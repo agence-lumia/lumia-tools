@@ -16,6 +16,8 @@
  *                   uninstall.php, after a reactivation).
  *   hold            a migration stopped by a failure: error recorded, marker absent, SKMT
  *                   left active, Lumia initialized no module, SKMT's bulk event moved.
+ *   freeze-state    prints a digest of the optimized images' meta and of the uploads
+ *                   files, and the number of skmt_image_optimizer_cron events.
  *   hold-writes     while on hold, writes the way the live SKMT would (a setting, the SMTP
  *                   password, an _skmt_* meta on an object already migrated), and records
  *                   them in the snapshot: they must win when the migration resumes.
@@ -649,6 +651,27 @@ if ( 'hold' === $e2e_phase ) {
 		WP_CLI::error( "hold: {$e2e_failures} check(s) failed" );
 	}
 	WP_CLI::success( 'hold: Lumia waits, SKMT keeps running.' );
+	return;
+}
+
+if ( 'freeze-state' === $e2e_phase ) {
+	// Everything SKMT's optimizer could change on the optimized images: their post
+	// meta (Lumia and legacy keys, attachment metadata), the uploads files, its event.
+	global $wpdb;
+	$snap  = e2e_read_json( E2E_SKMT_SNAPSHOT );
+	$ids   = array_map( 'intval', $snap['optimized_post_ids'] );
+	$meta  = $ids ? $wpdb->get_results( 'SELECT post_id, meta_key, meta_value FROM ' . $wpdb->postmeta . ' WHERE post_id IN (' . implode( ',', $ids ) . ') ORDER BY meta_id', ARRAY_A ) : [];
+	$files = [];
+	foreach ( e2e_listing( rtrim( e2e_uploads(), '/' ) ) as $rel => $size ) {
+		$files[ $rel ] = md5_file( e2e_uploads() . $rel );
+	}
+	echo wp_json_encode(
+		[
+			'meta'  => md5( serialize( $meta ) ),
+			'files' => md5( serialize( $files ) ),
+			'cron'  => count( e2e_cron_events( 'skmt_image_optimizer_cron' ) ),
+		]
+	);
 	return;
 }
 

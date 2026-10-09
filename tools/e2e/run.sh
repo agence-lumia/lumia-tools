@@ -429,7 +429,7 @@ cmd_reactivate_lumia() {
 # key) leaves SKMT active and Lumia on hold; reactivating Lumia then resumes and completes it.
 # Run on a freshly seeded bench without Lumia; ends like install-lumia + assert-migration.
 cmd_assert_partial() {
-	local failures=0 folder page out notice
+	local failures=0 folder page out notice before after action first_id
 
 	folder="$(working_tree_plugin)"
 	if wp plugin is-installed "${folder}" >/dev/null 2>&1; then
@@ -450,8 +450,13 @@ add_filter(
 );
 PHP
 
-	out="$(cmd_install_lumia 2>&1)"
+	if ! out="$(cmd_install_lumia 2>&1)"; then
+		echo "${out}"
+		die "install-lumia failed"
+	fi
 	echo "${out}"
+
+	first_id="$(wp eval 'echo (int) json_decode( file_get_contents( "/e2e/out/skmt-snapshot.json" ), true )["optimized_post_ids"][0];' | tr -d '\r')"
 
 	echo "Failed migration"
 	check "wp-cli warns about the failed step" "$(grep -q '^Warning: .*post_meta' <<<"${out}" && echo 0 || echo 1)"
@@ -467,6 +472,29 @@ PHP
 	check "the notice shows the database error" "$(grep -q 'e2e_missing_table' <<<"${notice}" && echo 0 || echo 1)"
 	page="$(http_code '/wp-admin/admin.php?page=lumia-tools' -H 'X-E2E-User: admin')"
 	check "the Lumia admin page is not registered while on hold (got ${page})" "$([ "${page}" != 200 ] && echo 0 || echo 1)"
+
+	echo "SKMT's image optimizer is frozen during the hold"
+	# A valid SKMT nonce cannot be built from here (the bench creates a new session per
+	# request): a bench-only override of the pluggable wp_verify_nonce() accepts any, so
+	# that without the freeze, SKMT's handlers would really run.
+	write_snippet accept-nonces <<'PHP'
+<?php
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	function wp_verify_nonce( $nonce, $action = -1 ) {
+		return 1;
+	}
+}
+PHP
+	before="$(wp eval-file /e2e/assert-migration.php freeze-state | tr -d '\r')"
+	for action in bulk_scan bulk bulk_status media_optimize media_reoptimize media_convert media_regenerate media_restore; do
+		page="$(curl -s -H 'X-E2E-User: admin' --data "action=skmt_image_optimizer_${action}&nonce=e2e&attachment_id=${first_id}&format=avif" "${SITE_URL}/wp-admin/admin-ajax.php")"
+		check "skmt_image_optimizer_${action} refused with a JSON error (${page:0:120})" \
+			"$(grep -q '^{"success":false,"data":"Image optimization is paused' <<<"${page}" && echo 0 || echo 1)"
+	done
+	remove_snippets
+	after="$(wp eval-file /e2e/assert-migration.php freeze-state | tr -d '\r')"
+	check "no meta or file of the optimized images changed, no skmt_image_optimizer_cron scheduled (${after})" \
+		"$([ "${after}" = "${before}" ] && grep -q '"cron":0' <<<"${after}" && echo 0 || echo 1)"
 
 	echo "SKMT keeps working during the hold"
 	wp --user=admin eval-file /e2e/assert-migration.php hold-writes || failures=$((failures + 1))

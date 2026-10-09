@@ -71,6 +71,11 @@ class Plugin {
 			// all_admin_notices, not admin_notices: SKMT, active, buffers every
 			// admin_notices output into its notification drawer.
 			add_action( 'all_admin_notices', [ $this, 'render_hold_notice' ] );
+
+			// SKMT's optimizer would re-encode the images whose meta is migrated.
+			if ( FromSkmt::legacy_optimizer_frozen() ) {
+				add_action( 'init', [ FromSkmt::class, 'freeze_legacy_optimizer' ], PHP_INT_MAX );
+			}
 			return;
 		}
 

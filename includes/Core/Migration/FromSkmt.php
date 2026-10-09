@@ -138,6 +138,24 @@ final class FromSkmt {
 	/** Activity log filter of the former plugin, see migrate_tables(). */
 	private const LEGACY_RECORD_FILTER = 'skmt_activity_log_record';
 
+	/** Namespace of SKMT's image optimizer classes, see freeze_legacy_optimizer(). */
+	private const LEGACY_OPTIMIZER_NAMESPACE = 'StudioKyne\\MiniTools\\Modules\\ImageOptimizer\\';
+
+	/**
+	 * Every AJAX action of SKMT's image optimizer (8d4cd85): bulk scan, start and
+	 * status, and the per-media actions, all of which can write files or meta.
+	 */
+	private const LEGACY_OPTIMIZER_AJAX = [
+		'skmt_image_optimizer_bulk_scan',
+		'skmt_image_optimizer_bulk',
+		'skmt_image_optimizer_bulk_status',
+		'skmt_image_optimizer_media_optimize',
+		'skmt_image_optimizer_media_reoptimize',
+		'skmt_image_optimizer_media_convert',
+		'skmt_image_optimizer_media_regenerate',
+		'skmt_image_optimizer_media_restore',
+	];
+
 	/** True while resuming a failed migration: the copies are refreshed from `skmt_*`. */
 	private static bool $refresh = false;
 
@@ -168,6 +186,53 @@ final class FromSkmt {
 	 */
 	public static function legacy_loaded(): bool {
 		return defined( 'SKMT_VERSION' );
+	}
+
+	/**
+	 * Whether SKMT's image optimizer must be frozen in this request: SKMT is
+	 * loaded and a migration has started (failed attempt) or completed (SKMT
+	 * re-enabled since). Its optimized images then no longer carry
+	 * `_skmt_optimized`: SKMT would take them for new ones and re-encode them,
+	 * through its bulk (the settings page restarts a running bulk on load), its
+	 * per-media buttons or its upload filter, and keep the degraded file as the
+	 * "original". To be called from `plugins_loaded` on.
+	 */
+	public static function legacy_optimizer_frozen(): bool {
+		return self::legacy_loaded() && ( isset( wp_load_alloptions()[ self::ERROR_OPTION ] ) || false !== get_option( self::MARKER ) );
+	}
+
+	/**
+	 * Hooked on `init` at PHP_INT_MAX, once SKMT's modules have hooked theirs:
+	 * unhooks SKMT's optimizer from the attachment metadata filter (uploads,
+	 * thumbnail regenerations), from its cron event and from its AJAX actions,
+	 * answers those actions with an error instead, and drops a re-armed event.
+	 * New uploads stay unprocessed until Lumia's optimizer takes over.
+	 */
+	public static function freeze_legacy_optimizer(): void {
+		$hooks = [ 'wp_generate_attachment_metadata', self::BULK_CRON ];
+		foreach ( self::LEGACY_OPTIMIZER_AJAX as $action ) {
+			$hooks[] = 'wp_ajax_' . $action;
+		}
+
+		foreach ( $hooks as $hook ) {
+			self::unhook_legacy_optimizer( $hook );
+		}
+
+		foreach ( self::LEGACY_OPTIMIZER_AJAX as $action ) {
+			add_action( 'wp_ajax_' . $action, [ self::class, 'refuse_legacy_optimizer' ], 0 );
+		}
+
+		if ( self::has_cron_event( self::BULK_CRON ) ) {
+			wp_unschedule_hook( self::BULK_CRON );
+		}
+	}
+
+	/**
+	 * Answer of the frozen SKMT optimizer AJAX actions (same shape as SKMT's own
+	 * errors: the message as data).
+	 */
+	public static function refuse_legacy_optimizer(): void {
+		wp_send_json_error( __( 'Image optimization is paused until the migration to Lümia Tools is complete.', 'lumia-tools' ) );
 	}
 
 	/**
@@ -675,6 +740,38 @@ final class FromSkmt {
 		$wpdb->query( "DROP TABLE `{$from}`" );
 
 		return self::db_ok();
+	}
+
+	/**
+	 * Removes from $hook every callback that is a method of one of SKMT's image
+	 * optimizer classes.
+	 */
+	private static function unhook_legacy_optimizer( string $hook ): void {
+		global $wp_filter;
+
+		if ( ! isset( $wp_filter[ $hook ] ) || ! $wp_filter[ $hook ] instanceof \WP_Hook ) {
+			return;
+		}
+
+		foreach ( $wp_filter[ $hook ]->callbacks as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				$function = $callback['function'];
+				if ( is_array( $function ) && is_object( $function[0] ) && 0 === strpos( get_class( $function[0] ), self::LEGACY_OPTIMIZER_NAMESPACE ) ) {
+					remove_filter( $hook, $function, $priority );
+				}
+			}
+		}
+	}
+
+	/** Whether any event of $hook is scheduled, whatever its arguments. */
+	private static function has_cron_event( string $hook ): bool {
+		foreach ( (array) _get_cron_array() as $hooks ) {
+			if ( ! empty( $hooks[ $hook ] ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static function table_exists( string $table ): bool {

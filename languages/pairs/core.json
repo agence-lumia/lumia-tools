@@ -142,5 +142,6 @@
   "Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.": "Migration depuis Studio Kyne Mini Tools terminée. Vous pouvez supprimer l'ancien plugin.",
   "Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated.": "Studio Kyne Mini Tools est toujours actif : Lümia Tools ne charge aucun de ses modules tant qu'il n'est pas désactivé.",
   "The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it.": "La migration depuis Studio Kyne Mini Tools s'est arrêtée à l'étape %s : Lümia Tools ne charge aucun de ses modules tant qu'elle n'est pas terminée. Ne supprimez pas Studio Kyne Mini Tools d'ici là : sa désinstallation effacerait les données pas encore migrées. Désactivez puis réactivez Lümia Tools pour la reprendre.",
-  "Database error: %s": "Erreur de base de données : %s"
+  "Database error: %s": "Erreur de base de données : %s",
+  "Image optimization is paused until the migration to Lümia Tools is complete.": "L'optimisation des images est suspendue jusqu'à la fin de la migration vers Lümia Tools."
 }
