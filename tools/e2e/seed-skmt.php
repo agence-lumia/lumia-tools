@@ -272,6 +272,20 @@ if ( 'content' === $e2e_phase ) {
 							'roles'        => [],
 							'children'     => [],
 						],
+						// The separator SKMT adds to its own submenu: the editor lists it as
+						// a child of the plugin page, under its slug.
+						[
+							'type'         => 'wp_item',
+							'slug'         => 'skmt-separator',
+							'label'        => null,
+							'icon'         => null,
+							'visible'      => false,
+							'block_access' => false,
+							'target_blank' => false,
+							'url'          => '',
+							'roles'        => [],
+							'children'     => [],
+						],
 					],
 				],
 				[

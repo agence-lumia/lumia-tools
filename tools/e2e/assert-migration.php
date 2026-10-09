@@ -24,6 +24,16 @@
  *   login-path      prints the custom login path the Security settings ask for.
  *   decrypt         prints "match" when the Lumia SMTP password and Brevo key decrypt to
  *                   the plain texts of the snapshot, the decrypted values otherwise.
+ *   legacy-key      with a LUMIA_ENCRYPTION_KEY defined in the request, the SKMT secrets
+ *                   still re-encrypt (the legacy key ignores it, as SKMT did).
+ *   l10n <key> [arg]
+ *                   prints a text the plugin shows, in the bench language (read through
+ *                   the plugin's own .mo), so that run.sh does not grep English sources.
+ *   interrupted <step>
+ *                   a migration killed inside <step>: step recorded without detail,
+ *                   Lumia left inactive, SKMT active, earlier steps done.
+ *   reinstall       after Lumia's uninstall and reinstall over leftover skmt_* options:
+ *                   the marker survived, nothing was migrated again.
  */
 
 use Lumia\Tools\Core\Activator;
@@ -38,6 +48,7 @@ if ( ! defined( 'WP_CLI' ) ) {
 const E2E_SKMT_SNAPSHOT  = '/e2e/out/skmt-snapshot.json';
 const E2E_LUMIA_SNAPSHOT = '/e2e/out/lumia-snapshot.json';
 const E2E_LEGACY_SLUG    = 'studio-kyne-mini-tools';
+const E2E_LEGACY_NAME    = 'Studio Kyne Mini Tools';
 const E2E_MARKER         = 'lumia_migrated_from_skmt';
 const E2E_ERROR_OPTION   = 'lumia_migration_error';
 
@@ -118,6 +129,22 @@ function e2e_check( bool $ok, string $label ): void {
 	if ( ! $ok ) {
 		++$e2e_failures;
 	}
+}
+
+/**
+ * Basename of the installed SKMT, found by its Plugin Name header: the bench may install
+ * it under another folder than studio-kyne-mini-tools/ (seed-skmt --folder).
+ */
+function e2e_legacy_basename(): string {
+	if ( ! function_exists( 'get_plugins' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+	foreach ( get_plugins() as $file => $data ) {
+		if ( E2E_LEGACY_NAME === $data['Name'] ) {
+			return $file;
+		}
+	}
+	return '';
 }
 
 /** skmt_x -> lumia_x, _skmt_x -> _lumia_x. */
@@ -228,13 +255,16 @@ function e2e_cron_events( string $hook ): array {
 	return $out;
 }
 
-/** Same rewrite as the brief: exact slug, or slug followed by "&". */
+/** Same rewrite as the brief: exact slug, or slug followed by "&"; SKMT's submenu separator exactly. */
 function e2e_rewrite_slugs( $value ) {
 	if ( is_array( $value ) ) {
 		return array_map( 'e2e_rewrite_slugs', $value );
 	}
 	if ( is_string( $value ) && ( E2E_LEGACY_SLUG === $value || 0 === strpos( $value, E2E_LEGACY_SLUG . '&' ) ) ) {
 		return 'lumia-tools' . substr( $value, strlen( E2E_LEGACY_SLUG ) );
+	}
+	if ( 'skmt-separator' === $value ) {
+		return 'lumia-separator';
 	}
 	return $value;
 }
@@ -335,6 +365,56 @@ if ( 'login-path' === $e2e_phase ) {
 	return;
 }
 
+if ( 'legacy-key' === $e2e_phase ) {
+	// A site may define LUMIA_ENCRYPTION_KEY before migrating (the help texts name it).
+	// SKMT never read it: the legacy key must not either, or nothing decrypts.
+	$snap = e2e_read_json( E2E_SKMT_SNAPSHOT );
+	define( 'LUMIA_ENCRYPTION_KEY', 'e2e-lumia-only-key' );
+	foreach ( $snap['secret_plain'] as $legacy => $plain ) {
+		$stored = get_option( $legacy );
+		if ( null === $plain || false === $stored ) {
+			continue;
+		}
+		$new = Crypto::reencrypt_from_legacy( (string) $stored );
+		e2e_check( $new !== $stored && $plain === Crypto::decrypt( $new ), "{$legacy} re-encrypts under LUMIA_ENCRYPTION_KEY and decrypts to {$plain}" );
+	}
+	if ( $e2e_failures > 0 ) {
+		WP_CLI::error( "legacy-key: {$e2e_failures} check(s) failed" );
+	}
+	WP_CLI::success( 'legacy-key: the legacy key ignores LUMIA_ENCRYPTION_KEY.' );
+	return;
+}
+
+if ( 'l10n' === $e2e_phase ) {
+	// The English sources are written out again on purpose (a changed source must fail
+	// here); the translation is the plugin's, in the bench language.
+	switch ( $args[1] ?? '' ) {
+		case 'hold-notice':
+			// As Plugin::render_hold_notice() formats it for step $args[2].
+			echo sprintf(
+				esc_html__( 'The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it.', 'lumia-tools' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment
+				'<code>' . esc_html( (string) ( $args[2] ?? '' ) ) . '</code>'
+			);
+			return;
+		case 'freeze-json':
+			// The whole body of FromSkmt::refuse_legacy_optimizer() (wp_send_json_error()).
+			echo wp_json_encode(
+				[
+					'success' => false,
+					'data'    => __( 'Image optimization is paused until the migration to Lümia Tools is complete.', 'lumia-tools' ),
+				]
+			);
+			return;
+		case 'complete':
+			echo __( 'Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.', 'lumia-tools' );
+			return;
+		case 'locale':
+			echo determine_locale();
+			return;
+	}
+	WP_CLI::error( 'l10n: unknown key.' );
+}
+
 if ( 'decrypt' === $e2e_phase ) {
 	$snap = e2e_read_json( E2E_SKMT_SNAPSHOT );
 	$got  = [];
@@ -359,7 +439,9 @@ if ( 'migration' === $e2e_phase ) {
 	if ( ! function_exists( 'is_plugin_active' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
-	e2e_check( ! is_plugin_active( E2E_LEGACY_SLUG . '/' . E2E_LEGACY_SLUG . '.php' ), 'SKMT is deactivated' );
+	$legacy_file = e2e_legacy_basename();
+	e2e_check( '' !== $legacy_file && ! is_plugin_active( $legacy_file ), "SKMT ({$legacy_file}) is deactivated" );
+	e2e_check( ! defined( 'SKMT_VERSION' ), 'SKMT is not loaded in this request' );
 	e2e_check( is_plugin_active( 'lumia-tools/lumia-tools.php' ), 'Lumia Tools is active' );
 	$marker = get_option( E2E_MARKER );
 	e2e_check( is_numeric( $marker ) && (int) $marker > time() - DAY_IN_SECONDS && (int) $marker <= time(), 'marker set to a recent timestamp (' . var_export( $marker, true ) . ')' );
@@ -396,6 +478,7 @@ if ( 'migration' === $e2e_phase ) {
 	if ( null !== $snap['options']['skmt_wl_menu_profiles'] ) {
 		e2e_check( false === strpos( $profiles, E2E_LEGACY_SLUG ), 'lumia_wl_menu_profiles no longer mentions the legacy slug' );
 		e2e_check( false !== strpos( $profiles, '"lumia-tools"' ) && false !== strpos( $profiles, '"lumia-tools&tab=module_smtp"' ), 'lumia_wl_menu_profiles points at lumia-tools and lumia-tools&tab=module_smtp' );
+		e2e_check( false === strpos( $profiles, 'skmt-separator' ) && false !== strpos( $profiles, '"lumia-separator"' ), "the hidden submenu separator child now reads lumia-separator (Lumia's own slug)" );
 	} else {
 		e2e_check( '' === $profiles, 'no menu profile to migrate' );
 	}
@@ -634,7 +717,7 @@ if ( 'hold' === $e2e_phase ) {
 	WP_CLI::log( 'Migration stopped by a failure' );
 	e2e_check( $expected_step === get_option( E2E_ERROR_OPTION ), "error option names the step '{$expected_step}' (got " . var_export( get_option( E2E_ERROR_OPTION ), true ) . ')' );
 	e2e_check( false === get_option( E2E_MARKER ), 'marker not set' );
-	e2e_check( is_plugin_active( E2E_LEGACY_SLUG . '/' . E2E_LEGACY_SLUG . '.php' ) && defined( 'SKMT_VERSION' ), 'SKMT left active (and loaded in this request)' );
+	e2e_check( is_plugin_active( e2e_legacy_basename() ) && defined( 'SKMT_VERSION' ), 'SKMT left active (and loaded in this request)' );
 	e2e_check( is_plugin_active( 'lumia-tools/lumia-tools.php' ), 'Lumia Tools active' );
 	e2e_check( false === has_action( 'init', [ Plugin::instance(), 'on_init' ] ), 'Lumia did not hook its module initialization' );
 	e2e_check( [] === Plugin::instance()->modules->get_active_instances() && [] === Plugin::instance()->modules->get_all(), 'Lumia registered and initialized no module' );
@@ -701,6 +784,56 @@ if ( 'hold-writes' === $e2e_phase ) {
 	];
 	e2e_write_json( E2E_SKMT_SNAPSHOT, $snap );
 	WP_CLI::success( "hold-writes: login URL /connexion-hold, new SMTP password, _skmt_optimized on attachment {$id}." );
+	return;
+}
+
+if ( 'interrupted' === $e2e_phase ) {
+	// Lumia is NOT active here (WordPress adds it to active_plugins only once the
+	// activation hook returns): only its options and the data can be read.
+	global $wpdb;
+	$step = $args[1] ?? '';
+	if ( ! function_exists( 'is_plugin_active' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+
+	WP_CLI::log( 'Migration killed inside a step' );
+	e2e_check( $step === get_option( E2E_ERROR_OPTION ), "lumia_migration_error names the interrupted step '{$step}' (got " . var_export( get_option( E2E_ERROR_OPTION ), true ) . ')' );
+	e2e_check( false === get_option( 'lumia_migration_error_detail' ), 'no error detail: interrupted, not failed' );
+	e2e_check( e2e_autoloaded( e2e_autoload( E2E_ERROR_OPTION ) ), 'lumia_migration_error is autoloaded (the hold reads it for free)' );
+	e2e_check( false === get_option( E2E_MARKER ), 'marker not set' );
+	e2e_check( ! is_plugin_active( 'lumia-tools/lumia-tools.php' ), 'Lumia Tools left inactive by WordPress' );
+	e2e_check( is_plugin_active( e2e_legacy_basename() ) && defined( 'SKMT_VERSION' ), 'SKMT left active' );
+	e2e_check( 0 < e2e_meta_count( $wpdb->postmeta, '_lumia_optimized' ) && 0 === e2e_like_count( $wpdb->postmeta, 'meta_key', '_skmt_' ), 'the earlier post_meta step completed' );
+	e2e_check( 0 < e2e_meta_count( $wpdb->usermeta, 'skmt_local_avatar' ), 'the interrupted user meta is not renamed yet' );
+	e2e_check( [] === e2e_cron_events( 'skmt_image_optimizer_cron' ), "SKMT's bulk event already removed (crons step)" );
+
+	if ( $e2e_failures > 0 ) {
+		WP_CLI::error( "interrupted: {$e2e_failures} check(s) failed" );
+	}
+	WP_CLI::success( 'interrupted: the killed step is recorded.' );
+	return;
+}
+
+if ( 'reinstall' === $e2e_phase ) {
+	$before = e2e_read_json( E2E_LUMIA_SNAPSHOT );
+	$snap   = e2e_read_json( E2E_SKMT_SNAPSHOT );
+
+	WP_CLI::log( 'Reinstall over leftover skmt_* options' );
+	e2e_check( (string) $before['marker'] === (string) get_option( E2E_MARKER ), 'the marker survived the uninstall of Lumia (tombstone)' );
+	e2e_check( $snap['options']['skmt_settings'] === e2e_raw_option( 'skmt_settings' ), 'skmt_settings is still there (SKMT deleted without its uninstall.php)' );
+	e2e_check( false === get_option( E2E_ERROR_OPTION ), 'no migration error recorded' );
+	$settings = get_option( 'lumia_settings' );
+	e2e_check( is_array( $settings ) && [] === array_filter( (array) $settings['modules'] ), 'lumia_settings holds the fresh defaults (every module off), not the old skmt_settings' );
+	$security = get_option( 'lumia_module_security' );
+	e2e_check( Lumia\Tools\Modules\Security\Module::get_defaults() == $security, 'lumia_module_security holds the Lumia defaults, not the old SKMT login URL' ); // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual -- nested arrays, key order may differ.
+	foreach ( array_keys( E2E_SECRETS ) as $legacy ) {
+		e2e_check( false === get_option( e2e_lumia( $legacy ) ), e2e_lumia( $legacy ) . ' not re-imported' );
+	}
+
+	if ( $e2e_failures > 0 ) {
+		WP_CLI::error( "reinstall: {$e2e_failures} check(s) failed" );
+	}
+	WP_CLI::success( 'reinstall: nothing migrated again.' );
 	return;
 }
 

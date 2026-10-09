@@ -12,6 +12,7 @@ OUT_DIR="${E2E_DIR}/out"
 
 SKMT_COMMIT="8d4cd85"
 SKMT_SLUG="studio-kyne-mini-tools"
+SKMT_NAME="Studio Kyne Mini Tools"
 SITE_URL="http://localhost:8089"
 WP_MIN_VERSION="6.9"
 ENCRYPTION_KEY="e2e-fixed-key"
@@ -89,6 +90,14 @@ working_tree_plugin() {
 	echo "${found}"
 }
 
+# Folder of the installed SKMT, found by its plugin name (seed-skmt --folder may install it
+# elsewhere than studio-kyne-mini-tools/); empty when SKMT is not installed.
+skmt_folder() {
+	# CSV quotes the title; a folder name never holds a comma.
+	wp plugin list --fields=name,title --format=csv | tr -d '\r' \
+		| grep -F ",\"${SKMT_NAME}\"" | cut -d, -f1 | head -n 1 || true
+}
+
 cmd_up() {
 	prepare_out_dir
 	dc up -d db wordpress
@@ -138,25 +147,30 @@ cmd_down() {
 }
 
 cmd_seed_skmt() {
-	local minimal=0 encryption_key=0 arg
+	local minimal=0 encryption_key=0 folder="${SKMT_SLUG}" arg
 
 	for arg in "$@"; do
 		case "${arg}" in
 			--minimal) minimal=1 ;;
 			--encryption-key) encryption_key=1 ;;
+			# SKMT installed under another folder, as a GitHub "Download ZIP" leaves it.
+			--folder=*)
+				folder="${arg#--folder=}"
+				[[ "${folder}" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "seed-skmt: bad folder name ${folder}" >&2; exit 2; }
+				;;
 			*) echo "seed-skmt: unknown option ${arg}" >&2; exit 2 ;;
 		esac
 	done
 
 	prepare_out_dir
-	if wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1; then
+	if [ -n "$(skmt_folder)" ]; then
 		die "SKMT is already installed: run 'down' then 'up' for a fresh bench"
 	fi
 
-	local zip_name="${SKMT_SLUG}-${SKMT_COMMIT}.zip" extracted
+	local zip_name="${folder}-${SKMT_COMMIT}.zip" extracted
 	extracted="$(mktemp -d)"
 	git -C "${REPO_DIR}" archive "${SKMT_COMMIT}" | tar -x -C "${extracted}"
-	build_zip "${extracted}" "${SKMT_SLUG}" "${OUT_DIR}/${zip_name}"
+	build_zip "${extracted}" "${folder}" "${OUT_DIR}/${zip_name}"
 	rm -rf "${extracted}"
 	chmod 644 "${OUT_DIR}/${zip_name}"
 
@@ -176,7 +190,7 @@ cmd_seed_skmt() {
 		wp --user=admin eval-file /e2e/seed-skmt.php content
 	fi
 
-	echo "SKMT seeded from ${SKMT_COMMIT} (minimal=${minimal}, encryption-key=${encryption_key})."
+	echo "SKMT seeded from ${SKMT_COMMIT} (minimal=${minimal}, encryption-key=${encryption_key}, folder=${folder})."
 }
 
 cmd_capture() {
@@ -203,7 +217,7 @@ cmd_install_lumia() {
 
 	# First install over a seeded SKMT: record what SKMT holds, so that assert-migration
 	# can compare the migrated data with it (row counts, ids, files, cron timestamp).
-	if [ "${folder}" != "${SKMT_SLUG}" ] && wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1 \
+	if [ "${folder}" != "${SKMT_SLUG}" ] && [ -n "$(skmt_folder)" ] \
 		&& ! wp plugin is-installed "${folder}" >/dev/null 2>&1; then
 		wp --user=admin eval-file /e2e/assert-migration.php snapshot
 	fi
@@ -349,6 +363,8 @@ cmd_assert_migration() {
 
 	if [ "$(option_state skmt_smtp_password)" = some ]; then
 		fresh_decrypt_checks
+		echo "Legacy key"
+		wp --user=admin eval-file /e2e/assert-migration.php legacy-key || failures=$((failures + 1))
 	fi
 
 	echo "Success notice"
@@ -367,17 +383,18 @@ cmd_assert_migration() {
 
 # assert-after-uninstall: SKMT's uninstall.php must find nothing that belongs to Lumia.
 cmd_assert_after_uninstall() {
-	local failures=0 left
+	local failures=0 left skmt
 
 	[ -f "${OUT_DIR}/lumia-snapshot.json" ] || die "no Lumia snapshot: run 'assert-migration' first"
-	wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1 || die "SKMT is not installed"
+	skmt="$(skmt_folder)"
+	[ -n "${skmt}" ] || die "SKMT is not installed"
 
 	# Through WordPress (uninstall_plugin()), so that SKMT's uninstall.php runs; then the
 	# files are deleted. `wp plugin delete` would only delete the files.
-	wp plugin uninstall "${SKMT_SLUG}"
+	wp plugin uninstall "${skmt}"
 
 	echo "SKMT uninstalled"
-	check "SKMT files deleted" "$(wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1 && echo 1 || echo 0)"
+	check "SKMT files deleted" "$(wp plugin is-installed "${skmt}" >/dev/null 2>&1 && echo 1 || echo 0)"
 	left="$(option_state skmt_settings)"
 	check "uninstall.php ran (skmt_settings: ${left})" "$([ "${left}" = none ] && echo 0 || echo 1)"
 
@@ -458,6 +475,17 @@ PHP
 
 	first_id="$(wp eval 'echo (int) json_decode( file_get_contents( "/e2e/out/skmt-snapshot.json" ), true )["optimized_post_ids"][0];' | tr -d '\r')"
 
+	# Expected texts in the bench language (fr_FR), read through the plugin's .mo: the
+	# English sources are translated on the pages and in the AJAX answers.
+	local locale expected_notice expected_json expected_done
+	locale="$(wp --user=admin eval-file /e2e/assert-migration.php l10n locale | tr -d '\r')"
+	expected_notice="$(wp --user=admin eval-file /e2e/assert-migration.php l10n hold-notice post_meta | tr -d '\r')"
+	expected_json="$(wp --user=admin eval-file /e2e/assert-migration.php l10n freeze-json | tr -d '\r')"
+	expected_done="$(wp --user=admin eval-file /e2e/assert-migration.php l10n complete | tr -d '\r')"
+	echo "Texts expected in ${locale}"
+	check "the plugin's translation is loaded (${expected_done})" \
+		"$([ "${locale}" = en_US ] || [ "${expected_done}" != 'Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.' ] && echo 0 || echo 1)"
+
 	echo "Failed migration"
 	check "wp-cli warns about the failed step" "$(grep -q '^Warning: .*post_meta' <<<"${out}" && echo 0 || echo 1)"
 	wp --user=admin eval-file /e2e/assert-migration.php hold post_meta || failures=$((failures + 1))
@@ -468,7 +496,8 @@ PHP
 	notice="$(grep -o 'id="lumia-migration-notice".*' <<<"${page}" || true)"
 	check "error notice rendered inline on the dashboard" "$([ -n "${notice}" ] && echo 0 || echo 1)"
 	check "the notice names the failed step" "$(grep -q 'post_meta' <<<"${notice}" && echo 0 || echo 1)"
-	check "the notice warns not to delete SKMT yet" "$(grep -q 'Do not delete Studio Kyne Mini Tools' <<<"${notice}" && echo 0 || echo 1)"
+	# The whole message (step, warning not to delete SKMT yet, how to resume), translated.
+	check "the notice warns not to delete SKMT yet (full message, ${locale})" "$(grep -qF "${expected_notice}" <<<"${notice}" && echo 0 || echo 1)"
 	check "the notice shows the database error" "$(grep -q 'e2e_missing_table' <<<"${notice}" && echo 0 || echo 1)"
 	page="$(http_code '/wp-admin/admin.php?page=lumia-tools' -H 'X-E2E-User: admin')"
 	check "the Lumia admin page is not registered while on hold (got ${page})" "$([ "${page}" != 200 ] && echo 0 || echo 1)"
@@ -488,8 +517,8 @@ PHP
 	before="$(wp eval-file /e2e/assert-migration.php freeze-state | tr -d '\r')"
 	for action in bulk_scan bulk bulk_status media_optimize media_reoptimize media_convert media_regenerate media_restore; do
 		page="$(curl -s -H 'X-E2E-User: admin' --data "action=skmt_image_optimizer_${action}&nonce=e2e&attachment_id=${first_id}&format=avif" "${SITE_URL}/wp-admin/admin-ajax.php")"
-		check "skmt_image_optimizer_${action} refused with a JSON error (${page:0:120})" \
-			"$(grep -q '^{"success":false,"data":"Image optimization is paused' <<<"${page}" && echo 0 || echo 1)"
+		check "skmt_image_optimizer_${action} refused with the JSON error of the freeze (${page:0:120})" \
+			"$([ "${page}" = "${expected_json}" ] && echo 0 || echo 1)"
 	done
 	remove_snippets
 	after="$(wp eval-file /e2e/assert-migration.php freeze-state | tr -d '\r')"
@@ -504,10 +533,87 @@ PHP
 	wp plugin deactivate "${folder}"
 	out="$(wp plugin activate "${folder}" 2>&1)"
 	echo "${out}"
-	check "wp-cli reports the completed migration" "$(grep -q 'Migration from Studio Kyne Mini Tools complete' <<<"${out}" && echo 0 || echo 1)"
+	check "wp-cli reports the completed migration" "$(grep -qF "${expected_done}" <<<"${out}" && echo 0 || echo 1)"
 
 	[ "${failures}" -eq 0 ] || die "assert-partial: ${failures} check(s) failed before the resume"
 	cmd_assert_migration
+}
+
+# assert-interrupted: a migration killed inside a step (here user_meta, after post_meta: a
+# bench snippet exits the process on its UPDATE, as a fatal error or a PHP-FPM timeout
+# would) leaves the step recorded without detail, Lumia inactive and SKMT active; the next
+# activation resumes in refresh mode and completes. Run on a freshly seeded bench without
+# Lumia; ends like install-lumia + assert-migration.
+cmd_assert_interrupted() {
+	local failures=0 folder out status
+
+	folder="$(working_tree_plugin)"
+	if wp plugin is-installed "${folder}" >/dev/null 2>&1; then
+		die "${folder} is already installed: start from a freshly seeded bench"
+	fi
+	trap remove_snippets EXIT
+	remove_snippets
+	write_snippet kill-user-meta <<'PHP'
+<?php
+add_filter(
+	'query',
+	static function ( $query ) {
+		if ( 0 === strpos( ltrim( $query ), 'UPDATE' ) && false !== strpos( $query, "'skmt_local_avatar'" ) ) {
+			exit( 255 );
+		}
+		return $query;
+	}
+);
+PHP
+
+	status=0
+	out="$(cmd_install_lumia 2>&1)" || status=$?
+	echo "${out}"
+
+	echo "Killed migration"
+	check "the activation died (exit status ${status})" "$([ "${status}" -ne 0 ] && echo 0 || echo 1)"
+	wp --user=admin eval-file /e2e/assert-migration.php interrupted user_meta || failures=$((failures + 1))
+
+	remove_snippets
+	# SKMT stays the live plugin until the retry (and nothing freezes it: Lumia is not
+	# active). What it writes meanwhile must win: the retry runs in refresh mode.
+	echo "SKMT keeps working until the retry"
+	wp --user=admin eval-file /e2e/assert-migration.php hold-writes || failures=$((failures + 1))
+
+	echo "Resume: activate ${folder} again"
+	out="$(wp plugin activate "${folder}" 2>&1)" || failures=$((failures + 1))
+	echo "${out}"
+	check "wp-cli reports the completed migration" \
+		"$(grep -qF "$(wp eval-file /e2e/assert-migration.php l10n complete | tr -d '\r')" <<<"${out}" && echo 0 || echo 1)"
+
+	[ "${failures}" -eq 0 ] || die "assert-interrupted: ${failures} check(s) failed before the resume"
+	cmd_assert_migration
+}
+
+# assert-reinstall: after a migration, SKMT removed with `wp plugin delete` (files only:
+# its skmt_* options stay), then Lumia uninstalled and installed again. The marker is a
+# tombstone: the reinstall must not migrate the old skmt_* settings again.
+cmd_assert_reinstall() {
+	local failures=0 folder skmt left
+
+	folder="$(working_tree_plugin)"
+	[ -f "${OUT_DIR}/lumia-snapshot.json" ] || die "no Lumia snapshot: run 'assert-migration' first"
+	[ -f "${OUT_DIR}/${folder}-worktree.zip" ] || die "no Lumia zip: run 'install-lumia' first"
+	skmt="$(skmt_folder)"
+	[ -n "${skmt}" ] || die "SKMT is not installed"
+
+	wp plugin delete "${skmt}"
+	wp plugin uninstall "${folder}" --deactivate
+
+	echo "Lumia uninstalled"
+	left="$(option_state lumia_settings)"
+	check "Lumia's uninstall.php ran (lumia_settings: ${left})" "$([ "${left}" = none ] && echo 0 || echo 1)"
+
+	wp plugin install "/e2e/out/${folder}-worktree.zip" --activate
+	wp --user=admin eval-file /e2e/assert-migration.php reinstall || failures=$((failures + 1))
+
+	[ "${failures}" -eq 0 ] || die "assert-reinstall: ${failures} check(s) failed"
+	echo "assert-reinstall: all checks passed."
 }
 
 usage() {
@@ -516,7 +622,7 @@ Usage: tools/e2e/run.sh <command> [args]
 
   up                                   start the bench: WordPress 6.9+ in French, admin/admin on http://localhost:8089
   down                                 stop the bench and delete its data
-  seed-skmt [--minimal] [--encryption-key]
+  seed-skmt [--minimal] [--encryption-key] [--folder=<name>]
                                        install SKMT (commit 8d4cd85) and seed realistic data
   capture <output-dir> [page-slug]     write the admin text to out/<output-dir>/ (slug defaults to studio-kyne-mini-tools)
   install-lumia                        install and activate the plugin built from the working tree
@@ -525,6 +631,8 @@ Usage: tools/e2e/run.sh <command> [args]
   assert-after-uninstall               uninstall SKMT (its uninstall.php runs), then check the Lumia data is intact
   reactivate-lumia                     change a setting, deactivate and reactivate Lumia: no replay, setting kept
   assert-partial                       inject a failure in the migration, check the hold, then resume (seeded bench, no Lumia)
+  assert-interrupted                   kill the activation inside a step, check the trace, then resume (seeded bench, no Lumia)
+  assert-reinstall                     delete SKMT's files only, uninstall and reinstall Lumia: nothing migrated again
 EOF
 }
 
@@ -543,6 +651,8 @@ case "${command}" in
 	assert-after-uninstall) cmd_assert_after_uninstall ;;
 	reactivate-lumia) cmd_reactivate_lumia ;;
 	assert-partial) cmd_assert_partial ;;
+	assert-interrupted) cmd_assert_interrupted ;;
+	assert-reinstall) cmd_assert_reinstall ;;
 	-h | --help | help) usage ;;
 	*)
 		echo "unknown command: ${command}" >&2
