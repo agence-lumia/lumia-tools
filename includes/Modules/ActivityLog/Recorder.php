@@ -6,26 +6,25 @@ defined( 'ABSPATH' ) || exit;
 use Lumia\Tools\Modules\Security\ClientIp;
 
 /**
- * Branche le journal sur les hooks WordPress et écrit les événements.
+ * Hooks the log into WordPress and writes the events.
  *
- * Chaque handler ne fait que traduire les arguments du hook en une ligne ;
- * exclusions, IP, auteur et dédoublonnage vivent dans record().
+ * Each handler only turns the hook arguments into a row; exclusions, IP,
+ * author and deduplication live in record().
  */
 class Recorder {
 
 	/**
-	 * Échecs de connexion journalisés par IP et par heure. Au-delà, les
-	 * tentatives de la même IP sont ignorées jusqu'à la fin de la fenêtre : une
-	 * attaque par force brute de dix mille essais remplissait sinon le plafond
-	 * de lignes en une nuit, et la purge par volume effaçait tout l'historique
-	 * utile — l'inverse du but.
+	 * Failed logins logged per IP and per hour. Beyond that, attempts from the
+	 * same IP are ignored until the end of the window: a brute-force attack of
+	 * ten thousand tries would otherwise fill the row cap in one night, and the
+	 * volume purge would erase all the useful history, the opposite of the goal.
 	 */
 	const FAILED_LOGIN_CAP = 10;
 
-	/** Longueur maximale d'une valeur avant/après conservée dans le détail. */
+	/** Maximum length of a before/after value kept in the detail. */
 	const VALUE_MAX = 200;
 
-	/** Nombre maximal de chemins listés pour un changement de réglages Lümia Tools. */
+	/** Maximum number of paths listed for a Lümia Tools settings change. */
 	const PATHS_MAX = 30;
 
 	/** @var string[] */
@@ -37,26 +36,26 @@ class Recorder {
 	private bool $anonymize_ip;
 
 	/**
-	 * Événements déjà écrits pendant cette requête (clé => true).
+	 * Events already written during this request (key => true).
 	 *
-	 * Gutenberg enregistre un article en deux requêtes, mais Bricks écrit
-	 * plusieurs métas dans la même, et une mise à jour de rôle passe par
-	 * plusieurs hooks : une seule ligne par objet et par requête suffit.
+	 * Gutenberg saves a post in two requests, but Bricks writes several metas
+	 * in the same one, and a role update goes through several hooks: a single
+	 * row per object and per request is enough.
 	 *
 	 * @var array<string, bool>
 	 */
 	private array $seen = [];
 
 	/**
-	 * Noms capturés avant suppression (extension, thème), relus une fois la
-	 * suppression confirmée : l'en-tête du fichier n'existe plus à ce moment.
+	 * Names captured before deletion (plugin, theme), read back once the
+	 * deletion is confirmed: the file header no longer exists at that point.
 	 *
 	 * @var array<string, string>
 	 */
 	private array $pending_names = [];
 
 	/**
-	 * @param array<string, mixed> $settings Réglages du module.
+	 * @param array<string, mixed> $settings Module settings.
 	 */
 	public function __construct( array $settings ) {
 		$this->excluded_groups = array_map( 'strval', (array) ( $settings['excluded_groups'] ?? [] ) );
@@ -65,12 +64,12 @@ class Recorder {
 	}
 
 	public function register(): void {
-		// Connexions.
+		// Logins.
 		add_action( 'wp_login', [ $this, 'on_login' ], 10, 2 );
 		add_action( 'wp_login_failed', [ $this, 'on_login_failed' ], 10, 1 );
 		add_action( 'wp_logout', [ $this, 'on_logout' ], 10, 1 );
 
-		// Contenus.
+		// Content.
 		add_action( 'transition_post_status', [ $this, 'on_transition_post_status' ], 10, 3 );
 		add_action( 'post_updated', [ $this, 'on_post_updated' ], 10, 3 );
 		add_action( 'trashed_post', [ $this, 'on_trashed_post' ], 10, 1 );
@@ -79,19 +78,19 @@ class Recorder {
 		add_action( 'added_post_meta', [ $this, 'on_post_meta' ], 10, 3 );
 		add_action( 'updated_post_meta', [ $this, 'on_post_meta' ], 10, 3 );
 
-		// Médias.
+		// Media.
 		add_action( 'add_attachment', [ $this, 'on_add_attachment' ], 10, 1 );
 		add_action( 'attachment_updated', [ $this, 'on_attachment_updated' ], 10, 3 );
 		add_action( 'delete_attachment', [ $this, 'on_delete_attachment' ], 10, 1 );
 
-		// Utilisateurs.
+		// Users.
 		add_action( 'user_register', [ $this, 'on_user_register' ], 10, 1 );
 		add_action( 'profile_update', [ $this, 'on_profile_update' ], 10, 2 );
 		add_action( 'set_user_role', [ $this, 'on_set_user_role' ], 10, 3 );
 		add_action( 'delete_user', [ $this, 'on_delete_user' ], 10, 2 );
 		add_action( 'after_password_reset', [ $this, 'on_password_reset' ], 10, 1 );
 
-		// Extensions et thèmes.
+		// Plugins and themes.
 		add_action( 'activated_plugin', [ $this, 'on_activated_plugin' ], 10, 2 );
 		add_action( 'deactivated_plugin', [ $this, 'on_deactivated_plugin' ], 10, 2 );
 		add_action( 'delete_plugin', [ $this, 'on_delete_plugin' ], 10, 1 );
@@ -101,18 +100,18 @@ class Recorder {
 		add_action( 'delete_theme', [ $this, 'on_delete_theme' ], 10, 1 );
 		add_action( 'deleted_theme', [ $this, 'on_deleted_theme' ], 10, 2 );
 
-		// Réglages.
+		// Settings.
 		add_action( 'updated_option', [ $this, 'on_updated_option' ], 10, 3 );
 		add_action( 'added_option', [ $this, 'on_added_option' ], 10, 2 );
 	}
 
 	/* ================================================================
-	 * CONNEXIONS
+	 * LOGINS
 	 * ================================================================ */
 
 	/**
-	 * `wp_login` passe l'utilisateur en argument : l'utilisateur courant n'est
-	 * pas encore positionné quand le hook se déclenche.
+	 * `wp_login` passes the user as an argument: the current user is not set
+	 * yet when the hook fires.
 	 *
 	 * @param string   $user_login
 	 * @param \WP_User $user
@@ -126,7 +125,7 @@ class Recorder {
 	}
 
 	/**
-	 * @param string $username Identifiant saisi — valeur libre de l'attaquant.
+	 * @param string $username Login name typed in: a value freely chosen by the attacker.
 	 */
 	public function on_login_failed( $username ): void {
 		$ip  = $this->client_ip();
@@ -147,8 +146,8 @@ class Recorder {
 	}
 
 	/**
-	 * Depuis WordPress 5.5, `wp_logout` reçoit l'identifiant : l'utilisateur
-	 * courant est déjà remis à zéro quand il se déclenche.
+	 * Since WordPress 5.5, `wp_logout` receives the ID: the current user is
+	 * already reset when it fires.
 	 *
 	 * @param int $user_id
 	 */
@@ -162,13 +161,13 @@ class Recorder {
 	}
 
 	/* ================================================================
-	 * CONTENUS
+	 * CONTENT
 	 * ================================================================ */
 
 	/**
-	 * Création : la seule transition qui nous intéresse ici. Les autres
-	 * (publication d'un brouillon, dépublication) arrivent aussi par
-	 * `post_updated`, qui voit l'avant et l'après.
+	 * Creation: the only transition we care about here. The others
+	 * (publishing a draft, unpublishing) also arrive through `post_updated`,
+	 * which sees the before and the after.
 	 *
 	 * @param string   $new_status
 	 * @param string   $old_status
@@ -179,8 +178,8 @@ class Recorder {
 			return;
 		}
 
-		// L'auto-draft que WordPress crée à l'ouverture de l'éditeur n'est pas
-		// une création : l'utilisateur n'a encore rien enregistré.
+		// The auto-draft WordPress creates when the editor opens is not a
+		// creation: the user has not saved anything yet.
 		if ( ! in_array( $old_status, [ 'new', 'auto-draft' ], true ) || in_array( $new_status, [ 'auto-draft', 'inherit', 'trash' ], true ) ) {
 			return;
 		}
@@ -198,17 +197,17 @@ class Recorder {
 			return;
 		}
 
-		// Premier enregistrement d'un auto-draft : déjà journalisé comme
-		// création. Corbeille et restauration ont leurs propres événements
-		// (wp_trash_post passe lui aussi par wp_update_post).
+		// First save of an auto-draft: already logged as a creation. Trash and
+		// restore have their own events (wp_trash_post also goes through
+		// wp_update_post).
 		if ( in_array( $before->post_status, [ 'new', 'auto-draft', 'trash' ], true ) || in_array( $after->post_status, [ 'auto-draft', 'trash' ], true ) ) {
 			return;
 		}
 
 		$changes = $this->post_changes( $before, $after );
 
-		// Gutenberg renvoie l'article une seconde fois pour les boîtes méta :
-		// rien n'a changé dans les champs, il n'y a rien à dire.
+		// Gutenberg sends the post a second time for the meta boxes: nothing
+		// changed in the fields, so there is nothing to report.
 		if ( ! $changes ) {
 			return;
 		}
@@ -237,15 +236,15 @@ class Recorder {
 	}
 
 	/**
-	 * `before_delete_post` plutôt que `deleted_post` : après suppression, le
-	 * titre n'est plus lisible.
+	 * `before_delete_post` rather than `deleted_post`: after deletion, the
+	 * title is no longer readable.
 	 *
 	 * @param int $post_id
 	 */
 	public function on_before_delete_post( $post_id ): void {
 		$post = get_post( (int) $post_id );
 
-		// Les auto-drafts sont purgés par le cron de WordPress chaque semaine.
+		// Auto-drafts are purged by the WordPress cron every week.
 		if ( ! $post instanceof \WP_Post || 'auto-draft' === $post->post_status || ! $this->is_tracked_post( $post ) ) {
 			return;
 		}
@@ -254,10 +253,9 @@ class Recorder {
 	}
 
 	/**
-	 * Constructeurs de pages : Bricks et Elementor rangent le contenu en
-	 * postmeta et n'appellent pas wp_update_post() — sans ce branchement, une
-	 * page refaite de fond en comble dans Bricks n'apparaissait nulle part.
-	 * Même chose pour le texte alternatif d'un média.
+	 * Page builders: Bricks and Elementor store the content in postmeta and do
+	 * not call wp_update_post(); without this hook, a page completely redone in
+	 * Bricks showed up nowhere. Same for the alt text of a media item.
 	 *
 	 * @param int    $meta_id
 	 * @param int    $object_id
@@ -267,8 +265,8 @@ class Recorder {
 		$meta_key = (string) $meta_key;
 
 		if ( '_wp_attachment_image_alt' === $meta_key ) {
-			// Le texte alternatif généré au téléversement (Image Optimizer) fait
-			// partie de l'ajout, pas d'une modification.
+			// The alt text generated on upload (Image Optimizer) is part of the
+			// addition, not of an update.
 			if ( isset( $this->seen[ 'media_added|attachment|' . (int) $object_id . '|' ] ) ) {
 				return;
 			}
@@ -281,7 +279,7 @@ class Recorder {
 		}
 
 		/**
-		 * Clés de postmeta qui portent le contenu d'une page.
+		 * Postmeta keys that hold the content of a page.
 		 *
 		 * @param string[] $keys
 		 */
@@ -308,7 +306,7 @@ class Recorder {
 	}
 
 	/* ================================================================
-	 * MÉDIAS
+	 * MEDIA
 	 * ================================================================ */
 
 	/**
@@ -348,7 +346,7 @@ class Recorder {
 	}
 
 	/* ================================================================
-	 * UTILISATEURS
+	 * USERS
 	 * ================================================================ */
 
 	/**
@@ -385,7 +383,7 @@ class Recorder {
 			}
 		}
 
-		// Le hash seul change : on note le fait, jamais la valeur.
+		// Only the hash changes: we note the fact, never the value.
 		if ( $old->user_pass !== $user->user_pass ) {
 			$changes['password'] = true;
 		}
@@ -396,9 +394,9 @@ class Recorder {
 	}
 
 	/**
-	 * wp_insert_user() pose le rôle AVANT `user_register` : à la création,
-	 * ce hook part avec une liste d'anciens rôles vide, et la création est
-	 * déjà journalisée.
+	 * wp_insert_user() sets the role BEFORE `user_register`: on creation, this
+	 * hook fires with an empty list of old roles, and the creation is already
+	 * logged.
 	 *
 	 * @param int      $user_id
 	 * @param string   $role
@@ -445,8 +443,8 @@ class Recorder {
 	}
 
 	/**
-	 * La réinitialisation se fait déconnecté : l'auteur est l'utilisateur
-	 * concerné, pas l'utilisateur courant (qui vaut 0).
+	 * The reset happens while logged out: the author is the user concerned,
+	 * not the current user (which is 0).
 	 *
 	 * @param \WP_User $user
 	 */
@@ -457,7 +455,7 @@ class Recorder {
 	}
 
 	/* ================================================================
-	 * EXTENSIONS ET THÈMES
+	 * PLUGINS AND THEMES
 	 * ================================================================ */
 
 	/**
@@ -497,9 +495,9 @@ class Recorder {
 	}
 
 	/**
-	 * Installations et mises à jour, extensions comme thèmes. Les mises à jour
-	 * automatiques passent aussi par là, lancées par le cron : elles
-	 * apparaissent sans auteur, ce qui est exactement ce qu'elles sont.
+	 * Installs and updates, plugins and themes alike. Automatic updates go
+	 * through here too, run by the cron: they appear without an author, which
+	 * is exactly what they are.
 	 *
 	 * @param \WP_Upgrader         $upgrader
 	 * @param array<string, mixed> $extra
@@ -588,7 +586,7 @@ class Recorder {
 	}
 
 	/* ================================================================
-	 * RÉGLAGES
+	 * SETTINGS
 	 * ================================================================ */
 
 	/**
@@ -623,8 +621,8 @@ class Recorder {
 	}
 
 	/**
-	 * Premier enregistrement d'un écran de module : l'option n'existait pas,
-	 * WordPress déclenche `added_option` et non `updated_option`.
+	 * First save of a module screen: the option did not exist, so WordPress
+	 * fires `added_option` and not `updated_option`.
 	 *
 	 * @param string $option
 	 * @param mixed  $value
@@ -638,51 +636,51 @@ class Recorder {
 	}
 
 	/**
-	 * Options WordPress suivies et leur libellé.
+	 * Tracked WordPress options and their label.
 	 *
 	 * @return array<string, string>
 	 */
 	public static function tracked_options(): array {
 		/**
-		 * Options WordPress dont la modification est journalisée.
+		 * WordPress options whose changes are logged.
 		 *
-		 * @param array<string, string> $options Nom de l'option => libellé.
+		 * @param array<string, string> $options Option name => label.
 		 */
 		return (array) apply_filters(
 			'lumia_activity_log_tracked_options',
 			[
-				'blogname'               => __( 'Titre du site', 'lumia-tools' ),
-				'blogdescription'        => __( 'Slogan', 'lumia-tools' ),
-				'siteurl'                => __( 'Adresse web de WordPress', 'lumia-tools' ),
-				'home'                   => __( 'Adresse web du site', 'lumia-tools' ),
-				'admin_email'            => __( 'E-mail d\'administration', 'lumia-tools' ),
-				'users_can_register'     => __( 'Inscription ouverte', 'lumia-tools' ),
-				'default_role'           => __( 'Rôle par défaut', 'lumia-tools' ),
-				'blog_public'            => __( 'Visibilité pour les moteurs de recherche', 'lumia-tools' ),
-				'permalink_structure'    => __( 'Structure des permaliens', 'lumia-tools' ),
-				'WPLANG'                 => __( 'Langue du site', 'lumia-tools' ),
-				'timezone_string'        => __( 'Fuseau horaire', 'lumia-tools' ),
-				'show_on_front'          => __( 'La page d\'accueil affiche', 'lumia-tools' ),
-				'page_on_front'          => __( 'Page d\'accueil', 'lumia-tools' ),
-				'page_for_posts'         => __( 'Page des articles', 'lumia-tools' ),
-				'default_comment_status' => __( 'Commentaires autorisés', 'lumia-tools' ),
-				'comment_registration'   => __( 'Commentaires réservés aux inscrits', 'lumia-tools' ),
+				'blogname'               => __( 'Site title', 'lumia-tools' ),
+				'blogdescription'        => __( 'Tagline', 'lumia-tools' ),
+				'siteurl'                => __( 'WordPress address (URL)', 'lumia-tools' ),
+				'home'                   => __( 'Site address (URL)', 'lumia-tools' ),
+				'admin_email'            => __( 'Administration email', 'lumia-tools' ),
+				'users_can_register'     => __( 'Open registration', 'lumia-tools' ),
+				'default_role'           => __( 'Default role', 'lumia-tools' ),
+				'blog_public'            => __( 'Search engine visibility', 'lumia-tools' ),
+				'permalink_structure'    => __( 'Permalink structure', 'lumia-tools' ),
+				'WPLANG'                 => __( 'Site language', 'lumia-tools' ),
+				'timezone_string'        => __( 'Timezone', 'lumia-tools' ),
+				'show_on_front'          => __( 'Homepage displays', 'lumia-tools' ),
+				'page_on_front'          => __( 'Homepage', 'lumia-tools' ),
+				'page_for_posts'         => __( 'Posts page', 'lumia-tools' ),
+				'default_comment_status' => __( 'Comments allowed', 'lumia-tools' ),
+				'comment_registration'   => __( 'Comments restricted to registered users', 'lumia-tools' ),
 			]
 		);
 	}
 
 	/* ================================================================
-	 * ÉCRITURE
+	 * WRITING
 	 * ================================================================ */
 
 	/**
-	 * Écrit un événement, sauf exclusion ou doublon.
+	 * Writes an event, unless excluded or duplicated.
 	 *
 	 * @param array<string, mixed> $details
-	 * @param \WP_User|null        $actor           Auteur explicite ; l'utilisateur courant sinon.
-	 * @param bool                 $apply_role_rule Faux pour les événements anonymes (échec de connexion) :
-	 *                                              exclure les administrateurs ne doit pas masquer les
-	 *                                              attaques qui les visent.
+	 * @param \WP_User|null        $actor           Explicit author; the current user otherwise.
+	 * @param bool                 $apply_role_rule False for anonymous events (failed login):
+	 *                                              excluding administrators must not hide the
+	 *                                              attacks aimed at them.
 	 */
 	private function record( string $event, string $object_type, int $object_id, string $label, array $details = [], ?\WP_User $actor = null, bool $apply_role_rule = true ): void {
 		$group = Events::group_of( $event );
@@ -692,8 +690,8 @@ class Recorder {
 		}
 
 		$dedupe_key = $event . '|' . $object_type . '|' . $object_id . '|' . ( $object_id ? '' : $label );
-		// Une option ne déclenche son hook que si sa valeur change : deux
-		// lignes dans la même requête sont deux changements réels.
+		// An option only fires its hook when its value changes: two rows in the
+		// same request are two real changes.
 		if ( ! in_array( $event, [ 'login_failed', 'option_updated' ], true ) && isset( $this->seen[ $dedupe_key ] ) ) {
 			return;
 		}
@@ -712,9 +710,9 @@ class Recorder {
 		$details['via'] = self::request_channel();
 
 		/**
-		 * Dernier mot avant l'écriture d'un événement du journal.
+		 * Last word before an event is written to the log.
 		 *
-		 * @param array<string, mixed>|false $row Ligne à écrire ; false pour l'ignorer.
+		 * @param array<string, mixed>|false $row Row to write; false to skip it.
 		 */
 		$row = apply_filters(
 			'lumia_activity_log_record',
@@ -741,16 +739,16 @@ class Recorder {
 	}
 
 	/**
-	 * Réglages Lümia Tools : on liste les chemins modifiés, sans les valeurs —
-	 * un module peut stocker un secret (mot de passe SMTP à venir). Seuls les
-	 * interrupteurs d'activation des modules, booléens, sont montrés.
+	 * Lümia Tools settings: we list the changed paths, without the values, as a
+	 * module may store a secret (SMTP password to come). Only the module
+	 * on/off switches, which are booleans, are shown.
 	 *
 	 * @param mixed $old
 	 * @param mixed $value
 	 */
 	private function record_lumia_option( string $option, $old, $value ): void {
-		// Une écriture sans utilisateur est technique (updater, cron), pas un
-		// choix de réglage.
+		// A write without a user is technical (updater, cron), not a settings
+		// choice.
 		if ( ! is_user_logged_in() ) {
 			return;
 		}
@@ -785,7 +783,7 @@ class Recorder {
 	}
 
 	/**
-	 * Chemins pointés des feuilles qui diffèrent entre deux tableaux.
+	 * Dotted paths of the leaves that differ between two arrays.
 	 *
 	 * @param array<mixed, mixed> $a
 	 * @param array<mixed, mixed> $b
@@ -797,8 +795,8 @@ class Recorder {
 			$va   = $a[ $key ] ?? null;
 			$vb   = $b[ $key ] ?? null;
 
-			// Les listes (rôles, IP) se comparent en bloc : lister chaque
-			// indice décalé par une insertion ne dirait rien d'utile.
+			// Lists (roles, IPs) are compared as a whole: listing every index
+			// shifted by an insertion would say nothing useful.
 			if ( is_array( $va ) && is_array( $vb ) && ! wp_is_numeric_array( $va ) && ! wp_is_numeric_array( $vb ) ) {
 				$this->diff_paths( $va, $vb, $path, $paths );
 			} elseif ( $va !== $vb ) {
@@ -808,7 +806,7 @@ class Recorder {
 	}
 
 	/**
-	 * Installation d'une extension ou d'un thème.
+	 * Installation of a plugin or a theme.
 	 *
 	 * @param \WP_Upgrader $upgrader
 	 */
@@ -848,13 +846,13 @@ class Recorder {
 	}
 
 	/* ================================================================
-	 * OUTILS
+	 * TOOLS
 	 * ================================================================ */
 
 	/**
-	 * Types de contenu suivis : ceux qui ont une interface d'édition, hors
-	 * médias (famille à part). Révisions, éléments de menu et changesets n'en
-	 * ont pas, ce qui les écarte sans liste noire à entretenir.
+	 * Tracked post types: those with an editing interface, except media (a
+	 * group of their own). Revisions, menu items and changesets have none,
+	 * which rules them out without a blocklist to maintain.
 	 */
 	private function is_tracked_post( \WP_Post $post ): bool {
 		if ( 'attachment' === $post->post_type || wp_is_post_revision( $post ) || wp_is_post_autosave( $post ) ) {
@@ -864,7 +862,7 @@ class Recorder {
 		static $types = null;
 		if ( null === $types ) {
 			/**
-			 * Types de contenu journalisés.
+			 * Post types that are logged.
 			 *
 			 * @param string[] $types
 			 */
@@ -875,8 +873,8 @@ class Recorder {
 	}
 
 	/**
-	 * Champs modifiés entre deux versions d'un contenu. Les textes longs ne
-	 * sont notés que comme « modifiés » : les copier doublerait la base.
+	 * Fields changed between two versions of a post. Long texts are only noted
+	 * as "changed": copying them would double the database.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -983,14 +981,14 @@ class Recorder {
 	}
 
 	/**
-	 * Adresse du client selon la source déclarée dans le module Sécurité — lue
-	 * même quand le module est inactif : c'est là que vit la configuration du
-	 * proxy du site, et se fier aux en-têtes sans elle laisserait n'importe qui
-	 * écrire l'IP de son choix dans le journal.
+	 * Client address according to the source declared in the Security module,
+	 * read even when the module is inactive: that is where the site's proxy
+	 * configuration lives, and trusting the headers without it would let anyone
+	 * write the IP of their choice into the log.
 	 */
 	private function client_ip(): string {
-		// WP-CLI renseigne lui-même REMOTE_ADDR à 127.0.0.1 : une adresse
-		// factice, pas celle de qui que ce soit.
+		// WP-CLI sets REMOTE_ADDR to 127.0.0.1 itself: a dummy address, not
+		// anyone's.
 		if ( ( defined( 'WP_CLI' ) && WP_CLI ) || ! isset( $_SERVER['REMOTE_ADDR'] ) ) {
 			return '';
 		}
@@ -1007,8 +1005,8 @@ class Recorder {
 	}
 
 	/**
-	 * Canal de la requête : distingue un clic dans l'admin d'une commande
-	 * WP-CLI, d'une tâche planifiée ou d'un appel d'API.
+	 * Request channel: tells a click in the admin from a WP-CLI command, a
+	 * scheduled task or an API call.
 	 */
 	private static function request_channel(): string {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1030,7 +1028,7 @@ class Recorder {
 	}
 
 	/**
-	 * Valeur scalaire courte pour le détail ; les tableaux sont encodés en JSON.
+	 * Short scalar value for the detail; arrays are JSON-encoded.
 	 *
 	 * @param mixed $value
 	 */

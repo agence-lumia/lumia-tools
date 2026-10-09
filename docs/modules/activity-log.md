@@ -1,60 +1,70 @@
-# Module ActivityLog
+# ActivityLog module
 
-`includes/Modules/ActivityLog/` + `assets/admin/js/modules/activity-log.js`. Qui a modifié quoi, et quand (issue #19). Quatre classes :
+`includes/Modules/ActivityLog/` + `assets/admin/js/modules/activity-log.js`. Who changed what, and when (issue #19). Four classes:
 
-- `Events` — catalogue : familles (`auth`, `content`, `media`, `users`, `plugins`, `themes`, `options`, `settings`) et libellés d'événements. La table ne stocke que la **clé** d'événement ; le libellé est traduit à l'affichage, donc un journal écrit en français se relit en anglais.
-- `Store` — la table `{prefix}lumia_activity_log` : schéma (`dbDelta`), insertion, lecture filtrée, purge.
-- `Recorder` — les hooks WordPress et `record()`, qui applique exclusions, IP, auteur et dédoublonnage.
-- `Module` — réglages, cron, liste AJAX (`lumia_activity_log_list`), export CSV (`admin_post_lumia_activity_log_export`).
+- `Events`: the catalogue, i.e. groups (`auth`, `content`, `media`, `users`, `plugins`, `themes`, `options`, `settings`) and event labels. The table only stores the event **key**; the label is translated at display time, so a log written in one language reads back in the new language after a language change.
+- `Store`: the `{prefix}lumia_activity_log` table: schema (`dbDelta`), insertion, filtered reading, purge.
+- `Recorder`: the WordPress hooks and `record()`, which applies exclusions, IP, author and deduplication.
+- `Module`: settings, cron, AJAX list (`lumia_activity_log_list`), CSV export (`admin_post_lumia_activity_log_export`).
 
-## Stockage
+## Storage
 
-- **Table dédiée**, pas d'option ni de postmeta : un journal grossit sans cesse, se filtre par date et par utilisateur, et se purge par lots. Dates en **UTC** (`created_at`) ; les filtres « du / au » arrivent en date du site et passent par `get_gmt_from_date()`.
-- **Nom de table interpolé** dans le SQL : `%i` n'existe dans `wpdb::prepare()` que depuis WP 6.2, l'extension supporte 6.0. Le nom ne vient que de `$wpdb->prefix`.
-- **Installation à chaque chargement** (`Store::maybe_install()`, une lecture d'option autochargée `lumia_activity_log_schema`) et pas seulement dans `on_activate()` : un module activé par import de configuration n'appelle pas `on_activate()`. Toute modification du `CREATE TABLE` incrémente `Store::SCHEMA_VERSION`.
-- **Table supprimée à la main** (onglet Base de données) : l'option de schéma dit toujours « installée », donc `maybe_install()` ne voit rien et chaque `INSERT` échouait en silence — journal muet jusqu'à une réactivation. `Store::insert()` teste l'existence de la table **seulement quand l'écriture échoue**, la recrée et réessaie une fois : un `SHOW TABLES` à chaque requête coûterait une requête SQL par page pour un cas rarissime.
-- **Valeurs tronquées** à la largeur des colonnes avant l'`INSERT` : en mode SQL strict, un titre de 300 caractères faisait échouer l'insertion entière et l'événement était perdu.
-- Désactiver le module **garde la table** (l'historique ne doit pas disparaître sur un clic) ; seule la désinstallation la supprime, via les clés `tables` et `cron` de `get_uninstall_keys()` (voir [core.md](../core.md#système-de-modules)).
-- Le user_login et le rôle sont **copiés** dans la ligne : un compte supprimé reste lisible et filtrable, et c'est souvent lui qu'on cherche. Le filtre « utilisateur » lit donc la table, pas `wp_users`.
+- **Dedicated table**, no option or postmeta: a log keeps growing, is filtered by date and by user, and is purged in batches. Dates in **UTC** (`created_at`); the "from / to" filters arrive as site dates and go through `get_gmt_from_date()`.
+- **Table name interpolated** into the SQL: `%i` only exists in `wpdb::prepare()` since WP 6.2, and the plugin supports 6.0. The name only comes from `$wpdb->prefix`.
+- **Installed on every load** (`Store::maybe_install()`, one read of the autoloaded option `lumia_activity_log_schema`) and not only in `on_activate()`: a module enabled by a configuration import does not call `on_activate()`. Any change to the `CREATE TABLE` increments `Store::SCHEMA_VERSION`.
+- **Table deleted by hand** (Database tab): the schema option still says "installed", so `maybe_install()` sees nothing and every `INSERT` failed silently, leaving the log mute until a reactivation. `Store::insert()` checks that the table exists **only when the write fails**, recreates it and retries once: a `SHOW TABLES` on every request would cost one SQL query per page for a very rare case.
+- **Values truncated** to the column width before the `INSERT`: in strict SQL mode, a 300-character title made the whole insertion fail and the event was lost.
+- Disabling the module **keeps the table** (the history must not disappear on a click); only uninstalling deletes it, through the `tables` and `cron` keys of `get_uninstall_keys()` (see [core.md](../core.md#module-system)).
+- The user_login and the role are **copied** into the row: a deleted account stays readable and filterable, and it is often the one being looked for. The "user" filter therefore reads the table, not `wp_users`.
 
-## Pièges de journalisation
+## Logging pitfalls
 
-- **Auto-draft** : WordPress crée un brouillon automatique à l'ouverture de l'éditeur, puis le premier enregistrement passe par `wp_update_post()`. La création se lit sur `transition_post_status` (`new`/`auto-draft` → autre chose), et `post_updated` ignore tout ce qui part d'un auto-draft. Sans ça, chaque création apparaissait en double (« créé » + « modifié »), et chaque ouverture d'éditeur abandonnée en « créé ».
-- **Gutenberg enregistre deux fois** (article, puis boîtes méta) : `post_updated` compare les champs et n'écrit rien si aucun n'a changé.
-- **Corbeille** : `wp_trash_post()` et `wp_untrash_post()` passent eux aussi par `wp_update_post()`. `post_updated` écarte donc toute transition depuis/vers `trash`, qui a ses propres événements.
-- **Constructeurs de page** : Bricks et Elementor rangent le contenu en postmeta et n'appellent pas `wp_update_post()`. Une page refaite dans Bricks n'apparaissait nulle part ; `added/updated_post_meta` surveille `_bricks_page_content_2`, `_bricks_page_header_2`, `_bricks_page_footer_2` et `_elementor_data` (filtre `lumia_activity_log_content_meta_keys`).
-- **Dédoublonnage par requête** (`Recorder::$seen`, clé événement + objet) : Bricks écrit plusieurs métas dans la même requête. Deux exceptions : `login_failed` (chaque tentative compte) et `option_updated` (le hook ne part que si la valeur change, deux lignes sont deux changements réels).
-- **Rôle posé avant `user_register`** : `wp_insert_user()` appelle `set_role()` avant de déclencher `user_register`. `set_user_role` ignore donc une liste d'anciens rôles vide, sinon chaque création produisait aussi un « rôle modifié ».
-- **Texte alternatif** : l'Image Optimizer le génère au téléversement ; il est ignoré si un `media_added` du même média a déjà été écrit dans la requête.
-- **Auteur explicite** pour `wp_login` (l'utilisateur courant n'est pas encore positionné), `wp_logout` (il est déjà remis à zéro — l'identifiant arrive en argument depuis WP 5.5) et `after_password_reset` (la réinitialisation se fait déconnecté).
-- **Suppression d'extension ou de thème** : l'en-tête du fichier n'existe plus après coup. Le nom est capturé sur `delete_plugin` / `delete_theme`, relu sur `deleted_*` si la suppression a réussi.
-- **Réglages Lümia Tools** (`lumia_settings`, `lumia_module_*`) : on liste les **chemins** modifiés, jamais les valeurs — un module peut stocker un secret (SMTP à venir). Seuls les interrupteurs d'activation des modules, booléens, sont montrés. Écritures sans utilisateur connecté (updater, cron) ignorées. Le premier enregistrement d'un écran passe par `added_option`, pas `updated_option`.
-- **Canal** (`details.via`) : web, AJAX, REST, cron, WP-CLI, XML-RPC. Une mise à jour automatique apparaît sans auteur, en « Tâche planifiée » : c'est ce qu'elle est.
+- **Auto-draft**: WordPress creates an automatic draft when the editor opens, then the first save goes through `wp_update_post()`. Creation is read from `transition_post_status` (`new`/`auto-draft` to anything else), and `post_updated` ignores everything that starts from an auto-draft. Without this, every creation appeared twice ("created" + "updated"), and every abandoned editor opening as "created".
+- **Gutenberg saves twice** (post, then meta boxes): `post_updated` compares the fields and writes nothing if none changed.
+- **Trash**: `wp_trash_post()` and `wp_untrash_post()` also go through `wp_update_post()`. `post_updated` therefore discards any transition from/to `trash`, which has its own events.
+- **Page builders**: Bricks and Elementor store the content in postmeta and do not call `wp_update_post()`. A page redone in Bricks showed up nowhere; `added/updated_post_meta` watches `_bricks_page_content_2`, `_bricks_page_header_2`, `_bricks_page_footer_2` and `_elementor_data` (filter `lumia_activity_log_content_meta_keys`).
+- **Per-request deduplication** (`Recorder::$seen`, key event + object): Bricks writes several metas in the same request. Two exceptions: `login_failed` (every attempt counts) and `option_updated` (the hook only fires when the value changes, so two rows are two real changes).
+- **Role set before `user_register`**: `wp_insert_user()` calls `set_role()` before firing `user_register`. `set_user_role` therefore ignores an empty list of old roles, otherwise every creation also produced a "role changed".
+- **Alt text**: Image Optimizer generates it on upload; it is ignored if a `media_added` for the same media item was already written in the request.
+- **Explicit author** for `wp_login` (the current user is not set yet), `wp_logout` (it is already reset; the ID arrives as an argument since WP 5.5) and `after_password_reset` (the reset happens while logged out).
+- **Plugin or theme deletion**: the file header no longer exists afterwards. The name is captured on `delete_plugin` / `delete_theme`, and read back on `deleted_*` if the deletion succeeded.
+- **Lümia Tools settings** (`lumia_settings`, `lumia_module_*`): we list the changed **paths**, never the values, as a module may store a secret (SMTP, to come). Only the module on/off switches, which are booleans, are shown. Writes with no logged-in user (updater, cron) are ignored. The first save of a screen goes through `added_option`, not `updated_option`.
+- **Channel** (`details.via`): web, AJAX, REST, cron, WP-CLI, XML-RPC. An automatic update appears without an author, as "Scheduled task": that is what it is.
 
-## IP et force brute
+## IP and brute force
 
-- IP résolue par `ClientIp` avec la source déclarée dans le module Sécurité (`lumia_module_security` → `authentication.ip_source`), **lue même si Sécurité est inactif** : c'est là que vit la configuration du proxy, et se fier aux en-têtes sans elle laisserait n'importe qui écrire l'IP de son choix dans le journal. Vide sous WP-CLI, qui pose lui-même un `REMOTE_ADDR` factice à `127.0.0.1`.
-- Anonymisation optionnelle par `wp_privacy_anonymize_ip()` (celle des outils de confidentialité du cœur), appliquée à l'écriture.
-- **Plafond d'échecs de connexion** : 10 par IP et par heure (transient `_lumia_al_fail_{md5(ip)}`), la dixième ligne portant `capped`. Sans lui, une attaque de dix mille essais remplissait le plafond de lignes en une nuit et la purge par volume effaçait tout l'historique utile.
-- L'exclusion par rôle ne s'applique pas aux échecs de connexion : exclure les administrateurs ne doit pas masquer les attaques contre eux.
+- IP resolved by `ClientIp` with the source declared in the Security module (`lumia_module_security` → `authentication.ip_source`), **read even if Security is inactive**: that is where the proxy configuration lives, and trusting the headers without it would let anyone write the IP of their choice into the log. Empty under WP-CLI, which sets a dummy `REMOTE_ADDR` of `127.0.0.1` itself.
+- Optional anonymization through `wp_privacy_anonymize_ip()` (the one used by the core privacy tools), applied at write time.
+- **Failed-login cap**: 10 per IP and per hour (transient `_lumia_al_fail_{md5(ip)}`), the tenth row carrying `capped`. Without it, an attack of ten thousand tries filled the row cap in one night and the volume purge erased all the useful history.
+- The role exclusion does not apply to failed logins: excluding administrators must not hide the attacks against them.
 
-## Réglages
+## Settings
 
-Le formulaire poste les familles et rôles **suivis** (cases cochées) ; le stockage garde les **exclusions** (`excluded_groups`, `excluded_roles`). Une famille ajoutée par une version ultérieure est ainsi suivie d'office au lieu d'arriver exclue. `to_form_payload()` fait la conversion inverse pour l'import de configuration.
+The form posts the **tracked** groups and roles (checked boxes); the storage keeps the **exclusions** (`excluded_groups`, `excluded_roles`). A group added by a later version is thus tracked by default instead of arriving excluded. `to_form_payload()` does the reverse conversion for the configuration import.
 
 ## Purge
 
-Cron quotidien `lumia_activity_log_purge`, programmé dans `init()` s'il manque (même raison que la table), désinscrit par `on_deactivate()` et par la désactivation de l'extension. Par âge (`retention_days`, 90 par défaut) puis par volume (`max_rows`, 10 000). Suppression par lots de 5 000 (`DELETE … LIMIT`) pour ne pas verrouiller la table ; le seuil de volume se lit d'abord (`ORDER BY id DESC LIMIT 1 OFFSET n`) parce que MySQL refuse `LIMIT` dans une sous-requête sur la table modifiée.
+Daily cron `lumia_activity_log_purge`, scheduled in `init()` if missing (same reason as the table), unscheduled by `on_deactivate()` and by the deactivation of the plugin. By age (`retention_days`, 90 by default) then by volume (`max_rows`, 10,000). Deletion in batches of 5,000 (`DELETE … LIMIT`) so the table is not locked; the volume threshold is read first (`ORDER BY id DESC LIMIT 1 OFFSET n`) because MySQL rejects `LIMIT` in a subquery on the table being modified.
 
-## Export CSV
+## CSV export
 
-Manuel, depuis la liste, avec les filtres appliqués — rien ne s'archive automatiquement sur le serveur (décision de l'issue #19 : pas d'IP qui s'accumulent sur disque).
+Manual, from the list, with the filters applied: nothing is archived automatically on the server (decision of issue #19: no IPs piling up on disk).
 
-- Pagination **par clé** (`before_id`) et non par `OFFSET` : des lignes qui arrivent pendant l'export décaleraient les pages.
-- **Injection de formule** : toute cellule commençant par `=`, `+`, `-`, `@`, tabulation ou retour chariot est préfixée d'une apostrophe. Titres, identifiants de connexion tentés et e-mails sont saisis par n'importe qui, et Excel exécute `=…` à l'ouverture.
-- BOM UTF-8 (sinon Excel lit en Windows-1252) ; séparateur `;` ; échappement vide passé explicitement à `fputcsv()` — le défaut `\` est déprécié depuis PHP 8.4 et l'avertissement partait dans le fichier.
-- Téléchargement par un formulaire POST éphémère plutôt que `fetch()`, qui obligerait à garder le fichier entier en mémoire dans un Blob.
+- **Keyset** pagination (`before_id`) and not `OFFSET`: rows arriving during the export would shift the pages.
+- **Formula injection**: any cell starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with an apostrophe. Titles, attempted login names and emails are typed by anyone, and Excel runs `=…` when the file is opened.
+- UTF-8 BOM (otherwise Excel reads Windows-1252); `;` separator; empty escape character passed explicitly to `fputcsv()`: the default `\` is deprecated since PHP 8.4 and the warning ended up in the file.
+- Download through a temporary POST form rather than `fetch()`, which would force keeping the whole file in memory in a Blob.
+- File name `activity-log-{Y-m-d-His}.csv`.
 
 ## Interface
 
-Liste et réglages partagent le formulaire du module : les filtres n'ont **pas d'attribut `name`** (ils ne partent pas avec l'enregistrement), et Entrée est interceptée dans **tous** les champs de filtre (recherche et dates), sinon elle soumettait les réglages : page rechargée, filtres perdus, et un faux « Réglages modifiés » au journal. Seule la dernière requête de liste s'affiche (compteur `state.request`) : une frappe rapide en lance plusieurs, qui peuvent répondre dans le désordre. Le détail d'un événement est mis en forme côté serveur (`Module::detail_lines()`, paires libellé/valeur) et affiché tel quel dans une modale nommée.
+The list and the settings share the module form: the filters have **no `name` attribute** (they are not sent with the save), and Enter is intercepted in **all** filter fields (search and dates), otherwise it submitted the settings: page reloaded, filters lost, and a false "Settings changed" entry in the log. Only the last list request is displayed (`state.request` counter): fast typing fires several, which can answer out of order. The detail of an event is formatted server-side (`Module::detail_lines()`, label/value pairs) and displayed as is in a named modal.
+
+## Translations
+
+All strings are English in the code (text domain `lumia-tools`); the French texts live in `languages/pairs/activity-log.json`.
+
+- Event and group labels, detail labels (`detail_lines()`), channels and the tracked WordPress option labels are translated **at display time** (or, for `option_updated`, at write time: the `label` detail stores the label as translated then).
+- The `label: value` joiner is itself a string (`%1$s: %2$s`, `Module::label_value()`): French puts a space before the colon, so the separator cannot be hard-coded.
+- JS strings come from `Module::get_admin_js_data()['i18n']` (keys `alLoading`, `alEmpty`, `alError`, `alTotal`, `alPage`, `alDate`, `alUser`, `alRole`, `alIp`, `alEvent`, `alObject`); the JS keeps no literal fallback.
+- "Content" is both a group and a post field: the field uses `_x( 'Content', 'post content field' )` so the two French texts ("Contenus" / "Contenu") do not collide in the `.po`.

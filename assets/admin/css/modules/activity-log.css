@@ -1,5 +1,5 @@
 /* ================================================================
- * Journal d'activité
+ * Activity log
  * ================================================================ */
 
 .lumia-al__filters {
@@ -26,7 +26,7 @@
   margin-left: auto;
 }
 
-/* ---- Tableau ---- */
+/* ---- Table ---- */
 
 .lumia-al__table-wrap {
   overflow-x: auto;
@@ -110,7 +110,7 @@
   font-size: 11px;
 }
 
-/* Un titre d'article peut être très long : on le coupe au lieu d'élargir la table. */
+/* A post title can be very long: it is cut off instead of widening the table. */
 .lumia-al__object span {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -126,7 +126,7 @@
   color: var(--lumia-text-muted) !important;
 }
 
-/* ---- Pied : total et pagination ---- */
+/* ---- Footer: total and pagination ---- */
 
 .lumia-al__footer {
   display: flex;
@@ -144,7 +144,7 @@
   gap: 8px;
 }
 
-/* ---- Modale de détail ---- */
+/* ---- Detail modal ---- */
 
 .lumia-al__detail {
   display: grid;
@@ -164,7 +164,7 @@
   overflow-wrap: anywhere;
 }
 
-/* ---- Familles et rôles suivis ---- */
+/* ---- Tracked groups and roles ---- */
 
 .lumia-al__checks-title {
   display: flex;

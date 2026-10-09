@@ -22,9 +22,9 @@
       el[id] = document.getElementById('lumia-al-' + id);
     });
 
-    // Entrée dans n'importe quel filtre (recherche, dates) soumettrait le
-    // formulaire de réglages qui englobe la liste : rechargement de la page,
-    // filtres perdus et faux « Réglages modifiés » au journal.
+    // Enter in any filter (search, dates) would submit the settings form that
+    // wraps the list: page reload, lost filters and a false "Settings
+    // changed" entry in the log.
     wrap.querySelector('.lumia-al__filters').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); reload(); }
     });
@@ -62,8 +62,9 @@
     load(1);
   });
 
-  function t(key, fallback) {
-    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || fallback;
+  /** String translated by PHP (Module::get_admin_js_data()); empty if missing. */
+  function t(key) {
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || '';
   }
 
   function format(str) {
@@ -74,7 +75,7 @@
     });
   }
 
-  /** Filtres courants, sous la forme attendue par le serveur. */
+  /** Current filters, in the shape the server expects. */
   function filters() {
     var type = el.type.value;
     return {
@@ -99,22 +100,22 @@
     fd.append('page', page);
     Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
 
-    setState(t('alLoading', 'Chargement…'));
+    setState(t('alLoading'));
 
     fetch(lumiaAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
       .then(function (r) { return r.json(); })
       .then(function (res) {
-        // Une frappe rapide dans la recherche lance plusieurs requêtes : seule
-        // la dernière doit s'afficher, même si une plus ancienne répond après.
+        // Fast typing in the search box fires several requests: only the last
+        // one must be displayed, even if an older one answers afterwards.
         if (request !== state.request) return;
         if (!res.success) throw new Error((res.data && res.data.message) || '');
         render(res.data);
       })
       .catch(function (err) {
         if (request !== state.request) return;
-        setState(t('alError', 'Impossible de charger le journal.'));
+        setState(t('alError'));
         if (typeof window.lumiaShowToast === 'function') {
-          window.lumiaShowToast((err && err.message) || t('alError', 'Impossible de charger le journal.'), 'error');
+          window.lumiaShowToast((err && err.message) || t('alError'), 'error');
         }
       });
   }
@@ -135,13 +136,13 @@
     state.page = data.page;
     state.pages = data.pages;
 
-    el.total.textContent = format(t('alTotal', '%s événement(s)'), data.total.toLocaleString());
-    el.page.textContent = format(t('alPage', 'Page %1$s sur %2$s'), data.page, data.pages);
+    el.total.textContent = format(t('alTotal'), data.total.toLocaleString());
+    el.page.textContent = format(t('alPage'), data.page, data.pages);
     el.prev.disabled = data.page <= 1;
     el.next.disabled = data.page >= data.pages;
 
     if (!data.rows.length) {
-      setState(t('alEmpty', 'Aucun événement pour ces critères.'));
+      setState(t('alEmpty'));
       return;
     }
 
@@ -178,7 +179,7 @@
     });
   }
 
-  /** Variante de badge du design system selon la famille ; rouge pour ce qui détruit ou échoue. */
+  /** Design system badge variant by group; red for what deletes or fails. */
   function badgeClass(row) {
     if (row.event_key === 'login_failed' || /_deleted$/.test(row.event_key)) return 'lumia-badge--danger';
     return {
@@ -210,12 +211,12 @@
     body.innerHTML = '';
 
     var lines = [
-      [t('alDate', 'Date'), row.date],
-      [t('alUser', 'Utilisateur'), row.user],
-      [t('alRole', 'Rôle'), row.role],
-      [t('alIp', 'Adresse IP'), row.ip],
-      [t('alEvent', 'Événement'), row.group + ' — ' + row.event],
-      [t('alObject', 'Objet'), row.object],
+      [t('alDate'), row.date],
+      [t('alUser'), row.user],
+      [t('alRole'), row.role],
+      [t('alIp'), row.ip],
+      [t('alEvent'), row.group + ' — ' + row.event],
+      [t('alObject'), row.object],
     ].concat(row.details);
 
     lines.forEach(function (pair) {
@@ -241,9 +242,9 @@
   }
 
   /**
-   * Téléchargement par un formulaire POST éphémère : le navigateur gère le
-   * fichier renvoyé, ce que fetch() ne sait pas faire sans passer par un Blob
-   * gardé entier en mémoire.
+   * Download through a temporary POST form: the browser handles the returned
+   * file, which fetch() cannot do without going through a Blob kept entirely
+   * in memory.
    */
   function exportCsv() {
     var form = document.createElement('form');
