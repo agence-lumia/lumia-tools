@@ -241,7 +241,7 @@
 
     var html = "";
     notices.forEach(function (n) {
-      var sourceLabel = n.source === "lumia" ? "LUMIA" : "WP";
+      var sourceLabel = n.source === "lumia" ? escapeHtml(t("brand")) : "WP";
       var sourceClass = "lumia-notif-item--" + n.source;
       var content = n.source === "lumia" ? n.message : n.html;
       var idAttr = n.id ? ' data-notice-id="' + n.id + '"' : "";

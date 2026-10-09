@@ -367,7 +367,7 @@
   color: #2563eb;
 }
 
-/* Source badge (LUMIA / WP) */
+/* Source badge (Lümia / WP) */
 .lumia-notif-item__source {
   display: inline-block;
   font-size: 10px;
@@ -381,6 +381,7 @@
 }
 
 .lumia-notif-item--lumia .lumia-notif-item__source {
+  text-transform: none; /* keep the brand spelling "Lümia" (uppercase would give LÜMIA) */
   background: var(--lumia-accent, #2563eb);
   color: #ffffff;
 }

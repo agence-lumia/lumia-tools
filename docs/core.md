@@ -107,7 +107,7 @@ Generic keys of `lumiaAdmin.i18n` that modules may reuse instead of duplicating 
 
 The other keys (`configure`, `unsavedTitle`, `unsavedText`, `unsavedLeave`, `unsavedStay`) belong to the core screens: do not rely on them.
 
-`lumiaAdmin` exists only on the plugin pages. `notifications.js` loads on the whole WP admin and therefore reads its own strings from `window.lumiaNotifData.i18n` (printed by `Admin::render_notification_drawer()`: `close`, `noNotifications`).
+`lumiaAdmin` exists only on the plugin pages. `notifications.js` loads on the whole WP admin and therefore reads its own strings from `window.lumiaNotifData.i18n` (printed by `Admin::render_notification_drawer()`: `close`, `noNotifications`, `brand`).
 
 ## Translations
 

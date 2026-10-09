@@ -597,6 +597,7 @@ class Admin {
 				'i18n'    => [
 					'close'           => __( 'Close', 'lumia-tools' ),
 					'noNotifications' => __( 'No notifications', 'lumia-tools' ),
+					'brand'           => __( 'Lümia', 'lumia-tools' ),
 				],
 			]
 		);
