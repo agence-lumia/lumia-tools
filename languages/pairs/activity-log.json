@@ -140,5 +140,6 @@
   "Event groups": "Familles d'événements",
   "Failed logins are always logged, whichever account is targeted: excluding administrators must not hide attacks against them.": "Les échecs de connexion sont toujours enregistrés, quel que soit le compte visé : exclure les administrateurs ne doit pas masquer les attaques contre eux.",
   "Open object": "Ouvrir l'objet",
-  "Close": "Fermer"
+  "Close": "Fermer",
+  "activity-log-%s.csv": "journal-activite-%s.csv"
 }

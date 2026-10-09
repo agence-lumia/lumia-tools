@@ -227,7 +227,9 @@ class Module extends AbstractModule {
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: ' . Admin::content_disposition( 'activity-log-' . wp_date( 'Y-m-d-His' ) . '.csv' ) );
+		/* translators: %s: export date and time (Y-m-d-His). */
+		$filename = sprintf( __( 'activity-log-%s.csv', 'lumia-tools' ), wp_date( 'Y-m-d-His' ) );
+		header( 'Content-Disposition: ' . Admin::content_disposition( $filename ) );
 
 		$out = fopen( 'php://output', 'w' );
 		if ( false === $out ) {

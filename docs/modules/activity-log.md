@@ -54,7 +54,7 @@ Manual, from the list, with the filters applied: nothing is archived automatical
 - **Formula injection**: any cell starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with an apostrophe. Titles, attempted login names and emails are typed by anyone, and Excel runs `=…` when the file is opened.
 - UTF-8 BOM (otherwise Excel reads Windows-1252); `;` separator; empty escape character passed explicitly to `fputcsv()`: the default `\` is deprecated since PHP 8.4 and the warning ended up in the file.
 - Download through a temporary POST form rather than `fetch()`, which would force keeping the whole file in memory in a Blob.
-- File name `activity-log-{Y-m-d-His}.csv`.
+- File name: translatable string `activity-log-%s.csv` (`%s` = `Y-m-d-His`); fr_FR keeps the original `journal-activite-%s.csv`. It goes through `Admin::content_disposition()`, which sanitizes it.
 
 ## Interface
 
