@@ -16,7 +16,7 @@
   "SVG sanitizing unavailable.": "Nettoyage SVG indisponible.",
   "This SVG is invalid or contains disallowed code.": "Ce SVG est invalide ou contient du code non autorisé.",
   "General": "Général",
-  "Content": "Contenu",
+  "icon category\u0004Content": "Contenu",
   "Media": "Médias",
   "Commerce": "Commerce",
   "Users": "Utilisateurs",

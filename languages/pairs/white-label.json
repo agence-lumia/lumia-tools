@@ -38,7 +38,7 @@
   "Hides the \"Screen Options\" tab at the top right of every admin page.": "Masque l'onglet « Options de l'écran » en haut à droite de chaque page admin.",
   "Host avatars locally instead of relying on Gravatar.": "Hébergez les avatars localement plutôt que de dépendre de Gravatar.",
   "Profile page": "Page de profil",
-  "Remove": "Retirer",
+  "local avatar\u0004Remove": "Retirer",
   "Remove the greeting": "Supprimer la salutation",
   "Removes \"Disable the visual editor\" and \"Syntax Highlighting\".": "Supprime « Désactiver l'éditeur visuel » et « Coloration syntaxique ».",
   "Removes \"Howdy,\" / \"Hello,\" in front of the logged-in user name, whatever the language.": "Supprime « Howdy, » / « Bonjour, » devant le nom de l'utilisateur connecté, quelle que soit la langue.",

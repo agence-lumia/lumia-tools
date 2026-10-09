@@ -325,7 +325,7 @@ class Module extends AbstractModule {
 					<span>
 						<input type="hidden" id="lumia-local-avatar-input" name="lumia_local_avatar" value="<?php echo esc_attr( (string) $attachment_id ); ?>">
 						<button type="button" class="button" id="lumia-local-avatar-choose"><?php esc_html_e( 'Choose image', 'lumia-tools' ); ?></button>
-						<button type="button" class="button-link delete" id="lumia-local-avatar-remove" style="<?php echo $attachment_id ? '' : 'display:none'; ?>;margin-left:8px"><?php esc_html_e( 'Remove', 'lumia-tools' ); ?></button>
+						<button type="button" class="button-link delete" id="lumia-local-avatar-remove" style="<?php echo $attachment_id ? '' : 'display:none'; ?>;margin-left:8px"><?php echo esc_html_x( 'Remove', 'local avatar', 'lumia-tools' ); ?></button>
 						<p class="description"><?php esc_html_e( 'Takes priority over Gravatar. Leave empty to use Gravatar (default WordPress behavior).', 'lumia-tools' ); ?></p>
 					</span>
 				</div>
