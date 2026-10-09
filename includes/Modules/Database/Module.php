@@ -7,22 +7,22 @@ use Lumia\Tools\Core\AbstractModule;
 use Lumia\Tools\Admin\Admin;
 
 /**
- * Module Base de données — exploration, édition et export des tables WordPress.
+ * Database module: browse, edit and export the WordPress tables.
  */
 class Module extends AbstractModule {
 
-	/** Nb de lignes maximum renvoyées par une requête SELECT libre sans LIMIT explicite. */
+	/** Maximum number of rows returned by a free-form SELECT query without an explicit LIMIT. */
 	const QUERY_ROW_CAP = 1000;
 
 	/**
-	 * Au-delà de cette estimation, on ne compte plus exactement dans la liste
-	 * des tables : un COUNT(*) sur un postmeta ou un journal de plusieurs
-	 * millions de lignes bloquait l'ouverture de l'onglet plusieurs secondes.
-	 * Le compte exact arrive de toute façon quand la table est ouverte.
+	 * Above this estimate, the table list no longer counts exactly: a
+	 * COUNT(*) on a postmeta table or a log with several million rows blocked
+	 * the tab for several seconds. The exact count arrives anyway once the
+	 * table is opened.
 	 */
 	const EXACT_COUNT_THRESHOLD = 100000;
 
-	/** Mots-clés interdits dans l'éditeur SQL libre (opérations hors périmètre / destructrices au niveau serveur). */
+	/** Keywords forbidden in the free-form SQL editor (out-of-scope or server-level destructive operations). */
 	const FORBIDDEN_KEYWORDS = [
 		'DROP DATABASE',
 		'DROP SCHEMA',
@@ -34,16 +34,16 @@ class Module extends AbstractModule {
 		'REVOKE',
 		'SHUTDOWN',
 		'CREATE DATABASE',
-		// Écriture / lecture de fichiers depuis le serveur MySQL. INTO OUTFILE
-		// se cache derrière un SELECT — c'est-à-dire derrière la classification
-		// « lecture » — et écrit pourtant sur le disque du serveur de bases.
+		// Writing / reading files from the MySQL server. INTO OUTFILE hides
+		// behind a SELECT, that is behind the "read" classification, yet it
+		// writes to the database server's disk.
 		'INTO OUTFILE',
 		'INTO DUMPFILE',
 		'LOAD DATA',
 		'LOAD_FILE',
-		// Instructions qui touchent le SERVEUR MySQL, pas ce site : variables
-		// globales (general_log_file écrit où on veut), chargement de code
-		// (UDF via SONAME, plugins), arrêt de connexions.
+		// Statements that touch the MySQL SERVER, not this site: global
+		// variables (general_log_file writes wherever you like), code loading
+		// (UDF via SONAME, plugins), killing connections.
 		'SET GLOBAL',
 		'SET PERSIST',
 		'INSTALL PLUGIN',
@@ -101,90 +101,123 @@ class Module extends AbstractModule {
 	}
 
 	/**
+	 * Strings for database.js, read as `lumiaAdmin.i18n.<key>`. The generic
+	 * keys (confirm, cancel, error) come from the core.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function get_admin_js_data(): array {
 		return [
 			'i18n' => [
-				'confirmDelete'     => __( 'Supprimer cette ligne ?', 'lumia-tools' ),
-				'confirmTruncate'   => __( 'Vider la table ? Cette action est irréversible.', 'lumia-tools' ),
-				'queryWarning'      => __( 'Attention : les requêtes de modification (UPDATE, DELETE, DROP…) s\'exécutent directement sur la base de données. Aucun undo possible.', 'lumia-tools' ),
-				'confirmWrite'      => __( 'Cette requête modifie la base de données et est irréversible. Confirmer l\'exécution ?', 'lumia-tools' ),
-				// Actions génériques
-				'confirm'           => __( 'Confirmer', 'lumia-tools' ),
-				'cancel'            => __( 'Annuler', 'lumia-tools' ),
-				'delete'            => __( 'Supprimer', 'lumia-tools' ),
-				'execute'           => __( 'Exécuter', 'lumia-tools' ),
-				// États / feedback
-				'loading'           => __( 'Chargement…', 'lumia-tools' ),
-				'executing'         => __( 'Exécution…', 'lumia-tools' ),
-				'inserting'         => __( 'Insertion…', 'lumia-tools' ),
-				'rowAdded'          => __( 'Ligne ajoutée', 'lumia-tools' ),
-				'rowUpdated'        => __( 'Ligne mise à jour', 'lumia-tools' ),
-				'rowDeleted'        => __( 'Ligne supprimée', 'lumia-tools' ),
-				'tableTruncated'    => __( 'Table vidée', 'lumia-tools' ),
-				'tableDropped'      => __( 'Table supprimée', 'lumia-tools' ),
-				'error'             => __( 'Erreur', 'lumia-tools' ),
-				'networkError'      => __( 'Erreur réseau', 'lumia-tools' ),
-				// Libellés de tableau / recherche
-				'noTables'          => __( 'Aucune table trouvée.', 'lumia-tools' ),
-				'noRows'            => __( 'Aucune ligne.', 'lumia-tools' ),
-				'noColumn'          => __( 'Aucune colonne.', 'lumia-tools' ),
-				'noHistory'         => __( 'Aucun historique.', 'lumia-tools' ),
-				'clearHistory'      => __( 'Vider l\'historique', 'lumia-tools' ),
-				'searchInTable'     => __( 'Rechercher dans la table…', 'lumia-tools' ),
-				'rowsLabel'         => __( 'lignes', 'lumia-tools' ),
-				'perPageLabel'      => __( 'Lignes / page', 'lumia-tools' ),
-				'setNull'           => __( 'Définir NULL', 'lumia-tools' ),
-				// Nettoyage
-				'cleanupTitle'      => __( 'Nettoyage', 'lumia-tools' ),
-				'cleanupIntro'      => __( 'Chaque élément est d\'abord compté ; rien n\'est supprimé sans votre confirmation. Faites une sauvegarde de la base avant un gros nettoyage.', 'lumia-tools' ),
-				'cleanupItems'      => __( 'Données superflues', 'lumia-tools' ),
-				'cleanupClean'      => __( 'Nettoyer', 'lumia-tools' ),
-				'cleanupAll'        => __( 'Tout nettoyer', 'lumia-tools' ),
-				'cleanupRescan'     => __( 'Recompter', 'lumia-tools' ),
-				'cleanupRunning'    => __( 'Nettoyage…', 'lumia-tools' ),
-				/* translators: 1: nombre d'éléments, 2: libellé de l'élément. */
-				'cleanupConfirm'    => __( 'Supprimer définitivement %1$s élément(s) : %2$s ?', 'lumia-tools' ),
-				/* translators: %s: nombre total d'éléments. */
-				'cleanupConfirmAll' => __( 'Supprimer définitivement %s élément(s), toutes catégories confondues ?', 'lumia-tools' ),
-				/* translators: 1: nombre d'éléments supprimés, 2: libellé de l'élément. */
-				'cleanupDone'       => __( '%1$s élément(s) supprimé(s) : %2$s', 'lumia-tools' ),
-				/* translators: %s: nombre total d'éléments supprimés. */
-				'cleanupDoneTotal'  => __( '%s élément(s) supprimé(s)', 'lumia-tools' ),
-				/* translators: %s: nombre d'éléments restants. */
-				'cleanupLeft'       => __( '%s élément(s) n\'ont pas pu être supprimés.', 'lumia-tools' ),
-				'optimizeTitle'     => __( 'Optimisation des tables', 'lumia-tools' ),
-				/* translators: 1: nombre de tables, 2: taille récupérable. */
-				'optimizeSummary'   => __( '%1$s table(s) fragmentée(s), %2$s récupérables.', 'lumia-tools' ),
-				'optimizeNone'      => __( 'Aucune table fragmentée.', 'lumia-tools' ),
-				'optimizeBtn'       => __( 'Optimiser', 'lumia-tools' ),
-				'optimizeConfirm'   => __( 'OPTIMIZE TABLE reconstruit chaque table et peut la verrouiller quelques secondes. Lancer l\'optimisation ?', 'lumia-tools' ),
-				/* translators: %s: nombre de tables optimisées. */
-				'optimizeDone'      => __( '%s table(s) optimisée(s)', 'lumia-tools' ),
-				'foreignTitle'      => __( 'Tables d\'extensions', 'lumia-tools' ),
-				'foreignIntro'      => __( 'Tables hors cœur WordPress. L\'extension propriétaire est devinée d\'après le nom de la table : vérifiez avant de supprimer. Aucune table n\'est supprimée automatiquement.', 'lumia-tools' ),
-				'foreignNone'       => __( 'Aucune table d\'extension.', 'lumia-tools' ),
-				'foreignUnknown'    => __( 'Aucune extension correspondante', 'lumia-tools' ),
-				/* translators: %s: nom(s) d'extension. */
-				'foreignInactive'   => __( 'Extension inactive : %s', 'lumia-tools' ),
-				/* translators: %s: nom(s) d'extension. */
-				'foreignActive'     => __( 'Extension active : %s', 'lumia-tools' ),
-				'open'              => __( 'Ouvrir', 'lumia-tools' ),
-				/* translators: %d: nombre maximal de lignes affichées. */
-				'queryTruncated'    => __( 'Résultat tronqué à %d lignes. Ajoutez une clause LIMIT pour cibler votre requête.', 'lumia-tools' ),
+				'confirmDelete'         => __( 'Delete this row?', 'lumia-tools' ),
+				'confirmTruncate'       => __( 'Empty the table? This action cannot be undone.', 'lumia-tools' ),
+				'queryWarning'          => __( 'Warning: modifying queries (UPDATE, DELETE, DROP…) run directly on the database. There is no undo.', 'lumia-tools' ),
+				'confirmWrite'          => __( 'This query modifies the database and cannot be undone. Confirm execution?', 'lumia-tools' ),
+				// Generic actions.
+				'delete'                => __( 'Delete', 'lumia-tools' ),
+				'execute'               => __( 'Execute', 'lumia-tools' ),
+				// States / feedback.
+				'loading'               => __( 'Loading…', 'lumia-tools' ),
+				'executing'             => __( 'Executing…', 'lumia-tools' ),
+				'inserting'             => __( 'Inserting…', 'lumia-tools' ),
+				'rowAdded'              => __( 'Row added', 'lumia-tools' ),
+				'rowUpdated'            => __( 'Row updated', 'lumia-tools' ),
+				'rowDeleted'            => __( 'Row deleted', 'lumia-tools' ),
+				'tableTruncated'        => __( 'Table emptied', 'lumia-tools' ),
+				'tableDropped'          => __( 'Table deleted', 'lumia-tools' ),
+				'networkError'          => __( 'Network error', 'lumia-tools' ),
+				// Table / search labels.
+				'noTables'              => __( 'No tables found.', 'lumia-tools' ),
+				'noRows'                => __( 'No rows.', 'lumia-tools' ),
+				'noColumn'              => __( 'No columns.', 'lumia-tools' ),
+				'noHistory'             => __( 'No history.', 'lumia-tools' ),
+				'clearHistory'          => __( 'Clear history', 'lumia-tools' ),
+				'history'               => _x( 'History', 'SQL query history', 'lumia-tools' ),
+				'searchInTable'         => __( 'Search in table…', 'lumia-tools' ),
+				'rowsLabel'             => __( 'rows', 'lumia-tools' ),
+				'perPageLabel'          => __( 'Rows / page', 'lumia-tools' ),
+				'setNull'               => __( 'Set NULL', 'lumia-tools' ),
+				'otherTables'           => __( 'Other tables', 'lumia-tools' ),
+				/* translators: %s: size in bytes. */
+				'sizeBytes'             => __( '%s B', 'lumia-tools' ),
+				/* translators: %s: size in kilobytes. */
+				'sizeKb'                => __( '%s KB', 'lumia-tools' ),
+				/* translators: %s: size in megabytes. */
+				'sizeMb'                => __( '%s MB', 'lumia-tools' ),
+				// Structure tab.
+				'structureColumns'      => __( 'Columns', 'lumia-tools' ),
+				'structureIndexes'      => __( 'Indexes / Keys', 'lumia-tools' ),
+				'colName'               => _x( 'Name', 'table structure column', 'lumia-tools' ),
+				'colType'               => _x( 'Type', 'table structure column', 'lumia-tools' ),
+				'colDefault'            => _x( 'Default', 'table structure column', 'lumia-tools' ),
+				'colKey'                => _x( 'Key', 'table structure column', 'lumia-tools' ),
+				'colExtra'              => _x( 'Extra', 'table structure column', 'lumia-tools' ),
+				'colColumn'             => _x( 'Column', 'table structure column', 'lumia-tools' ),
+				'colUnique'             => _x( 'Unique', 'table structure column', 'lumia-tools' ),
+				'yes'                   => _x( 'Yes', 'index is unique', 'lumia-tools' ),
+				'no'                    => _x( 'No', 'index is unique', 'lumia-tools' ),
+				// Insert row modal.
+				'primaryKeyHint'        => __( 'primary key', 'lumia-tools' ),
+				'autoHint'              => __( 'auto', 'lumia-tools' ),
+				'autoPlaceholder'       => __( '(auto)', 'lumia-tools' ),
+				// Cleanup.
+				'cleanupTitle'          => __( 'Cleanup', 'lumia-tools' ),
+				'cleanupIntro'          => __( 'Each item is counted first; nothing is deleted without your confirmation. Back up the database before a large cleanup.', 'lumia-tools' ),
+				'cleanupItems'          => __( 'Unneeded data', 'lumia-tools' ),
+				'cleanupClean'          => __( 'Clean up', 'lumia-tools' ),
+				'cleanupAll'            => __( 'Clean up everything', 'lumia-tools' ),
+				'cleanupRescan'         => __( 'Recount', 'lumia-tools' ),
+				'cleanupRunning'        => __( 'Cleaning…', 'lumia-tools' ),
+				/* translators: 1: number of items, 2: item label. */
+				'cleanupConfirm'        => __( 'Permanently delete %1$s item(s): %2$s?', 'lumia-tools' ),
+				/* translators: %s: total number of items. */
+				'cleanupConfirmAll'     => __( 'Permanently delete %s item(s), across all categories?', 'lumia-tools' ),
+				/* translators: 1: number of items deleted, 2: item label. */
+				'cleanupDone'           => __( '%1$s item(s) deleted: %2$s', 'lumia-tools' ),
+				/* translators: %s: total number of items deleted. */
+				'cleanupDoneTotal'      => __( '%s item(s) deleted', 'lumia-tools' ),
+				/* translators: %s: number of items left. */
+				'cleanupLeft'           => __( '%s item(s) could not be deleted.', 'lumia-tools' ),
+				'optimizeTitle'         => __( 'Table optimization', 'lumia-tools' ),
+				/* translators: 1: number of tables, 2: recoverable size. */
+				'optimizeSummary'       => __( '%1$s fragmented table(s), %2$s recoverable.', 'lumia-tools' ),
+				'optimizeNone'          => __( 'No fragmented tables.', 'lumia-tools' ),
+				'optimizeBtn'           => __( 'Optimize', 'lumia-tools' ),
+				'optimizeConfirm'       => __( 'OPTIMIZE TABLE rebuilds each table and may lock it for a few seconds. Start the optimization?', 'lumia-tools' ),
+				/* translators: %s: number of tables optimized. */
+				'optimizeDone'          => __( '%s table(s) optimized', 'lumia-tools' ),
+				'foreignTitle'          => __( 'Plugin tables', 'lumia-tools' ),
+				'foreignIntro'          => __( 'Tables outside WordPress core. The owning plugin is guessed from the table name: check before deleting. No table is deleted automatically.', 'lumia-tools' ),
+				'foreignNone'           => __( 'No plugin tables.', 'lumia-tools' ),
+				'foreignUnknown'        => __( 'No matching plugin', 'lumia-tools' ),
+				/* translators: %s: plugin name(s). */
+				'foreignInactive'       => __( 'Inactive plugin: %s', 'lumia-tools' ),
+				/* translators: %s: plugin name(s). */
+				'foreignActive'         => __( 'Active plugin: %s', 'lumia-tools' ),
+				'open'                  => __( 'Open', 'lumia-tools' ),
+				// SQL query tab.
+				'queryTablePlaceholder' => __( 'my_table', 'lumia-tools' ),
+				/* translators: %s: number of rows affected by the query. */
+				'queryAffected'         => __( '%s row(s) affected.', 'lumia-tools' ),
+				/* translators: %s: ID of the last inserted row. */
+				'queryLastId'           => __( 'Last inserted ID: %s.', 'lumia-tools' ),
+				'queryNoResult'         => __( 'Query executed. No results.', 'lumia-tools' ),
+				/* translators: %s: number of rows returned by the query. */
+				'queryRowCount'         => __( '%s row(s)', 'lumia-tools' ),
+				/* translators: %d: maximum number of rows displayed. */
+				'queryTruncated'        => __( 'Result truncated to %d rows. Add a LIMIT clause to target your query.', 'lumia-tools' ),
 			],
 		];
 	}
 
 	/* ================================================================
-	 * SÉCURITÉ
+	 * SECURITY
 	 * ================================================================ */
 
 	/**
-	 * Sous multisite, `manage_options` est une capacité par site, alors que la
-	 * base est commune au réseau : un administrateur de sous-site obtiendrait
-	 * ici l'édition SQL de tout le réseau. Voir AbstractModule.
+	 * On multisite, `manage_options` is a per-site capability while the
+	 * database is shared by the whole network: a sub-site administrator would
+	 * get SQL editing of the entire network here. See AbstractModule.
 	 */
 	public static function get_required_capability(): string {
 		return is_multisite() ? 'manage_network_options' : 'manage_options';
@@ -193,16 +226,17 @@ class Module extends AbstractModule {
 	private function guard(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 		}
-		// Empêche $wpdb->print_error() d'ÉCHO du HTML d'erreur avant notre JSON
-		// (sinon la réponse est corrompue → « Erreur réseau » côté JS au lieu du message SQL).
+		// Stops $wpdb->print_error() from ECHOing error HTML before our JSON
+		// (otherwise the response is corrupted and the JS shows "Network error"
+		// instead of the SQL message).
 		global $wpdb;
 		$wpdb->suppress_errors( true );
 	}
 
 	/* ================================================================
-	 * AJAX — LISTE DES TABLES
+	 * AJAX: TABLE LIST
 	 * ================================================================ */
 
 	public function ajax_get_tables(): void {
@@ -221,10 +255,10 @@ class Module extends AbstractModule {
 			$estimate = (int) $t['Rows'];
 			$approx   = false;
 
-			// `SHOW TABLE STATUS`.Rows est une estimation pour InnoDB (souvent 0 ou
-			// très approximative). On la corrige par un COUNT(*) tant qu'elle reste
-			// raisonnable ; au-delà du seuil on garde l'estimation et on le dit.
-			// Le nom provient de SHOW TABLE STATUS, donc sûr à échapper en backticks.
+			// `SHOW TABLE STATUS`.Rows is only an estimate for InnoDB (often 0 or
+			// very approximate). We correct it with a COUNT(*) while it stays
+			// reasonable; above the threshold we keep the estimate and say so.
+			// The name comes from SHOW TABLE STATUS, so it is safe to escape in backticks.
 			if ( $estimate <= self::EXACT_COUNT_THRESHOLD ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 				$count = $wpdb->get_var( 'SELECT COUNT(*) FROM `' . str_replace( '`', '``', $name ) . '`' );
@@ -255,12 +289,12 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * VALIDATION DES IDENTIFIANTS
+	 * IDENTIFIER VALIDATION
 	 * ================================================================ */
 
 	/**
-	 * Vérifie qu'une table existe dans la base courante. Retourne le nom validé
-	 * (échappable en backticks) ou null.
+	 * Checks that a table exists in the current database. Returns the validated
+	 * name (safe to escape in backticks) or null.
 	 */
 	private function validate_table( string $table ): ?string {
 		if ( '' === $table ) {
@@ -278,19 +312,19 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Lit et valide le paramètre `table` du POST. Utilise sanitize_text_field
-	 * (et NON sanitize_key qui force en minuscules et casserait les noms de
-	 * tables/colonnes sensibles à la casse selon le système de fichiers MySQL).
-	 * La validation contre information_schema garantit que les backticks sont sûrs.
+	 * Reads and validates the `table` POST parameter. Uses sanitize_text_field
+	 * (and NOT sanitize_key, which lowercases and would break table/column
+	 * names that are case-sensitive depending on the MySQL file system).
+	 * Validation against information_schema guarantees the backticks are safe.
 	 */
 	private function read_table(): ?string {
-		$table = isset( $_POST['table'] ) ? sanitize_text_field( wp_unslash( $_POST['table'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- appelé uniquement après guard().
+		$table = isset( $_POST['table'] ) ? sanitize_text_field( wp_unslash( $_POST['table'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- only called after guard().
 		return $this->validate_table( $table );
 	}
 
 	/**
-	 * Récupère les colonnes réelles d'une table indexées par nom (whitelist + typage).
-	 * @return array<string, array<string, mixed>> Field => ligne SHOW COLUMNS.
+	 * Gets the real columns of a table, indexed by name (allowlist + typing).
+	 * @return array<string, array<string, mixed>> Field => SHOW COLUMNS row.
 	 */
 	private function get_columns_map( string $table ): array {
 		global $wpdb;
@@ -304,9 +338,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Détermine le placeholder $wpdb (%d/%f/%s) adapté au type SQL d'une colonne.
+	 * Determines the $wpdb placeholder (%d/%f/%s) that fits a column's SQL type.
 	 *
-	 * @param array<string, mixed> $col Ligne SHOW COLUMNS.
+	 * @param array<string, mixed> $col SHOW COLUMNS row.
 	 */
 	private function column_format( array $col ): string {
 		$type = strtolower( $col['Type'] ?? '' );
@@ -319,22 +353,22 @@ class Module extends AbstractModule {
 		return '%s';
 	}
 
-	/** Traduit les erreurs MySQL courantes en messages lisibles (le message brut reste en repli). */
+	/** Translates common MySQL errors into readable messages (the raw message stays as a fallback). */
 	private function friendly_db_error( string $raw, string $fallback ): string {
 		if ( '' === $raw ) {
 			return $fallback;
 		}
 		if ( stripos( $raw, 'Duplicate entry' ) !== false ) {
-			return __( 'Cette valeur existe déjà (contrainte d\'unicité).', 'lumia-tools' ) . ' — ' . $raw;
+			return __( 'This value already exists (unique constraint).', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		if ( stripos( $raw, 'foreign key' ) !== false ) {
-			return __( 'Contrainte de clé étrangère non respectée.', 'lumia-tools' ) . ' — ' . $raw;
+			return __( 'Foreign key constraint violated.', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		if ( stripos( $raw, 'cannot be null' ) !== false || stripos( $raw, "doesn't have a default" ) !== false ) {
-			return __( 'Un champ obligatoire est manquant.', 'lumia-tools' ) . ' — ' . $raw;
+			return __( 'A required field is missing.', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		if ( stripos( $raw, 'Incorrect' ) !== false && stripos( $raw, 'value' ) !== false ) {
-			return __( 'Valeur de type incorrect pour une colonne.', 'lumia-tools' ) . ' — ' . $raw;
+			return __( 'Incorrect value type for a column.', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		return $raw;
 	}
@@ -343,7 +377,7 @@ class Module extends AbstractModule {
 		$this->guard();
 
 		global $wpdb;
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard() en tête de handler.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified by guard() at the top of the handler.
 		$page      = max( 1, isset( $_POST['page'] ) ? (int) $_POST['page'] : 1 );
 		$per_page  = min( 200, max( 10, isset( $_POST['per_page'] ) ? (int) $_POST['per_page'] : 50 ) );
 		$search    = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
@@ -353,10 +387,10 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table not found.', 'lumia-tools' ) ] );
 		}
 
-		// Colonnes — $table validé via information_schema, backticks sûrs.
+		// Columns: $table validated via information_schema, backticks are safe.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$columns   = $wpdb->get_results( 'SHOW COLUMNS FROM `' . $table . '`', ARRAY_A );
 		$col_names = array_column( $columns, 'Field' );
@@ -367,7 +401,7 @@ class Module extends AbstractModule {
 				break; }
 		}
 
-		// Recherche : WHERE sur toutes les colonnes de type texte (LIKE).
+		// Search: WHERE over all text-type columns (LIKE).
 		$where = '';
 		if ( '' !== $search ) {
 			$text_cols = array_filter( $columns, static fn( $c ) => str_contains( strtolower( $c['Type'] ), 'char' ) || str_contains( strtolower( $c['Type'] ), 'text' ) );
@@ -411,7 +445,7 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table not found.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
@@ -431,7 +465,7 @@ class Module extends AbstractModule {
 		$this->guard();
 
 		global $wpdb;
-		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce vérifié par guard() en tête de handler ; valeur et clé primaire brutes, passées à $wpdb->update() qui échappe.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by guard() at the top of the handler; raw value and primary key, passed to $wpdb->update() which escapes.
 		$primary_col = isset( $_POST['primary_col'] ) ? sanitize_text_field( wp_unslash( $_POST['primary_col'] ) ) : '';
 		$primary_val = isset( $_POST['primary_val'] ) ? wp_unslash( $_POST['primary_val'] ) : '';
 		$col         = isset( $_POST['col'] ) ? sanitize_text_field( wp_unslash( $_POST['col'] ) ) : '';
@@ -441,22 +475,22 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table || ! $primary_col || ! $col ) {
-			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid parameters.', 'lumia-tools' ) ] );
 		}
 
-		// Whitelist colonne + clé primaire contre les colonnes réelles de la table.
+		// Allowlist the column + primary key against the table's real columns.
 		$columns = $this->get_columns_map( $table );
 		if ( ! isset( $columns[ $col ], $columns[ $primary_col ] ) ) {
-			wp_send_json_error( [ 'message' => __( 'Colonne inconnue.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Unknown column.', 'lumia-tools' ) ] );
 		}
 
-		// NULL explicite → valeur null (interdit si la colonne n'accepte pas NULL).
+		// Explicit NULL: null value (forbidden if the column does not accept NULL).
 		if ( $set_null ) {
 			if ( 'YES' !== ( $columns[ $col ]['Null'] ?? 'NO' ) ) {
-				wp_send_json_error( [ 'message' => __( 'Cette colonne n\'accepte pas la valeur NULL.', 'lumia-tools' ) ] );
+				wp_send_json_error( [ 'message' => __( 'This column does not accept the NULL value.', 'lumia-tools' ) ] );
 			}
 			$data    = [ $col => null ];
-			$formats = null; // laisse $wpdb produire NULL.
+			$formats = null; // lets $wpdb produce NULL.
 		} else {
 			$data    = [ $col => $value ];
 			$formats = [ $this->column_format( $columns[ $col ] ) ];
@@ -474,19 +508,19 @@ class Module extends AbstractModule {
 		$this->guard();
 
 		global $wpdb;
-		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce vérifié par guard() en tête de handler ; clé primaire passée à $wpdb->delete() qui échappe.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by guard() at the top of the handler; primary key passed to $wpdb->delete() which escapes.
 		$primary_col = isset( $_POST['primary_col'] ) ? sanitize_text_field( wp_unslash( $_POST['primary_col'] ) ) : '';
 		$primary_val = isset( $_POST['primary_val'] ) ? wp_unslash( $_POST['primary_val'] ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		$table = $this->read_table();
 		if ( null === $table || ! $primary_col ) {
-			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid parameters.', 'lumia-tools' ) ] );
 		}
 
 		$columns = $this->get_columns_map( $table );
 		if ( ! isset( $columns[ $primary_col ] ) ) {
-			wp_send_json_error( [ 'message' => __( 'Colonne inconnue.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Unknown column.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -502,18 +536,18 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table not found.', 'lumia-tools' ) ] );
 		}
 
 		global $wpdb;
 
-		// Champs soumis (col => valeur brute) + colonnes explicitement NULL.
-		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce vérifié par guard() en tête de handler ; valeurs brutes typées plus bas contre les colonnes réelles, écrites via $wpdb->insert() qui échappe.
+		// Submitted fields (col => raw value) + columns explicitly set to NULL.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by guard() at the top of the handler; raw values typed below against the real columns, written via $wpdb->insert() which escapes.
 		$fields = isset( $_POST['fields'] ) && is_array( $_POST['fields'] ) ? wp_unslash( $_POST['fields'] ) : [];
 		$nulls  = isset( $_POST['nulls'] ) && is_array( $_POST['nulls'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['nulls'] ) ) : [];
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-		// Colonnes réelles de la table (whitelist + typage).
+		// Real columns of the table (allowlist + typing).
 		$columns = $this->get_columns_map( $table );
 
 		$data    = [];
@@ -521,17 +555,17 @@ class Module extends AbstractModule {
 		foreach ( $columns as $field => $col ) {
 			$extra = strtolower( $col['Extra'] ?? '' );
 
-			// Colonne explicitement NULL → valeur null typée (refusée si NOT NULL sans défaut).
+			// Column explicitly NULL: typed null value (refused if NOT NULL without a default).
 			if ( in_array( $field, $nulls, true ) ) {
 				if ( 'YES' !== ( $col['Null'] ?? 'NO' ) ) {
-					/* translators: %s: nom de la colonne. */
-					wp_send_json_error( [ 'message' => sprintf( __( 'La colonne « %s » n\'accepte pas NULL.', 'lumia-tools' ), $field ) ] );
+					/* translators: %s: column name. */
+					wp_send_json_error( [ 'message' => sprintf( __( 'The column "%s" does not accept NULL.', 'lumia-tools' ), $field ) ] );
 				}
 				$data[ $field ] = null;
 				$formats[]      = $this->column_format( $col );
 				continue;
 			}
-			// Auto-increment laissé vide → délégué à MySQL.
+			// Auto-increment left empty: delegated to MySQL.
 			if ( str_contains( $extra, 'auto_increment' ) && ( ! isset( $fields[ $field ] ) || '' === $fields[ $field ] ) ) {
 				continue;
 			}
@@ -543,13 +577,13 @@ class Module extends AbstractModule {
 		}
 
 		if ( empty( $data ) ) {
-			wp_send_json_error( [ 'message' => __( 'Aucune valeur à insérer.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'No values to insert.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$result = $wpdb->insert( $table, $data, $formats );
 		if ( false === $result ) {
-			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Insertion échouée.', 'lumia-tools' ) ) ] );
+			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Insert failed.', 'lumia-tools' ) ) ] );
 		}
 		wp_send_json_success( [ 'insert_id' => $wpdb->insert_id ] );
 	}
@@ -560,7 +594,7 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table not found.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
@@ -577,7 +611,7 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table not found.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
@@ -589,7 +623,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * AJAX — NETTOYAGE (endpoints typés, jamais via ajax_run_query)
+	 * AJAX: CLEANUP (typed endpoints, never through ajax_run_query)
 	 * ================================================================ */
 
 	public function ajax_cleanup_scan(): void {
@@ -616,15 +650,15 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Purge un lot d'un élément. Le client rappelle tant que `deleted` et
-	 * `remaining` sont non nuls.
+	 * Purges one batch of an item. The client calls again as long as `deleted`
+	 * and `remaining` are non-zero.
 	 */
 	public function ajax_cleanup_run(): void {
 		$this->guard();
 
-		$item = isset( $_POST['item'] ) ? sanitize_key( wp_unslash( $_POST['item'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- vérifié par guard().
+		$item = isset( $_POST['item'] ) ? sanitize_key( wp_unslash( $_POST['item'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified by guard().
 		if ( ! array_key_exists( $item, Cleanup::items() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Élément inconnu.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Unknown item.', 'lumia-tools' ) ] );
 		}
 
 		$cleanup = new Cleanup();
@@ -638,16 +672,16 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Optimise UNE table du site : `OPTIMIZE TABLE` reconstruit une table
-	 * InnoDB entière, un appel par table évite le dépassement de délai.
+	 * Optimizes ONE site table: `OPTIMIZE TABLE` rebuilds a whole InnoDB
+	 * table, so one call per table avoids a timeout.
 	 */
 	public function ajax_cleanup_optimize(): void {
 		$this->guard();
 
-		$table   = isset( $_POST['table'] ) ? sanitize_text_field( wp_unslash( $_POST['table'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- vérifié par guard().
+		$table   = isset( $_POST['table'] ) ? sanitize_text_field( wp_unslash( $_POST['table'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified by guard().
 		$cleanup = new Cleanup();
 		if ( ! $cleanup->is_site_table( $table ) ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table not found.', 'lumia-tools' ) ] );
 		}
 		if ( ! $cleanup->optimize( $table ) ) {
 			global $wpdb;
@@ -657,24 +691,24 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Repère une opération interdite dans une requête, ou null.
+	 * Finds a forbidden operation in a query, or null.
 	 *
-	 * Deux précautions contre les faux positifs, qui bloquaient des requêtes
-	 * parfaitement légitimes :
-	 *  - la comparaison se fait sur des MOTS entiers (« migrant » ne contient
-	 *    plus « GRANT ») ;
-	 *  - les chaînes littérales sont neutralisées au préalable, une valeur
-	 *    n'étant jamais une instruction.
+	 * Two precautions against false positives, which used to block perfectly
+	 * legitimate queries:
+	 *  - the comparison is done on whole WORDS ("migrant" no longer contains
+	 *    "GRANT");
+	 *  - string literals are neutralized beforehand, a value never being a
+	 *    statement.
 	 *
-	 * Le test ne porte que sur cette copie : c'est bien la requête d'origine
-	 * qui est exécutée ensuite.
+	 * The test only applies to this copy: it is the original query that is
+	 * executed afterwards.
 	 */
 	private function find_forbidden_keyword( string $sql ): ?string {
-		$sujet = $this->normalize_sql( $sql );
+		$subject = $this->normalize_sql( $sql );
 
 		foreach ( self::FORBIDDEN_KEYWORDS as $kw ) {
-			$motif = '/\b' . str_replace( ' ', '\s+', preg_quote( $kw, '/' ) ) . '\b/i';
-			if ( preg_match( $motif, $sujet ) ) {
+			$pattern = '/\b' . str_replace( ' ', '\s+', preg_quote( $kw, '/' ) ) . '\b/i';
+			if ( preg_match( $pattern, $subject ) ) {
 				return $kw;
 			}
 		}
@@ -683,28 +717,26 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Réduit une requête à une forme comparable, pour les seuls tests de
-	 * garde-fou. La requête EXÉCUTÉE reste l'originale.
+	 * Reduces a query to a comparable form, for the guard-rail tests only.
+	 * The EXECUTED query remains the original.
 	 *
-	 * Trois passes, dans cet ordre — l'ordre est le fond du sujet :
+	 * Three passes, in this order: the order is the whole point.
 	 *
-	 *  1. neutraliser les littéraux ('…', "…") et les identifiants entre
-	 *     accents graves. Une valeur n'est jamais une instruction, et il faut
-	 *     le faire EN PREMIER : une ouverture de commentaire à l'intérieur
-	 *     d'une chaîne n'ouvre rien du tout, et la traiter comme telle
-	 *     tronquerait la requête normalisée, donc masquerait ce qui suit ;
-	 *  2. retirer les commentaires. C'est le trou que l'audit a exploité :
-	 *     MySQL accepte un commentaire vide comme séparateur de mots, si bien
-	 *     qu'un DROP suivi d'un commentaire vide puis de DATABASE ne
-	 *     ressemblait à aucun mot-clé interdit tout en étant exécuté comme
-	 *     « DROP DATABASE ». Étendre la liste noire n'y changeait rien : il y a
-	 *     une infinité de façons d'écrire l'espace ;
-	 *  3. réduire toute suite d'espaces (y compris les retours à la ligne) à
-	 *     un espace simple, pour que `\s+` des motifs ait un terrain régulier.
+	 *  1. neutralize the literals ('…', "…") and the backtick-quoted
+	 *     identifiers. A value is never a statement, and this must come FIRST:
+	 *     a comment opener inside a string opens nothing at all, and treating
+	 *     it as one would truncate the normalized query and hide what follows;
+	 *  2. strip the comments. This is the hole the audit exploited: MySQL
+	 *     accepts an empty comment as a word separator, so a DROP followed by
+	 *     an empty comment and then DATABASE looked like no forbidden keyword
+	 *     while being executed as "DROP DATABASE". Extending the blacklist did
+	 *     not change that: there are infinitely many ways to write a space;
+	 *  3. collapse every run of whitespace (line breaks included) into a
+	 *     single space, so that the `\s+` of the patterns has even ground.
 	 *
-	 * Chaque `preg_replace` peut échouer (chaîne non close, limite de
-	 * récursion) ; on conserve alors l'état précédent plutôt que de laisser une
-	 * chaîne vide passer tous les tests.
+	 * Each `preg_replace` can fail (unterminated string, recursion limit); the
+	 * previous state is then kept rather than letting an empty string pass
+	 * every test.
 	 */
 	private function normalize_sql( string $sql ): string {
 		$out = preg_replace(
@@ -714,53 +746,52 @@ class Module extends AbstractModule {
 		);
 		$out = ( null === $out ) ? $sql : $out;
 
-		$sans_commentaires = preg_replace(
+		$without_comments = preg_replace(
 			[
-				'#/\*.*?\*/#s',   // /* … */, y compris sur plusieurs lignes
-				'#--[^\n]*#',     // -- jusqu'à la fin de la ligne
-				'#\#[^\n]*#',     // #  jusqu'à la fin de la ligne
+				'#/\*.*?\*/#s',   // /* … */, including over several lines
+				'#--[^\n]*#',     // -- up to the end of the line
+				'#\#[^\n]*#',     // #  up to the end of the line
 			],
 			' ',
 			$out
 		);
-		$out               = ( null === $sans_commentaires ) ? $out : $sans_commentaires;
+		$out              = ( null === $without_comments ) ? $out : $without_comments;
 
-		$compacte = preg_replace( '/\s+/', ' ', $out );
-		$out      = ( null === $compacte ) ? $out : $compacte;
+		$collapsed = preg_replace( '/\s+/', ' ', $out );
+		$out       = ( null === $collapsed ) ? $out : $collapsed;
 
 		return trim( $out );
 	}
 
 	/**
-	 * La requête est-elle une simple lecture ?
+	 * Is the query a plain read?
 	 *
-	 * Ne fonder la réponse que sur le premier mot ne suffit pas : un `SELECT`
-	 * peut écrire (`INTO OUTFILE`), un `WITH … AS (…) DELETE …` commence par un
-	 * mot de lecture, et `SELECT 1; DELETE FROM …` en cache une derrière un
-	 * point-virgule. La classification décide de la confirmation d'écriture ET
-	 * du plafond de lignes : se tromper dans ce sens-là laisse passer une
-	 * modification sans confirmation.
+	 * Basing the answer on the first word alone is not enough: a `SELECT` can
+	 * write (`INTO OUTFILE`), a `WITH … AS (…) DELETE …` starts with a read
+	 * word, and `SELECT 1; DELETE FROM …` hides one behind a semicolon. The
+	 * classification decides both the write confirmation AND the row cap:
+	 * getting it wrong in that direction lets a modification through without
+	 * confirmation.
 	 *
-	 * On exige donc trois choses : un mot d'ouverture de lecture, aucun verbe
-	 * d'écriture ailleurs dans la requête, et aucun point-virgule interne.
+	 * Three things are therefore required: a read opening word, no write verb
+	 * anywhere else in the query, and no inner semicolon.
 	 *
-	 * Le sens de l'erreur est assumé : classer une lecture en écriture ne coûte
-	 * qu'une confirmation de plus, l'inverse coûte une table.
+	 * The direction of the error is deliberate: classifying a read as a write
+	 * only costs one more confirmation, the opposite costs a table.
 	 */
 	private function is_read_query( string $normalized ): bool {
 		if ( ! preg_match( '/^\s*(SELECT|SHOW|DESCRIBE|DESC|EXPLAIN|WITH)\b/i', $normalized ) ) {
 			return false;
 		}
 
-		// `SHOW CREATE TABLE` reste une lecture : CREATE et DROP ne figurent pas
-		// dans cette liste, ils ne peuvent de toute façon pas commencer une
-		// requête classée en lecture.
+		// `SHOW CREATE TABLE` stays a read: CREATE and DROP are not in this
+		// list, and they cannot start a query classified as a read anyway.
 		if ( preg_match( '/\b(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|ALTER|RENAME|INTO\s+(OUTFILE|DUMPFILE)|LOAD\s+DATA)\b/i', $normalized ) ) {
 			return false;
 		}
 
-		// Un point-virgule ailleurs qu'en fin de requête annonce une seconde
-		// instruction, que ce test-ci n'a pas examinée.
+		// A semicolon anywhere but at the end of the query announces a second
+		// statement, which this test has not examined.
 		if ( preg_match( '/;\s*\S/', $normalized ) ) {
 			return false;
 		}
@@ -772,28 +803,28 @@ class Module extends AbstractModule {
 		$this->guard();
 
 		global $wpdb;
-		$sql = isset( $_POST['sql'] ) ? trim( (string) wp_unslash( $_POST['sql'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce vérifié par guard() en tête de handler ; SQL saisi par l'administrateur, filtré par find_forbidden_keyword() et confirmé côté client pour toute écriture.
+		$sql = isset( $_POST['sql'] ) ? trim( (string) wp_unslash( $_POST['sql'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by guard() at the top of the handler; SQL typed by the administrator, filtered by find_forbidden_keyword() and confirmed client-side for any write.
 		if ( '' === $sql ) {
-			wp_send_json_error( [ 'message' => __( 'Requête vide.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Empty query.', 'lumia-tools' ) ] );
 		}
 
-		// Garde-fou 1 : opérations interdites (gestion des bases/utilisateurs, arrêt serveur…).
+		// Guard 1: forbidden operations (database/user management, server shutdown…).
 		$forbidden = $this->find_forbidden_keyword( $sql );
 		if ( null !== $forbidden ) {
-			/* translators: %s: mot-clé SQL interdit. */
-			wp_send_json_error( [ 'message' => sprintf( __( 'Opération interdite dans cet éditeur : %s.', 'lumia-tools' ), $forbidden ) ] );
+			/* translators: %s: forbidden SQL keyword. */
+			wp_send_json_error( [ 'message' => sprintf( __( 'Operation not allowed in this editor: %s.', 'lumia-tools' ), $forbidden ) ] );
 		}
 
-		// Détecter si c'est une requête de lecture. Le test porte sur la forme
-		// normalisée : un commentaire suffisait sinon à déguiser une écriture.
+		// Detect whether it is a read query. The test applies to the normalized
+		// form: otherwise a comment was enough to disguise a write.
 		$normalized = $this->normalize_sql( $sql );
 		$is_select  = $this->is_read_query( $normalized );
 
-		// Garde-fou 2 : toute requête d'écriture exige une confirmation explicite côté client.
-		if ( ! $is_select && empty( $_POST['confirm'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard() en tête de handler.
+		// Guard 2: any write query requires an explicit confirmation from the client.
+		if ( ! $is_select && empty( $_POST['confirm'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by guard() at the top of the handler.
 			wp_send_json_error(
 				[
-					'message'       => __( 'Cette requête modifie la base. Confirmation requise.', 'lumia-tools' ),
+					'message'       => __( 'This query modifies the database. Confirmation required.', 'lumia-tools' ),
 					'needs_confirm' => true,
 				]
 			);
@@ -802,20 +833,20 @@ class Module extends AbstractModule {
 		$wpdb->flush();
 
 		if ( $is_select ) {
-			// Garde-fou 3 : borne mémoire — on plafonne les SELECT sans LIMIT explicite.
+			// Guard 3: memory bound: SELECTs without an explicit LIMIT are capped.
 			$capped    = $sql;
 			$truncated = false;
 			$bare      = rtrim( $sql, "; \t\n\r" );
-			// Seuls SELECT et WITH peuvent ramener un volume non borné. SHOW,
-			// DESCRIBE et EXPLAIN rendent un jeu déjà fini — et n'acceptent pas
-			// de LIMIT : le plafond transformait « SHOW CREATE TABLE x » en
-			// erreur de syntaxe.
+			// Only SELECT and WITH can return an unbounded volume. SHOW,
+			// DESCRIBE and EXPLAIN return an already finite set, and do not
+			// accept a LIMIT: the cap turned "SHOW CREATE TABLE x" into a
+			// syntax error.
 			//
-			// La présence d'un LIMIT se lit sur la forme normalisée : un
-			// « /* LIMIT 1 */ » en commentaire faisait sauter le plafond.
-			$plafonnable = (bool) preg_match( '/^\s*(SELECT|WITH)\b/i', $normalized );
+			// The presence of a LIMIT is read on the normalized form: a
+			// "/* LIMIT 1 */" comment used to bypass the cap.
+			$cappable = (bool) preg_match( '/^\s*(SELECT|WITH)\b/i', $normalized );
 
-			if ( $plafonnable && ! preg_match( '/\bLIMIT\b/i', $normalized ) ) {
+			if ( $cappable && ! preg_match( '/\bLIMIT\b/i', $normalized ) ) {
 				$capped    = $bare . ' LIMIT ' . self::QUERY_ROW_CAP;
 				$truncated = true;
 			}
@@ -840,7 +871,7 @@ class Module extends AbstractModule {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$result = $wpdb->query( $sql );
 		if ( false === $result ) {
-			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Requête échouée.', 'lumia-tools' ) ) ] );
+			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Query failed.', 'lumia-tools' ) ) ] );
 		}
 		wp_send_json_success(
 			[
@@ -854,13 +885,13 @@ class Module extends AbstractModule {
 	public function ajax_export_sql(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'lumia-tools' ) );
 		}
 
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_die( esc_html__( 'Table invalide.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'Invalid table.', 'lumia-tools' ) );
 		}
 
 		$filename = $table . '_' . gmdate( 'Y-m-d_His' ) . '.sql';
@@ -869,7 +900,7 @@ class Module extends AbstractModule {
 		header( 'Content-Type: application/octet-stream' );
 		header( 'Content-Disposition: ' . Admin::content_disposition( $filename ) );
 
-		// Colonnes + typage : détermine quelles valeurs sont numériques (non quotées) ou binaires (hex).
+		// Columns + typing: determines which values are numeric (unquoted) or binary (hex).
 		$columns   = $this->get_columns_map( $table );
 		$col_names = array_keys( $columns );
 		$is_num    = [];
@@ -879,16 +910,16 @@ class Module extends AbstractModule {
 			$is_num[ $field ]    = (bool) preg_match( '/^(tinyint|smallint|mediumint|int|integer|bigint|decimal|dec|numeric|float|double|real|bit|year)\b/', $type );
 			$is_binary[ $field ] = (bool) preg_match( '/(blob|binary)\b/', $type );
 		}
-		// Liste de colonnes échappées pour un INSERT explicite (réimportable même si l'ordre/nombre change).
+		// Escaped column list for an explicit INSERT (re-importable even if the order/number changes).
 		$col_list = '`' . implode( '`, `', array_map( 'esc_sql', $col_names ) ) . '`';
 
-		// Structure de la table.
+		// Table structure.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$create = $wpdb->get_row( 'SHOW CREATE TABLE `' . $table . '`', ARRAY_N );
 
-		// Sortie SQL brute téléchargée en application/octet-stream, jamais rendue
-		// en HTML : un échappement HTML corromprait le dump. La table sort de
-		// read_table() (liste blanche SHOW TABLES), les valeurs de esc_sql().
+		// Raw SQL output downloaded as application/octet-stream, never rendered
+		// as HTML: HTML escaping would corrupt the dump. The table comes from
+		// read_table() (SHOW TABLES allowlist), the values from esc_sql().
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo "-- Lümia Tools - Export SQL\n";
 		echo '-- Table: ' . $table . "\n";
@@ -897,7 +928,7 @@ class Module extends AbstractModule {
 		echo 'DROP TABLE IF EXISTS `' . $table . "`;\n";
 		echo $create[1] . ";\n\n";
 
-		// Données par lots de 500.
+		// Data in batches of 500.
 		$offset = 0;
 		$batch  = 500;
 		do {
@@ -912,14 +943,14 @@ class Module extends AbstractModule {
 					if ( null === $v ) {
 						$values[] = 'NULL';
 					} elseif ( ! empty( $is_binary[ $field ] ) ) {
-						// Données binaires → littéral hexadécimal (0x…), toujours réimportable.
+						// Binary data: hexadecimal literal (0x…), always re-importable.
 						$values[] = '0x' . bin2hex( $v );
 					} elseif ( ! empty( $is_num[ $field ] ) && is_numeric( $v ) ) {
-						$values[] = $v; // numérique → non quoté.
+						$values[] = $v; // numeric: unquoted.
 					} else {
-						// esc_sql() remplace chaque « % » par un jeton de hachage destiné à
-						// $wpdb->prepare() : hors prepare(), il faut le retirer, sinon le
-						// dump contient ce jeton à la place des « % » d'origine.
+						// esc_sql() replaces every "%" with a hash token meant for
+						// $wpdb->prepare(): outside prepare() it must be removed, otherwise
+						// the dump contains that token in place of the original "%".
 						$values[] = "'" . $wpdb->remove_placeholder_escape( esc_sql( (string) $v ) ) . "'";
 					}
 				}

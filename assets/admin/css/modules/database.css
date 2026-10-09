@@ -1,14 +1,14 @@
 /*
- * Module Base de données — explorateur de tables
+ * Database module: table explorer
  */
 
-/* Masquer le bouton "Enregistrer" du header (ce module n'a pas de form) */
+/* Hide the header "Save" button (this module has no form) */
 .lumia-page__header-actions [form="lumia-module-form"] { display: none !important; }
 
 /* ================================================================
- * LAYOUT — panneau qui remplit la hauteur dispo, scroll INTERNE (jamais la page).
- * Tout est géré en flex depuis .lumia-admin-main (aucune hauteur calculée en JS).
- * Même pattern :has() que le Créateur de menu (voir menu-creator.css).
+ * LAYOUT: panel that fills the available height, INTERNAL scroll (never the page).
+ * Everything is handled in flex from .lumia-admin-main (no height computed in JS).
+ * Same :has() pattern as the Menu Creator (see menu-creator.css).
  * ================================================================ */
 .lumia-admin-main:has(.lumia-db) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
 .lumia-admin-main:has(.lumia-db) .lumia-page { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -65,17 +65,17 @@
 }
 .lumia-db__table-item-rows { font-size: 11px; color: var(--lumia-text-secondary); flex-shrink: 0; }
 
-/* Recherche : utilise le composant réutilisable .lumia-search (components.css).
-   Seules les contraintes de largeur propres au module sont définies ici. */
+/* Search: uses the reusable .lumia-search component (components.css).
+   Only the module's own width constraints are defined here. */
 .lumia-db__search--data { min-width: 240px; max-width: 320px; }
 
 /* ================================================================
- * ZONE PRINCIPALE
+ * MAIN AREA
  * ================================================================ */
 .lumia-db__main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .lumia-db__empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--lumia-text-secondary); }
 
-/* Vue table = colonne flex qui remplit le main et distribue le scroll interne */
+/* Table view = flex column that fills the main area and distributes the internal scroll */
 .lumia-db__view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .lumia-db__table-header {
@@ -89,7 +89,7 @@
 .lumia-db__table-actions .lumia-btn { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ================================================================
- * MENU D'ACTIONS (dropdown regroupant export + zone dangereuse)
+ * ACTIONS MENU (dropdown grouping export + danger zone)
  * ================================================================ */
 .lumia-db__menu-wrap { position: relative; }
 .lumia-db__menu {
@@ -121,14 +121,14 @@
 /* ================================================================
  * TABS
  * ================================================================ */
-/* Composant partagé lumia-tabs, resserré sur la marge de l'explorateur. */
+/* Shared lumia-tabs component, tightened to the explorer's margin. */
 .lumia-db .lumia-tabs { padding: 0 16px; gap: 0; }
 
-/* Chaque tab-content remplit l'espace restant et scrolle en interne */
+/* Each tab-content fills the remaining space and scrolls internally */
 .lumia-db__tab-content { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
 
 /* ================================================================
- * ONGLET DONNÉES
+ * DATA TAB
  * ================================================================ */
 .lumia-db__data-toolbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -149,9 +149,9 @@
 .lumia-db__page-btn.is-active { background: var(--lumia-accent); color: #fff; border-color: var(--lumia-accent); }
 .lumia-db__page-ellipsis { padding: 0 2px; color: var(--lumia-text-secondary); }
 
-/* Zone de table scrollable (horizontale ET verticale) */
+/* Scrollable table area (horizontal AND vertical) */
 .lumia-db__data-table-wrap { overflow: auto; }
-/* Dans l'onglet Données uniquement, la table remplit l'espace restant */
+/* In the Data tab only, the table fills the remaining space */
 #lumia-db-tab-data .lumia-db__data-table-wrap { flex: 1; min-height: 0; }
 
 .lumia-db__data-table { width: auto; min-width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -184,7 +184,7 @@
   font-size: 12px; box-sizing: border-box; font-family: inherit;
 }
 .lumia-db__data-table td.is-editing textarea { min-height: 80px; resize: vertical; }
-/* Barre d'action de l'édition inline (bouton NULL) */
+/* Inline edit action bar (NULL button) */
 .lumia-db__edit-actions {
   display: flex; justify-content: flex-end; gap: 6px;
   padding: 3px 6px; background: var(--lumia-n50); border: 2px solid var(--lumia-accent); border-top: none;
@@ -199,7 +199,7 @@
 .lumia-db__data-table td.lumia-db__td-binary { color: var(--lumia-text-secondary); font-style: italic; cursor: default; }
 .lumia-db__data-empty { text-align: center; color: var(--lumia-text-secondary); cursor: default; padding: 24px; }
 
-/* Bouton de suppression discret : icône seule, révélée au survol de la ligne. */
+/* Discreet delete button: icon only, revealed on row hover. */
 .lumia-db__delete-row {
   display: inline-flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; padding: 0;
@@ -213,7 +213,7 @@
 .lumia-db__delete-row:hover { background: var(--lumia-danger-bg); color: var(--lumia-danger); }
 
 /* ================================================================
- * ONGLET STRUCTURE
+ * STRUCTURE TAB
  * ================================================================ */
 .lumia-db__structure-section-title {
   padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--lumia-border);
@@ -221,7 +221,7 @@
 }
 
 /* ================================================================
- * ÉDITEUR SQL
+ * SQL EDITOR
  * ================================================================ */
 .lumia-db__query-warning {
   display: flex; align-items: flex-start; gap: 8px;
@@ -250,7 +250,7 @@
   font-family: monospace; font-size: 12px; color: var(--lumia-danger); white-space: pre-wrap;
 }
 
-/* Historique */
+/* History */
 .lumia-db__query-history-wrap { position: relative; }
 .lumia-db__history-dropdown {
   position: absolute; bottom: calc(100% + 4px); left: 0;
@@ -274,7 +274,7 @@
 }
 
 /* ================================================================
- * MODALE AJOUT DE LIGNE
+ * ADD ROW MODAL
  * ================================================================ */
 .lumia-db__insert-fields { display: flex; flex-direction: column; gap: 12px; }
 .lumia-db__insert-field { margin: 0; }
@@ -289,7 +289,7 @@
 }
 .lumia-db__insert-null input { margin: 0; }
 
-/* Modal suppression : nom de table mis en évidence */
+/* Delete modal: table name highlighted */
 #lumia-db-drop-name {
   display: inline-block; margin-top: 4px; padding: 2px 6px;
   background: var(--lumia-n100); border-radius: var(--lumia-radius-xs);
@@ -297,9 +297,9 @@
 }
 
 /* ================================================================
- * NETTOYAGE (issue #16)
+ * CLEANUP (issue #16)
  * ================================================================ */
-/* Entrée de la barre latérale : un <button> qui reprend le look d'une table. */
+/* Sidebar entry: a <button> that takes on the look of a table. */
 .lumia-db__cleanup-link {
   width: calc(100% - 12px); margin-top: 6px; border: 0; background: none;
   font: inherit; color: inherit; text-align: left; font-weight: 500;

@@ -4,33 +4,33 @@ namespace Lumia\Tools\Modules\Database;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Onglet Nettoyage du module Base de données (remplace WP-Sweep).
+ * Cleanup tab of the Database module (replaces WP-Sweep).
  *
- * Chaque élément se compte, puis se purge par lots de BATCH : un site qui
- * traîne 80 000 révisions ne tient pas dans un seul appel AJAX. Les objets
- * qui ont une API WordPress (articles, révisions, commentaires, transients)
- * passent par elle, pour que les hooks et les caches suivent ; les
- * métadonnées et relations orphelines n'ont plus d'objet parent, donc plus
- * de cache à invalider, et partent en SQL direct.
+ * Each item is counted, then purged in batches of BATCH: a site carrying
+ * 80,000 revisions does not fit in a single AJAX call. Objects that have a
+ * WordPress API (posts, revisions, comments, transients) go through it, so
+ * that hooks and caches follow; orphaned metadata and relations no longer
+ * have a parent object, hence no cache to invalidate, and are deleted with
+ * direct SQL.
  *
- * Portée : le site courant (`$wpdb->prefix`). En multisite, chaque site se
- * nettoie depuis son propre tableau de bord.
+ * Scope: the current site (`$wpdb->prefix`). On multisite, each site is
+ * cleaned from its own dashboard.
  */
 class Cleanup {
 
-	/** Nombre d'objets traités par appel. */
+	/** Number of objects processed per call. */
 	const BATCH = 200;
 
-	/** Espace libre minimal (octets) pour signaler une table fragmentée. */
+	/** Minimum free space (bytes) to report a fragmented table. */
 	const MIN_FREE = 1048576;
 
-	/** Part minimale d'espace libre rapportée à la taille de la table. */
+	/** Minimum share of free space relative to the table size. */
 	const MIN_FREE_RATIO = 0.2;
 
 	/**
-	 * Préfixes de tables connus qui ne ressemblent pas au nom de l'extension
-	 * qui les crée. Jeton (premier segment du nom court) => dossiers
-	 * d'extensions possibles.
+	 * Known table prefixes that do not look like the name of the plugin that
+	 * creates them. Token (first segment of the short name) => possible plugin
+	 * folders.
 	 */
 	const OWNER_ALIASES = [
 		'wc'              => [ 'woocommerce' ],
@@ -43,65 +43,65 @@ class Cleanup {
 	];
 
 	/**
-	 * Éléments nettoyables, dans l'ordre d'affichage.
+	 * Cleanable items, in display order.
 	 *
 	 * @return array<string, array{label: string, description: string}>
 	 */
 	public static function items(): array {
 		return [
 			'revisions'                 => [
-				'label'       => __( 'Révisions', 'lumia-tools' ),
-				'description' => __( 'Anciennes versions des contenus, conservées à chaque enregistrement.', 'lumia-tools' ),
+				'label'       => __( 'Revisions', 'lumia-tools' ),
+				'description' => __( 'Previous versions of content, kept each time it is saved.', 'lumia-tools' ),
 			],
 			'auto_drafts'               => [
-				'label'       => __( 'Brouillons automatiques', 'lumia-tools' ),
-				'description' => __( 'Créés à l\'ouverture de l\'éditeur, jamais enregistrés.', 'lumia-tools' ),
+				'label'       => __( 'Auto drafts', 'lumia-tools' ),
+				'description' => __( 'Created when the editor is opened, never saved.', 'lumia-tools' ),
 			],
 			'trashed_posts'             => [
-				'label'       => __( 'Contenus dans la corbeille', 'lumia-tools' ),
-				'description' => __( 'Articles, pages et types personnalisés supprimés définitivement.', 'lumia-tools' ),
+				'label'       => __( 'Content in the trash', 'lumia-tools' ),
+				'description' => __( 'Posts, pages and custom post types, permanently deleted.', 'lumia-tools' ),
 			],
 			'spam_comments'             => [
-				'label'       => __( 'Commentaires indésirables', 'lumia-tools' ),
-				'description' => __( 'Commentaires marqués comme spam.', 'lumia-tools' ),
+				'label'       => __( 'Spam comments', 'lumia-tools' ),
+				'description' => __( 'Comments marked as spam.', 'lumia-tools' ),
 			],
 			'trashed_comments'          => [
-				'label'       => __( 'Commentaires dans la corbeille', 'lumia-tools' ),
-				'description' => __( 'Commentaires supprimés définitivement.', 'lumia-tools' ),
+				'label'       => __( 'Comments in the trash', 'lumia-tools' ),
+				'description' => __( 'Comments, permanently deleted.', 'lumia-tools' ),
 			],
 			'expired_transients'        => [
-				'label'       => __( 'Transients expirés', 'lumia-tools' ),
-				'description' => __( 'Données de cache temporaires dont la date d\'expiration est passée.', 'lumia-tools' ),
+				'label'       => __( 'Expired transients', 'lumia-tools' ),
+				'description' => __( 'Temporary cache data whose expiry date has passed.', 'lumia-tools' ),
 			],
 			'orphan_transient_timeouts' => [
-				'label'       => __( 'Expirations de transients orphelines', 'lumia-tools' ),
-				'description' => __( 'Dates d\'expiration dont le transient n\'existe plus.', 'lumia-tools' ),
+				'label'       => __( 'Orphaned transient timeouts', 'lumia-tools' ),
+				'description' => __( 'Expiry dates whose transient no longer exists.', 'lumia-tools' ),
 			],
 			'orphan_postmeta'           => [
-				'label'       => __( 'Métadonnées de contenus orphelines', 'lumia-tools' ),
-				'description' => __( 'Rattachées à un contenu qui n\'existe plus.', 'lumia-tools' ),
+				'label'       => __( 'Orphaned post metadata', 'lumia-tools' ),
+				'description' => __( 'Attached to content that no longer exists.', 'lumia-tools' ),
 			],
 			'orphan_commentmeta'        => [
-				'label'       => __( 'Métadonnées de commentaires orphelines', 'lumia-tools' ),
-				'description' => __( 'Rattachées à un commentaire qui n\'existe plus.', 'lumia-tools' ),
+				'label'       => __( 'Orphaned comment metadata', 'lumia-tools' ),
+				'description' => __( 'Attached to a comment that no longer exists.', 'lumia-tools' ),
 			],
 			'orphan_usermeta'           => [
-				'label'       => __( 'Métadonnées d\'utilisateurs orphelines', 'lumia-tools' ),
-				'description' => __( 'Rattachées à un utilisateur qui n\'existe plus.', 'lumia-tools' ),
+				'label'       => __( 'Orphaned user metadata', 'lumia-tools' ),
+				'description' => __( 'Attached to a user that no longer exists.', 'lumia-tools' ),
 			],
 			'orphan_termmeta'           => [
-				'label'       => __( 'Métadonnées de termes orphelines', 'lumia-tools' ),
-				'description' => __( 'Rattachées à une catégorie ou étiquette qui n\'existe plus.', 'lumia-tools' ),
+				'label'       => __( 'Orphaned term metadata', 'lumia-tools' ),
+				'description' => __( 'Attached to a category or tag that no longer exists.', 'lumia-tools' ),
 			],
 			'orphan_term_relationships' => [
-				'label'       => __( 'Relations de termes orphelines', 'lumia-tools' ),
-				'description' => __( 'Liens entre un terme et un contenu qui n\'existe plus.', 'lumia-tools' ),
+				'label'       => __( 'Orphaned term relationships', 'lumia-tools' ),
+				'description' => __( 'Links between a term and content that no longer exists.', 'lumia-tools' ),
 			],
 		];
 	}
 
 	/* ================================================================
-	 * COMPTAGE
+	 * COUNTING
 	 * ================================================================ */
 
 	public function count( string $item ): int {
@@ -150,11 +150,10 @@ class Cleanup {
 	}
 
 	/**
-	 * Compte ce que `delete_expired_transients()` supprimera, et seulement
-	 * cela : le cœur ne supprime que des PAIRES valeur + expiration. Une
-	 * expiration seule n'est jamais touchée par lui (voir l'élément
-	 * `orphan_transient_timeouts`) ; la compter ici laisserait un reste
-	 * après chaque nettoyage.
+	 * Counts what `delete_expired_transients()` will delete, and only that:
+	 * core only deletes PAIRS of value + timeout. A lone timeout is never
+	 * touched by it (see the `orphan_transient_timeouts` item); counting it
+	 * here would leave a remainder after each cleanup.
 	 */
 	private function count_expired_transients(): int {
 		global $wpdb;
@@ -202,10 +201,10 @@ class Cleanup {
 	}
 
 	/**
-	 * FROM … WHERE des expirations sans transient. L'inverse (un transient
-	 * sans expiration) n'est PAS orphelin : c'est un transient créé sans
-	 * durée, qui n'expire jamais. Le supprimer casserait l'extension qui l'a
-	 * posé.
+	 * FROM … WHERE of the timeouts without a transient. The opposite (a
+	 * transient without a timeout) is NOT an orphan: it is a transient created
+	 * without a duration, which never expires. Deleting it would break the
+	 * plugin that set it.
 	 */
 	private function orphan_timeouts_sql(): string {
 		global $wpdb;
@@ -223,7 +222,7 @@ class Cleanup {
 	}
 
 	/**
-	 * Description d'une table de métadonnées pour la détection d'orphelins.
+	 * Description of a metadata table, for orphan detection.
 	 *
 	 * @return array{table: string, id: string, fk: string, parent: string, pk: string}|null
 	 */
@@ -270,22 +269,22 @@ class Cleanup {
 	 * @param array{table: string, id: string, fk: string, parent: string, pk: string} $m
 	 */
 	private function orphan_meta_sql( array $m ): string {
-		// Identifiants issus de $wpdb et de constantes : rien ne vient du client.
+		// Identifiers come from $wpdb and constants: nothing comes from the client.
 		return "FROM {$m['table']} m LEFT JOIN {$m['parent']} p ON p.{$m['pk']} = m.{$m['fk']} WHERE p.{$m['pk']} IS NULL";
 	}
 
 	/**
-	 * FROM … WHERE des relations dont l'objet n'est plus un contenu.
+	 * FROM … WHERE of the relations whose object is no longer a post.
 	 *
-	 * `term_relationships.object_id` n'est pas toujours un ID d'article : les
-	 * catégories de liens pointent vers des liens, une taxonomie peut être
-	 * enregistrée sur les utilisateurs (types de membres BuddyPress…).
+	 * `term_relationships.object_id` is not always a post ID: link categories
+	 * point to links, a taxonomy can be registered on users (BuddyPress member
+	 * types…).
 	 *
-	 * D'où une liste BLANCHE : seules les taxonomies enregistrées, et
-	 * rattachées uniquement à des types de contenu, sont purgées. Une liste
-	 * noire des taxonomies « non contenu » ne voit que celles enregistrées au
-	 * moment du nettoyage : extension désactivée, ses relations vers des
-	 * utilisateurs passaient pour orphelines et partaient définitivement.
+	 * Hence an ALLOWLIST: only taxonomies that are registered, and attached
+	 * only to post types, are purged. A blocklist of the "non-content"
+	 * taxonomies only sees those registered at cleanup time: with a plugin
+	 * deactivated, its relations to users looked like orphans and were
+	 * deleted for good.
 	 */
 	private function orphan_relationships_sql(): string {
 		global $wpdb;
@@ -299,12 +298,12 @@ class Cleanup {
 			}
 		}
 		if ( ! $allowed ) {
-			// Aucune taxonomie sûre : une condition toujours fausse.
+			// No safe taxonomy: an always-false condition.
 			return "FROM {$wpdb->term_relationships} tr INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE 1 = 0";
 		}
 		$placeholders = implode( ', ', array_fill( 0, count( $allowed ), '%s' ) );
 
-		// $placeholders ne contient que des %s, un par taxonomie autorisée.
+		// $placeholders only contains %s, one per allowed taxonomy.
 		return $wpdb->prepare(
 			"FROM {$wpdb->term_relationships} tr
 			INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
@@ -315,14 +314,14 @@ class Cleanup {
 	}
 
 	/* ================================================================
-	 * PURGE (un lot par appel)
+	 * PURGE (one batch per call)
 	 * ================================================================ */
 
 	/**
-	 * Purge un lot et renvoie le nombre d'objets supprimés. 0 signifie « plus
-	 * rien à faire ou plus rien de supprimable » : le client s'arrête là, ce
-	 * qui évite une boucle infinie sur un objet que WordPress refuse de
-	 * supprimer.
+	 * Purges a batch and returns the number of objects deleted. 0 means
+	 * "nothing left to do or nothing left that can be deleted": the client
+	 * stops there, which avoids an endless loop on an object that WordPress
+	 * refuses to delete.
 	 */
 	public function run( string $item ): int {
 		global $wpdb;
@@ -345,8 +344,8 @@ class Cleanup {
 
 			case 'expired_transients':
 				$before = $this->count_expired_transients();
-				// true : même avec un cache objet externe, ce sont les lignes
-				// de la base que l'on vient de compter.
+				// true: even with an external object cache, these are the
+				// database rows that were just counted.
 				delete_expired_transients( true );
 				return max( 0, $before - $this->count_expired_transients() );
 
@@ -372,7 +371,7 @@ class Cleanup {
 			if ( ! $ids ) {
 				return 0;
 			}
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- entiers castés ci-dessus.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- integers cast above.
 			return (int) $wpdb->query( "DELETE FROM {$meta['table']} WHERE {$meta['id']} IN (" . implode( ',', $ids ) . ')' );
 		}
 
@@ -380,8 +379,8 @@ class Cleanup {
 	}
 
 	/**
-	 * @param string   $where    Clause constante (jamais d'entrée client).
-	 * @param callable $delete   wp_delete_post ou wp_delete_post_revision.
+	 * @param string   $where    Constant clause (never client input).
+	 * @param callable $delete   wp_delete_post or wp_delete_post_revision.
 	 */
 	private function delete_posts( string $where, callable $delete ): int {
 		global $wpdb;
@@ -389,8 +388,8 @@ class Cleanup {
 		$ids  = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE {$where} ORDER BY ID LIMIT " . self::BATCH );
 		$done = 0;
 		foreach ( $ids as $id ) {
-			// Le second argument force la suppression définitive pour
-			// wp_delete_post ; wp_delete_post_revision l'ignore.
+			// The second argument forces permanent deletion for
+			// wp_delete_post; wp_delete_post_revision ignores it.
 			if ( $delete( (int) $id, true ) ) {
 				++$done;
 			}
@@ -412,8 +411,8 @@ class Cleanup {
 	}
 
 	/**
-	 * Supprime un lot de relations orphelines puis recalcule le compteur des
-	 * termes concernés (colonne `count`, affichée dans l'admin).
+	 * Deletes a batch of orphaned relations, then recalculates the counter of
+	 * the terms concerned (`count` column, displayed in the admin).
 	 */
 	private function delete_orphan_relationships(): int {
 		global $wpdb;
@@ -439,9 +438,9 @@ class Cleanup {
 		}
 
 		foreach ( $touched as $taxonomy => $tt_ids ) {
-			// Une taxonomie non enregistrée (extension retirée) n'a pas de
-			// callback de comptage : wp_update_term_count_now() lirait une
-			// propriété sur false.
+			// An unregistered taxonomy (plugin removed) has no count
+			// callback: wp_update_term_count_now() would read a property on
+			// false.
 			if ( taxonomy_exists( $taxonomy ) ) {
 				wp_update_term_count_now( array_unique( $tt_ids ), $taxonomy );
 			}
@@ -452,20 +451,20 @@ class Cleanup {
 	}
 
 	/* ================================================================
-	 * OPTIMISATION ET TABLES ORPHELINES
+	 * OPTIMIZATION AND ORPHANED TABLES
 	 * ================================================================ */
 
 	/**
-	 * Tables du site dont l'espace libre (`Data_free`) est non nul.
+	 * Site tables whose free space (`Data_free`) is non-zero.
 	 *
 	 * @return list<array{name: string, free: int}>
 	 */
 	public function fragmented_tables(): array {
 		global $wpdb;
 
-		// Tablespace InnoDB partagé : chaque table y rapporte l'espace libre
-		// du fichier COMMUN, que OPTIMIZE ne rend jamais au disque. Compter
-		// ces tables multipliait le total et les laissait « fragmentées » à vie.
+		// Shared InnoDB tablespace: each table reports the free space of the
+		// COMMON file, which OPTIMIZE never gives back to the disk. Counting
+		// these tables multiplied the total and left them "fragmented" for life.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$per_table = $wpdb->get_var( 'SELECT @@innodb_file_per_table' );
 		$shared    = null !== $per_table && ! in_array( strtoupper( (string) $per_table ), [ '1', 'ON' ], true );
@@ -477,9 +476,9 @@ class Cleanup {
 			if ( $shared && 'InnoDB' === $t['Engine'] ) {
 				continue;
 			}
-			// InnoDB garde quelques Mo réservés par table, qu'OPTIMIZE ne
-			// libère pas sur une grosse table : sans seuil relatif, elle
-			// restait signalée après chaque optimisation.
+			// InnoDB keeps a few MB reserved per table, which OPTIMIZE does
+			// not release on a large table: without a relative threshold, it
+			// stayed flagged after every optimization.
 			if ( $free >= self::MIN_FREE && $free > $used * self::MIN_FREE_RATIO ) {
 				$tables[] = [
 					'name' => (string) $t['Name'],
@@ -491,9 +490,9 @@ class Cleanup {
 	}
 
 	/**
-	 * Tables préfixées qui n'appartiennent pas au cœur, avec une supposition
-	 * sur l'extension qui les a créées. Heuristique assumée : la liste sert à
-	 * orienter, la suppression reste une décision manuelle, table par table.
+	 * Prefixed tables that do not belong to core, with a guess at the plugin
+	 * that created them. A deliberate heuristic: the list is there to guide,
+	 * deletion remains a manual decision, table by table.
 	 *
 	 * @return list<array{name: string, rows: int, size: int, status: string, owners: list<string>}>
 	 */
@@ -510,7 +509,7 @@ class Cleanup {
 		/** @var array<string, array{Name: string}> $plugins */
 
 		/**
-		 * Filtre les alias jeton de table => dossiers d'extensions.
+		 * Filters the aliases token of a table => plugin folders.
 		 *
 		 * @param array<string, list<string>> $aliases
 		 */
@@ -521,7 +520,7 @@ class Cleanup {
 			$name  = (string) $t['Name'];
 			$short = substr( $name, strlen( $prefix ) );
 
-			// Tables des sous-sites (wp_2_posts…) vues depuis le site principal.
+			// Sub-site tables (wp_2_posts…) seen from the main site.
 			if ( in_array( $short, $core, true ) || ( is_multisite() && preg_match( '/^\d+_/', $short ) ) ) {
 				continue;
 			}
@@ -557,7 +556,7 @@ class Cleanup {
 			];
 		}
 
-		// Les plus suspectes d'abord.
+		// The most suspicious first.
 		$order = [
 			'unknown'  => 0,
 			'inactive' => 1,
@@ -580,7 +579,7 @@ class Cleanup {
 		if ( isset( $aliases[ $token ] ) && in_array( $dir, (array) $aliases[ $token ], true ) ) {
 			return true;
 		}
-		// Sous trois caractères, un jeton (« e », « wc ») correspond à tout.
+		// Under three characters, a token ("e", "wc") matches everything.
 		if ( strlen( $token ) < 3 ) {
 			return false;
 		}
@@ -591,7 +590,7 @@ class Cleanup {
 	}
 
 	/**
-	 * Vrai si la table appartient au site courant (préfixe) et existe.
+	 * True if the table belongs to the current site (prefix) and exists.
 	 */
 	public function is_site_table( string $table ): bool {
 		foreach ( $this->site_table_status() as $t ) {
@@ -604,14 +603,14 @@ class Cleanup {
 
 	public function optimize( string $table ): bool {
 		global $wpdb;
-		// Nom vérifié par is_site_table() : issu de SHOW TABLE STATUS.
+		// Name checked by is_site_table(): it comes from SHOW TABLE STATUS.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $wpdb->get_results( 'OPTIMIZE TABLE `' . str_replace( '`', '``', $table ) . '`', ARRAY_A );
 		if ( '' !== $wpdb->last_error ) {
 			return false;
 		}
-		// MySQL ne lève pas d'erreur SQL quand OPTIMIZE échoue (table
-		// verrouillée, corrompue) : l'échec est une ligne Msg_type = error.
+		// MySQL does not raise an SQL error when OPTIMIZE fails (locked or
+		// corrupted table): the failure is a row with Msg_type = error.
 		foreach ( (array) $rows as $row ) {
 			if ( isset( $row['Msg_type'] ) && 'error' === strtolower( (string) $row['Msg_type'] ) ) {
 				$wpdb->last_error = (string) ( $row['Msg_text'] ?? '' );
@@ -622,7 +621,7 @@ class Cleanup {
 	}
 
 	/**
-	 * SHOW TABLE STATUS restreint aux tables du préfixe courant.
+	 * SHOW TABLE STATUS restricted to the tables of the current prefix.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
