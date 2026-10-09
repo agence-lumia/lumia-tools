@@ -47,7 +47,7 @@ Seule la couche de compatibilité (section 3) mentionne encore les anciens noms,
 
 ## 2. Migration des données (`Core\Migration\FromSkmt`)
 
-**Déclenchement** : à l'activation de Lümia Tools (`Activator::activate`) **et** au premier `plugins_loaded` en admin (cas d'un upload qui n'appelle pas le hook d'activation dans le même processus), si `skmt_settings` existe et que l'option `lumia_migrated_from_skmt` est absente. Idempotente : chaque étape vérifie son état avant d'agir ; le marqueur n'est posé qu'en fin de migration réussie.
+**Déclenchement** : à l'activation de Lümia Tools (`Activator::activate`, admin comme `wp plugin activate`), **avant** la création des options par défaut — sinon `lumia_settings` existerait déjà, vide, et la copie serait sautée. Condition : `skmt_settings` existe et l'option `lumia_migrated_from_skmt` est absente. Idempotente : chaque étape vérifie son état avant d'agir ; le marqueur n'est posé qu'en fin de migration réussie.
 
 | Donnée | Traitement |
 |---|---|
@@ -56,6 +56,8 @@ Seule la couche de compatibilité (section 3) mentionne encore les anciens noms,
 | Tables `{prefix}skmt_activity_log`, `{prefix}skmt_mail_log` | **`RENAME TABLE`** vers `{prefix}lumia_*` (si la cible n'existe pas). |
 | Post meta `_skmt_*` (optimiseur d'images, repli) | **Renommées en place** : `UPDATE postmeta SET meta_key = '_lumia_…' WHERE meta_key = '_skmt_…'`, clé par clé (liste fermée). |
 | User meta `skmt_notices`, `skmt_local_avatar` | Renommées en place (`usermeta`). |
+| Term meta `skmt_folder_color` | Renommée en place (`termmeta`). |
+| Lignes du journal d'activité écrites par le plugin (`event = 'skmt_settings'`, `object_type = 'skmt'`) | Réécrites en `lumia_settings` / `lumia` dans la table renommée, sinon l'affichage ne les reconnaît plus. |
 | Taxonomie `skmt_media_folder` | Renommée en place (`UPDATE term_taxonomy SET taxonomy = 'lumia_media_folder'`), cache des termes vidé. |
 | Crons `skmt_smtp_log_purge`, `skmt_activity_log_purge`, `skmt_image_optimizer_cron` | `wp_clear_scheduled_hook` sur l'ancien ; le module reprogramme le nouveau à son `init()` (bulk de l'optimiseur : reprogrammé avec ses arguments s'il était en cours). |
 | Slug de page `studio-kyne-mini-tools` stocké dans les profils de menu (WhiteLabel, MenuCreator) | Remplacé par `lumia-tools` dans les options copiées (parcours récursif des tableaux, remplacement exact de la valeur et du préfixe `studio-kyne-mini-tools&`). |
