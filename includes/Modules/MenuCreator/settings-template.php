@@ -1,7 +1,7 @@
 <?php
 /**
- * Template des réglages du module Créateur de menu.
- * Rend l'éditeur 3 colonnes intégré dans l'admin du plugin.
+ * Settings template of the Menu Creator module.
+ * Renders the 3-column editor built into the plugin admin.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -31,23 +31,23 @@ $svg = [
 <div class="lumia-mc-editor" id="lumia-mc-editor">
 
 	<!-- ============================================================
-		COLONNE GAUCHE — liste des menus
+		LEFT COLUMN — menu list
 		============================================================ -->
 	<aside class="lumia-wl-ep__profiles-col">
 
 		<div class="lumia-wl-ep__profiles-header">
 			<span class="lumia-wl-ep__profiles-title"><?php esc_html_e( 'Menus', 'lumia-tools' ); ?></span>
-			<!-- Import / export de la totalité des menus : actions de gestion,
-				donc en icône seule dans l'en-tête, hors du flux de navigation. -->
+			<!-- Import / export of all the menus: management actions, hence
+				icon-only in the header, outside the navigation flow. -->
 			<span class="lumia-mc-hdr-actions">
 				<button type="button" class="lumia-mc-hdr-btn" id="lumia-mc-import-btn"
-					data-lumia-tip="<?php esc_attr_e( 'Importer un ou plusieurs menus depuis un .json', 'lumia-tools' ); ?>"
-					aria-label="<?php esc_attr_e( 'Importer des menus', 'lumia-tools' ); ?>">
+					data-lumia-tip="<?php esc_attr_e( 'Import one or more menus from a .json file', 'lumia-tools' ); ?>"
+					aria-label="<?php esc_attr_e( 'Import menus', 'lumia-tools' ); ?>">
 					<?php echo $svg['upload']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</button>
 				<button type="button" class="lumia-mc-hdr-btn" id="lumia-mc-export-all-btn"
-					data-lumia-tip="<?php esc_attr_e( 'Exporter tous les menus dans un .json', 'lumia-tools' ); ?>"
-					aria-label="<?php esc_attr_e( 'Exporter tous les menus', 'lumia-tools' ); ?>">
+					data-lumia-tip="<?php esc_attr_e( 'Export all menus to a .json file', 'lumia-tools' ); ?>"
+					aria-label="<?php esc_attr_e( 'Export all menus', 'lumia-tools' ); ?>">
 					<?php echo $svg['download']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</button>
 				<input type="file" id="lumia-mc-import-file" accept="application/json,.json" style="display:none">
@@ -56,49 +56,49 @@ $svg = [
 
 		<div class="lumia-wl-ep__profiles-search-wrap">
 			<?php echo $svg['search']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			<input type="search" class="lumia-wl-ep__profiles-search" id="lumia-wl-ep-search" placeholder="<?php esc_attr_e( 'Rechercher…', 'lumia-tools' ); ?>">
+			<input type="search" class="lumia-wl-ep__profiles-search" id="lumia-wl-ep-search" placeholder="<?php esc_attr_e( 'Search…', 'lumia-tools' ); ?>">
 		</div>
 
 		<div class="lumia-wl-ep__profiles-tabs">
-			<button type="button" class="lumia-wl-ep__profiles-tab is-active" data-filter="all"><?php esc_html_e( 'Tous', 'lumia-tools' ); ?></button>
-			<button type="button" class="lumia-wl-ep__profiles-tab" data-filter="active"><?php esc_html_e( 'Actifs', 'lumia-tools' ); ?></button>
-			<button type="button" class="lumia-wl-ep__profiles-tab" data-filter="draft"><?php esc_html_e( 'Brouillons', 'lumia-tools' ); ?></button>
+			<button type="button" class="lumia-wl-ep__profiles-tab is-active" data-filter="all"><?php esc_html_e( 'All', 'lumia-tools' ); ?></button>
+			<button type="button" class="lumia-wl-ep__profiles-tab" data-filter="active"><?php echo esc_html_x( 'Active', 'menu filter tab', 'lumia-tools' ); ?></button>
+			<button type="button" class="lumia-wl-ep__profiles-tab" data-filter="draft"><?php esc_html_e( 'Drafts', 'lumia-tools' ); ?></button>
 		</div>
 
-		<!-- La création suit immédiatement le dernier menu (et non le bas de la
-			colonne) : le bouton occupe la place où le nouveau menu apparaîtra. -->
+		<!-- Creation follows the last menu immediately (not the bottom of the
+			column): the button takes the place where the new menu will appear. -->
 		<div class="lumia-wl-ep__profiles-scroll">
 			<div class="lumia-wl-ep__profiles-list" id="lumia-wl-ep-profiles-list"></div>
 			<button type="button" class="lumia-mc-add-placeholder" id="lumia-mc-new-btn">
 				<?php echo $svg['plus']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				<span><?php esc_html_e( 'Nouveau menu', 'lumia-tools' ); ?></span>
+				<span><?php esc_html_e( 'New menu', 'lumia-tools' ); ?></span>
 			</button>
 		</div>
 
 	</aside>
 
 	<!-- ============================================================
-		COLONNE CENTRALE — placeholder + arbre
+		CENTER COLUMN — placeholder + tree
 		============================================================ -->
 	<div class="lumia-wl-ep__tree-col" id="lumia-mc-tree-col">
 
 		<div class="lumia-wl-ep__tree-actions" id="lumia-mc-tree-actions" style="display:none">
 			<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-wl-add-sep">
-				+ <?php esc_html_e( 'Séparateur', 'lumia-tools' ); ?>
+				+ <?php esc_html_e( 'Separator', 'lumia-tools' ); ?>
 			</button>
 			<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-wl-add-link">
-				+ <?php esc_html_e( 'Lien personnalisé', 'lumia-tools' ); ?>
+				+ <?php esc_html_e( 'Custom link', 'lumia-tools' ); ?>
 			</button>
 		</div>
 
-		<!-- Bandeau des entrées orphelines : rempli par le JS quand le profil
-			référence des slugs absents du menu WP courant. -->
+		<!-- Banner of orphaned entries: filled by the JS when the profile
+			references slugs missing from the current WP menu. -->
 		<div class="lumia-mc-stale-bar" id="lumia-mc-stale-bar" style="display:none"></div>
 
 		<div class="lumia-mc-placeholder" id="lumia-mc-placeholder">
 			<span class="lumia-mc-placeholder__icon"><?php echo $svg['menu-ph']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-			<h3><?php esc_html_e( 'Éditeur de menu', 'lumia-tools' ); ?></h3>
-			<p><?php esc_html_e( 'Sélectionnez un menu dans la liste ou créez-en un nouveau pour modifier sa structure et ses paramètres.', 'lumia-tools' ); ?></p>
+			<h3><?php esc_html_e( 'Menu editor', 'lumia-tools' ); ?></h3>
+			<p><?php esc_html_e( 'Select a menu from the list or create a new one to edit its structure and settings.', 'lumia-tools' ); ?></p>
 		</div>
 
 		<div class="lumia-wl-ep__tree" id="lumia-wl-tree" style="display:none"></div>
@@ -106,58 +106,58 @@ $svg = [
 	</div>
 
 	<!-- ============================================================
-		COLONNE DROITE — paramètres (direct switch, no tabs)
+		RIGHT COLUMN — settings (direct switch, no tabs)
 		============================================================ -->
 	<div class="lumia-wl-ep__settings-col" id="lumia-wl-settings-col" style="display:none">
 
-		<!-- En-tête du panel (titre dynamique + bouton retour) -->
+		<!-- Panel header (dynamic title + back button) -->
 		<div class="lumia-mc-panel-header">
-			<button type="button" class="lumia-mc-back-btn" id="lumia-mc-back-btn" style="display:none" data-lumia-tip="<?php esc_attr_e( 'Retour aux paramètres du menu', 'lumia-tools' ); ?>">
+			<button type="button" class="lumia-mc-back-btn" id="lumia-mc-back-btn" style="display:none" data-lumia-tip="<?php esc_attr_e( 'Back to the menu settings', 'lumia-tools' ); ?>">
 				<?php echo $svg['chevron-l']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<span><?php esc_html_e( 'Menu', 'lumia-tools' ); ?></span>
 			</button>
-			<span class="lumia-mc-panel-title" id="lumia-mc-panel-title"><?php esc_html_e( 'Paramètres du menu', 'lumia-tools' ); ?></span>
-			<!-- Export du menu ouvert : action de gestion du menu, donc dans son
-				en-tête et masquée sur la vue d'un élément. -->
+			<span class="lumia-mc-panel-title" id="lumia-mc-panel-title"><?php esc_html_e( 'Menu settings', 'lumia-tools' ); ?></span>
+			<!-- Export of the open menu: a menu management action, hence in its
+				header and hidden on an item's view. -->
 			<button type="button" class="lumia-mc-hdr-btn lumia-mc-panel-header__action" id="lumia-mc-export-btn"
-				data-lumia-tip="<?php esc_attr_e( 'Exporter ce menu en .json', 'lumia-tools' ); ?>"
-				aria-label="<?php esc_attr_e( 'Exporter ce menu', 'lumia-tools' ); ?>">
+				data-lumia-tip="<?php esc_attr_e( 'Export this menu as .json', 'lumia-tools' ); ?>"
+				aria-label="<?php esc_attr_e( 'Export this menu', 'lumia-tools' ); ?>">
 				<?php echo $svg['download']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</button>
 		</div>
 
-		<!-- Panel profil -->
+		<!-- Profile panel -->
 		<div id="lumia-wl-profile-settings" class="lumia-wl-settings-panel">
 
 			<div class="lumia-wl-settings-row">
 				<div class="lumia-wl-settings-row__label">
-					<span><?php esc_html_e( 'Nom du menu', 'lumia-tools' ); ?></span>
-					<p class="lumia-form__help"><?php esc_html_e( 'Identifiant interne du profil.', 'lumia-tools' ); ?></p>
+					<span><?php esc_html_e( 'Menu name', 'lumia-tools' ); ?></span>
+					<p class="lumia-form__help"><?php esc_html_e( 'Internal identifier of the profile.', 'lumia-tools' ); ?></p>
 				</div>
 				<input type="text" class="lumia-input" id="lumia-wl-profile-name"
-					placeholder="<?php esc_attr_e( 'Nom du menu…', 'lumia-tools' ); ?>">
+					placeholder="<?php esc_attr_e( 'Menu name…', 'lumia-tools' ); ?>">
 			</div>
 
 			<div class="lumia-wl-settings-row">
 				<div class="lumia-wl-settings-row__label">
 					<span class="lumia-mc-status-label-wrap">
-						<?php esc_html_e( 'Statut', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Status', 'lumia-tools' ); ?>
 						<span class="lumia-mc-status-badge" id="lumia-mc-status-badge"></span>
 					</span>
-					<p class="lumia-form__help"><?php esc_html_e( 'Activez ce menu pour qu\'il s\'applique aux utilisateurs ciblés.', 'lumia-tools' ); ?></p>
+					<p class="lumia-form__help"><?php esc_html_e( 'Activate this menu for it to apply to the targeted users.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-mc-status-group">
 					<div class="lumia-wl-seg">
-						<button type="button" class="lumia-wl-seg__btn" data-value="draft"  id="lumia-wl-status-draft"><?php esc_html_e( 'Brouillon', 'lumia-tools' ); ?></button>
-						<button type="button" class="lumia-wl-seg__btn" data-value="active" id="lumia-wl-status-active"><?php esc_html_e( 'Actif', 'lumia-tools' ); ?></button>
+						<button type="button" class="lumia-wl-seg__btn" data-value="draft"  id="lumia-wl-status-draft"><?php esc_html_e( 'Draft', 'lumia-tools' ); ?></button>
+						<button type="button" class="lumia-wl-seg__btn" data-value="active" id="lumia-wl-status-active"><?php esc_html_e( 'Active', 'lumia-tools' ); ?></button>
 					</div>
 				</div>
 			</div>
 
 			<div class="lumia-wl-settings-row lumia-wl-settings-row--inline">
 				<div class="lumia-wl-settings-row__label">
-					<span><?php esc_html_e( 'Appliquer à tous les utilisateurs', 'lumia-tools' ); ?></span>
-					<p class="lumia-form__help"><?php esc_html_e( 'Ce menu sera appliqué à tous, sans restriction.', 'lumia-tools' ); ?></p>
+					<span><?php esc_html_e( 'Apply to all users', 'lumia-tools' ); ?></span>
+					<p class="lumia-form__help"><?php esc_html_e( 'This menu will be applied to everyone, without restriction.', 'lumia-tools' ); ?></p>
 				</div>
 				<label class="lumia-toggle">
 					<input type="checkbox" id="lumia-wl-apply-all">
@@ -167,35 +167,35 @@ $svg = [
 
 			<div class="lumia-wl-settings-row lumia-wl-settings-row--col" id="lumia-wl-targeting-rows">
 				<div class="lumia-wl-settings-row__label">
-					<span><?php esc_html_e( 'Inclure — rôles ou utilisateurs', 'lumia-tools' ); ?></span>
-					<p class="lumia-form__help"><?php esc_html_e( 'Ce menu s\'applique à ces rôles / utilisateurs.', 'lumia-tools' ); ?></p>
+					<span><?php esc_html_e( 'Include — roles or users', 'lumia-tools' ); ?></span>
+					<p class="lumia-form__help"><?php esc_html_e( 'This menu applies to these roles / users.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-wl-multiselect" id="lumia-wl-include-select"></div>
 			</div>
 
 			<div class="lumia-wl-settings-row lumia-wl-settings-row--col" id="lumia-wl-targeting-rows-ex">
 				<div class="lumia-wl-settings-row__label">
-					<span><?php esc_html_e( 'Exclure — rôles ou utilisateurs', 'lumia-tools' ); ?></span>
-					<p class="lumia-form__help"><?php esc_html_e( 'Ces rôles / utilisateurs ne verront pas ce menu.', 'lumia-tools' ); ?></p>
+					<span><?php esc_html_e( 'Exclude — roles or users', 'lumia-tools' ); ?></span>
+					<p class="lumia-form__help"><?php esc_html_e( 'These roles / users will not see this menu.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-wl-multiselect" id="lumia-wl-exclude-select"></div>
 			</div>
 
 		</div>
 
-		<!-- Panel item -->
+		<!-- Item panel -->
 		<div id="lumia-wl-item-settings" class="lumia-wl-settings-panel" style="display:none">
 			<div id="lumia-wl-item-fields"></div>
 		</div>
 
-		<!-- Pied de page ancré en bas : Enregistrer + Réinitialiser -->
+		<!-- Footer anchored at the bottom: Save + Reset -->
 		<div class="lumia-mc-panel-footer">
 			<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-mc-reset-menu-btn">
-				<?php esc_html_e( 'Réinitialiser', 'lumia-tools' ); ?>
+				<?php esc_html_e( 'Reset', 'lumia-tools' ); ?>
 			</button>
 			<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--primary" id="lumia-mc-save-panel-btn" disabled
-				data-lumia-tip="<?php esc_attr_e( 'Enregistrer (Ctrl/Cmd+S) — Ctrl+Z annule, Ctrl+Y rétablit', 'lumia-tools' ); ?>">
-				<?php esc_html_e( 'Enregistrer', 'lumia-tools' ); ?>
+				data-lumia-tip="<?php esc_attr_e( 'Save (Ctrl/Cmd+S) — Ctrl+Z undoes, Ctrl+Y redoes', 'lumia-tools' ); ?>">
+				<?php esc_html_e( 'Save', 'lumia-tools' ); ?>
 			</button>
 		</div>
 

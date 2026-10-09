@@ -8,21 +8,22 @@ use Lumia\Tools\Modules\ImageOptimizer\SvgHandler;
 use Lumia\Tools\Modules\WhiteLabel\MenuProfileManager;
 
 /**
- * Module Créateur de menu — gestion des profils de navigation et application aux utilisateurs.
+ * Menu Creator module — management of navigation profiles and their application to users.
  */
 class Module extends AbstractModule {
 
 	/**
-	 * Nombre maximal d'entrées de menu persistées par niveau (garde-fou payload).
+	 * Maximum number of menu entries persisted per level (payload safeguard).
 	 */
 	private const MAX_ITEMS = 300;
 
 	/**
-	 * Copie du menu WP admin AVANT toute personnalisation par ce module
-	 * (séparateurs injectés, liens custom ajoutés, items masqués retirés).
-	 * L'éditeur doit présenter à l'utilisateur le menu WP d'origine, pas la
-	 * version déjà transformée — sinon nos propres séparateurs / liens custom
-	 * y réapparaissent en double. Capturé au début de apply_menu_visibility.
+	 * Copy of the WP admin menu BEFORE any customization by this module
+	 * (injected separators, added custom links, removed hidden items).
+	 * The editor must show the user the original WP menu, not the already
+	 * transformed version — otherwise our own separators / custom links
+	 * would show up again as duplicates. Captured at the start of
+	 * apply_menu_visibility.
 	 *
 	 * @var array<int, mixed>|null
 	 */
@@ -34,7 +35,7 @@ class Module extends AbstractModule {
 	private static $pristine_submenu = null;
 
 	public function init(): void {
-		// Moteur d'application des menus personnalisés
+		// Engine applying the custom menus
 		$has_active = ! empty(
 			array_filter(
 				MenuProfileManager::get_all(),
@@ -43,26 +44,26 @@ class Module extends AbstractModule {
 		);
 
 		if ( $has_active ) {
-			// N'active l'ordre custom que si l'utilisateur courant a réellement
-			// un profil actif (sinon on force tout le monde dans le chemin
-			// custom_menu_order pour rien).
+			// Only enables the custom order if the current user really has an
+			// active profile (otherwise everyone would be pushed through the
+			// custom_menu_order path for nothing).
 			add_filter( 'custom_menu_order', [ $this, 'maybe_enable_custom_order' ] );
 			add_filter( 'menu_order', [ $this, 'apply_menu_order' ], 9999 );
 			add_action( 'admin_menu', [ $this, 'apply_menu_visibility' ], 9999 );
 			add_action( 'admin_head', [ $this, 'inject_menu_icon_overrides' ] );
 			add_action( 'admin_head', [ $this, 'inject_custom_link_targets' ] );
-			// Priorité 1 : refuser la page avant que quoi que ce soit d'autre
-			// (chargement d'écran, traitement de formulaire) ne s'exécute.
+			// Priority 1: deny the page before anything else (screen loading,
+			// form handling) runs.
 			add_action( 'admin_init', [ $this, 'enforce_blocked_pages' ], 1 );
 		}
 
-		// admin_footer : le script des toasts y est déjà chargé.
+		// admin_footer: the toast script is already loaded there.
 		add_action( 'admin_footer', [ $this, 'render_denied_toast' ] );
 
-		// Uniformise l'opacité des icônes de menu (natives ET personnalisées) :
-		// WP atténue par défaut #adminmenu .wp-menu-image img à 60% tant que
-		// l'item n'est pas survolé/actif. Indépendant d'un profil actif, pour
-		// que même les icônes natives (ex. l'icône du plugin lui-même) en profitent.
+		// Makes menu icon opacity uniform (native AND custom): by default WP
+		// dims #adminmenu .wp-menu-image img to 60% until the item is hovered or
+		// active. Independent of an active profile, so that even native icons
+		// (e.g. the plugin's own icon) benefit from it.
 		add_action( 'admin_head', [ $this, 'inject_global_icon_opacity_fix' ] );
 
 		// AJAX endpoints
@@ -73,20 +74,19 @@ class Module extends AbstractModule {
 		add_action( 'wp_ajax_lumia_wl_import_profile', [ $this, 'ajax_import_profile' ] );
 		add_action( 'wp_ajax_lumia_wl_sanitize_svg', [ $this, 'ajax_sanitize_svg' ] );
 
-		// Médiathèque WP pour le picker d'icônes
+		// WP media library for the icon picker
 		add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_media' ] );
 	}
 
 	/* ================================================================
-	 * MOTEUR DE MENU
+	 * MENU ENGINE
 	 * ================================================================ */
 
 	/**
-	 * N'active le tri de menu personnalisé que pour un utilisateur réellement
-	 * ciblé par un profil actif ; laisse la valeur des autres filtres intacte
-	 * sinon.
+	 * Only enables the custom menu sort for a user really targeted by an active
+	 * profile; leaves the value of the other filters untouched otherwise.
 	 *
-	 * @param bool $enabled Valeur courante du filtre custom_menu_order.
+	 * @param bool $enabled Current value of the custom_menu_order filter.
 	 */
 	public function maybe_enable_custom_order( $enabled ): bool {
 		if ( MenuProfileManager::get_active_for_user( get_current_user_id() ) ) {
@@ -109,12 +109,12 @@ class Module extends AbstractModule {
 		foreach ( $profile['items'] as $item ) {
 			$type = $item['type'] ?? 'wp_item';
 
-			// Un lien personnalisé est enregistré dans $menu par add_menu_page()
-			// sous le slug que WordPress dérive de l'URL, PAS l'URL brute :
-			// add_menu_page applique plugin_basename() sur le menu_slug reçu.
-			// Il faut reproduire exactement la même transformation ici, sinon
-			// le slug ne correspond à aucune entrée de $menu_order et le lien
-			// retombe dans "remaining" (donc tout en bas du menu).
+			// A custom link is registered in $menu by add_menu_page() under the
+			// slug WordPress derives from the URL, NOT the raw URL:
+			// add_menu_page applies plugin_basename() to the received menu_slug.
+			// The exact same transformation must be reproduced here, otherwise
+			// the slug matches no $menu_order entry and the link falls into
+			// "remaining" (hence at the very bottom of the menu).
 			if ( 'custom_link' === $type ) {
 				if ( ! empty( $item['url'] ) ) {
 					$slugs[] = $this->custom_link_slug( $item['url'] );
@@ -139,9 +139,9 @@ class Module extends AbstractModule {
 
 		global $menu, $submenu;
 
-		// Instantané du menu WP pristine, avant nos modifications : consommé
-		// par get_admin_js_data() pour alimenter l'éditeur avec le vrai menu
-		// WP (et non la version déjà personnalisée).
+		// Snapshot of the pristine WP menu, before our modifications: consumed
+		// by get_admin_js_data() to feed the editor with the real WP menu (and
+		// not the already customized version).
 		if ( null === self::$pristine_menu ) {
 			self::$pristine_menu    = is_array( $menu ) ? $menu : [];
 			self::$pristine_submenu = is_array( $submenu ) ? $submenu : [];
@@ -155,14 +155,14 @@ class Module extends AbstractModule {
 
 			if ( 'separator' === $type ) {
 				if ( ! empty( $slug ) && is_array( $menu ) ) {
-					// Les clés de $menu doivent rester des entiers (WordPress les
-					// traite comme telles) : on cherche le prochain slot entier
-					// libre plutôt que d'incrémenter en float, qui serait
-					// silencieusement tronqué par PHP (et provoque des collisions).
+					// The $menu keys must stay integers (WordPress treats them as
+					// such): look for the next free integer slot rather than
+					// incrementing a float, which PHP would silently truncate
+					// (and which causes collisions).
 					while ( isset( $menu[ $next_position ] ) ) {
 						++$next_position;
 					}
-					$menu[ $next_position ] = [ '', 'read', $slug, '', 'wp-menu-separator' ]; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- réordonner le menu d'admin est l'objet du module.
+					$menu[ $next_position ] = [ '', 'read', $slug, '', 'wp-menu-separator' ]; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- reordering the admin menu is the purpose of this module.
 					++$next_position;
 				}
 				continue;
@@ -174,14 +174,14 @@ class Module extends AbstractModule {
 			}
 
 			if ( 'custom_link' === $type && ! empty( $item['url'] ) ) {
-				// Restriction par rôle : on n'ajoute simplement pas l'entrée.
-				// Passer par la capacité d'add_menu_page ne marcherait pas —
-				// WordPress raisonne en capacités, pas en rôles, et il n'en
-				// existe aucune qui corresponde exactement à « ces rôles-là ».
+				// Role restriction: the entry is simply not added. Going through
+				// add_menu_page's capability would not work — WordPress reasons
+				// in capabilities, not roles, and none matches "these roles"
+				// exactly.
 				if ( ! $this->current_user_has_role( (array) ( $item['roles'] ?? [] ) ) ) {
 					continue;
 				}
-				$label    = sanitize_text_field( $item['label'] ?? __( 'Lien', 'lumia-tools' ) );
+				$label    = sanitize_text_field( $item['label'] ?? __( 'Link', 'lumia-tools' ) );
 				$icon_url = $this->resolve_native_icon_url( $item['icon'] ?? null );
 				add_menu_page( $label, $label, 'read', esc_url_raw( $item['url'] ), '', $icon_url, 999 );
 				continue;
@@ -193,10 +193,10 @@ class Module extends AbstractModule {
 						continue;
 					}
 					if ( isset( $item['label'] ) ) {
-						$menu[ $key ][0] = esc_html( $item['label'] ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- réordonner le menu d'admin est l'objet du module.
+						$menu[ $key ][0] = esc_html( $item['label'] ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- reordering the admin menu is the purpose of this module.
 					}
 					if ( isset( $item['icon'] ) && strpos( $item['icon'], 'dashicons-' ) === 0 ) {
-						$menu[ $key ][6] = esc_attr( $item['icon'] ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- réordonner le menu d'admin est l'objet du module.
+						$menu[ $key ][6] = esc_attr( $item['icon'] ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- reordering the admin menu is the purpose of this module.
 					}
 					break;
 				}
@@ -209,11 +209,11 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * L'utilisateur courant fait-il partie des rôles autorisés ?
+	 * Is the current user among the allowed roles?
 	 *
-	 * Liste vide = aucune restriction (tous ceux qui voient ce menu voient
-	 * l'entrée). Un super-admin sans rôle sur le site courant reste couvert
-	 * par le cas « aucune restriction » uniquement.
+	 * Empty list = no restriction (everyone who sees this menu sees the
+	 * entry). A super admin without a role on the current site is only covered
+	 * by the "no restriction" case.
 	 *
 	 * @param array<int, string> $roles
 	 */
@@ -227,12 +227,12 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Applique les personnalisations enfants (ordre, visibilité, label) au
-	 * $submenu WP réel : le filtre menu_order ne gère QUE le premier niveau,
-	 * les sous-menus doivent être réécrits directement dans le global $submenu.
+	 * Applies the child customizations (order, visibility, label) to the real
+	 * WP $submenu: the menu_order filter ONLY handles the first level, the
+	 * submenus must be rewritten directly in the $submenu global.
 	 *
-	 * @param string               $parent_slug Slug du parent dans $submenu.
-	 * @param array<int, mixed>    $children    Enfants du profil, dans l'ordre voulu.
+	 * @param string               $parent_slug Slug of the parent in $submenu.
+	 * @param array<int, mixed>    $children    Profile children, in the wanted order.
 	 */
 	private function apply_submenu( string $parent_slug, array $children ): void {
 		global $submenu;
@@ -240,7 +240,7 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		// Indexe les entrées WP existantes par leur slug ([2]).
+		// Indexes the existing WP entries by their slug ([2]).
 		$existing = [];
 		foreach ( $submenu[ $parent_slug ] as $sub ) {
 			if ( is_array( $sub ) && isset( $sub[2] ) ) {
@@ -266,37 +266,36 @@ class Module extends AbstractModule {
 			unset( $existing[ $child_slug ] );
 		}
 
-		// Entrées WP non listées dans le profil (ajoutées après sa création) :
-		// conservées à la suite pour ne rien faire disparaître par surprise.
+		// WP entries not listed in the profile (added after its creation): kept
+		// afterwards so that nothing disappears by surprise.
 		foreach ( $existing as $entry ) {
 			$reordered[] = $entry;
 		}
 
-		$submenu[ $parent_slug ] = $reordered; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- réordonner le menu d'admin est l'objet du module.
+		$submenu[ $parent_slug ] = $reordered; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- reordering the admin menu is the purpose of this module.
 	}
 
 	/* ================================================================
-	 * BLOCAGE D'ACCÈS
+	 * ACCESS BLOCKING
 	 * ================================================================ */
 
 	/**
-	 * Refuse l'accès direct aux pages dont l'item porte `block_access`.
+	 * Denies direct access to the pages whose item carries `block_access`.
 	 *
-	 * Masquer une entrée de menu ne fait que la retirer de la barre latérale :
-	 * l'URL reste tapable et la page s'ouvre normalement. Cette option, à
-	 * cocher item par item (et uniquement sur un item déjà masqué), ajoute le
-	 * refus côté serveur.
+	 * Hiding a menu entry only removes it from the sidebar: the URL can still be
+	 * typed and the page opens normally. This option, ticked item by item (and
+	 * only on an already hidden item), adds the server-side denial.
 	 *
-	 * Ce n'est PAS un système de permissions : il s'applique au profil de menu
-	 * de l'utilisateur, pas à ses capacités. Un utilisateur qui a la capacité
-	 * requise garde l'accès via l'API REST, WP-CLI ou admin-ajax.
+	 * This is NOT a permissions system: it applies to the user's menu profile,
+	 * not to their capabilities. A user who has the required capability keeps
+	 * access through the REST API, WP-CLI or admin-ajax.
 	 */
 	public function enforce_blocked_pages(): void {
 		global $pagenow;
 
-		// Jamais sur les points d'entrée programmatiques : ils n'affichent pas
-		// d'écran d'admin et un refus y casserait des requêtes légitimes
-		// (téléversements, autosave, actions de formulaire d'autres modules).
+		// Never on programmatic entry points: they do not display an admin
+		// screen and a denial there would break legitimate requests (uploads,
+		// autosave, form actions of other modules).
 		if ( wp_doing_ajax() || wp_doing_cron() || ! is_admin() ) {
 			return;
 		}
@@ -314,12 +313,12 @@ class Module extends AbstractModule {
 				continue;
 			}
 
-			// index.php est la cible de la redirection : le bloquer y créerait
-			// une boucle, on rend donc un refus direct.
+			// index.php is the redirect target: blocking it there would create a
+			// loop, so a direct denial is rendered.
 			if ( 'index.php' === $pagenow ) {
 				wp_die(
-					esc_html__( 'Vous n’avez pas accès à cette page.', 'lumia-tools' ),
-					esc_html__( 'Accès refusé', 'lumia-tools' ),
+					esc_html__( 'You do not have access to this page.', 'lumia-tools' ),
+					esc_html__( 'Access denied', 'lumia-tools' ),
 					[ 'response' => 403 ]
 				);
 			}
@@ -330,7 +329,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Slugs (premier niveau + sous-items) marqués masqués ET bloqués.
+	 * Slugs (first level + sub-items) flagged hidden AND blocked.
 	 *
 	 * @param array<string, mixed> $profile
 	 * @return array<int, string>
@@ -343,8 +342,8 @@ class Module extends AbstractModule {
 				if ( empty( $candidate['block_access'] ) || ! empty( $candidate['visible'] ) ) {
 					continue;
 				}
-				// Un lien personnalisé pointe hors de notre contrôle (URL
-				// arbitraire, souvent externe) : rien à bloquer côté admin.
+				// A custom link points outside of our control (arbitrary URL, often
+				// external): nothing to block on the admin side.
 				if ( 'custom_link' === ( $candidate['type'] ?? 'wp_item' ) ) {
 					continue;
 				}
@@ -357,18 +356,18 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * La requête admin courante correspond-elle à ce slug de menu ?
+	 * Does the current admin request match this menu slug?
 	 *
-	 * Un slug de menu WP prend trois formes : un fichier (`upload.php`), un
-	 * fichier avec paramètres (`edit.php?post_type=page`) ou un slug de page
-	 * d'extension (`woocommerce`, `wc-admin&path=/analytics/overview`, servi
-	 * par admin.php). On reconstruit la requête attendue puis on la compare à
-	 * la requête réelle.
+	 * A WP menu slug takes three forms: a file (`upload.php`), a file with
+	 * parameters (`edit.php?post_type=page`) or a plugin page slug
+	 * (`woocommerce`, `wc-admin&path=/analytics/overview`, served by
+	 * admin.php). The expected request is rebuilt, then compared to the real
+	 * request.
 	 *
-	 * Les paramètres du slug doivent tous être présents à l'identique ; à
-	 * l'inverse, un slug qui ne mentionne ni post_type, ni taxonomy, ni page
-	 * ne doit pas matcher une requête qui en porte un — sans quoi bloquer
-	 * `edit.php` (Articles) bloquerait aussi `edit.php?post_type=page`.
+	 * The slug's parameters must all be present identically; conversely, a slug
+	 * that mentions neither post_type, nor taxonomy, nor page must not match a
+	 * request that carries one — otherwise blocking `edit.php` (Posts) would
+	 * also block `edit.php?post_type=page`.
 	 */
 	private function request_matches_slug( string $slug ): bool {
 		global $pagenow;
@@ -401,7 +400,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Décompose un slug de menu en fichier + paramètres attendus.
+	 * Splits a menu slug into a file + expected parameters.
 	 *
 	 * @return array{file:string, args:array<string, string>}
 	 */
@@ -416,9 +415,9 @@ class Module extends AbstractModule {
 			parse_str( substr( $slug, $qpos + 1 ), $args );
 		}
 
-		// Pas de fichier PHP → slug de page d'extension, servi par admin.php.
-		// Il peut embarquer ses propres paramètres après un & (WooCommerce :
-		// « wc-admin&path=/analytics/overview »).
+		// No PHP file → plugin page slug, served by admin.php. It may carry its
+		// own parameters after a & (WooCommerce:
+		// "wc-admin&path=/analytics/overview").
 		if ( false === strpos( $file, '.php' ) ) {
 			$bits         = explode( '&', $file, 2 );
 			$args['page'] = $bits[0];
@@ -430,7 +429,7 @@ class Module extends AbstractModule {
 			$file = 'admin.php';
 		}
 
-		// parse_str() peut produire des tableaux (clé[]=…) : on ne garde que les scalaires.
+		// parse_str() can produce arrays (key[]=…): only scalars are kept.
 		$flat = [];
 		foreach ( $args as $key => $value ) {
 			if ( is_scalar( $value ) ) {
@@ -445,22 +444,22 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Message affiché après une redirection de blocage.
+	 * Message displayed after a blocking redirect.
 	 *
-	 * Un toast plutôt qu'une admin_notice : celle-ci serait capturée par le
-	 * centre de notifications du plugin et n'apparaîtrait que sous la cloche,
-	 * alors que l'utilisateur vient d'être redirigé et doit comprendre
-	 * immédiatement pourquoi il n'est pas sur la page demandée.
+	 * A toast rather than an admin_notice: the latter would be captured by the
+	 * plugin's notification center and would only appear under the bell, while
+	 * the user has just been redirected and must immediately understand why they
+	 * are not on the requested page.
 	 *
-	 * Le paramètre est retiré de l'URL dans la foulée, pour qu'un simple
-	 * rechargement ne rejoue pas le message.
+	 * The parameter is removed from the URL right after, so that a plain reload
+	 * does not replay the message.
 	 */
 	public function render_denied_toast(): void {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( empty( $_GET['lumia_denied'] ) ) {
 			return;
 		}
-		$message = __( 'Vous n’avez pas accès à cette page.', 'lumia-tools' );
+		$message = __( 'You do not have access to this page.', 'lumia-tools' );
 		?>
 		<script>
 		( function () {
@@ -470,8 +469,8 @@ class Module extends AbstractModule {
 				if ( typeof window.lumiaShowToast === 'function' ) {
 					window.lumiaShowToast( msg, 'warning' );
 				} else if ( tries++ < 20 ) {
-					// Le script des toasts est chargé en pied de page : on laisse
-					// quelques tours de boucle avant d'abandonner silencieusement.
+					// The toast script is loaded in the footer: a few loop turns
+					// are allowed before silently giving up.
 					window.setTimeout( show, 100 );
 				}
 			} )();
@@ -486,9 +485,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Ajoute target="_blank" / rel="noopener" aux liens personnalisés qui le
-	 * demandent : add_menu_page() ne sait pas poser d'attribut target, on le
-	 * fait donc côté DOM après rendu du menu.
+	 * Adds target="_blank" / rel="noopener" to the custom links that ask for it:
+	 * add_menu_page() cannot set a target attribute, so it is done on the DOM
+	 * side after the menu is rendered.
 	 */
 	public function inject_custom_link_targets(): void {
 		$profile = MenuProfileManager::get_active_for_user( get_current_user_id() );
@@ -529,23 +528,22 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Injecte les icônes SVG/média personnalisées dans le menu admin réel.
+	 * Injects the custom SVG/media icons into the real admin menu.
 	 *
-	 * Deux modes de rendu selon la source (cf. resolve_icon_render) :
-	 * - SVG monochrome (bibliothèque interne, fichier Lucide uploadé…) : rendu
-	 *   en masque CSS coloré par background-color. Un <img> ne peut pas hériter
-	 *   d'une couleur de texte, donc son `currentColor` retombe au noir —
-	 *   invisible sur la barre latérale sombre. Le masque ne retient que la
-	 *   forme et applique la couleur de repos des dashicons (blanc au survol,
-	 *   comme les icônes natives).
-	 * - Autre média (PNG/JPG, SVG déjà colorisé) : rendu en <img>, les couleurs
-	 *   d'origine sont préservées.
+	 * Two rendering modes depending on the source (see resolve_icon_render):
+	 * - Monochrome SVG (internal library, uploaded Lucide file…): rendered as a
+	 *   CSS mask colored through background-color. An <img> cannot inherit a
+	 *   text color, so its `currentColor` falls back to black — invisible on the
+	 *   dark sidebar. The mask only keeps the shape and applies the dashicons'
+	 *   resting color (white on hover, like the native icons).
+	 * - Other media (PNG/JPG, already colorized SVG): rendered as an <img>, the
+	 *   original colors are preserved.
 	 *
-	 * Le ciblage se fait sur l'attribut id du <li> (index 5 de $menu), pas sur
-	 * un href : plusieurs extensions (WooCommerce « Marketing », « Statistiques »)
-	 * enregistrent leur page sous un slug puis réécrivent l'URL réelle du menu,
-	 * si bien que le href ne contient plus le slug et qu'aucune icône n'était
-	 * appliquée. L'id est unique et reste dérivé du slug d'enregistrement.
+	 * Targeting uses the <li> id attribute (index 5 of $menu), not an href:
+	 * several plugins (WooCommerce "Marketing", "Analytics") register their page
+	 * under a slug and then rewrite the real menu URL, so the href no longer
+	 * contains the slug and no icon was applied. The id is unique and remains
+	 * derived from the registration slug.
 	 */
 	public function inject_menu_icon_overrides(): void {
 		$profile = MenuProfileManager::get_active_for_user( get_current_user_id() );
@@ -553,12 +551,12 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		// On tient compte des sous-items en plus des items de premier niveau :
-		// pour un rôle à capacités réduites (ex. auteur), WordPress promeut
-		// certains sous-menus en items de premier niveau (profile.php « Profil »
-		// remplace users.php « Comptes »). Le JS ne cible que les .menu-top,
-		// donc côté admin — où le sous-item reste un sous-menu — ceci n'a aucun
-		// effet visible.
+		// Sub-items are taken into account in addition to the top-level items:
+		// for a role with reduced capabilities (e.g. author), WordPress promotes
+		// some submenus to top-level items (profile.php "Profile" replaces
+		// users.php "Users"). The JS only targets .menu-top, so on the admin
+		// side — where the sub-item stays a submenu — this has no visible
+		// effect.
 		$candidates = [];
 		foreach ( $profile['items'] as $item ) {
 			$candidates[] = $item;
@@ -574,10 +572,10 @@ class Module extends AbstractModule {
 			}
 			$icon = $item['icon'];
 
-			// Un lien personnalisé est enregistré dans $menu (donc dans le
-			// href réel) sous le slug dérivé par add_menu_page (plugin_basename
-			// de l'URL), pas sous son slug interne généré côté client ni l'URL
-			// brute (voir apply_menu_visibility / apply_menu_order).
+			// A custom link is registered in $menu (hence in the real href) under
+			// the slug derived by add_menu_page (plugin_basename of the URL), not
+			// under its internal slug generated client-side nor the raw URL (see
+			// apply_menu_visibility / apply_menu_order).
 			$match_slug = 'custom_link' === ( $item['type'] ?? 'wp_item' )
 				? ( ! empty( $item['url'] ) ? $this->custom_link_slug( $item['url'] ) : '' )
 				: ( $item['slug'] ?? '' );
@@ -603,24 +601,25 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		// CSS immédiat (avant peinture, admin_head) : masque le dashicon
-		// d'origine tant que le JS n'a pas remplacé le contenu, pour éviter
-		// le flash "dashicon puis icône custom" au chargement. L'inline style
-		// posé ensuite par le script (opacity:1 !important) prend le dessus,
-		// une déclaration inline important battant toujours une règle de
-		// feuille de style important sur la même propriété.
+		// Immediate CSS (before paint, admin_head): hides the original dashicon
+		// until the JS has replaced the content, to avoid the "dashicon then
+		// custom icon" flash on load. The inline style set afterwards by the
+		// script (opacity:1 !important) takes over, an inline important
+		// declaration always beating an important stylesheet rule on the same
+		// property.
 		$hide_css = '';
 		foreach ( $icons as $entry ) {
-			// Sélecteur d'attribut plutôt que #id : un id de menu WP peut
-			// contenir des points (toplevel_page_admin-page-wc-settings…),
-			// que « #id » interpréterait comme un sélecteur de classe.
+			// Attribute selector rather than #id: a WP menu id may contain dots
+			// (toplevel_page_admin-page-wc-settings…), which "#id" would interpret
+			// as a class selector.
 			$hide_css .= $entry['id']
 				? '#adminmenu li[id="' . str_replace( '"', '', $entry['id'] ) . '"] .wp-menu-image{opacity:0!important}'
 				: '#adminmenu a[href*="' . str_replace( [ '"', '<', '>', '\\' ], '', $entry['slug'] ) . '"] .wp-menu-image{opacity:0!important}';
 		}
 
-		// Rendu des icônes en masque : la forme vient du SVG, la couleur de la
-		// feuille de style — donc alignée sur les dashicons natifs, survol inclus.
+		// Mask rendering of the icons: the shape comes from the SVG, the color
+		// from the stylesheet — hence aligned with the native dashicons, hover
+		// included.
 		$hide_css .= '#adminmenu .lumia-mc-icon{display:block;width:20px;height:20px;margin:7px auto 0;'
 			. 'background-color:#f3f1f1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;'
 			. '-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}'
@@ -636,15 +635,16 @@ class Module extends AbstractModule {
 			var icons = <?php echo wp_json_encode( $icons ); ?>;
 			var links = document.querySelectorAll( '#adminmenu a.menu-top' );
 			icons.forEach( function ( entry ) {
-				// Ciblage principal : l'id du <li>, dérivé du slug d'enregistrement
-				// et donc fiable même quand l'extension réécrit l'URL du menu.
+				// Main targeting: the <li> id, derived from the registration slug
+				// and therefore reliable even when the plugin rewrites the menu
+				// URL.
 				var link = null;
 				if ( entry.id ) {
 					var li = document.getElementById( entry.id );
 					link = li ? li.querySelector( 'a.menu-top' ) : null;
 				}
-				// Repli historique sur le href pour les entrées sans id (menu
-				// construit à la main par une extension, séparateurs promus…).
+				// Historical fallback on the href for entries without an id (menu
+				// built by hand by a plugin, promoted separators…).
 				for ( var i = 0; ! link && i < links.length; i++ ) {
 					if ( ( links[ i ].getAttribute( 'href' ) || '' ).indexOf( entry.slug ) !== -1 ) {
 						link = links[ i ];
@@ -657,17 +657,17 @@ class Module extends AbstractModule {
 				if ( ! imgEl ) {
 					return;
 				}
-				// Le dashicon d'origine est rendu via un ::before CSS sur les
-				// classes dashicons-before/dashicons-xxx : vider innerHTML ne
-				// le retire pas (les pseudo-éléments ne font pas partie du DOM).
-				// Pour les liens personnalisés, WP a aussi pu poser lui-même un
-				// background-image inline (via add_menu_page + icon_url data:)
-				// sur ce même élément : on repart d'un style totalement vierge.
+				// The original dashicon is rendered through a CSS ::before on the
+				// dashicons-before/dashicons-xxx classes: emptying innerHTML does
+				// not remove it (pseudo-elements are not part of the DOM). For
+				// custom links, WP may also have set an inline background-image
+				// itself (via add_menu_page + icon_url data:) on that same element:
+				// we start again from a totally blank style.
 				imgEl.className = 'wp-menu-image';
 				imgEl.removeAttribute( 'style' );
-				// WP applique opacity:.6 sur #adminmenu .wp-menu-image img : il
-				// faut forcer opacity:1 en !important pour battre cette règle,
-				// et révéler l'icône masquée temporairement par le <style> ci-dessus.
+				// WP applies opacity:.6 to #adminmenu .wp-menu-image img: opacity:1
+				// must be forced with !important to beat that rule, and to reveal
+				// the icon temporarily hidden by the <style> above.
 				imgEl.style.setProperty( 'opacity', '1', 'important' );
 				imgEl.innerHTML = '';
 				if ( entry.mask ) {
@@ -683,9 +683,9 @@ class Module extends AbstractModule {
 				img.alt = '';
 				img.style.cssText = 'width:20px;height:20px;object-fit:contain;';
 				img.style.setProperty( 'opacity', '1', 'important' );
-				// Aligne verticalement avec les dashicons natifs : WP force
-				// padding-top:9px sur .wp-menu-image img (dashicons: 7px de
-				// chaque côté pour un glyphe de 20px dans un conteneur de 34px).
+				// Vertically aligns with the native dashicons: WP forces
+				// padding-top:9px on .wp-menu-image img (dashicons: 7px on each
+				// side for a 20px glyph in a 34px container).
 				img.style.setProperty( 'padding-top', '7px', 'important' );
 				imgEl.appendChild( img );
 			} );
@@ -695,32 +695,31 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Force l'opacité pleine des icônes de menu, natives ET personnalisées :
-	 * WP atténue par défaut #adminmenu .wp-menu-image img à 60% tant que
-	 * l'item n'est pas survolé/actif — comportement jugé peu lisible, à
-	 * uniformiser indépendamment d'un profil Menu Creator actif.
+	 * Forces full opacity on the menu icons, native AND custom: by default WP
+	 * dims #adminmenu .wp-menu-image img to 60% until the item is hovered or
+	 * active — a behavior judged hard to read, to be made uniform regardless of
+	 * an active Menu Creator profile.
 	 *
-	 * Corrige aussi l'alignement vertical : WP applique padding:9px 0 0 aux
-	 * icônes <img> (ex. le logo du plugin lui-même) alors que les dashicons
-	 * sont centrés à 7px — d'où un décalage de 2px. On n'override QUE le
-	 * padding-top (pas de shorthand ni de box-sizing:border-box, qui ferait
-	 * rentrer le padding DANS la taille 20×20 fixée en inline sur nos icônes
-	 * custom injectées et les réduirait/désaligne­rait).
+	 * Also fixes the vertical alignment: WP applies padding:9px 0 0 to <img>
+	 * icons (e.g. the plugin's own logo) while the dashicons are centered at
+	 * 7px — hence a 2px offset. ONLY padding-top is overridden (no shorthand and
+	 * no box-sizing:border-box, which would pull the padding INSIDE the 20x20
+	 * size set inline on our injected custom icons and shrink/misalign them).
 	 */
 	public function inject_global_icon_opacity_fix(): void {
 		echo '<style>#adminmenu .wp-menu-image img{opacity:1!important;padding-top:7px!important}</style>';
 	}
 
 	/**
-	 * Nettoie un titre de menu WP pour l'éditeur.
+	 * Cleans a WP menu title for the editor.
 	 *
-	 * WordPress et les extensions collent leurs compteurs dans le titre lui-même,
-	 * sous forme de <span> : « Commentaires <span class="awaiting-mod">0</span> »,
-	 * « Extensions <span class="update-plugins">0</span> ». wp_strip_all_tags()
-	 * retire le balisage mais garde le chiffre, d'où les libellés absurdes du
-	 * type « Commentaires 00 commentaire en modération » dans l'arbre. On retire
-	 * donc les <span> avec leur contenu : dans un titre de menu ils ne portent
-	 * jamais que ces pastilles.
+	 * WordPress and plugins stick their counters in the title itself, as a
+	 * <span>: "Comments <span class="awaiting-mod">0</span>",
+	 * "Plugins <span class="update-plugins">0</span>". wp_strip_all_tags()
+	 * removes the markup but keeps the number, hence absurd labels like
+	 * "Comments 00 comments in moderation" in the tree. The <span> elements are
+	 * therefore removed along with their content: in a menu title they only ever
+	 * carry these bubbles.
 	 */
 	private function clean_menu_label( string $raw ): string {
 		$clean = preg_replace( '#<span(?:\s[^>]*)?>.*?</span>#is', '', $raw );
@@ -729,13 +728,13 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Slugs de menu WP jamais surfacés dans l'éditeur (et donc jamais appliqués).
+	 * WP menu slugs never surfaced in the editor (and therefore never applied).
 	 *
-	 * Le Gestionnaire de liens (link-manager.php + sa taxonomie link_category)
-	 * est une fonctionnalité legacy désactivée par défaut depuis WP 3.5 : quand
-	 * elle est off, elle n'apparaît pas dans le menu WP réel, donc la faire
-	 * remonter dans le Créateur crée un item fantôme déroutant. On la masque
-	 * par défaut. Filtrable pour les sites qui l'utilisent réellement.
+	 * The Link Manager (link-manager.php + its link_category taxonomy) is a
+	 * legacy feature disabled by default since WP 3.5: when it is off, it does
+	 * not appear in the real WP menu, so surfacing it in the Creator would
+	 * create a confusing ghost item. It is hidden by default. Filterable for the
+	 * sites that really use it.
 	 *
 	 * @return array<int, string>
 	 */
@@ -749,35 +748,35 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Reproduit la transformation qu'applique add_menu_page() à un menu_slug :
-	 * plugin_basename( esc_url_raw( $url ) ). C'est sous CE slug que le lien
-	 * personnalisé existe réellement dans $menu / $menu_order — le matcher
-	 * ainsi garantit que l'ordre choisi et l'override d'icône ciblent la bonne
-	 * entrée (au lieu de laisser le lien retomber en bas du menu).
+	 * Reproduces the transformation add_menu_page() applies to a menu_slug:
+	 * plugin_basename( esc_url_raw( $url ) ). The custom link really exists in
+	 * $menu / $menu_order under THIS slug — matching it this way guarantees that
+	 * the chosen order and the icon override target the right entry (instead of
+	 * letting the link fall to the bottom of the menu).
 	 */
 	private function custom_link_slug( string $url ): string {
 		return plugin_basename( esc_url_raw( $url ) );
 	}
 
 	/**
-	 * Décide comment rendre une icône stockée dans le menu admin réel.
+	 * Decides how to render an icon stored in the real admin menu.
 	 *
-	 * Un SVG monochrome (tracé en `currentColor`) ne peut pas être rendu en
-	 * <img> : hors DOM inline, `currentColor` n'hérite d'aucune couleur et
-	 * retombe au noir — donc invisible sur la barre latérale sombre. Ces
-	 * icônes-là sont rendues en masque CSS (mask=true) et colorisées par la
-	 * feuille de style. Les autres médias gardent leurs couleurs via <img>.
+	 * A monochrome SVG (stroked in `currentColor`) cannot be rendered as an
+	 * <img>: outside the inline DOM, `currentColor` inherits no color and falls
+	 * back to black — hence invisible on the dark sidebar. These icons are
+	 * rendered as a CSS mask (mask=true) and colorized by the stylesheet. Other
+	 * media keep their colors through <img>.
 	 *
-	 * @return array{src:string, mask:bool}|null Null si la valeur est inexploitable.
+	 * @return array{src:string, mask:bool}|null Null if the value is unusable.
 	 */
 	private function resolve_icon_render( string $icon ): ?array {
 		if ( 0 === strpos( $icon, 'svg:' ) ) {
-			$svg_xml = base64_decode( substr( $icon, 4 ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- icône SVG assainie, stockée et rendue en data URI.
+			$svg_xml = base64_decode( substr( $icon, 4 ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- sanitized SVG icon, stored and rendered as a data URI.
 			if ( false === $svg_xml ) {
 				return null;
 			}
 			return [
-				'src'  => 'data:image/svg+xml;base64,' . base64_encode( $svg_xml ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- icône SVG assainie, stockée et rendue en data URI.
+				'src'  => 'data:image/svg+xml;base64,' . base64_encode( $svg_xml ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- sanitized SVG icon, stored and rendered as a data URI.
 				'mask' => self::svg_is_monochrome( $svg_xml ),
 			];
 		}
@@ -794,12 +793,13 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Un SVG est-il monochrome, donc recolorisable par masque sans rien perdre ?
+	 * Is an SVG monochrome, hence recolorable through a mask without losing
+	 * anything?
 	 *
-	 * Vrai si le tracé est en `currentColor`, s'il ne déclare aucune couleur
-	 * (noir par défaut) ou s'il n'en utilise qu'une. Faux dès qu'il y en a
-	 * plusieurs : le logo du plugin lui-même (carré blanc + glyphe noir) ne
-	 * doit pas être aplati en silhouette pleine — il garde son <img>.
+	 * True if the stroke is `currentColor`, if it declares no color (black by
+	 * default) or if it uses only one. False as soon as there are several: the
+	 * plugin's own logo (white square + black glyph) must not be flattened into
+	 * a solid silhouette — it keeps its <img>.
 	 */
 	public static function svg_is_monochrome( string $xml ): bool {
 		if ( false !== stripos( $xml, 'currentcolor' ) ) {
@@ -822,9 +822,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retourne l'attribut id que WordPress rend sur le <li> d'un item de menu
-	 * (menu-header.php : preg_replace sur l'index 5 de $menu), ou '' si l'item
-	 * est introuvable / sans hookname.
+	 * Returns the id attribute WordPress renders on the <li> of a menu item
+	 * (menu-header.php: preg_replace on index 5 of $menu), or '' if the item is
+	 * not found / has no hookname.
 	 */
 	private function menu_dom_id( string $slug ): string {
 		global $menu;
@@ -844,13 +844,13 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Lit le contenu d'un SVG hébergé par ce site (médiathèque ou wp-content),
-	 * pour savoir s'il est monochrome ou l'inliner. Retourne null dès que le
-	 * fichier n'est pas un SVG local lisible — on ne va jamais chercher une
-	 * ressource distante depuis un rendu de page admin.
+	 * Reads the content of an SVG hosted by this site (media library or
+	 * wp-content), to know whether it is monochrome or to inline it. Returns
+	 * null as soon as the file is not a readable local SVG — a remote resource
+	 * is never fetched from an admin page render.
 	 *
-	 * Le résultat est mémoïsé : la méthode est appelée à chaque chargement de
-	 * page admin, une fois par icône.
+	 * The result is memoized: the method is called on every admin page load,
+	 * once per icon.
 	 */
 	private function read_local_svg( string $url ): ?string {
 		static $cache = [];
@@ -864,8 +864,8 @@ class Module extends AbstractModule {
 			return null;
 		}
 
-		// Comparaison insensible au schéma : l'URL stockée peut avoir été
-		// enregistrée en http alors que le site répond aujourd'hui en https.
+		// Scheme-insensitive comparison: the stored URL may have been saved as
+		// http while the site now answers over https.
 		$strip    = static fn( string $u ): string => (string) preg_replace( '#^https?:#i', '', $u );
 		$bare_url = $strip( $url );
 		$uploads  = wp_upload_dir();
@@ -883,7 +883,7 @@ class Module extends AbstractModule {
 
 		$file = strtok( $file, '?#' );
 		$real = realpath( $file );
-		// realpath + préfixe : neutralise un éventuel ../ dans l'URL stockée.
+		// realpath + prefix: neutralizes any ../ in the stored URL.
 		if ( ! $real || 0 !== strpos( $real, (string) realpath( WP_CONTENT_DIR ) ) || ! is_readable( $real ) ) {
 			return null;
 		}
@@ -902,8 +902,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Résout un icon_url natif WP (dashicon, data-URI SVG, ou URL média)
-	 * à partir du format interne stocké côté client.
+	 * Resolves a native WP icon_url (dashicon, SVG data URI, or media URL) from
+	 * the internal format stored client-side.
 	 */
 	private function resolve_native_icon_url( ?string $icon ): string {
 		if ( empty( $icon ) ) {
@@ -914,19 +914,19 @@ class Module extends AbstractModule {
 		}
 		if ( strpos( $icon, 'svg:' ) === 0 ) {
 			$svg_b64 = substr( $icon, 4 );
-			$svg_xml = base64_decode( $svg_b64, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- icône SVG assainie, stockée et rendue en data URI.
+			$svg_xml = base64_decode( $svg_b64, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- sanitized SVG icon, stored and rendered as a data URI.
 			if ( false === $svg_xml ) {
 				return 'dashicons-admin-links';
 			}
-			return 'data:image/svg+xml;base64,' . base64_encode( $this->neutralize_svg_color( $svg_xml ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- icône SVG assainie, stockée et rendue en data URI.
+			return 'data:image/svg+xml;base64,' . base64_encode( $this->neutralize_svg_color( $svg_xml ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- sanitized SVG icon, stored and rendered as a data URI.
 		}
 		if ( strpos( $icon, 'http' ) === 0 ) {
-			// Un SVG monochrome servi par URL s'afficherait en noir (currentColor
-			// n'hérite de rien dans un background-image) : on l'inline en le
-			// teintant, comme pour la bibliothèque interne.
+			// A monochrome SVG served by URL would display in black (currentColor
+			// inherits nothing in a background-image): it is inlined and tinted,
+			// like for the internal library.
 			$local = $this->read_local_svg( $icon );
 			if ( null !== $local && false !== stripos( $local, 'currentColor' ) ) {
-				return 'data:image/svg+xml;base64,' . base64_encode( $this->neutralize_svg_color( $local ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- icône SVG assainie, stockée et rendue en data URI.
+				return 'data:image/svg+xml;base64,' . base64_encode( $this->neutralize_svg_color( $local ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- sanitized SVG icon, stored and rendered as a data URI.
 			}
 			return esc_url_raw( $icon );
 		}
@@ -934,12 +934,12 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Fige "currentColor" à la couleur de repos réelle des glyphes dashicons
-	 * de ce skin admin (#f3f1f1, cf. colors/modern/colors.css) : rendu en
-	 * <img>/background-image (pas de DOM inline), currentColor ne peut hériter
-	 * d'aucune couleur de texte environnante et résoudrait sinon au noir par
-	 * défaut. Fixe (pas de variante hover blanche) — l'écart visuel avec le
-	 * blanc pur du survol natif est minime.
+	 * Freezes "currentColor" to the real resting color of the dashicons glyphs
+	 * of this admin skin (#f3f1f1, see colors/modern/colors.css): rendered as
+	 * <img>/background-image (no inline DOM), currentColor cannot inherit any
+	 * surrounding text color and would otherwise resolve to black by default.
+	 * Fixed (no white hover variant) — the visual gap with the pure white of the
+	 * native hover is minimal.
 	 */
 	private function neutralize_svg_color( string $svg_xml ): string {
 		return str_replace( 'currentColor', '#f3f1f1', $svg_xml );
@@ -952,17 +952,17 @@ class Module extends AbstractModule {
 	public function ajax_save_profile(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 		}
 
 		$raw = isset( $_POST['profile'] ) ? wp_unslash( $_POST['profile'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( empty( $raw ) || ! is_string( $raw ) ) {
-			wp_send_json_error( [ 'message' => __( 'Données manquantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Missing data.', 'lumia-tools' ) ] );
 		}
 
 		$profile = json_decode( $raw, true );
 		if ( ! is_array( $profile ) ) {
-			wp_send_json_error( [ 'message' => __( 'JSON invalide.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid JSON.', 'lumia-tools' ) ] );
 		}
 
 		$sanitized = $this->sanitize_profile( $profile );
@@ -973,12 +973,12 @@ class Module extends AbstractModule {
 	public function ajax_delete_profile(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 		}
 
 		$profile_id = isset( $_POST['profile_id'] ) ? sanitize_text_field( wp_unslash( $_POST['profile_id'] ) ) : '';
 		if ( empty( $profile_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'ID manquant.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Missing ID.', 'lumia-tools' ) ] );
 		}
 
 		MenuProfileManager::delete( $profile_id );
@@ -988,18 +988,18 @@ class Module extends AbstractModule {
 	public function ajax_duplicate_profile(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 		}
 
 		$profile_id = isset( $_POST['profile_id'] ) ? sanitize_text_field( wp_unslash( $_POST['profile_id'] ) ) : '';
 		$original   = MenuProfileManager::get( $profile_id );
 		if ( ! $original ) {
-			wp_send_json_error( [ 'message' => __( 'Profil introuvable.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Profile not found.', 'lumia-tools' ) ] );
 		}
 
 		$copy               = $original;
 		$copy['id']         = wp_generate_uuid4();
-		$copy['name']       = $original['name'] . ' ' . __( '(copie)', 'lumia-tools' );
+		$copy['name']       = $original['name'] . ' ' . __( '(copy)', 'lumia-tools' );
 		$copy['status']     = 'draft';
 		$copy['updated_at'] = time();
 
@@ -1012,9 +1012,9 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	/**
-	 * Les profils de menu vivent sous leur propre option
-	 * (`lumia_wl_menu_profiles`), pas dans `lumia_module_menu_creator` : sans ce
-	 * bloc, l'export de configuration du plugin les laisserait de côté.
+	 * The menu profiles live under their own option
+	 * (`lumia_wl_menu_profiles`), not in `lumia_module_menu_creator`: without
+	 * this block, the plugin configuration export would leave them out.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -1024,12 +1024,12 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Rejoue les profils d'un fichier importé.
+	 * Replays the profiles of an imported file.
 	 *
-	 * Chaque profil repasse par sanitize_profile() — le JSON ne va jamais
-	 * directement en base. Fusion par id (MenuProfileManager::save écrase
-	 * l'entrée de même id, ajoute sinon) : un fichier partiel ne supprime
-	 * aucun menu existant sur le site.
+	 * Each profile goes through sanitize_profile() again — the JSON never goes
+	 * straight to the database. Merge by id (MenuProfileManager::save overwrites
+	 * the entry with the same id, adds otherwise): a partial file does not
+	 * delete any existing menu on the site.
 	 *
 	 * @param array<string, mixed> $extras
 	 */
@@ -1045,32 +1045,32 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Import de menus exportés depuis un autre site.
+	 * Import of menus exported from another site.
 	 *
-	 * Trois formes de fichier acceptées : un profil nu, l'enveloppe d'un menu
-	 * (`{profile: …}`) et l'enveloppe multi-menus (`{profiles: […]}`), pour que
-	 * les deux boutons d'export de l'éditeur relisent le même endpoint.
+	 * Three file forms are accepted: a bare profile, a single-menu envelope
+	 * (`{profile: …}`) and the multi-menu envelope (`{profiles: […]}`), so that
+	 * the editor's two export buttons are read back by the same endpoint.
 	 *
-	 * Le JSON ne va jamais directement dans l'option : chaque menu repasse par
-	 * sanitize_profile(), exactement comme un enregistrement depuis l'éditeur.
-	 * Un menu dont l'id existe déjà met à jour l'existant, sinon il s'ajoute —
-	 * un fichier partiel ne supprime donc rien. Tous arrivent en brouillon,
-	 * pour ne pas remplacer sans prévenir le menu actif des utilisateurs.
+	 * The JSON never goes straight into the option: each menu goes through
+	 * sanitize_profile(), exactly like a save from the editor. A menu whose id
+	 * already exists updates the existing one, otherwise it is added — a partial
+	 * file therefore deletes nothing. All arrive as drafts, so as not to replace
+	 * the users' active menu without warning.
 	 */
 	public function ajax_import_profile(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 		}
 
 		$raw = isset( $_POST['profile'] ) ? wp_unslash( $_POST['profile'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( empty( $raw ) || ! is_string( $raw ) ) {
-			wp_send_json_error( [ 'message' => __( 'Données manquantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Missing data.', 'lumia-tools' ) ] );
 		}
 
 		$decoded = json_decode( $raw, true );
 		if ( ! is_array( $decoded ) ) {
-			wp_send_json_error( [ 'message' => __( 'Fichier illisible : JSON invalide.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Unreadable file: invalid JSON.', 'lumia-tools' ) ] );
 		}
 
 		if ( isset( $decoded['profiles'] ) && is_array( $decoded['profiles'] ) ) {
@@ -1093,14 +1093,14 @@ class Module extends AbstractModule {
 			$sanitized           = $this->sanitize_profile( $profile );
 			$sanitized['status'] = 'draft';
 			if ( '' === $sanitized['name'] ) {
-				$sanitized['name'] = __( 'Menu importé', 'lumia-tools' );
+				$sanitized['name'] = __( 'Imported menu', 'lumia-tools' );
 			}
 			MenuProfileManager::save( $sanitized );
 			$saved[] = $sanitized;
 		}
 
 		if ( ! $saved ) {
-			wp_send_json_error( [ 'message' => __( 'Ce fichier ne contient aucun menu.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'This file does not contain any menu.', 'lumia-tools' ) ] );
 		}
 
 		wp_send_json_success(
@@ -1113,37 +1113,37 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Assainit un SVG collé dans le picker d'icônes.
+	 * Sanitizes an SVG pasted into the icon picker.
 	 *
-	 * Réutilise le nettoyeur du module Image Optimizer plutôt que d'en écrire
-	 * un second : c'est le même risque (script, href externe, XXE) et la même
-	 * liste blanche. Le SVG n'est stocké qu'une fois passé par ce filtre.
+	 * Reuses the Image Optimizer module's sanitizer rather than writing a
+	 * second one: it is the same risk (script, external href, XXE) and the same
+	 * allowlist. The SVG is only stored once it has gone through this filter.
 	 */
 	public function ajax_sanitize_svg(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 		}
 
 		$raw = isset( $_POST['svg'] ) ? wp_unslash( $_POST['svg'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
-			wp_send_json_error( [ 'message' => __( 'Collez le code d’un SVG.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Paste the code of an SVG.', 'lumia-tools' ) ] );
 		}
 		if ( strlen( $raw ) > 100000 ) {
-			wp_send_json_error( [ 'message' => __( 'SVG trop volumineux (100 Ko maximum).', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'SVG too large (100 KB maximum).', 'lumia-tools' ) ] );
 		}
 
 		if ( ! class_exists( SvgHandler::class ) ) {
-			wp_send_json_error( [ 'message' => __( 'Nettoyage SVG indisponible.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'SVG sanitizing unavailable.', 'lumia-tools' ) ] );
 		}
 
 		$handler = new SvgHandler( [] );
 		$clean   = $handler->sanitize( $raw );
 		if ( null === $clean ) {
-			wp_send_json_error( [ 'message' => __( 'Ce SVG est invalide ou contient du code non autorisé.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'This SVG is invalid or contains disallowed code.', 'lumia-tools' ) ] );
 		}
 
-		wp_send_json_success( [ 'icon' => 'svg:' . base64_encode( $clean ) ] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- icône SVG assainie, stockée et rendue en data URI.
+		wp_send_json_success( [ 'icon' => 'svg:' . base64_encode( $clean ) ] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- sanitized SVG icon, stored and rendered as a data URI.
 	}
 
 	public function ajax_search_users(): void {
@@ -1198,8 +1198,8 @@ class Module extends AbstractModule {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function sanitize_menu_items( array $items, int $depth = 0 ): array {
-		// Garde-fou anti-payload : borne le nombre d'entrées persistées par
-		// niveau, pour éviter qu'un profil pathologique ne gonfle l'option.
+		// Payload safeguard: bounds the number of entries persisted per level, to
+		// keep a pathological profile from bloating the option.
 		$items     = array_slice( array_values( $items ), 0, self::MAX_ITEMS );
 		$sanitized = [];
 		foreach ( $items as $item ) {
@@ -1219,13 +1219,13 @@ class Module extends AbstractModule {
 				'label'        => isset( $item['label'] ) ? sanitize_text_field( $item['label'] ) : null,
 				'icon'         => $this->sanitize_icon_value( $item['icon'] ?? null ),
 				'visible'      => $visible,
-				// N'a de sens que sur un item masqué : un item visible et bloqué
-				// serait un piège (lien affiché menant à un refus).
+				// Only makes sense on a hidden item: a visible and blocked item
+				// would be a trap (displayed link leading to a denial).
 				'block_access' => ! $visible && ! empty( $item['block_access'] ),
 				'target_blank' => ! empty( $item['target_blank'] ),
 				'url'          => 'custom_link' === $type ? esc_url_raw( $item['url'] ?? '' ) : '',
-				// Restriction par rôle, liens personnalisés uniquement (les
-				// items WP sont déjà filtrés par leurs propres capacités).
+				// Role restriction, custom links only (WP items are already
+				// filtered by their own capabilities).
 				'roles'        => 'custom_link' === $type
 					? array_values( array_filter( array_map( 'sanitize_key', (array) ( $item['roles'] ?? [] ) ) ) )
 					: [],
@@ -1236,8 +1236,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Sanitise la valeur d'icône : dashicon / "svg:<base64>" via
-	 * sanitize_text_field, mais URL média via esc_url_raw.
+	 * Sanitizes the icon value: dashicon / "svg:<base64>" through
+	 * sanitize_text_field, but media URL through esc_url_raw.
 	 *
 	 * @param mixed $icon
 	 */
@@ -1297,9 +1297,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * SortableJS est déclaré en dépendance plutôt que renvoyé par
-	 * get_admin_js() : le module Médias charge le même fichier, et deux URL
-	 * identiques sous deux handles différents étaient servies deux fois.
+	 * SortableJS is declared as a dependency rather than returned by
+	 * get_admin_js(): the Media module loads the same file, and two identical
+	 * URLs under two different handles were served twice.
 	 */
 	public function get_admin_js_deps(): array {
 		return [ 'lumia-sortable-js' ];
@@ -1312,20 +1312,123 @@ class Module extends AbstractModule {
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$data = [
 			'mcProfiles' => MenuProfileManager::get_all(),
+			// Strings read by menu-creator.js through lumiaAdmin.i18n.
 			'i18n'       => [
-				'newMenu'          => __( 'Nouveau menu', 'lumia-tools' ),
-				'draft'            => __( 'Brouillon', 'lumia-tools' ),
-				'active'           => __( 'Actif', 'lumia-tools' ),
-				'unsavedChanges'   => __( 'Modifications non sauvegardées', 'lumia-tools' ),
-				'leaveConfirm'     => __( 'Vos modifications seront perdues. Continuer ?', 'lumia-tools' ),
-				'deleteConfirmMsg' => __( 'Cette action est irréversible.', 'lumia-tools' ),
+				'newMenu'               => __( 'New menu', 'lumia-tools' ),
+				'draft'                 => __( 'Draft', 'lumia-tools' ),
+				'active'                => __( 'Active', 'lumia-tools' ),
+				'unsavedChanges'        => __( 'Unsaved changes', 'lumia-tools' ),
+				'leaveConfirm'          => __( 'Your changes will be lost. Continue?', 'lumia-tools' ),
+				'deleteConfirmMsg'      => __( 'This action cannot be undone.', 'lumia-tools' ),
+				'nothingToUndo'         => __( 'Nothing to undo.', 'lumia-tools' ),
+				'changeUndone'          => __( 'Change undone.', 'lumia-tools' ),
+				'nothingToRedo'         => __( 'Nothing to redo.', 'lumia-tools' ),
+				'changeRedone'          => __( 'Change redone.', 'lumia-tools' ),
+				'nothingToSave'         => __( 'No changes to save.', 'lumia-tools' ),
+				'continueWithoutSaving' => __( 'Continue without saving', 'lumia-tools' ),
+				/* translators: %d: sequence number of a new menu. */
+				'menuNumbered'          => __( 'Menu %d', 'lumia-tools' ),
+				/* translators: %s: label of the “New menu” button. */
+				'noMenuYet'             => __( 'No menu yet. Use “%s” to create one.', 'lumia-tools' ),
+				'noResults'             => __( 'No results.', 'lumia-tools' ),
+				'menuActive'            => __( 'Active menu', 'lumia-tools' ),
+				'draftNotApplied'       => __( 'Draft — not applied', 'lumia-tools' ),
+				'unnamedMenu'           => __( 'Untitled menu', 'lumia-tools' ),
+				'notSaved'              => __( 'Not saved', 'lumia-tools' ),
+				'duplicateMenu'         => __( 'Duplicate this menu', 'lumia-tools' ),
+				'deleteMenu'            => __( 'Delete this menu', 'lumia-tools' ),
+				'thisMenu'              => __( 'this menu', 'lumia-tools' ),
+				'deleteMenuTitle'       => __( 'Delete menu', 'lumia-tools' ),
+				/* translators: %s: name of the menu to delete. */
+				'deleteMenuPrompt'      => __( 'Delete “%s”?', 'lumia-tools' ),
+				'delete'                => __( 'Delete', 'lumia-tools' ),
+				'menuDeleted'           => __( 'Menu deleted.', 'lumia-tools' ),
+				'deleteError'           => __( 'Error while deleting.', 'lumia-tools' ),
+				'menuDuplicated'        => __( 'Menu duplicated.', 'lumia-tools' ),
+				'duplicateError'        => __( 'Error while duplicating.', 'lumia-tools' ),
+				'resetMenuTitle'        => __( 'Reset menu', 'lumia-tools' ),
+				'resetMenuMessage'      => __( 'All unsaved changes will be lost and the menu will be reloaded from the last save.', 'lumia-tools' ),
+				'reset'                 => __( 'Reset', 'lumia-tools' ),
+				'menuSettings'          => __( 'Menu settings', 'lumia-tools' ),
+				'item'                  => __( 'Item', 'lumia-tools' ),
+				/* translators: %d: number of stale menu entries (singular). */
+				'staleEntriesOne'       => __( '%d stale entry', 'lumia-tools' ),
+				/* translators: %d: number of stale menu entries (plural). */
+				'staleEntriesMany'      => __( '%d stale entries', 'lumia-tools' ),
+				/* translators: %d: number of additional stale entries not listed by name. */
+				'staleAndMore'          => __( 'and %d more', 'lumia-tools' ),
+				'staleHint'             => __( 'These slugs do not match any current WordPress menu.', 'lumia-tools' ),
+				'cleanUp'               => __( 'Clean up', 'lumia-tools' ),
+				'cleanStaleTitle'       => __( 'Clean up stale entries', 'lumia-tools' ),
+				/* translators: %d: number of stale entries about to be removed. */
+				'cleanStaleMessage'     => __( 'Remove %d item(s) from this menu? If the related plugin is reactivated, the item will come back with its default settings.', 'lumia-tools' ),
+				'staleRemoved'          => __( 'Stale entries removed. Remember to save.', 'lumia-tools' ),
+				'showInMenu'            => __( 'Show in menu', 'lumia-tools' ),
+				'hideFromMenu'          => __( 'Hide from menu', 'lumia-tools' ),
+				'moveUp'                => __( 'Move up', 'lumia-tools' ),
+				'moveDown'              => __( 'Move down', 'lumia-tools' ),
+				'hiddenAndBlocked'      => __( 'Hidden and direct access blocked', 'lumia-tools' ),
+				'staleTip'              => __( 'Entry missing from the current WordPress menu — plugin deactivated or removed.', 'lumia-tools' ),
+				'newLink'               => __( 'New link', 'lumia-tools' ),
+				'separatorNoSettings'   => __( 'Separator — no settings.', 'lumia-tools' ),
+				'urlField'              => __( 'URL', 'lumia-tools' ),
+				'restrictToRoles'       => __( 'Restricted to roles', 'lumia-tools' ),
+				'restrictToRolesHelp'   => __( 'Leave empty to show this link to everyone who sees this menu.', 'lumia-tools' ),
+				'labelField'            => __( 'Label', 'lumia-tools' ),
+				'labelHelp'             => __( 'Leave empty to keep the original label.', 'lumia-tools' ),
+				'iconField'             => __( 'Icon', 'lumia-tools' ),
+				'iconChildHelp'         => __( 'Only applied when this item becomes a top-level menu (roles with limited capabilities, e.g. “Profile” for authors).', 'lumia-tools' ),
+				'visible'               => __( 'Visible', 'lumia-tools' ),
+				'blockAccess'           => __( 'Block direct access', 'lumia-tools' ),
+				'blockAccessTip'        => __( 'This is not a permissions system: the REST API, WP-CLI and WordPress capabilities are not affected.', 'lumia-tools' ),
+				'blockAccessHelp'       => __( 'Hiding only removes the link: the page stays reachable by its URL. Tick to deny it too (redirect to the dashboard).', 'lumia-tools' ),
+				'openInNewTab'          => __( 'Open in a new tab', 'lumia-tools' ),
+				'resetItem'             => __( 'Reset item', 'lumia-tools' ),
+				'itemReset'             => __( 'Item reset.', 'lumia-tools' ),
+				'change'                => __( 'Change', 'lumia-tools' ),
+				'chooseIcon'            => __( 'Choose an icon', 'lumia-tools' ),
+				'menuExported'          => __( 'Menu exported.', 'lumia-tools' ),
+				'noMenuToExport'        => __( 'No menu to export.', 'lumia-tools' ),
+				'unsavedNotExported'    => __( 'Unsaved changes are not in the export.', 'lumia-tools' ),
+				/* translators: %d: number of exported menus (singular). */
+				'menusExportedOne'      => __( '%d menu exported.', 'lumia-tools' ),
+				/* translators: %d: number of exported menus (plural). */
+				'menusExportedMany'     => __( '%d menus exported.', 'lumia-tools' ),
+				'importFailed'          => __( 'Import failed.', 'lumia-tools' ),
+				/* translators: %d: number of imported menus. */
+				'menusImported'         => __( '%d menus imported as drafts.', 'lumia-tools' ),
+				'menuImported'          => __( 'Menu imported as a draft.', 'lumia-tools' ),
+				/* translators: %d: number of existing menus that were updated by the import. */
+				'existingUpdatedMany'   => __( '%d existing menus updated.', 'lumia-tools' ),
+				'existingUpdatedOne'    => __( '1 existing menu updated.', 'lumia-tools' ),
+				'fileReadFailed'        => __( 'Unable to read the file.', 'lumia-tools' ),
+				'libraryEmpty'          => __( 'Empty library.', 'lumia-tools' ),
+				'icons'                 => __( 'Icons', 'lumia-tools' ),
+				'noIcon'                => __( 'No icon.', 'lumia-tools' ),
+				'restoreOriginalIcon'   => __( 'Restore the original icon', 'lumia-tools' ),
+				'removeIcon'            => __( 'Remove the icon', 'lumia-tools' ),
+				'tabLibrary'            => __( 'Library', 'lumia-tools' ),
+				'tabMedia'              => __( 'Media library', 'lumia-tools' ),
+				'tabCode'               => __( 'SVG code', 'lumia-tools' ),
+				'searchIcon'            => __( 'Search an icon…', 'lumia-tools' ),
+				'openMediaLibrary'      => __( 'Open the media library', 'lumia-tools' ),
+				'svgHelp'               => __( 'Paste the code of an SVG (Lucide, Heroicons…). It is cleaned on the server: scripts, external links and entities are removed. A stroke set to <code>currentColor</code> automatically takes the color of the menu theme.', 'lumia-tools' ),
+				'useThisSvg'            => __( 'Use this SVG', 'lumia-tools' ),
+				'pasteSvg'              => _x( 'Paste the code of an SVG.', 'toast message', 'lumia-tools' ),
+				'svgRejected'           => __( 'SVG rejected.', 'lumia-tools' ),
+				'svgApplied'            => __( 'SVG icon applied.', 'lumia-tools' ),
+				'menuSaved'             => __( 'Menu saved.', 'lumia-tools' ),
+				'saveFailed'            => __( 'Error while saving.', 'lumia-tools' ),
+				'search'                => __( 'Search…', 'lumia-tools' ),
+				'role'                  => __( 'Role', 'lumia-tools' ),
+				'user'                  => __( 'User', 'lumia-tools' ),
 			],
 		];
 
 		if ( 'module_menu_creator' === $tab && is_admin() && current_user_can( 'manage_options' ) ) {
 			global $menu, $submenu;
-			// Menu WP d'origine si disponible (capturé avant nos modifications),
-			// sinon le global (déjà pristine quand aucun profil n'est actif).
+			// Original WP menu if available (captured before our modifications),
+			// otherwise the global (already pristine when no profile is active).
 			$src_menu    = null !== self::$pristine_menu ? self::$pristine_menu : ( is_array( $menu ) ? $menu : [] );
 			$src_submenu = null !== self::$pristine_submenu ? self::$pristine_submenu : ( is_array( $submenu ) ? $submenu : [] );
 			$excluded    = $this->editor_excluded_slugs();
@@ -1391,18 +1494,18 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Bibliothèque d'icônes du picker, groupée par catégorie (l'ordre des clés
-	 * fait l'ordre d'affichage). Les tracés sont repris **tels quels** de
-	 * lucide-static v1.34.0 (https://lucide.dev, licence ISC) : aucun n'est
-	 * dessiné ou approximé à la main. Pour en ajouter, copier le contenu du
-	 * <svg> officiel de l'icône, sans le wrapper.
+	 * Icon library of the picker, grouped by category (the key order is the
+	 * display order). The paths are taken **as is** from lucide-static v1.34.0
+	 * (https://lucide.dev, ISC license): none is drawn or approximated by hand.
+	 * To add one, copy the content of the icon's official <svg>, without the
+	 * wrapper.
 	 *
 	 * @return array<string, array{label:string, icons:array<string, string>}>
 	 */
 	private function get_icon_library(): array {
 		return [
 			'general'  => [
-				'label' => __( 'Général', 'lumia-tools' ),
+				'label' => __( 'General', 'lumia-tools' ),
 				'icons' => [
 					'layout-dashboard' => '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
 					'house'            => '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -1432,7 +1535,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'content'  => [
-				'label' => __( 'Contenu', 'lumia-tools' ),
+				'label' => __( 'Content', 'lumia-tools' ),
 				'icons' => [
 					'file'           => '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
 					'file-text'      => '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
@@ -1462,7 +1565,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'media'    => [
-				'label' => __( 'Médias', 'lumia-tools' ),
+				'label' => __( 'Media', 'lumia-tools' ),
 				'icons' => [
 					'image'                  => '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
 					'images'                 => '<path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"/><path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"/><circle cx="13" cy="7" r="1" fill="currentColor"/><rect x="8" y="2" width="14" height="14" rx="2"/>',
@@ -1505,7 +1608,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'users'    => [
-				'label' => __( 'Utilisateurs', 'lumia-tools' ),
+				'label' => __( 'Users', 'lumia-tools' ),
 				'icons' => [
 					'user-round'       => '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
 					'users-round'      => '<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
@@ -1523,7 +1626,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'data'     => [
-				'label' => __( 'Données', 'lumia-tools' ),
+				'label' => __( 'Data', 'lumia-tools' ),
 				'icons' => [
 					'chart-column' => '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
 					'chart-line'   => '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
@@ -1537,7 +1640,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'design'   => [
-				'label' => __( 'Apparence', 'lumia-tools' ),
+				'label' => __( 'Appearance', 'lumia-tools' ),
 				'icons' => [
 					'palette'            => '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>',
 					'swatch-book'        => '<path d="M11 17a4 4 0 0 1-8 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2Z"/><path d="M16.7 13H19a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H7"/><path d="M 7 17h.01"/><path d="m11 8 2.3-2.3a2.4 2.4 0 0 1 3.404.004L18.6 7.6a2.4 2.4 0 0 1 .026 3.434L9.9 19.8"/>',
@@ -1557,7 +1660,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'system'   => [
-				'label' => __( 'Système', 'lumia-tools' ),
+				'label' => __( 'System', 'lumia-tools' ),
 				'icons' => [
 					'settings'      => '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
 					'settings-2'    => '<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
@@ -1594,188 +1697,189 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Alias de recherche du picker : slug -> mots-clés supplémentaires.
+	 * Search aliases of the picker: slug -> additional keywords.
 	 *
-	 * Les slugs Lucide sont anglais et rarement devinables depuis une interface
-	 * française — « funnel » pour un filtre, « banknote » pour un billet,
-	 * « boxes » pour un stock. Sans cette table, chercher « filtre » ou
-	 * « facture » ne renvoie rien alors que l'icône existe. Un slug absent
-	 * d'ici reste cherchable par son nom ; les accents sont ignorés à la
-	 * comparaison côté JS, inutile de doubler les entrées.
+	 * The Lucide slugs are English and rarely guessable from another language's
+	 * interface — "funnel" for a filter, "banknote" for a bill, "boxes" for a
+	 * stock. Without this table, searching "filter" or "invoice" in a translated
+	 * interface returns nothing although the icon exists. Each keyword list is
+	 * translatable, so that the search follows the interface language. A slug
+	 * missing from here stays searchable by its name; accents are ignored in the
+	 * JS comparison, no need to double the entries.
 	 *
 	 * @return array<string, string>
 	 */
 	private function get_icon_aliases(): array {
 		return [
-			// Général.
-			'layout-dashboard'       => 'tableau de bord accueil dashboard widgets',
-			'house'                  => 'maison accueil home site',
-			'gauge'                  => 'jauge compteur performance vitesse',
-			'compass'                => 'boussole exploration navigation découvrir',
-			'panels-top-left'        => 'panneaux mise en page layout colonnes',
-			'panel-left'             => 'panneau latéral barre sidebar colonne',
-			'grid-2x2'               => 'grille cases quadrillage vignettes',
-			'list'                   => 'liste éléments lignes énumération',
-			'menu'                   => 'menu navigation burger hamburger lignes',
-			'star'                   => 'étoile favori note avis mise en avant',
-			'heart'                  => 'coeur favori aimé souhaits like',
-			'bookmark'               => 'signet marque-page favori enregistré',
-			'flag'                   => 'drapeau signalement langue pays repère',
-			'bell'                   => 'cloche notification alerte rappel',
-			'search'                 => 'recherche loupe trouver chercher',
-			'funnel'                 => 'filtre entonnoir trier affiner',
-			'sparkles'               => 'étincelles magie ia nouveau brillant',
-			'zap'                    => 'éclair rapide performance foudre cache',
-			'rocket'                 => 'fusée lancement démarrage rapide déploiement',
-			'circle-help'            => 'aide question support faq assistance',
-			'info'                   => 'information détail à propos renseignement',
-			'badge-check'            => 'badge vérifié validé certifié approuvé',
-			'circle-alert'           => 'alerte attention avertissement erreur',
-			'eye'                    => 'oeil voir visible aperçu prévisualiser',
-			'eye-off'                => 'oeil barré masqué caché invisible',
+			// General.
+			'layout-dashboard'       => __( 'dashboard home overview widgets', 'lumia-tools' ),
+			'house'                  => __( 'house home front page site', 'lumia-tools' ),
+			'gauge'                  => __( 'gauge meter performance speed', 'lumia-tools' ),
+			'compass'                => __( 'compass exploration navigation discover', 'lumia-tools' ),
+			'panels-top-left'        => __( 'panels page layout columns', 'lumia-tools' ),
+			'panel-left'             => __( 'side panel bar sidebar column', 'lumia-tools' ),
+			'grid-2x2'               => __( 'grid cells squares thumbnails', 'lumia-tools' ),
+			'list'                   => __( 'list items rows enumeration', 'lumia-tools' ),
+			'menu'                   => __( 'menu navigation burger hamburger lines', 'lumia-tools' ),
+			'star'                   => __( 'star favorite rating review featured', 'lumia-tools' ),
+			'heart'                  => __( 'heart favorite loved wishlist like', 'lumia-tools' ),
+			'bookmark'               => __( 'bookmark saved favorite marker', 'lumia-tools' ),
+			'flag'                   => __( 'flag report language country marker', 'lumia-tools' ),
+			'bell'                   => __( 'bell notification alert reminder', 'lumia-tools' ),
+			'search'                 => __( 'search magnifier find look up', 'lumia-tools' ),
+			'funnel'                 => __( 'filter funnel sort refine', 'lumia-tools' ),
+			'sparkles'               => __( 'sparkles magic ai new shiny', 'lumia-tools' ),
+			'zap'                    => __( 'lightning fast performance bolt cache', 'lumia-tools' ),
+			'rocket'                 => __( 'rocket launch startup fast deployment', 'lumia-tools' ),
+			'circle-help'            => __( 'help question support faq assistance', 'lumia-tools' ),
+			'info'                   => __( 'information detail about details', 'lumia-tools' ),
+			'badge-check'            => __( 'badge verified validated certified approved', 'lumia-tools' ),
+			'circle-alert'           => __( 'alert attention warning error', 'lumia-tools' ),
+			'eye'                    => __( 'eye see visible preview', 'lumia-tools' ),
+			'eye-off'                => __( 'crossed eye hidden concealed invisible', 'lumia-tools' ),
 
-			// Contenu.
-			'file'                   => 'fichier document page vide',
-			'file-text'              => 'fichier texte document article page',
-			'files'                  => 'fichiers documents copies multiples',
-			'folder'                 => 'dossier répertoire classement',
-			'folder-open'            => 'dossier ouvert répertoire parcourir',
-			'book'                   => 'livre documentation manuel guide',
-			'book-open'              => 'livre ouvert lecture documentation guide',
-			'notebook-pen'           => 'carnet notes rédaction journal',
-			'newspaper'              => 'journal actualités articles presse blog news',
-			'pen-line'               => 'stylo écrire éditer rédiger modifier',
-			'pencil'                 => 'crayon éditer modifier écrire',
-			'square-pen'             => 'éditer modifier crayon rédiger',
-			'type'                   => 'typographie police texte caractère',
-			'quote'                  => 'citation guillemets témoignage',
-			'list-checks'            => 'liste de tâches cases à cocher todo checklist',
-			'clipboard-list'         => 'presse-papiers liste tâches formulaire',
-			'calendar'               => 'calendrier date agenda événement planning',
-			'calendar-days'          => 'calendrier jours agenda planning dates',
-			'clock'                  => 'horloge heure temps historique planification',
-			'tag'                    => 'étiquette mot-clé label tarif',
-			'tags'                   => 'étiquettes mots-clés labels taxonomie',
-			'link'                   => 'lien url hyperlien chaîne permalien',
-			'paperclip'              => 'trombone pièce jointe fichier attaché',
-			'archive'                => 'archive boîte rangement sauvegarde stockage',
-			'trash-2'                => 'corbeille supprimer poubelle effacer',
+			// Content.
+			'file'                   => __( 'file document blank page', 'lumia-tools' ),
+			'file-text'              => __( 'text file document article page', 'lumia-tools' ),
+			'files'                  => __( 'files documents multiple copies', 'lumia-tools' ),
+			'folder'                 => __( 'folder directory filing', 'lumia-tools' ),
+			'folder-open'            => __( 'open folder directory browse', 'lumia-tools' ),
+			'book'                   => __( 'book documentation manual guide', 'lumia-tools' ),
+			'book-open'              => __( 'open book reading documentation guide', 'lumia-tools' ),
+			'notebook-pen'           => __( 'notebook notes writing journal', 'lumia-tools' ),
+			'newspaper'              => __( 'newspaper news articles press blog', 'lumia-tools' ),
+			'pen-line'               => __( 'pen write edit compose modify', 'lumia-tools' ),
+			'pencil'                 => __( 'pencil edit modify write', 'lumia-tools' ),
+			'square-pen'             => __( 'edit modify pencil compose', 'lumia-tools' ),
+			'type'                   => __( 'typography font text character', 'lumia-tools' ),
+			'quote'                  => __( 'quote quotation marks testimonial', 'lumia-tools' ),
+			'list-checks'            => __( 'task list checkboxes todo checklist', 'lumia-tools' ),
+			'clipboard-list'         => __( 'clipboard task list form', 'lumia-tools' ),
+			'calendar'               => __( 'calendar date schedule event planning', 'lumia-tools' ),
+			'calendar-days'          => __( 'calendar days schedule planning dates', 'lumia-tools' ),
+			'clock'                  => __( 'clock time hour history scheduling', 'lumia-tools' ),
+			'tag'                    => __( 'tag keyword label price', 'lumia-tools' ),
+			'tags'                   => __( 'tags keywords labels taxonomy', 'lumia-tools' ),
+			'link'                   => __( 'link url hyperlink chain permalink', 'lumia-tools' ),
+			'paperclip'              => __( 'paperclip attachment attached file', 'lumia-tools' ),
+			'archive'                => __( 'archive box storage backup', 'lumia-tools' ),
+			'trash-2'                => __( 'trash delete bin erase', 'lumia-tools' ),
 
-			// Médias.
-			'image'                  => 'image photo illustration visuel média',
-			'images'                 => 'images photos galerie médiathèque visuels',
-			'gallery-horizontal'     => 'galerie carrousel horizontal diaporama',
-			'gallery-horizontal-end' => 'galerie carrousel horizontal fin diaporama',
-			'gallery-vertical'       => 'galerie vertical colonne diaporama',
-			'gallery-vertical-end'   => 'galerie vertical fin colonne diaporama',
-			'camera'                 => 'appareil photo caméra cliché capture',
-			'video'                  => 'vidéo film caméra lecture séquence',
-			'film'                   => 'film pellicule vidéo cinéma montage',
-			'music'                  => 'musique audio son note piste',
-			'mic'                    => 'micro podcast enregistrement audio voix',
-			'play'                   => 'lecture jouer démarrer lancer',
-			'headphones'             => 'casque écoute audio son podcast',
-			'upload'                 => 'téléverser envoyer importer charger upload',
-			'download'               => 'télécharger exporter récupérer download',
-			'cloud-upload'           => 'nuage téléverser sauvegarde distant cloud',
+			// Media.
+			'image'                  => __( 'image photo illustration visual media', 'lumia-tools' ),
+			'images'                 => __( 'images photos gallery media library visuals', 'lumia-tools' ),
+			'gallery-horizontal'     => __( 'gallery carousel horizontal slideshow', 'lumia-tools' ),
+			'gallery-horizontal-end' => __( 'gallery carousel horizontal end slideshow', 'lumia-tools' ),
+			'gallery-vertical'       => __( 'gallery vertical column slideshow', 'lumia-tools' ),
+			'gallery-vertical-end'   => __( 'gallery vertical end column slideshow', 'lumia-tools' ),
+			'camera'                 => __( 'camera photo shot capture', 'lumia-tools' ),
+			'video'                  => __( 'video movie camera playback footage', 'lumia-tools' ),
+			'film'                   => __( 'film reel video cinema editing', 'lumia-tools' ),
+			'music'                  => __( 'music audio sound note track', 'lumia-tools' ),
+			'mic'                    => __( 'microphone podcast recording audio voice', 'lumia-tools' ),
+			'play'                   => __( 'play start launch run', 'lumia-tools' ),
+			'headphones'             => __( 'headphones listening audio sound podcast', 'lumia-tools' ),
+			'upload'                 => __( 'upload send import load', 'lumia-tools' ),
+			'download'               => __( 'download export retrieve save', 'lumia-tools' ),
+			'cloud-upload'           => __( 'cloud upload backup remote sync', 'lumia-tools' ),
 
 			// Commerce.
-			'shopping-bag'           => 'sac achat boutique commande shopping',
-			'shopping-cart'          => 'panier caddie achat commande boutique',
-			'store'                  => 'boutique magasin commerce vitrine',
-			'package'                => 'colis paquet produit livraison module extension',
-			'package-2'              => 'colis paquet produit stock livraison',
-			'package-open'           => 'colis ouvert déballage produit livraison',
-			'truck'                  => 'camion livraison expédition transport',
-			'receipt'                => 'reçu facture ticket note commande',
-			'credit-card'            => 'carte bancaire paiement carte de crédit règlement',
-			'banknote'               => 'billet argent monnaie paiement espèces',
-			'dollar-sign'            => 'dollar devise prix argent tarif',
-			'euro'                   => 'euro devise prix argent tarif',
-			'percent'                => 'pourcentage remise promotion solde taux',
-			'gift'                   => 'cadeau offre bon promotion récompense',
-			'wallet'                 => 'portefeuille solde paiement porte-monnaie',
-			'ticket'                 => 'billet coupon code promo ticket réduction',
-			'boxes'                  => 'stock inventaire cartons entrepôt produits',
+			'shopping-bag'           => __( 'bag purchase shop order shopping', 'lumia-tools' ),
+			'shopping-cart'          => __( 'cart basket purchase order shop', 'lumia-tools' ),
+			'store'                  => __( 'store shop commerce storefront', 'lumia-tools' ),
+			'package'                => __( 'parcel package product delivery module plugin', 'lumia-tools' ),
+			'package-2'              => __( 'parcel package product stock delivery', 'lumia-tools' ),
+			'package-open'           => __( 'open parcel unpacking product delivery', 'lumia-tools' ),
+			'truck'                  => __( 'truck delivery shipping transport', 'lumia-tools' ),
+			'receipt'                => __( 'receipt invoice ticket note order', 'lumia-tools' ),
+			'credit-card'            => __( 'bank card payment credit card settlement', 'lumia-tools' ),
+			'banknote'               => __( 'banknote money currency payment cash', 'lumia-tools' ),
+			'dollar-sign'            => __( 'dollar currency price money rate', 'lumia-tools' ),
+			'euro'                   => __( 'euro currency price money rate', 'lumia-tools' ),
+			'percent'                => __( 'percentage discount promotion sale rate', 'lumia-tools' ),
+			'gift'                   => __( 'gift offer voucher promotion reward', 'lumia-tools' ),
+			'wallet'                 => __( 'wallet balance payment purse', 'lumia-tools' ),
+			'ticket'                 => __( 'ticket coupon promo code discount', 'lumia-tools' ),
+			'boxes'                  => __( 'stock inventory cartons warehouse products', 'lumia-tools' ),
 
-			// Utilisateurs.
-			'user-round'             => 'utilisateur compte profil personne membre',
-			'users-round'            => 'utilisateurs comptes membres équipe groupe rôles',
-			'user-round-plus'        => 'ajouter un utilisateur nouveau compte inscription membre',
-			'user-round-cog'         => 'réglages du compte profil permissions rôle utilisateur',
-			'contact-round'          => 'contact carnet répertoire fiche personne',
-			'id-card'                => 'carte identité badge profil fiche',
-			'mail'                   => 'e-mail courriel message enveloppe contact',
-			'message-circle'         => 'message discussion commentaire chat bulle',
-			'message-square'         => 'message commentaire discussion chat avis',
-			'phone'                  => 'téléphone appel contact numéro',
-			'at-sign'                => 'arobase e-mail mention identifiant courriel',
-			'handshake'              => 'poignée de main partenariat accord affiliation',
-			'user-round-check'       => 'utilisateur validé compte vérifié approuvé membre',
+			// Users.
+			'user-round'             => __( 'user account profile person member', 'lumia-tools' ),
+			'users-round'            => __( 'users accounts members team group roles', 'lumia-tools' ),
+			'user-round-plus'        => __( 'add a user new account registration member', 'lumia-tools' ),
+			'user-round-cog'         => __( 'account settings profile permissions role user', 'lumia-tools' ),
+			'contact-round'          => __( 'contact address book directory card person', 'lumia-tools' ),
+			'id-card'                => __( 'identity card badge profile record', 'lumia-tools' ),
+			'mail'                   => __( 'email mail message envelope contact', 'lumia-tools' ),
+			'message-circle'         => __( 'message discussion comment chat bubble', 'lumia-tools' ),
+			'message-square'         => __( 'message comment discussion chat review', 'lumia-tools' ),
+			'phone'                  => __( 'phone call contact number', 'lumia-tools' ),
+			'at-sign'                => __( 'at sign email mention handle mail', 'lumia-tools' ),
+			'handshake'              => __( 'handshake partnership agreement affiliation', 'lumia-tools' ),
+			'user-round-check'       => __( 'user validated account verified approved member', 'lumia-tools' ),
 
-			// Données.
-			'chart-column'           => 'graphique barres statistiques rapport histogramme',
-			'chart-line'             => 'graphique courbe statistiques évolution tendance',
-			'chart-pie'              => 'graphique camembert secteurs répartition statistiques',
-			'trending-up'            => 'tendance croissance hausse progression statistiques',
-			'activity'               => 'activité pouls journal suivi monitoring',
-			'database'               => 'base de données sql tables stockage',
-			'server'                 => 'serveur hébergement infrastructure machine',
-			'hard-drive'             => 'disque dur stockage espace sauvegarde',
-			'table'                  => 'tableau tableur grille colonnes données',
+			// Data.
+			'chart-column'           => __( 'chart bars statistics report histogram', 'lumia-tools' ),
+			'chart-line'             => __( 'chart line statistics evolution trend', 'lumia-tools' ),
+			'chart-pie'              => __( 'chart pie sectors breakdown statistics', 'lumia-tools' ),
+			'trending-up'            => __( 'trend growth increase progress statistics', 'lumia-tools' ),
+			'activity'               => __( 'activity pulse log tracking monitoring', 'lumia-tools' ),
+			'database'               => __( 'database sql tables storage', 'lumia-tools' ),
+			'server'                 => __( 'server hosting infrastructure machine', 'lumia-tools' ),
+			'hard-drive'             => __( 'hard drive storage space backup', 'lumia-tools' ),
+			'table'                  => __( 'table spreadsheet grid columns data', 'lumia-tools' ),
 
-			// Apparence.
-			'palette'                => 'palette couleurs thème design apparence',
-			'swatch-book'            => 'nuancier couleurs échantillons charte thème',
-			'paintbrush'             => 'pinceau peinture style personnalisation thème',
-			'brush'                  => 'brosse pinceau style couleur personnalisation',
-			'layers'                 => 'calques couches empilement superposition',
-			'blocks'                 => 'blocs éditeur gutenberg composants briques',
-			'toy-brick'              => 'brique bloc module extension composant',
-			'puzzle'                 => 'puzzle extension module greffon plugin pièce',
-			'component'              => 'composant élément bloc module',
-			'wand-sparkles'          => 'baguette magique automatique effets ia embellir',
-			'sliders-horizontal'     => 'réglages curseurs options filtres paramètres',
-			'sliders-vertical'       => 'réglages curseurs égaliseur options paramètres',
-			'ruler'                  => 'règle mesure dimensions taille espacement',
-			'frame'                  => 'cadre encadrement bordure conteneur',
-			'layout-template'        => 'modèle gabarit template mise en page structure',
+			// Appearance.
+			'palette'                => __( 'palette colors theme design appearance', 'lumia-tools' ),
+			'swatch-book'            => __( 'swatch colors samples brand theme', 'lumia-tools' ),
+			'paintbrush'             => __( 'paintbrush painting style customization theme', 'lumia-tools' ),
+			'brush'                  => __( 'brush paintbrush style color customization', 'lumia-tools' ),
+			'layers'                 => __( 'layers stacking overlay', 'lumia-tools' ),
+			'blocks'                 => __( 'blocks editor gutenberg components bricks', 'lumia-tools' ),
+			'toy-brick'              => __( 'brick block module plugin component', 'lumia-tools' ),
+			'puzzle'                 => __( 'puzzle plugin module add-on piece', 'lumia-tools' ),
+			'component'              => __( 'component element block module', 'lumia-tools' ),
+			'wand-sparkles'          => __( 'magic wand automatic effects ai beautify', 'lumia-tools' ),
+			'sliders-horizontal'     => __( 'settings sliders options filters parameters', 'lumia-tools' ),
+			'sliders-vertical'       => __( 'settings sliders equalizer options parameters', 'lumia-tools' ),
+			'ruler'                  => __( 'ruler measure dimensions size spacing', 'lumia-tools' ),
+			'frame'                  => __( 'frame framing border container', 'lumia-tools' ),
+			'layout-template'        => __( 'template layout pattern page structure', 'lumia-tools' ),
 
-			// Système.
-			'settings'               => 'réglages paramètres configuration options engrenage',
-			'settings-2'             => 'réglages paramètres options configuration curseurs',
-			'wrench'                 => 'clé outils maintenance réparation dépannage',
-			'cog'                    => 'engrenage réglages configuration rouage paramètres',
-			'shield'                 => 'bouclier sécurité protection pare-feu',
-			'shield-check'           => 'sécurité vérifiée protection validée bouclier',
-			'lock'                   => 'cadenas verrou sécurité privé protégé mot de passe',
-			'key'                    => 'clé mot de passe accès licence identifiant jeton',
-			'plug'                   => 'prise branchement extension connexion intégration',
-			'power'                  => 'alimentation marche arrêt activer désactiver',
-			'terminal'               => 'terminal console commande shell cli',
-			'code'                   => 'code développement html balise snippet',
-			'bug'                    => 'bogue erreur débogage anomalie problème',
-			'refresh-cw'             => 'actualiser recharger synchroniser mise à jour rafraîchir',
-			'hammer'                 => 'marteau outils construction maintenance',
-			'life-buoy'              => 'bouée support aide assistance secours',
-			'log-out'                => 'déconnexion sortir quitter session',
-			'globe'                  => 'globe monde site web international langue',
-			'map'                    => 'carte plan géographie itinéraire',
-			'map-pin'                => 'épingle localisation adresse position lieu',
-			'map-pinned'             => 'carte localisation adresse position lieux',
-			'pin'                    => 'épingle épingler fixer marquer',
-			'megaphone'              => 'mégaphone annonce marketing communication promotion',
-			'rss'                    => 'flux rss syndication abonnement actualités',
-			'share-2'                => 'partager partage réseaux sociaux diffusion',
-			'external-link'          => 'lien externe nouvel onglet sortant ouvrir',
-			'monitor'                => 'écran bureau ordinateur affichage desktop',
-			'smartphone'             => 'mobile téléphone responsive portable écran',
-			'languages'              => 'langues traduction international multilingue localisation',
+			// System.
+			'settings'               => __( 'settings parameters configuration options gear', 'lumia-tools' ),
+			'settings-2'             => __( 'settings parameters options configuration sliders', 'lumia-tools' ),
+			'wrench'                 => __( 'wrench tools maintenance repair troubleshooting', 'lumia-tools' ),
+			'cog'                    => __( 'cog gear settings configuration parameters', 'lumia-tools' ),
+			'shield'                 => __( 'shield security protection firewall', 'lumia-tools' ),
+			'shield-check'           => __( 'security verified protection validated shield', 'lumia-tools' ),
+			'lock'                   => __( 'padlock lock security private protected password', 'lumia-tools' ),
+			'key'                    => __( 'key password access license identifier token', 'lumia-tools' ),
+			'plug'                   => __( 'plug connection plugin integration', 'lumia-tools' ),
+			'power'                  => __( 'power on off enable disable', 'lumia-tools' ),
+			'terminal'               => __( 'terminal console command shell cli', 'lumia-tools' ),
+			'code'                   => __( 'code development html tag snippet', 'lumia-tools' ),
+			'bug'                    => __( 'bug error debugging anomaly problem', 'lumia-tools' ),
+			'refresh-cw'             => __( 'refresh reload synchronize update renew', 'lumia-tools' ),
+			'hammer'                 => __( 'hammer tools construction maintenance', 'lumia-tools' ),
+			'life-buoy'              => __( 'lifebuoy support help assistance rescue', 'lumia-tools' ),
+			'log-out'                => __( 'logout exit leave session', 'lumia-tools' ),
+			'globe'                  => __( 'globe world website international language', 'lumia-tools' ),
+			'map'                    => __( 'map plan geography route', 'lumia-tools' ),
+			'map-pin'                => __( 'pin location address position place', 'lumia-tools' ),
+			'map-pinned'             => __( 'map location address position places', 'lumia-tools' ),
+			'pin'                    => __( 'pin attach fix mark', 'lumia-tools' ),
+			'megaphone'              => __( 'megaphone announcement marketing communication promotion', 'lumia-tools' ),
+			'rss'                    => __( 'feed rss syndication subscription news', 'lumia-tools' ),
+			'share-2'                => __( 'share sharing social networks distribution', 'lumia-tools' ),
+			'external-link'          => __( 'external link new tab outgoing open', 'lumia-tools' ),
+			'monitor'                => __( 'screen desktop computer display', 'lumia-tools' ),
+			'smartphone'             => __( 'mobile phone responsive handheld screen', 'lumia-tools' ),
+			'languages'              => __( 'languages translation international multilingual localization', 'lumia-tools' ),
 		];
 	}
 
 	/**
-	 * Bibliothèque aplatie : slug → SVG complet, consommé par le picker JS.
+	 * Flattened library: slug → full SVG, consumed by the JS picker.
 	 *
 	 * @return array<string, string>
 	 */
@@ -1792,7 +1896,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Catégories du picker : identifiant → libellé + liste ordonnée de slugs.
+	 * Picker categories: identifier → label + ordered list of slugs.
 	 *
 	 * @return array<int, array{id:string, label:string, icons:array<int, string>}>
 	 */

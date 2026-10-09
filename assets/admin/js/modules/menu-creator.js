@@ -1,6 +1,6 @@
 /**
- * Lümia Tools — Module Créateur de menu
- * Éditeur intégré 3 colonnes.
+ * Lümia Tools — Menu Creator module
+ * Built-in 3-column editor.
  */
 (function () {
   "use strict";
@@ -9,8 +9,29 @@
 
   var L = window.lumiaLucide || {};
 
+  // Translated strings: module `i18n` merged on top of the core one (PHP side,
+  // Module::get_admin_js_data()). No literal fallback: a fallback in one
+  // language would defeat the translation.
+  var I = lumiaAdmin.i18n || {};
+
+  /** Translated string for a key ("" when the key is unknown). */
+  function tr(key) { return I[key] || ""; }
+
+  /**
+   * Substitutes %s / %d / %1$s placeholders in a translated format string.
+   * Unnumbered placeholders consume the arguments in order.
+   */
+  function fmt(format) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var next = 0;
+    return String(format).replace(/%(?:(\d+)\$)?[sd]/g, function (m, pos) {
+      var i = pos ? parseInt(pos, 10) - 1 : next++;
+      return i < args.length ? String(args[i]) : m;
+    });
+  }
+
   /* ================================================================
-   * ÉTAT
+   * STATE
    * ================================================================ */
 
   var ed = {
@@ -21,7 +42,7 @@
 
   var expandedUids = new Set();
 
-  // Dropdown flottant pour le picker d'icône (singleton, body)
+  // Floating dropdown for the icon picker (singleton, appended to body)
   var iconPickerEl   = null;
   var iconPickerItem = null;
 
@@ -35,40 +56,40 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (!document.getElementById("lumia-mc-editor")) return;
 
-    // Masquer le bouton Enregistrer du header module (remplacé par le footer du panel)
+    // Hide the module header's Save button (replaced by the panel footer)
     var headerSaveBtn = document.getElementById("lumia-module-save-btn");
     if (headerSaveBtn) {
       headerSaveBtn.style.display = "none";
     }
 
-    // Nouveau menu
+    // New menu
     var newBtn = document.getElementById("lumia-mc-new-btn");
     if (newBtn) {
       newBtn.addEventListener("click", function () { confirmDirty(startNewProfile); });
     }
 
-    // Import / export global des menus (en-tête de la colonne de gauche)
+    // Global menu import / export (header of the left column)
     bindProfilesFooter();
 
-    // Bouton retour dans le panel droit
+    // Back button in the right panel
     var backBtn = document.getElementById("lumia-mc-back-btn");
     if (backBtn) {
       backBtn.addEventListener("click", function () { showProfilePanel(); });
     }
 
-    // Boutons du pied de page
+    // Footer buttons
     bindPanelFooter();
 
     // Ctrl/Cmd+S, Ctrl+Z / Ctrl+Y
     bindShortcuts();
 
-    // Boutons +séparateur / +lien
+    // +separator / +link buttons
     bindTreeActions();
 
-    // Dropdown flottant icon picker (singleton, appendé au body)
+    // Floating icon picker dropdown (singleton, appended to body)
     createFloatingIconPicker();
 
-    // Fermer le dropdown si clic en dehors — capture phase pour résister aux WP stopPropagation
+    // Close the dropdown on an outside click — capture phase to survive WP's stopPropagation
     document.addEventListener("mousedown", function (e) {
       if (iconPickerEl &&
           !iconPickerEl.classList.contains("is-hidden") &&
@@ -78,15 +99,15 @@
       }
     }, true);
 
-    // Fermer le dropdown avec Échap
+    // Close the dropdown with Escape
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && iconPickerEl && !iconPickerEl.classList.contains("is-hidden")) {
         hideIconPicker();
       }
     });
 
-    // Fermer les multi-selects rôles/utilisateurs (inclure/exclure) au clic
-    // en dehors — capture phase pour résister aux stopPropagation de WP.
+    // Close the role/user multi-selects (include/exclude) on an outside
+    // click — capture phase to survive WP's stopPropagation.
     document.addEventListener("mousedown", function (e) {
       ["include", "exclude", "itemRoles"].forEach(function (key) {
         var w = ms[key];
@@ -96,7 +117,7 @@
       });
     }, true);
 
-    // …et avec Échap.
+    // …and with Escape.
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
       ["include", "exclude", "itemRoles"].forEach(function (key) {
@@ -135,14 +156,14 @@
   }
 
   /* ================================================================
-   * HISTORIQUE — annuler / rétablir
+   * HISTORY — undo / redo
    *
-   * Toute mutation de l'éditeur se termine par setDirty(true) : c'est donc là
-   * qu'on prend l'instantané, plutôt que d'instrumenter chaque poignée (arbre,
-   * champs, picker d'icône…) et d'en oublier une. L'instantané reprend
-   * collectProfile() — l'état des champs du panneau, qui vit dans le DOM et pas
-   * dans ed.profile — mais garde les items avec leurs propriétés d'exécution
-   * (_uid, _wpLabel) pour ne pas casser la sélection au retour en arrière.
+   * Every editor mutation ends with setDirty(true): that is where the snapshot
+   * is taken, rather than instrumenting each handler (tree, fields, icon
+   * picker…) and forgetting one. The snapshot reuses collectProfile() — the
+   * state of the panel fields, which lives in the DOM and not in ed.profile —
+   * but keeps the items with their runtime properties (_uid, _wpLabel) so the
+   * selection is not broken when going back.
    * ================================================================ */
 
   var hist = { stack: [], index: -1, lock: false, last: 0, ready: false, baseDirty: false };
@@ -171,8 +192,8 @@
     var snap = snapshotState();
     var now  = Date.now();
 
-    // Coalescence : la frappe déclenche un setDirty par caractère, ce qui
-    // donnerait un historique inutilisable (un Ctrl+Z par lettre).
+    // Coalescing: typing triggers one setDirty per character, which would
+    // make the history unusable (one Ctrl+Z per letter).
     if (hist.index > 0 && now - hist.last < 400) {
       hist.stack[hist.index] = snap;
       hist.last = now;
@@ -193,8 +214,8 @@
     ed.profile.id  = id;
     ed.selectedUid = null;
     renderEditor();
-    // Revenir à l'instantané de départ, c'est revenir à l'état enregistré :
-    // le menu n'est plus « modifié » (sauf s'il n'a jamais été enregistré).
+    // Going back to the initial snapshot means going back to the saved state:
+    // the menu is no longer "modified" (unless it was never saved).
     setDirty(i !== 0 || hist.baseDirty);
     hist.index = i;
     hist.last  = 0;
@@ -203,26 +224,26 @@
 
   function undo() {
     if (!ed.profile || !hist.ready) return;
-    if (hist.index <= 0) { toast("Rien à annuler.", "info"); return; }
+    if (hist.index <= 0) { toast(tr("nothingToUndo"), "info"); return; }
     applyHistory(hist.index - 1);
-    toast("Modification annulée.", "info");
+    toast(tr("changeUndone"), "info");
   }
 
   function redo() {
     if (!ed.profile || !hist.ready) return;
-    if (hist.index >= hist.stack.length - 1) { toast("Rien à rétablir.", "info"); return; }
+    if (hist.index >= hist.stack.length - 1) { toast(tr("nothingToRedo"), "info"); return; }
     applyHistory(hist.index + 1);
-    toast("Modification rétablie.", "info");
+    toast(tr("changeRedone"), "info");
   }
 
   /**
-   * Raccourcis clavier de l'éditeur.
+   * Editor keyboard shortcuts.
    *
-   * Ctrl/Cmd+S est toujours intercepté (le dialogue « enregistrer la page » du
-   * navigateur n'a aucun sens ici). Ctrl+Z / Ctrl+Y sont en revanche laissés au
-   * champ quand le focus est dans une zone de saisie : l'annulation de texte
-   * native y est attendue, et une annulation globale ferait perdre bien plus
-   * que la lettre que l'utilisateur voulait reprendre.
+   * Ctrl/Cmd+S is always intercepted (the browser's "save page" dialog makes no
+   * sense here). Ctrl+Z / Ctrl+Y, on the other hand, are left to the field
+   * when the focus is in an input area: native text undo is expected there,
+   * and a global undo would lose far more than the letter the user wanted to
+   * take back.
    */
   function bindShortcuts() {
     document.addEventListener("keydown", function (e) {
@@ -233,7 +254,7 @@
         e.preventDefault();
         if (!ed.profile) return;
         if (ed.dirty) onSave();
-        else toast("Aucune modification à enregistrer.", "info");
+        else toast(tr("nothingToSave"), "info");
         return;
       }
 
@@ -249,39 +270,39 @@
   }
 
   /* ================================================================
-   * CONFIRMATION UNSAVED CHANGES
+   * UNSAVED CHANGES CONFIRMATION
    * ================================================================ */
 
   function confirmDirty(callback) {
     if (!ed.dirty) { callback(); return; }
     window.lumiaModal.open({
-      title:        "Modifications non sauvegardées",
-      message:      "Vos modifications seront perdues. Continuer ?",
-      confirmLabel: "Continuer sans enregistrer",
-      cancelLabel:  "Annuler",
+      title:        tr("unsavedChanges"),
+      message:      tr("leaveConfirm"),
+      confirmLabel: tr("continueWithoutSaving"),
+      cancelLabel:  tr("cancel"),
       danger:       true,
       onConfirm:    function () { setDirty(false); callback(); },
     });
   }
 
   /* ================================================================
-   * PROFIL VIDE
+   * BLANK PROFILE
    * ================================================================ */
 
   function blankProfile() {
     var profiles = lumiaAdmin.mcProfiles || [];
     var names    = profiles.map(function (p) { return p.name || ""; });
     var n = 1;
-    while (names.indexOf("Menu " + n) !== -1) { n++; }
+    while (names.indexOf(fmt(tr("menuNumbered"), n)) !== -1) { n++; }
     return {
-      id: "__new__", name: "Menu " + n, status: "draft", apply_to_all: false,
+      id: "__new__", name: fmt(tr("menuNumbered"), n), status: "draft", apply_to_all: false,
       include_roles: [], include_users: [], exclude_roles: [], exclude_users: [],
       items: [], updated_at: 0,
     };
   }
 
   /* ================================================================
-   * CHARGEMENT D'UN PROFIL
+   * LOADING A PROFILE
    * ================================================================ */
 
   function loadProfile(profile) {
@@ -304,9 +325,9 @@
     ed.profile     = blankProfile();
     ed.selectedUid = null;
     expandedUids.clear();
-    // Un menu tout juste créé n'existe pas encore côté serveur : le bouton
-    // Enregistrer doit être utilisable immédiatement, sans exiger que
-    // l'utilisateur modifie un champ au préalable.
+    // A newly created menu does not exist on the server yet: the Save button
+    // must be usable right away, without requiring the user to edit a field
+    // first.
     setDirty(true);
 
     ensureUids(ed.profile.items);
@@ -338,7 +359,7 @@
   }
 
   /* ================================================================
-   * SIDEBAR — liste des profils
+   * SIDEBAR — profile list
    * ================================================================ */
 
   function renderProfilesSidebar() {
@@ -358,9 +379,7 @@
 
     if (!filtered.length && !isDraft) {
       container.innerHTML = '<p class="lumia-wl-ep-profiles-empty">' +
-        esc(profiles.length === 0
-          ? "Aucun menu. Utilisez « Nouveau menu » pour en créer un."
-          : "Aucun résultat.") + "</p>";
+        esc(profiles.length === 0 ? fmt(tr("noMenuYet"), tr("newMenu")) : tr("noResults")) + "</p>";
       return;
     }
 
@@ -374,16 +393,16 @@
         '<div class="lumia-wl-ep-profile-item' + (isCurrent ? " is-active" : "") +
             '" data-id="' + esc(p.id) + '">' +
           '<span class="lumia-mc-dot ' + dotClass + '" data-lumia-tip="' +
-            (isActive ? "Menu actif" : "Brouillon — non appliqué") + '"></span>' +
+            (isActive ? tr("menuActive") : tr("draftNotApplied")) + '"></span>' +
           '<span class="lumia-wl-ep-profile-item__name">' +
-            esc(p.name || "Menu sans nom") + "</span>" +
+            esc(p.name || tr("unnamedMenu")) + "</span>" +
           '<span class="lumia-mc-item-actions">' +
             '<button type="button" class="lumia-mc-item-action" data-action="duplicate" ' +
-              'data-id="' + esc(p.id) + '" data-lumia-tip="Dupliquer ce menu">' +
+              'data-id="' + esc(p.id) + '" data-lumia-tip="' + esc(tr("duplicateMenu")) + '">' +
               (L.copy || "") + "</button>" +
             '<button type="button" class="lumia-mc-item-action lumia-mc-item-action--danger" ' +
-              'data-action="delete" data-id="' + esc(p.id) + '" data-lumia-tip="Supprimer ce menu">' +
-              (L.trash || "×") + "</button>" +
+              'data-action="delete" data-id="' + esc(p.id) + '" data-lumia-tip="' + esc(tr("deleteMenu")) + '">' +
+              (L.trash || "&times;") + "</button>" +
           "</span>" +
         "</div>"
       );
@@ -406,17 +425,17 @@
   }
 
   /**
-   * Ligne représentant le menu en cours de création, pas encore enregistré
-   * côté serveur (donc absent de lumiaAdmin.mcProfiles) : sans actions
-   * dupliquer/supprimer, qui exigent un id réel.
+   * Row representing the menu being created, not yet saved on the server
+   * (hence absent from lumiaAdmin.mcProfiles): no duplicate/delete actions,
+   * which require a real id.
    */
   function buildDraftRowHtml(p) {
     return (
       '<div class="lumia-wl-ep-profile-item is-active" data-id="__new__">' +
-        '<span class="lumia-mc-dot lumia-mc-dot--draft" data-lumia-tip="Brouillon — non appliqué"></span>' +
+        '<span class="lumia-mc-dot lumia-mc-dot--draft" data-lumia-tip="' + esc(tr("draftNotApplied")) + '"></span>' +
         '<span class="lumia-wl-ep-profile-item__name">' +
-          esc(p.name || "Menu sans nom") + "</span>" +
-        '<span class="lumia-badge lumia-badge--warning">Non enregistré</span>' +
+          esc(p.name || tr("unnamedMenu")) + "</span>" +
+        '<span class="lumia-badge lumia-badge--warning">' + esc(tr("notSaved")) + "</span>" +
       "</div>"
     );
   }
@@ -442,29 +461,29 @@
   }
 
   /* ================================================================
-   * ACTIONS SIDEBAR
+   * SIDEBAR ACTIONS
    * ================================================================ */
 
   function onSidebarDelete(profileId) {
     var p    = findProfileById(profileId);
-    var name = p ? (p.name || "ce menu") : "ce menu";
+    var name = p ? (p.name || tr("thisMenu")) : tr("thisMenu");
     window.lumiaModal.open({
-      title: "Supprimer le menu",
-      message: 'Supprimer « ' + name + ' » ? Cette action est irréversible.',
-      confirmLabel: "Supprimer", cancelLabel: "Annuler", danger: true,
+      title: tr("deleteMenuTitle"),
+      message: fmt(tr("deleteMenuPrompt"), name) + " " + tr("deleteConfirmMsg"),
+      confirmLabel: tr("delete"), cancelLabel: tr("cancel"), danger: true,
       onConfirm: function () {
-        // Un menu actif applique ses personnalisations au menu WP réel :
-        // après suppression il faut recharger la page pour que la barre
-        // latérale WP revienne à son état natif (sinon résidus à l'écran).
+        // An active menu applies its customizations to the real WP menu:
+        // after deletion the page must be reloaded so the WP sidebar goes
+        // back to its native state (otherwise leftovers stay on screen).
         var wasActive = !!(p && p.status === "active");
         ajaxPost("lumia_wl_delete_profile", { profile_id: profileId }, function (data) {
           if (data && data.success) {
             lumiaAdmin.mcProfiles = (lumiaAdmin.mcProfiles || []).filter(function (x) { return x.id !== profileId; });
             if (ed.profile && ed.profile.id === profileId) { ed.profile = null; showPlaceholder(); }
             renderProfilesSidebar();
-            toast("Menu supprimé.", "success");
+            toast(tr("menuDeleted"), "success");
             if (wasActive) { setTimeout(function () { window.location.reload(); }, 600); }
-          } else { toast("Erreur lors de la suppression.", "error"); }
+          } else { toast(tr("deleteError"), "error"); }
         });
       },
     });
@@ -476,13 +495,13 @@
         lumiaAdmin.mcProfiles = lumiaAdmin.mcProfiles || [];
         lumiaAdmin.mcProfiles.push(data.data.profile);
         renderProfilesSidebar();
-        toast("Menu dupliqué.", "success");
-      } else { toast("Erreur lors de la duplication.", "error"); }
+        toast(tr("menuDuplicated"), "success");
+      } else { toast(tr("duplicateError"), "error"); }
     });
   }
 
   /* ================================================================
-   * PIED DE PAGE — Enregistrer / Réinitialiser
+   * FOOTER — Save / Reset
    * ================================================================ */
 
   function bindPanelFooter() {
@@ -502,10 +521,10 @@
       resetBtn.addEventListener("click", function () {
         if (!ed.profile) return;
         window.lumiaModal.open({
-          title:        "Réinitialiser le menu",
-          message:      "Toutes les modifications non sauvegardées seront perdues et le menu sera rechargé depuis la dernière sauvegarde.",
-          confirmLabel: "Réinitialiser",
-          cancelLabel:  "Annuler",
+          title:        tr("resetMenuTitle"),
+          message:      tr("resetMenuMessage"),
+          confirmLabel: tr("reset"),
+          cancelLabel:  tr("cancel"),
           danger:       true,
           onConfirm: function () {
             if (ed.profile.id === "__new__") {
@@ -522,7 +541,7 @@
   }
 
   /* ================================================================
-   * FUSION AVEC LE MENU WP
+   * MERGE WITH THE WP MENU
    * ================================================================ */
 
   function mergeWpMenu() {
@@ -531,23 +550,23 @@
       ed.profile.items = wpMenu.map(function (m) { return wpItemToEditorItem(m); }).filter(Boolean);
     } else {
       var seen = {};
-      // On ne purge les références WP disparues que si l'on connaît réellement
-      // le menu WP courant : sans wpMenu (donnée absente), on ne supprime rien.
+      // Vanished WP references are only purged when the current WP menu is
+      // really known: without wpMenu (missing data), nothing is removed.
       var wpKnown = wpMenu.length > 0;
       ed.profile.items = ed.profile.items.filter(function (item) {
         if (!item._uid) item._uid = genUid();
-        // Séparateurs et liens personnalisés n'existent pas dans le menu WP :
-        // ils sont propres au profil, toujours conservés.
+        // Separators and custom links do not exist in the WP menu: they belong
+        // to the profile and are always kept.
         if (item.type === "separator" || item.type === "custom_link") {
           seen[item.slug] = true;
           return true;
         }
         var wp = findWpItem(item.slug);
-        // Élément WP qui ne correspond à plus rien dans le menu réel (extension
-        // désactivée, fonctionnalité coupée comme le Gestionnaire de liens, ou
-        // résidu d'un ancien profil). On le garde mais on le signale : le
-        // supprimer en silence ferait disparaître un réglage volontaire dès
-        // qu'une extension est désactivée le temps d'une mise à jour.
+        // WP item that matches nothing in the real menu any more (plugin
+        // deactivated, feature turned off such as the Link Manager, or leftover
+        // from an old profile). It is kept but flagged: silently deleting it
+        // would wipe a deliberate setting as soon as a plugin is deactivated
+        // for the length of an update.
         item._stale   = !wp && wpKnown;
         item._wpLabel = wp ? stripTags(wp.label) : (item._wpLabel || item.slug);
         item._wpIcon  = wp ? (wp.icon || "") : (item._wpIcon || "");
@@ -573,7 +592,7 @@
 
   function wpItemToEditorItem(m) {
     if (!m.slug) return null;
-    // Séparateurs WP : slug commençant par "separator" (label toujours vide)
+    // WP separators: slug starting with "separator" (label always empty)
     if (/^separator/.test(m.slug)) {
       return {
         type: "separator", slug: m.slug, _uid: genUid(),
@@ -605,7 +624,7 @@
   }
 
   /* ================================================================
-   * RENDU GLOBAL
+   * GLOBAL RENDERING
    * ================================================================ */
 
   function renderEditor() {
@@ -623,18 +642,18 @@
   }
 
   /* ================================================================
-   * NAVIGATION DU PANEL DROIT (sans tabs)
+   * RIGHT PANEL NAVIGATION (no tabs)
    * ================================================================ */
 
   function showProfilePanel() {
     hideIconPicker();
     ed.selectedUid = null;
     setDisplay("lumia-mc-back-btn", "none");
-    // L'export porte sur le menu entier : il n'a rien à faire sur la vue d'un
-    // élément, où le bouton laisserait croire qu'on exporte cet élément-là.
+    // The export applies to the whole menu: it has no business on an item's
+    // view, where the button would suggest that this item alone is exported.
     setDisplay("lumia-mc-export-btn", "");
     var titleEl = document.getElementById("lumia-mc-panel-title");
-    if (titleEl) titleEl.textContent = "Paramètres du menu";
+    if (titleEl) titleEl.textContent = tr("menuSettings");
     show("lumia-wl-profile-settings");
     hide("lumia-wl-item-settings");
     renderTree();
@@ -647,7 +666,7 @@
     setDisplay("lumia-mc-export-btn", "none");
     var titleEl = document.getElementById("lumia-mc-panel-title");
     if (titleEl) {
-      titleEl.textContent = item.label || item._wpLabel || prettifySlug(item.slug) || "Élément";
+      titleEl.textContent = item.label || item._wpLabel || prettifySlug(item.slug) || tr("item");
     }
     hide("lumia-wl-profile-settings");
     show("lumia-wl-item-settings");
@@ -658,10 +677,10 @@
   }
 
   /**
-   * Un enfant n'a jamais d'icône WP (WordPress ne fournit aucune icône
-   * pour les sous-menus dans $submenu, contrairement à $menu) : on masque
-   * donc le picker d'icône pour ces items plutôt que de laisser un
-   * contrôle qui ne peut jamais rien afficher de pertinent.
+   * A child never has a WP icon (WordPress provides no icon for submenus in
+   * $submenu, unlike $menu): the icon picker is therefore hidden for these
+   * items rather than leaving a control that can never display anything
+   * relevant.
    */
   function isChildItem(uid) {
     if (!ed.profile) return false;
@@ -669,7 +688,7 @@
   }
 
   /* ================================================================
-   * ARBRE
+   * TREE
    * ================================================================ */
 
   function renderTree() {
@@ -684,14 +703,14 @@
   }
 
   /* ================================================================
-   * ENTRÉES OBSOLÈTES
+   * STALE ENTRIES
    * ================================================================ */
 
   /**
-   * Liste des items (parents et enfants) dont le slug n'existe plus dans le
-   * menu WP courant. On les garde dans le profil — une extension désactivée
-   * le temps d'une mise à jour ne doit pas effacer son paramétrage — mais on
-   * le dit, sinon ces réglages sans effet passent inaperçus.
+   * List of the items (parents and children) whose slug no longer exists in
+   * the current WP menu. They are kept in the profile — a plugin deactivated
+   * for the length of an update must not wipe its settings — but flagged,
+   * otherwise these ineffective settings would go unnoticed.
    */
   function staleItems() {
     if (!ed.profile) return [];
@@ -715,14 +734,14 @@
     bar.innerHTML =
       '<span class="lumia-mc-stale-bar__icon">' + (L.warn || "!") + "</span>" +
       '<span class="lumia-mc-stale-bar__text">' +
-        "<strong>" + stale.length +
-        (stale.length > 1 ? " entrées obsolètes" : " entrée obsolète") + "</strong> — " +
+        "<strong>" + esc(fmt(stale.length > 1 ? tr("staleEntriesMany") : tr("staleEntriesOne"), stale.length)) +
+        "</strong> — " +
         esc(names.slice(0, 4).join(", ")) +
-        (names.length > 4 ? " et " + (names.length - 4) + " autre(s)" : "") +
-        ". Ces slugs ne correspondent à aucun menu WordPress actuel." +
+        (names.length > 4 ? " " + esc(fmt(tr("staleAndMore"), names.length - 4)) : "") +
+        ". " + esc(tr("staleHint")) +
       "</span>" +
       '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" ' +
-        'id="lumia-mc-stale-clean">Nettoyer</button>';
+        'id="lumia-mc-stale-clean">' + esc(tr("cleanUp")) + "</button>";
     bar.style.display = "";
 
     var btn = document.getElementById("lumia-mc-stale-clean");
@@ -733,11 +752,10 @@
     var stale = staleItems();
     if (!stale.length) return;
     window.lumiaModal.open({
-      title:        "Nettoyer les entrées obsolètes",
-      message:      "Retirer " + stale.length + " entrée(s) de ce menu ? " +
-                    "Si l'extension concernée est réactivée, l'entrée reviendra avec ses réglages par défaut.",
-      confirmLabel: "Nettoyer",
-      cancelLabel:  "Annuler",
+      title:        tr("cleanStaleTitle"),
+      message:      fmt(tr("cleanStaleMessage"), stale.length),
+      confirmLabel: tr("cleanUp"),
+      cancelLabel:  tr("cancel"),
       danger:       true,
       onConfirm: function () {
         ed.profile.items = (ed.profile.items || []).filter(function (item) {
@@ -747,7 +765,7 @@
         ed.selectedUid = null;
         showProfilePanel();
         setDirty(true);
-        toast("Entrées obsolètes retirées. Pensez à enregistrer.", "success");
+        toast(tr("staleRemoved"), "success");
       },
     });
   }
@@ -755,7 +773,7 @@
   function buildItemHtml(item, idx, total, parentUid) {
     var uid = item._uid;
 
-    /* --- SÉPARATEUR : juste une ligne, aucun texte --- */
+    /* --- SEPARATOR: just a line, no text --- */
     if (item.type === "separator") {
       return (
         '<div class="lumia-wl-tree-item lumia-wl-tree-item--sep" data-uid="' + esc(uid) + '">' +
@@ -767,14 +785,14 @@
               mvBtn(uid, parentUid, idx, total) +
               '<button type="button" class="lumia-wl-tree-item__del" ' +
                 'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '">' +
-                (L.trash || "×") + "</button>" +
+                (L.trash || "&times;") + "</button>" +
             "</div>" +
           "</div>" +
         "</div>"
       );
     }
 
-    /* --- ITEM NORMAL --- */
+    /* --- REGULAR ITEM --- */
     var label    = item.label || item._wpLabel || prettifySlug(item.slug);
     var hidden   = item.visible === false;
     var selected = ed.selectedUid === uid;
@@ -810,13 +828,13 @@
           lockBadge(item) +
           '<div class="lumia-wl-tree-item__btns">' +
             '<button type="button" class="lumia-wl-tree-item__vis" data-uid="' + esc(uid) + '" ' +
-              'data-lumia-tip="' + (hidden ? "Afficher dans le menu" : "Masquer du menu") + '">' +
+              'data-lumia-tip="' + esc(hidden ? tr("showInMenu") : tr("hideFromMenu")) + '">' +
               (hidden ? (L.eyeOff || "") : (L.eye || "")) + "</button>" +
             mvBtn(uid, parentUid, idx, total) +
             (item.type === "custom_link"
               ? '<button type="button" class="lumia-wl-tree-item__del" ' +
                   'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '">' +
-                  (L.trash || "×") + "</button>"
+                  (L.trash || "&times;") + "</button>"
               : "") +
           "</div>" +
         "</div>" +
@@ -844,7 +862,7 @@
           lockBadge(c) +
           '<div class="lumia-wl-tree-item__btns">' +
             '<button type="button" class="lumia-wl-tree-item__vis" data-uid="' + esc(uid) + '" ' +
-              'data-lumia-tip="' + (hidden ? "Afficher dans le menu" : "Masquer du menu") + '">' +
+              'data-lumia-tip="' + esc(hidden ? tr("showInMenu") : tr("hideFromMenu")) + '">' +
               (hidden ? (L.eyeOff || "") : (L.eye || "")) + "</button>" +
             mvBtn(uid, parentUid, ci, total) +
           "</div>" +
@@ -858,16 +876,16 @@
     var dn = idx === total - 1 ? ' style="opacity:.3;pointer-events:none"' : "";
     return (
       '<button type="button" class="lumia-wl-tree-item__mv" data-mv="up" ' +
-        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-lumia-tip="Monter"' + up + '>' +
+        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-lumia-tip="' + esc(tr("moveUp")) + '"' + up + '>' +
         (L.chevronU || "↑") + "</button>" +
       '<button type="button" class="lumia-wl-tree-item__mv" data-mv="down" ' +
-        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-lumia-tip="Descendre"' + dn + '>' +
+        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-lumia-tip="' + esc(tr("moveDown")) + '"' + dn + '>' +
         (L.chevronD || "↓") + "</button>"
     );
   }
 
   /**
-   * Source affichable d'une valeur d'icône stockée ("svg:<base64>" ou URL).
+   * Displayable source of a stored icon value ("svg:<base64>" or URL).
    */
   function iconSrc(icon) {
     return icon.indexOf("svg:") === 0 ? "data:image/svg+xml;base64," + icon.slice(4) : icon;
@@ -877,14 +895,14 @@
     return src.indexOf("data:image/svg+xml") === 0 || /\.svg([?#]|$)/i.test(src);
   }
 
-  // Texte des SVG servis par URL, résolu une fois puis mémorisé.
-  // null = en cours / échec, string = contenu.
+  // Text of the SVGs served by URL, resolved once then memoized.
+  // null = pending / failed, string = content.
   var svgTextCache = {};
 
   /**
-   * Contenu d'une source SVG, quand il est lisible sans requête.
-   * Pour une URL du site, lance un fetch et redessine l'arbre à l'arrivée
-   * (une seule fois par URL) plutôt que de bloquer le rendu.
+   * Content of an SVG source, when readable without a request.
+   * For a site URL, starts a fetch and redraws the tree on arrival (once per
+   * URL) rather than blocking the rendering.
    */
   function svgTextOf(src) {
     if (src.indexOf("data:image/svg+xml;base64,") === 0) {
@@ -908,10 +926,10 @@
   }
 
   /**
-   * Un SVG est-il monochrome, donc recolorisable par masque sans rien perdre ?
-   * Même règle que Module::svg_is_monochrome() côté PHP : une icône bicolore
-   * (le logo du plugin : carré blanc + glyphe noir) serait aplatie en carré
-   * plein par un masque, elle garde donc son <img>.
+   * Is an SVG monochrome, hence recolorable through a mask without losing
+   * anything? Same rule as Module::svg_is_monochrome() on the PHP side: a
+   * two-color icon (the plugin logo: white square + black glyph) would be
+   * flattened into a solid square by a mask, so it keeps its <img>.
    */
   function isMonochromeSvg(text) {
     if (!text) return false;
@@ -928,22 +946,22 @@
   }
 
   /**
-   * Rend une icône de menu dans l'éditeur (fond clair).
+   * Renders a menu icon in the editor (light background).
    *
-   * Les SVG d'icône de menu sont monochromes et peints pour la barre latérale
-   * SOMBRE de wp-admin : WooCommerce et Bricks embarquent un fill #f3f1f1
-   * (invisible sur fond clair), les fichiers Lucide un stroke currentColor
-   * (noir dans un <img>, faute de couleur héritée). Un <img> affiche donc soit
-   * rien, soit une icône hors thème. On les rend en masque CSS : la source ne
-   * fournit que la forme, la couleur vient de l'éditeur (currentColor).
-   * Les images non-SVG (PNG/JPG) gardent un <img> classique.
+   * Menu icon SVGs are monochrome and painted for the DARK wp-admin sidebar:
+   * WooCommerce and Bricks ship a #f3f1f1 fill (invisible on a light
+   * background), Lucide files a currentColor stroke (black in an <img>, for
+   * lack of an inherited color). An <img> thus shows either nothing or an
+   * off-theme icon. They are rendered as a CSS mask: the source only provides
+   * the shape, the color comes from the editor (currentColor).
+   * Non-SVG images (PNG/JPG) keep a regular <img>.
    */
   function iconMarkup(icon, cls) {
     if (icon.indexOf("dashicons-") === 0) {
       return '<span class="' + cls + ' dashicons ' + esc(icon) + '" aria-hidden="true"></span>';
     }
     var src = iconSrc(icon);
-    // Les guillemets / parenthèses casseraient le url() inline : repli <img>.
+    // Quotes / parentheses would break the inline url(): fall back to <img>.
     if (isSvgSrc(src) && !/["'()\\]/.test(src) && isMonochromeSvg(svgTextOf(src))) {
       var u = 'url("' + src + '")';
       return '<span class="' + cls + ' lumia-wl-icon-mask" aria-hidden="true" ' +
@@ -953,19 +971,19 @@
   }
 
   /**
-   * Cadenas sur un item masqué ET bloqué : sans marqueur, rien dans l'arbre ne
-   * distingue « retiré du menu » de « page refusée ».
+   * Padlock on a hidden AND blocked item: without a marker, nothing in the
+   * tree tells "removed from the menu" apart from "page denied".
    */
   function lockBadge(item) {
     if (item.visible !== false || !item.block_access) return "";
-    return '<span class="lumia-wl-tree-item__lock" data-lumia-tip="Masqué et accès direct bloqué">' +
+    return '<span class="lumia-wl-tree-item__lock" data-lumia-tip="' + esc(tr("hiddenAndBlocked")) + '">' +
       (L.lock || "") + "</span>";
   }
 
   /**
-   * Marqueur d'aide (icône Lucide `info` + tooltip), pour une réserve
-   * secondaire qui alourdirait la ligne si elle était écrite en toutes
-   * lettres. Équivalent JS de `Admin::render_help_tip()`.
+   * Help marker (Lucide `info` icon + tooltip), for a secondary caveat that
+   * would weigh the line down if written out in full. JS equivalent of
+   * `Admin::render_help_tip()`.
    */
   function helpTip(text) {
     return '<button type="button" class="lumia-tip-info" tabindex="0" data-lumia-tip="' +
@@ -973,14 +991,14 @@
   }
 
   /**
-   * Marqueur « obsolète » : le slug ne correspond à aucune entrée du menu WP
-   * courant. Le réglage est conservé (une extension peut être réactivée) mais
-   * il ne produit plus rien tant que l'entrée n'existe pas.
+   * "Stale" marker: the slug matches no entry of the current WP menu. The
+   * setting is kept (a plugin may be reactivated) but has no effect as long as
+   * the entry does not exist.
    */
   function staleBadge(item) {
     if (!item._stale) return "";
     return '<span class="lumia-wl-tree-item__stale" ' +
-      'data-lumia-tip="Entrée absente du menu WordPress actuel — extension désactivée ou supprimée.">' +
+      'data-lumia-tip="' + esc(tr("staleTip")) + '">' +
       (L.warn || "!") + "</span>";
   }
 
@@ -991,13 +1009,13 @@
   }
 
   /* ================================================================
-   * BIND ARBRE
+   * TREE BINDINGS
    * ================================================================ */
 
   function bindTree(tree) {
     initTreeSortable(tree);
 
-    /* --- CLIC SUR ROW → sélection --- */
+    /* --- ROW CLICK → selection --- */
     tree.querySelectorAll(
       ".lumia-wl-tree-item:not(.lumia-wl-tree-item--sep) .lumia-wl-tree-item__row"
     ).forEach(function (row) {
@@ -1024,7 +1042,7 @@
       });
     });
 
-    /* --- VISIBILITÉ --- */
+    /* --- VISIBILITY --- */
     tree.querySelectorAll(".lumia-wl-tree-item__vis").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -1036,7 +1054,7 @@
       });
     });
 
-    /* --- MONTER / DESCENDRE --- */
+    /* --- MOVE UP / DOWN --- */
     tree.querySelectorAll(".lumia-wl-tree-item__mv").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -1056,7 +1074,7 @@
       });
     });
 
-    /* --- SUPPRIMER (séparateurs et liens custom) --- */
+    /* --- DELETE (separators and custom links) --- */
     tree.querySelectorAll(".lumia-wl-tree-item__del").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -1075,8 +1093,8 @@
   }
 
   /* ================================================================
-   * DRAG & DROP (SortableJS) — un instance par niveau, aucun
-   * croisement racine ↔ enfants (pas de "group" partagé)
+   * DRAG & DROP (SortableJS) — one instance per level, no
+   * root ↔ children crossing (no shared "group")
    * ================================================================ */
 
   function initTreeSortable(tree) {
@@ -1089,9 +1107,9 @@
       ghostClass:  "lumia-mc-sortable-ghost",
     };
 
-    // "tree" (#lumia-wl-tree) est un noeud persistant entre les rendus
-    // (seul son innerHTML change) : n'instancier Sortable dessus qu'une fois,
-    // sinon chaque renderTree() empilerait une nouvelle instance dessus.
+    // "tree" (#lumia-wl-tree) is a node that persists between renders (only
+    // its innerHTML changes): instantiate Sortable on it only once, otherwise
+    // every renderTree() would stack a new instance on it.
     if (!tree._lumiaSortable) {
       tree._lumiaSortable = new Sortable(tree, Object.assign({}, sortableOpts, {
         onEnd: function (evt) {
@@ -1104,8 +1122,9 @@
       }));
     }
 
-    // Les conteneurs d'enfants, eux, sont recréés à chaque rendu (innerHTML
-    // remplacé) : une nouvelle instance à chaque fois est donc correcte.
+    // The children containers, on the other hand, are recreated on every
+    // render (innerHTML replaced): a new instance each time is therefore
+    // correct.
 
     tree.querySelectorAll(".lumia-wl-tree-item__children").forEach(function (childrenEl) {
       var parentEl  = childrenEl.closest(".lumia-wl-tree-item");
@@ -1126,7 +1145,7 @@
   }
 
   /* ================================================================
-   * ACTIONS ARBRE (+séparateur / +lien) — ajout EN HAUT
+   * TREE ACTIONS (+separator / +link) — added AT THE TOP
    * ================================================================ */
 
   function bindTreeActions() {
@@ -1147,8 +1166,9 @@
       linkBtn.addEventListener("click", function () {
         if (!ed.profile) return;
         ed.profile.items.unshift({
-          type: "custom_link", slug: "lien-" + genUid(), label: "Nouveau lien",
-          _uid: genUid(), _wpLabel: "Nouveau lien", _wpIcon: "",
+          // "lien-" is a persisted slug prefix: it must not change.
+          type: "custom_link", slug: "lien-" + genUid(), label: tr("newLink"),
+          _uid: genUid(), _wpLabel: tr("newLink"), _wpIcon: "",
           visible: true, target_blank: false, url: "", icon: null, roles: [], children: [],
         });
         setDirty(true);
@@ -1158,7 +1178,7 @@
   }
 
   /* ================================================================
-   * PANEL PROFIL
+   * PROFILE PANEL
    * ================================================================ */
 
   function populateProfilePanel() {
@@ -1214,76 +1234,74 @@
     var activeBtn = document.getElementById("lumia-wl-status-active");
     var isActive  = activeBtn && activeBtn.classList.contains("is-active");
     badge.className  = "lumia-mc-status-badge " + (isActive ? "is-active" : "is-draft");
-    badge.textContent = isActive ? "Actif" : "Brouillon";
+    badge.textContent = isActive ? tr("active") : tr("draft");
   }
 
   /* ================================================================
-   * CHAMPS D'ITEM
+   * ITEM FIELDS
    * ================================================================ */
 
   function buildItemFields(item, isChild) {
     if (item.type === "separator") {
-      return '<p class="lumia-wl-note" style="padding:16px">Séparateur — aucun paramètre.</p>';
+      return '<p class="lumia-wl-note" style="padding:16px">' + esc(tr("separatorNoSettings")) + "</p>";
     }
     var html = "";
     if (item.type === "custom_link") {
-      html += settingsRow("URL",
+      html += settingsRow(tr("urlField"),
         '<input type="url" class="lumia-input" id="lumia-wl-item-url" value="' + esc(item.url || "") + '">', "");
-      // Les items WP sont déjà filtrés par leurs propres capacités ; un lien
-      // personnalisé, lui, n'est rattaché à rien — d'où cette restriction.
+      // WP items are already filtered by their own capabilities; a custom
+      // link, on the other hand, is attached to nothing — hence this
+      // restriction.
       html +=
         '<div class="lumia-wl-settings-row lumia-wl-settings-row--col">' +
-          '<div class="lumia-wl-settings-row__label"><span>Réservé aux rôles</span>' +
-            '<p class="lumia-form__help">Laisser vide pour afficher ce lien à tous ceux qui voient ce menu.</p>' +
+          '<div class="lumia-wl-settings-row__label"><span>' + esc(tr("restrictToRoles")) + "</span>" +
+            '<p class="lumia-form__help">' + esc(tr("restrictToRolesHelp")) + "</p>" +
           "</div>" +
           '<div class="lumia-wl-multiselect" id="lumia-wl-item-roles-select"></div>' +
         "</div>";
     }
-    html += settingsRow("Label",
+    html += settingsRow(tr("labelField"),
       '<input type="text" class="lumia-input" id="lumia-wl-item-label" value="' + esc(item.label || "") + '" ' +
         'placeholder="' + esc(item._wpLabel || prettifySlug(item.slug)) + '">',
-      "Laisser vide pour conserver le label d'origine.");
+      tr("labelHelp"));
     html += (
       '<div class="lumia-wl-settings-row lumia-wl-settings-row--inline">' +
-        '<div class="lumia-wl-settings-row__label"><span>Icône</span>' +
+        '<div class="lumia-wl-settings-row__label"><span>' + esc(tr("iconField")) + "</span>" +
           (isChild
-            ? '<p class="lumia-form__help">Appliquée uniquement lorsque cet élément devient un menu de premier niveau (rôles à capacités réduites, ex. « Profil » pour les auteurs).</p>'
+            ? '<p class="lumia-form__help">' + esc(tr("iconChildHelp")) + "</p>"
             : "") +
         "</div>" +
         buildIconBtnHtml(item) +
       "</div>"
     );
-    html += settingsRow("Visible",
+    html += settingsRow(tr("visible"),
       '<label class="lumia-toggle">' +
         '<input type="checkbox" id="lumia-wl-item-visible"' + (item.visible !== false ? " checked" : "") + '>' +
         '<span class="lumia-toggle__slider"></span></label>', "", true);
-    // Masquer ne fait que retirer l'entrée du menu : l'URL reste ouvrable.
-    // L'option n'a donc de sens — et n'est affichée — que sur un item masqué.
+    // Hiding only removes the entry from the menu: the URL stays reachable.
+    // The option therefore only makes sense — and is only shown — on a hidden
+    // item.
     if (item.type === "wp_item") {
       html +=
         '<div class="lumia-wl-settings-row lumia-wl-settings-row--inline" id="lumia-wl-block-row"' +
           (item.visible === false ? "" : ' style="display:none"') + ">" +
           '<div class="lumia-wl-settings-row__label">' +
-            // La réserve importante (ce n'est pas un système de permissions)
-            // passe sous un marqueur d'aide : elle doit rester lisible sans
-            // allonger une ligne déjà dense.
-            "<span>Bloquer l'accès direct" + helpTip("Ce n'est pas un système de " +
-              "permissions : l'API REST, WP-CLI et les capacités WordPress ne sont pas " +
-              "concernés.") + "</span>" +
-            '<p class="lumia-form__help">Masquer retire seulement le lien : la page reste ' +
-              'accessible par son URL. Cochez pour la refuser aussi (redirection vers le ' +
-              'tableau de bord).</p>' +
+            // The important caveat (this is not a permissions system) goes
+            // under a help marker: it must stay readable without lengthening an
+            // already dense line.
+            "<span>" + esc(tr("blockAccess")) + helpTip(tr("blockAccessTip")) + "</span>" +
+            '<p class="lumia-form__help">' + esc(tr("blockAccessHelp")) + "</p>" +
           "</div>" +
           '<label class="lumia-toggle">' +
             '<input type="checkbox" id="lumia-wl-item-block"' + (item.block_access ? " checked" : "") + ">" +
             '<span class="lumia-toggle__slider"></span></label>' +
         "</div>";
     }
-    // "Nouvel onglet" n'a de sens que pour un item de premier niveau : les
-    // sous-menus pointent vers des pages admin WP, aucun intérêt à les ouvrir
-    // dans un onglet séparé (et l'attribut target n'y est pas appliqué).
+    // "New tab" only makes sense for a top-level item: submenus point to WP
+    // admin pages, there is no point in opening them in a separate tab (and the
+    // target attribute is not applied to them).
     if (!isChild) {
-      html += settingsRow("Ouvrir dans un nouvel onglet",
+      html += settingsRow(tr("openInNewTab"),
         '<label class="lumia-toggle">' +
           '<input type="checkbox" id="lumia-wl-item-target"' + (item.target_blank ? " checked" : "") + '>' +
           '<span class="lumia-toggle__slider"></span></label>', "", true);
@@ -1292,7 +1310,7 @@
       html += (
         '<div class="lumia-wl-settings-row lumia-wl-item-reset-row">' +
           '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--danger" id="lumia-wl-item-reset">' +
-            'Réinitialiser l\'élément</button>' +
+            esc(tr("resetItem")) + "</button>" +
         "</div>"
       );
     }
@@ -1317,7 +1335,7 @@
     return (
       '<button type="button" class="lumia-wl-icon-btn" id="lumia-wl-icon-open">' +
         '<span class="lumia-wl-icon-btn-thumb">' + thumb + "</span>" +
-        '<span>' + (icon ? "Modifier" : "Choisir une icône") + "</span>" +
+        '<span>' + esc(icon ? tr("change") : tr("chooseIcon")) + "</span>" +
       "</button>"
     );
   }
@@ -1352,7 +1370,7 @@
       item.label = lblEl.value || null;
       setDirty(true);
       var titleEl = document.getElementById("lumia-mc-panel-title");
-      if (titleEl) titleEl.textContent = item.label || item._wpLabel || prettifySlug(item.slug) || "Élément";
+      if (titleEl) titleEl.textContent = item.label || item._wpLabel || prettifySlug(item.slug) || tr("item");
       renderTree();
     });
 
@@ -1361,8 +1379,8 @@
     var blockRow = document.getElementById("lumia-wl-block-row");
     if (visEl) visEl.addEventListener("change", function () {
       item.visible = visEl.checked;
-      // Un item redevenu visible ne peut pas rester bloqué : le lien serait
-      // affiché mais mènerait à un refus.
+      // An item that becomes visible again cannot stay blocked: the link would
+      // be displayed but lead to a denial.
       if (item.visible) {
         item.block_access = false;
         if (blockEl) blockEl.checked = false;
@@ -1374,7 +1392,7 @@
     if (blockEl) blockEl.addEventListener("change", function () {
       item.block_access = blockEl.checked;
       setDirty(true);
-      renderTree(); // fait apparaître / disparaître le cadenas dans l'arbre
+      renderTree(); // shows / hides the padlock in the tree
     });
 
     var tgtEl = document.getElementById("lumia-wl-item-target");
@@ -1386,7 +1404,7 @@
       item.block_access = false; item.target_blank = false;
       setDirty(true);
       showItemPanel(item);
-      toast("Élément réinitialisé.", "success");
+      toast(tr("itemReset"), "success");
     });
 
     var iconBtn = document.getElementById("lumia-wl-icon-open");
@@ -1397,13 +1415,12 @@
   }
 
   /* ================================================================
-   * EXPORT / IMPORT D'UN MENU
+   * MENU EXPORT / IMPORT
    * ================================================================ */
 
   /**
-   * Exporte le menu courant en .json. On sérialise l'état de l'éditeur (donc
-   * y compris les modifications non enregistrées) : ce que l'utilisateur voit
-   * est ce qu'il exporte.
+   * Exports the current menu as .json. The editor state is serialized (hence
+   * including unsaved changes): what the user sees is what they export.
    */
   function downloadJson(data, filename) {
     var url = URL.createObjectURL(new Blob(
@@ -1415,8 +1432,8 @@
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    // Libère l'URL au tour de boucle suivant : la révoquer tout de suite
-    // annulerait le téléchargement dans certains navigateurs.
+    // Release the URL on the next loop turn: revoking it right away would
+    // cancel the download in some browsers.
     setTimeout(function () { URL.revokeObjectURL(url); }, 0);
   }
 
@@ -1436,20 +1453,20 @@
       exported: new Date().toISOString(),
       profile:  payload,
     }, "lumia-menu-" + slugifyName(payload.name, "menu") + ".json");
-    toast("Menu exporté.", "success");
+    toast(tr("menuExported"), "success");
   }
 
   /**
-   * Exporte tous les menus enregistrés. On part de lumiaAdmin.mcProfiles (l'état
-   * en base), pas de l'éditeur : le menu ouvert peut avoir des modifications
-   * non enregistrées, qu'il serait trompeur d'inclure dans un export « tout ».
+   * Exports all saved menus. It starts from lumiaAdmin.mcProfiles (the state in
+   * the database), not from the editor: the open menu may have unsaved changes,
+   * which it would be misleading to include in an "export all".
    */
   function exportAllProfiles() {
     var profiles = lumiaAdmin.mcProfiles || [];
-    if (!profiles.length) { toast("Aucun menu à exporter.", "error"); return; }
+    if (!profiles.length) { toast(tr("noMenuToExport"), "error"); return; }
 
     if (ed.dirty) {
-      toast("Modifications non enregistrées : elles ne sont pas dans l'export.", "warning");
+      toast(tr("unsavedNotExported"), "warning");
     }
     downloadJson({
       lumia:     "menu_profiles",
@@ -1457,7 +1474,7 @@
       exported: new Date().toISOString(),
       profiles: profiles,
     }, "lumia-menus.json");
-    toast(profiles.length + (profiles.length > 1 ? " menus exportés." : " menu exporté."), "success");
+    toast(fmt(profiles.length > 1 ? tr("menusExportedMany") : tr("menusExportedOne"), profiles.length), "success");
   }
 
   function bindProfilesFooter() {
@@ -1475,12 +1492,12 @@
       if (!file) return;
       var reader = new FileReader();
       reader.onload = function () {
-        // Le fichier ne fait que transiter : c'est le serveur qui valide et
-        // assainit (sanitize_profile), jamais ce parse côté client.
+        // The file only passes through: the server validates and sanitizes
+        // (sanitize_profile), never this client-side parse.
         input.value = "";
         ajaxPost("lumia_wl_import_profile", { profile: String(reader.result || "") }, function (data) {
           if (!data || !data.success) {
-            toast((data && data.data && data.data.message) || "Import impossible.", "error");
+            toast((data && data.data && data.data.message) || tr("importFailed"), "error");
             return;
           }
           var imported = data.data.profiles || [data.data.profile];
@@ -1493,15 +1510,15 @@
 
           var updated = data.data.updated || 0;
           var msg = imported.length > 1
-            ? imported.length + " menus importés en brouillon."
-            : "Menu importé en brouillon.";
+            ? fmt(tr("menusImported"), imported.length)
+            : tr("menuImported");
           if (updated) {
-            msg += " " + (updated > 1 ? updated + " menus existants mis à jour." : "1 menu existant mis à jour.");
+            msg += " " + (updated > 1 ? fmt(tr("existingUpdatedMany"), updated) : tr("existingUpdatedOne"));
           }
           toast(msg, "success");
         });
       };
-      reader.onerror = function () { toast("Lecture du fichier impossible.", "error"); };
+      reader.onerror = function () { toast(tr("fileReadFailed"), "error"); };
       reader.readAsText(file);
     });
   }
@@ -1511,11 +1528,11 @@
    * ================================================================ */
 
   /**
-   * Ferme le picker explicitement lors de toute navigation (changement
-   * d'item, de panel, de profil) : ne pas se reposer uniquement sur le
-   * mousedown document-level, qui peut laisser le picker ouvert et bloquer
-   * l'UX si la navigation est déclenchée par autre chose qu'un simple clic
-   * en dehors (ex. sélection d'un autre item, changement de menu).
+   * Closes the picker explicitly on any navigation (item, panel or profile
+   * change): do not rely only on the document-level mousedown, which can leave
+   * the picker open and block the UX if the navigation is triggered by
+   * something other than a plain outside click (e.g. selecting another item,
+   * switching menu).
    */
   function hideIconPicker() {
     if (iconPickerEl) iconPickerEl.classList.add("is-hidden");
@@ -1545,17 +1562,17 @@
   }
 
   /**
-   * Repli d'accents : les slugs Lucide sont anglais, les alias français.
-   * Sans ça, « etoile » ne trouverait pas « étoile » et l'utilisateur devrait
-   * deviner l'accent exact du mot-clé.
+   * Accent folding: Lucide slugs are English, the aliases may be accented.
+   * Without it, a search typed without accents would not find an accented
+   * keyword and the user would have to guess its exact accents.
    */
   function foldAccents(str) {
     return (str || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   }
 
   /**
-   * Termes indexés d'une icône : son slug (tirets remplacés par des espaces,
-   * pour que « chart column » marche aussi) et ses alias FR/EN.
+   * Indexed terms of an icon: its slug (dashes replaced by spaces, so that
+   * "chart column" works too) and its aliases.
    */
   function iconSearchTerms(name) {
     var aliases = (lumiaAdmin && lumiaAdmin.iconAliases) || {};
@@ -1563,19 +1580,19 @@
   }
 
   /**
-   * Grille de la bibliothèque, groupée par catégorie.
+   * Library grid, grouped by category.
    *
-   * Les catégories viennent de `lumiaAdmin.iconCategories` (ordre d'affichage
-   * fait côté PHP). Si la donnée manque — payload d'une version antérieure —
-   * on retombe sur une grille à plat de toute la bibliothèque.
+   * The categories come from `lumiaAdmin.iconCategories` (display order set on
+   * the PHP side). If the data is missing — payload from an earlier version —
+   * it falls back to a flat grid of the whole library.
    */
   function buildIconGridHtml() {
     var lib = (lumiaAdmin && lumiaAdmin.iconLibrary) || window.lumiaWlIconLibrary || {};
     var names = Object.keys(lib);
-    if (!names.length) return '<p class="lumia-wl-icon-lib-empty">Bibliothèque vide.</p>';
+    if (!names.length) return '<p class="lumia-wl-icon-lib-empty">' + esc(tr("libraryEmpty")) + "</p>";
 
     var cats = (lumiaAdmin && lumiaAdmin.iconCategories) || null;
-    if (!cats || !cats.length) cats = [{ id: "all", label: "Icônes", icons: names }];
+    if (!cats || !cats.length) cats = [{ id: "all", label: tr("icons"), icons: names }];
 
     function cell(name) {
       if (!lib[name]) return "";
@@ -1596,7 +1613,7 @@
           '<div class="lumia-wl-icon-grid">' + (cat.icons || []).map(cell).join("") + "</div>" +
         "</div>"
       );
-    }).join("") + '<p class="lumia-wl-icon-lib-empty" id="lumia-ip-no-result" style="display:none">Aucune icône.</p>';
+    }).join("") + '<p class="lumia-wl-icon-lib-empty" id="lumia-ip-no-result" style="display:none">' + esc(tr("noIcon")) + "</p>";
   }
 
   function buildIconDropdownHtml(item) {
@@ -1606,30 +1623,30 @@
       imgSrc = iconSrc(icon);
     }
 
-    // Repli explicite : on montre ce que « rétablir » va effectivement donner,
-    // plutôt qu'un « Icône par défaut » qui n'annonce rien.
+    // Explicit fallback: show what "restore" will actually give, rather than a
+    // "Default icon" that announces nothing.
     var native = item._wpIcon || "";
-    var resetLabel = native ? "Rétablir l'icône d'origine" : "Retirer l'icône";
+    var resetLabel = native ? tr("restoreOriginalIcon") : tr("removeIcon");
     var resetPreview = native ? iconMarkup(native, "lumia-wl-icon-reset__i") : "";
 
     return (
       '<div class="lumia-wl-icon-picker-tabs">' +
-        '<button type="button" class="lumia-wl-icon-tab is-active" data-tab="library">Bibliothèque</button>' +
-        '<button type="button" class="lumia-wl-icon-tab" data-tab="media">Médiathèque</button>' +
-        '<button type="button" class="lumia-wl-icon-tab" data-tab="code">Code SVG</button>' +
+        '<button type="button" class="lumia-wl-icon-tab is-active" data-tab="library">' + esc(tr("tabLibrary")) + "</button>" +
+        '<button type="button" class="lumia-wl-icon-tab" data-tab="media">' + esc(tr("tabMedia")) + "</button>" +
+        '<button type="button" class="lumia-wl-icon-tab" data-tab="code">' + esc(tr("tabCode")) + "</button>" +
       "</div>" +
 
       '<div class="lumia-wl-icon-pane" data-pane="library">' +
         '<div class="lumia-wl-icon-search-wrap">' +
           '<input type="search" class="lumia-input lumia-wl-icon-search" id="lumia-ip-search" ' +
-            'placeholder="Rechercher une icône…" autocomplete="off">' +
+            'placeholder="' + esc(tr("searchIcon")) + '" autocomplete="off">' +
         "</div>" +
         '<div class="lumia-wl-icon-scroll" id="lumia-ip-lib">' + buildIconGridHtml() + "</div>" +
       "</div>" +
 
       '<div class="lumia-wl-icon-pane" data-pane="media" style="display:none"><div class="lumia-wl-icon-pane__body">' +
         '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-ip-media-btn">' +
-          "Ouvrir la médiathèque</button>" +
+          esc(tr("openMediaLibrary")) + "</button>" +
         '<div class="lumia-wl-icon-media-preview" id="lumia-ip-media-prev"' +
           (imgSrc ? "" : ' style="display:none"') + ">" +
           (imgSrc ? iconMarkup(imgSrc, "lumia-wl-icon-media-preview__i") : "") +
@@ -1639,11 +1656,9 @@
       '<div class="lumia-wl-icon-pane" data-pane="code" style="display:none"><div class="lumia-wl-icon-pane__body">' +
         '<textarea class="lumia-input lumia-wl-icon-code" id="lumia-ip-code" rows="5" ' +
           'placeholder="&lt;svg …&gt;…&lt;/svg&gt;"></textarea>' +
-        '<p class="lumia-form__help">Collez le code d\'un SVG (Lucide, Heroicons…). Il est nettoyé ' +
-          'côté serveur : scripts, liens externes et entités sont retirés. Un tracé en ' +
-          '<code>currentColor</code> se colore automatiquement au thème du menu.</p>' +
+        '<p class="lumia-form__help">' + tr("svgHelp") + "</p>" +
         '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--primary" id="lumia-ip-code-btn">' +
-          "Utiliser ce SVG</button>" +
+          esc(tr("useThisSvg")) + "</button>" +
       "</div></div>" +
 
       '<div class="lumia-wl-icon-picker-footer">' +
@@ -1682,14 +1697,14 @@
       btn.addEventListener("click", function () { applyIcon(btn.dataset.iconVal); });
     });
 
-    // Recherche : on masque/affiche les cellules déjà rendues plutôt que de
-    // reconstruire la grille — 150 icônes, chaque frappe recréerait autant
-    // de nœuds et perdrait le focus.
+    // Search: already rendered cells are hidden/shown rather than rebuilding
+    // the grid — 150 icons, every keystroke would recreate as many nodes and
+    // lose the focus.
     var search = el.querySelector("#lumia-ip-search");
     if (search) {
       search.addEventListener("input", function () {
-        // Chaque mot saisi doit être trouvé : « carte bancaire » ne doit pas
-        // ramener toutes les cartes, mais « bancaire carte » doit marcher.
+        // Every typed word must be found: "credit card" must not bring back
+        // every card, but "card credit" must work.
         var words = foldAccents(search.value.trim()).split(/\s+/).filter(Boolean);
         var none = true;
         el.querySelectorAll(".lumia-wl-icon-cat").forEach(function (cat) {
@@ -1701,7 +1716,7 @@
             if (hit) shown++;
           });
           cat.style.display = shown ? "" : "none";
-          // Pendant une recherche, les en-têtes de catégorie n'apportent rien.
+          // During a search, the category headers add nothing.
           var title = cat.querySelector(".lumia-wl-icon-cat__title");
           if (title) title.style.display = words.length ? "none" : "";
           if (shown) none = false;
@@ -1710,7 +1725,7 @@
         if (empty) empty.style.display = none ? "" : "none";
       });
       search.addEventListener("keydown", function (e) {
-        // Entrée = choisir la première icône visible.
+        // Enter = pick the first visible icon.
         if (e.key !== "Enter") return;
         e.preventDefault();
         var first = Array.prototype.find.call(
@@ -1726,18 +1741,18 @@
     if (codeBtn && codeEl) {
       codeBtn.addEventListener("click", function () {
         var raw = codeEl.value.trim();
-        if (!raw) { toast("Collez le code d'un SVG.", "error"); return; }
+        if (!raw) { toast(tr("pasteSvg"), "error"); return; }
         codeBtn.disabled = true;
-        // L'assainissement est fait côté serveur : ce que l'éditeur stocke est
-        // le SVG nettoyé qu'il renvoie, jamais la chaîne collée telle quelle.
+        // Sanitizing is done server-side: what the editor stores is the cleaned
+        // SVG it returns, never the pasted string as is.
         ajaxPost("lumia_wl_sanitize_svg", { svg: raw }, function (data) {
           codeBtn.disabled = false;
           if (!data || !data.success) {
-            toast((data && data.data && data.data.message) || "SVG refusé.", "error");
+            toast((data && data.data && data.data.message) || tr("svgRejected"), "error");
             return;
           }
           applyIcon(data.data.icon);
-          toast("Icône SVG appliquée.", "success");
+          toast(tr("svgApplied"), "success");
         });
       });
     }
@@ -1747,7 +1762,7 @@
     var mediaPrev = el.querySelector("#lumia-ip-media-prev");
     if (mediaBtn && typeof wp !== "undefined" && wp.media) {
       mediaBtn.addEventListener("click", function () {
-        var frame = wp.media({ title: "Choisir une icône", multiple: false });
+        var frame = wp.media({ title: tr("chooseIcon"), multiple: false });
         frame.on("select", function () {
           var att = frame.state().get("selection").first().toJSON();
           if (mediaPrev) {
@@ -1766,11 +1781,11 @@
     var thumb = btn.querySelector(".lumia-wl-icon-btn-thumb");
     var label = btn.querySelector("span:last-child");
     if (thumb) thumb.innerHTML = buildIconThumbInner(item.icon, item._wpIcon);
-    if (label) label.textContent = item.icon ? "Modifier" : "Choisir une icône";
+    if (label) label.textContent = item.icon ? tr("change") : tr("chooseIcon");
   }
 
   /* ================================================================
-   * SAUVEGARDE
+   * SAVING
    * ================================================================ */
 
   function onSave() {
@@ -1797,19 +1812,19 @@
           });
         }
         renderProfilesSidebar();
-        toast("Menu enregistré.", "success");
+        toast(tr("menuSaved"), "success");
 
         try { sessionStorage.setItem("lumia_mc_open_profile", saved.id); } catch (e) {}
         setTimeout(function () { window.location.reload(); }, 800);
       } else {
         if (saveBtn) saveBtn.disabled = false;
-        toast("Erreur lors de la sauvegarde.", "error");
+        toast(tr("saveFailed"), "error");
       }
     });
   }
 
   /* ================================================================
-   * COLLECTE
+   * COLLECTION
    * ================================================================ */
 
   function collectProfile() {
@@ -1871,9 +1886,9 @@
   }
 
   /**
-   * @param {object} [opts] rolesOnly : n'expose que les rôles (restriction d'un
-   *   lien personnalisé — un lien de menu ne se cible pas par utilisateur).
-   *   onChange : appelé après chaque ajout/retrait, avec la valeur courante.
+   * @param {object} [opts] rolesOnly: only exposes the roles (restriction of a
+   *   custom link — a menu link is not targeted per user).
+   *   onChange: called after every addition/removal, with the current value.
    */
   function createMultiSelect(containerId, initialSelected, opts) {
     var container = document.getElementById(containerId);
@@ -1882,9 +1897,9 @@
     var widget = { selected: initialSelected || [], results: [], open: false, timer: null,
                    container: container, rolesOnly: !!opts.rolesOnly };
 
-    // Structure persistante. L'input n'est JAMAIS recréé : le rebuild complet
-    // de l'ancienne version détruisait l'input focalisé, ce qui déclenchait un
-    // blur → le dropdown se refermait aussitôt (« pas le temps de cliquer »).
+    // Persistent structure. The input is NEVER recreated: the full rebuild of
+    // the old version destroyed the focused input, which triggered a blur → the
+    // dropdown closed immediately ("no time to click").
     container.innerHTML =
       '<div class="lumia-wl-ms-tags"></div>' +
       '<div class="lumia-wl-ms-dropdown" style="display:none"></div>';
@@ -1893,7 +1908,7 @@
     var input      = document.createElement("input");
     input.type        = "text";
     input.className   = "lumia-wl-ms-input";
-    input.placeholder = "Rechercher…";
+    input.placeholder = tr("search");
     tagsEl.appendChild(input);
 
     widget.getValue = function () {
@@ -1909,7 +1924,7 @@
         var chip = document.createElement("span");
         chip.className = "lumia-wl-chip";
         chip.innerHTML = esc(s.label) +
-          '<button type="button" class="lumia-wl-chip__remove" data-id="' + esc(s.id) + '">' + (L.x || "×") + "</button>";
+          '<button type="button" class="lumia-wl-chip__remove" data-id="' + esc(s.id) + '">' + (L.x || "&times;") + "</button>";
         tagsEl.insertBefore(chip, input);
       });
     }
@@ -1922,8 +1937,8 @@
     widget.render = function () { renderChips(); renderDropdown(); };
     widget.close  = function () { if (!widget.open) return; widget.open = false; renderDropdown(); };
 
-    // Délégation : chips et options sont recréés à chaque rendu, on écoute
-    // donc au niveau du container (une seule fois, pas de fuite de listeners).
+    // Delegation: chips and options are recreated on every render, so we listen
+    // at the container level (once, no listener leak).
     container.addEventListener("mousedown", function (e) {
       var rm = e.target.closest(".lumia-wl-chip__remove");
       if (rm) {
@@ -1937,18 +1952,18 @@
       }
       var opt = e.target.closest(".lumia-wl-ms-option");
       if (opt) {
-        e.preventDefault(); // conserve le focus de l'input
+        e.preventDefault(); // keeps the input focus
         if (!widget.selected.find(function (s) { return s.id === opt.dataset.id; })) {
           var rawId = opt.dataset.type === "user" ? parseInt(opt.dataset.raw, 10) : opt.dataset.raw;
           widget.selected.push({ id: opt.dataset.id, rawId: rawId, label: opt.dataset.label, type: opt.dataset.type });
           setDirty(true);
           if (opts.onChange) opts.onChange(widget.getValue());
         }
-        widget.render(); // reste ouvert pour permettre les ajouts multiples
+        widget.render(); // stays open to allow multiple additions
         input.focus();
         return;
       }
-      // Clic dans la zone de tags (hors chip) → focus l'input.
+      // Click in the tags area (outside a chip) → focus the input.
       if (e.target === tagsEl || e.target === container) {
         input.focus();
       }
@@ -2009,11 +2024,11 @@
   function msDropdownHtml(widget) {
     var selIds  = widget.selected.map(function (s) { return s.id; });
     var options = widget.results.filter(function (r) { return selIds.indexOf(r.id) === -1; });
-    if (!options.length) return '<div class="lumia-wl-ms-empty">Aucun résultat.</div>';
+    if (!options.length) return '<div class="lumia-wl-ms-empty">' + esc(tr("noResults")) + "</div>";
     return options.map(function (r) {
       var badge = r.type === "role"
-        ? '<span class="lumia-badge lumia-badge--info">Rôle</span>'
-        : '<span class="lumia-badge lumia-badge--inactive">Utilisateur</span>';
+        ? '<span class="lumia-badge lumia-badge--info">' + esc(tr("role")) + "</span>"
+        : '<span class="lumia-badge lumia-badge--inactive">' + esc(tr("user")) + "</span>";
       return '<div class="lumia-wl-ms-option" data-id="' + esc(r.id) + '" data-label="' + esc(r.label) +
         '" data-type="' + esc(r.type) + '" data-raw="' + esc(String(r.rawId)) + '">' +
         esc(r.label) + " " + badge + "</div>";
@@ -2021,7 +2036,7 @@
   }
 
   /* ================================================================
-   * UTILITAIRES
+   * UTILITIES
    * ================================================================ */
 
   function ajaxPost(action, data, cb) {
@@ -2096,10 +2111,10 @@
   function stripTags(s) { return String(s || "").replace(/<[^>]*>/g, "").trim(); }
 
   /**
-   * Fallback lisible quand ni label ni _wpLabel ne sont disponibles
-   * (item masqué et mergeWpMenu pas encore passé, ou menu WP introuvable) :
-   * extrait le morceau utile du slug ("edit.php?post_type=product" → "Product")
-   * plutôt que d'afficher la chaîne technique brute.
+   * Readable fallback when neither label nor _wpLabel is available (hidden
+   * item with mergeWpMenu not run yet, or WP menu not found): extracts the
+   * useful part of the slug ("edit.php?post_type=product" → "Product") rather
+   * than displaying the raw technical string.
    */
   function prettifySlug(slug) {
     var raw = String(slug || "");

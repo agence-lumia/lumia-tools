@@ -1,9 +1,9 @@
 /* ================================================================
-   MODULE CRÉATEUR DE MENU — éditeur intégré (embedded)
+   MENU CREATOR MODULE — built-in (embedded) editor
    ================================================================ */
 
 /* ----------------------------------------------------------------
-   Layout parent : l'éditeur remplit toute la hauteur disponible
+   Parent layout: the editor fills the whole available height
    ---------------------------------------------------------------- */
 
 .lumia-admin-main:has(.lumia-mc-editor) {
@@ -21,14 +21,14 @@
   overflow: hidden;
 }
 
-/* Topbar module : sticky dans les pages normales, statique dans l'éditeur */
+/* Module topbar: sticky on regular pages, static in the editor */
 .lumia-admin-main:has(.lumia-mc-editor) .lumia-page__header {
   position: static;
   flex-shrink: 0;
 }
 
 /* ----------------------------------------------------------------
-   CORPS DE L'ÉDITEUR (3 colonnes)
+   EDITOR BODY (3 columns)
    ---------------------------------------------------------------- */
 
 .lumia-mc-editor {
@@ -48,7 +48,7 @@
 }
 
 /* ----------------------------------------------------------------
-   COLONNE GAUCHE — liste des profils
+   LEFT COLUMN — profile list
    ---------------------------------------------------------------- */
 
 .lumia-wl-ep__profiles-col {
@@ -106,7 +106,7 @@
   color: var(--lumia-text);
 }
 
-/* Search — wrapper stylisé comme un input */
+/* Search — wrapper styled like an input */
 .lumia-wl-ep__profiles-search-wrap {
   display: flex;
   align-items: center;
@@ -200,8 +200,8 @@
   gap: 1px;
 }
 
-/* Création : bouton fantôme en fin de liste, là où le nouveau menu
-   apparaîtra — plutôt qu'une icône « + » isolée dans l'en-tête. */
+/* Creation: ghost button at the end of the list, where the new menu will
+   appear — rather than an isolated "+" icon in the header. */
 .lumia-mc-add-placeholder {
   display: flex;
   align-items: center;
@@ -227,8 +227,8 @@
 }
 
 /* ----------------------------------------------------------------
-   ITEM DE LA SIDEBAR (profil)
-   -- hauteur stable : les actions sont toujours en layout --
+   SIDEBAR ITEM (profile)
+   -- stable height: the actions are always in the layout --
    ---------------------------------------------------------------- */
 
 .lumia-wl-ep-profile-item {
@@ -265,7 +265,7 @@
   min-width: 0;
 }
 
-/* Pastille de statut */
+/* Status dot */
 .lumia-mc-dot {
   width: 7px;
   height: 7px;
@@ -281,7 +281,7 @@
   background: #f59e0b; /* amber-400 */
 }
 
-/* Actions — toujours en layout, visibilité gérée */
+/* Actions — always in the layout, visibility managed */
 .lumia-mc-item-actions {
   display: flex;
   align-items: center;
@@ -329,7 +329,7 @@
 }
 
 /* ----------------------------------------------------------------
-   COLONNE CENTRALE — arbre du menu + placeholder
+   CENTER COLUMN — menu tree + placeholder
    ---------------------------------------------------------------- */
 
 .lumia-wl-ep__tree-col {
@@ -391,7 +391,7 @@
 }
 
 /* ----------------------------------------------------------------
-   ITEMS DE L'ARBRE
+   TREE ITEMS
    ---------------------------------------------------------------- */
 
 .lumia-wl-tree-item {
@@ -425,7 +425,7 @@
   background: var(--lumia-n50, #f9fafb);
 }
 
-/* Drag handle — visible uniquement au survol */
+/* Drag handle — only visible on hover */
 .lumia-wl-tree-item__handle {
   color: var(--lumia-n300, #d1d5db);
   cursor: grab;
@@ -470,7 +470,7 @@
   flex-shrink: 0;
 }
 
-/* Icône du menu */
+/* Menu icon */
 .lumia-wl-tree-item__icon,
 .lumia-wl-tree-item__icon-ph {
   width: 16px;
@@ -488,11 +488,11 @@
 }
 
 /**
- * Icône SVG rendue en masque : la source ne donne que la forme, la couleur
- * vient d'ici. Indispensable pour les icônes de menu monochromes, peintes
- * pour la barre latérale sombre de wp-admin (fill blanc chez WooCommerce ou
- * Bricks, stroke currentColor — donc noir en <img> — pour un fichier Lucide),
- * qui seraient sinon invisibles ou hors thème sur le fond clair de l'éditeur.
+ * SVG icon rendered as a mask: the source only gives the shape, the color
+ * comes from here. Essential for monochrome menu icons painted for the dark
+ * wp-admin sidebar (white fill for WooCommerce or Bricks, stroke currentColor
+ * — hence black in an <img> — for a Lucide file), which would otherwise be
+ * invisible or off-theme on the editor's light background.
  */
 .lumia-wl-icon-mask {
   display: inline-block;
@@ -509,7 +509,7 @@
   color: var(--lumia-n500, #6b7280);
 }
 
-/* Cadenas « accès direct bloqué » */
+/* Padlock "direct access blocked" */
 .lumia-wl-tree-item__lock {
   display: inline-flex;
   align-items: center;
@@ -529,7 +529,7 @@
   font-style: italic;
 }
 
-/* Bandeau des entrées obsolètes, au-dessus de l'arbre. */
+/* Banner of the stale entries, above the tree. */
 .lumia-mc-stale-bar {
   display: flex;
   align-items: center;
@@ -571,7 +571,7 @@
   min-width: 0;
 }
 
-/* Premier niveau : un peu plus de poids */
+/* First level: a bit more weight */
 .lumia-wl-tree-item:not(.lumia-wl-tree-item--child) > .lumia-wl-tree-item__row .lumia-wl-tree-item__label {
   font-weight: 500;
 }
@@ -581,7 +581,7 @@
   text-decoration: line-through;
 }
 
-/* Groupe de boutons à droite */
+/* Button group on the right */
 .lumia-wl-tree-item__btns {
   display: flex;
   align-items: center;
@@ -595,7 +595,7 @@
   opacity: 1;
 }
 
-/* Boutons individuels */
+/* Individual buttons */
 .lumia-wl-tree-item__vis,
 .lumia-wl-tree-item__mv,
 .lumia-wl-tree-item__del {
@@ -630,7 +630,7 @@
   padding-left: 20px;
 }
 
-/* Séparateur visuel */
+/* Visual separator */
 .lumia-wl-tree-item--sep .lumia-wl-tree-item__row {
   cursor: default;
 }
@@ -642,13 +642,13 @@
   border-radius: 1px;
 }
 
-/* Séparateur : juste une ligne, pas de texte */
+/* Separator: just a line, no text */
 .lumia-wl-tree-sep-label {
   display: none;
 }
 
 /* ----------------------------------------------------------------
-   COLONNE DROITE — panel header + panels + footer
+   RIGHT COLUMN — panel header + panels + footer
    ---------------------------------------------------------------- */
 
 .lumia-wl-ep__settings-col {
@@ -662,7 +662,7 @@
   overflow: hidden;
 }
 
-/* En-tête du panel — titre + bouton retour */
+/* Panel header — title + back button */
 .lumia-mc-panel-header {
   display: flex;
   align-items: center;
@@ -707,7 +707,7 @@
   min-width: 0;
 }
 
-/* Panels (scrollables) */
+/* Panels (scrollable) */
 .lumia-wl-settings-panel {
   flex: 1;
   overflow-y: auto;
@@ -715,7 +715,7 @@
   overscroll-behavior: contain;
 }
 
-/* Pied de page ancré en bas */
+/* Footer anchored at the bottom */
 .lumia-mc-panel-footer {
   display: flex;
   align-items: center;
@@ -727,7 +727,7 @@
   background: var(--lumia-n50);
 }
 
-/* Groupe statut */
+/* Status group */
 .lumia-mc-status-group {
   width: 100%;
 }
@@ -773,7 +773,7 @@
   background: #f59e0b;
 }
 
-/* Lignes de paramètres */
+/* Settings rows */
 .lumia-wl-settings-row {
   display: flex;
   flex-direction: column;
@@ -793,8 +793,8 @@
   gap: 12px;
 }
 
-/* Le bloc de libellé absorbe la place restante ; sans min-width:0 son texte
-   d'aide impose sa largeur intrinsèque et pousse le contrôle hors du panneau. */
+/* The label block absorbs the remaining space; without min-width:0 its help
+   text imposes its intrinsic width and pushes the control out of the panel. */
 .lumia-wl-settings-row--inline > .lumia-wl-settings-row__label {
   flex: 1;
   min-width: 0;
@@ -829,7 +829,7 @@
 }
 
 /* ----------------------------------------------------------------
-   SEGMENTED CONTROL (Statut)
+   SEGMENTED CONTROL (Status)
    ---------------------------------------------------------------- */
 
 .lumia-wl-seg {
@@ -870,7 +870,7 @@
 }
 
 /* ----------------------------------------------------------------
-   ICON PICKER — aperçu + bouton (le dropdown est flottant)
+   ICON PICKER — preview + button (the dropdown is floating)
    ---------------------------------------------------------------- */
 
 .lumia-wl-icon-preview-row {
@@ -925,7 +925,7 @@
   line-height: 16px;
 }
 
-/* Dropdown flottant (appended to body) */
+/* Floating dropdown (appended to body) */
 .lumia-wl-icon-float {
   position: fixed;
   z-index: 99999;
@@ -973,9 +973,9 @@
   overflow-y: auto;
 }
 
-/* Panneaux sans grille (médiathèque, code SVG) : le padding est porté par le
-   corps, pour que la barre de recherche du panneau Bibliothèque puisse rester
-   collée en haut sans marge parasite. */
+/* Panes without a grid (media library, SVG code): the padding is carried by
+   the body, so that the search bar of the Library pane can stay stuck to the
+   top without a stray margin. */
 .lumia-wl-icon-pane__body {
   padding: 0.625rem;
   display: flex;
@@ -1024,7 +1024,7 @@
   resize: vertical;
 }
 
-/* Bouton de repli : l'aperçu de l'icône native rend le « rétablir » explicite. */
+/* Fallback button: the native icon preview makes the "restore" explicit. */
 .lumia-wl-icon-picker-footer .lumia-btn {
   width: 100%;
   display: inline-flex;
@@ -1034,9 +1034,9 @@
   line-height: 1;
 }
 
-/* Boîte de 16px centrée : sans elle, un dashicon garde son font-size de 20px
-   (il déborde et pousse le libellé) et une icône <img> se cale sur la ligne
-   de base du texte au lieu d'être centrée. */
+/* Centered 16px box: without it, a dashicon keeps its 20px font-size (it
+   overflows and pushes the label) and an <img> icon sits on the text baseline
+   instead of being centered. */
 .lumia-wl-icon-reset-thumb {
   display: inline-flex;
   align-items: center;
