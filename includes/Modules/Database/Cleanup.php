@@ -3,6 +3,8 @@ namespace Lumia\Tools\Modules\Database;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Core\Compat;
+
 /**
  * Cleanup tab of the Database module (replaces WP-Sweep).
  *
@@ -513,7 +515,7 @@ class Cleanup {
 		 *
 		 * @param array<string, list<string>> $aliases
 		 */
-		$aliases = (array) apply_filters( 'lumia_db_table_owner_aliases', self::OWNER_ALIASES );
+		$aliases = (array) Compat::apply_filters( 'db_table_owner_aliases', self::OWNER_ALIASES );
 
 		$tables = [];
 		foreach ( $this->site_table_status() as $t ) {

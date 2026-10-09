@@ -122,6 +122,15 @@ Adding a string:
 
 Tooling details: `tools/i18n/README.md`.
 
+## Compatibility with Studio Kyne Mini Tools (`Core\Compat`)
+
+Sites migrated from the former name may still define `SKMT_*` constants in `wp-config.php` and hook snippets on `skmt_*` filters and actions. Every read of those public names goes through `Compat`, never through `defined()` or a direct `apply_filters()`:
+
+- `Compat::constant( 'SMTP_USER' )` / `Compat::has_constant( 'SMTP_USER' )`: `LUMIA_SMTP_USER` first, `SKMT_SMTP_USER` as a fallback (`null` / `false` if neither exists). Covers `DISABLE_LOGIN_URL`, `SMTP_USER`, `SMTP_PASSWORD`, `BREVO_API_KEY`, `ENCRYPTION_KEY`.
+- `Compat::apply_filters( 'custom_login_redirect', $value, ...$args )` / `Compat::do_action( 'register_modules', ...$args )`: if something is hooked on `skmt_*`, it runs first through `apply_filters_deprecated()` / `do_action_deprecated()` (version `2.0.0`, notice in `WP_DEBUG`), then `lumia_*` runs. Covers `module_definitions`, `register_modules`, `custom_login_redirect`, `db_table_owner_aliases`, `activity_log_post_types`, `activity_log_content_meta_keys`, `activity_log_tracked_options`, `activity_log_record`, `mc_editor_excluded_slugs`.
+
+The admin help texts only mention the `LUMIA_*` names. A new public filter, action or wp-config constant is added through `Compat` only if a site could already have used its `skmt_` / `SKMT_` ancestor. Checked on the Docker bench by `tools/e2e/run.sh assert-compat`.
+
 ## Adding a module
 
 1. Create `includes/Modules/MyModule/Module.php` extending `AbstractModule`

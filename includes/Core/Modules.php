@@ -126,7 +126,7 @@ class Modules {
 		 * Allows adding/overriding modules from other plugins/themes.
 		 * Format: [ 'module_id' => [ 'name' => ..., 'class' => ..., ... ] ]
 		 */
-		$definitions = apply_filters( 'lumia_module_definitions', $defaults );
+		$definitions = Compat::apply_filters( 'module_definitions', $defaults );
 
 		if ( ! is_array( $definitions ) ) {
 			$definitions = $defaults;
@@ -153,7 +153,7 @@ class Modules {
 		/**
 		 * Imperative hook to register modules through $modules->register(...).
 		 */
-		do_action( 'lumia_register_modules', $this, $only_active );
+		Compat::do_action( 'register_modules', $this, $only_active );
 	}
 
 	/**

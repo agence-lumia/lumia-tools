@@ -3,6 +3,8 @@ namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Core\Compat;
+
 /**
  * Encryption of the SMTP password at rest.
  *
@@ -87,8 +89,10 @@ class Crypto {
 	 * that survives a regeneration of the `wp-config.php` salts.
 	 */
 	private static function key(): string {
-		if ( defined( 'LUMIA_ENCRYPTION_KEY' ) && '' !== (string) LUMIA_ENCRYPTION_KEY ) {
-			$material = (string) LUMIA_ENCRYPTION_KEY;
+		$constant = Compat::constant( 'ENCRYPTION_KEY' );
+
+		if ( null !== $constant && '' !== (string) $constant ) {
+			$material = (string) $constant;
 		} else {
 			$material = ( defined( 'LOGGED_IN_KEY' ) ? (string) LOGGED_IN_KEY : '' ) . ( defined( 'LOGGED_IN_SALT' ) ? (string) LOGGED_IN_SALT : '' );
 		}

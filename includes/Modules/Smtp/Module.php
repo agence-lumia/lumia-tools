@@ -4,6 +4,7 @@ namespace Lumia\Tools\Modules\Smtp;
 defined( 'ABSPATH' ) || exit;
 
 use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Core\Compat;
 
 /**
  * SMTP module — sending through an authenticated SMTP server or the Brevo API,
@@ -101,11 +102,11 @@ class Module extends AbstractModule {
 			'log_max_rows'       => min( self::ROWS_MAX, max( self::ROWS_MIN, absint( $settings['log_max_rows'] ?? 5000 ) ) ),
 		];
 
-		if ( ! defined( 'LUMIA_SMTP_PASSWORD' ) ) {
+		if ( ! Compat::has_constant( 'SMTP_PASSWORD' ) ) {
 			self::store_secret( Mailer::PASSWORD_OPTION, self::sanitize_password( $settings['password'] ?? '' ) );
 		}
 
-		if ( ! defined( 'LUMIA_BREVO_API_KEY' ) ) {
+		if ( ! Compat::has_constant( 'BREVO_API_KEY' ) ) {
 			// A Brevo key (`xkeysib-…`) only has letters, digits and dashes.
 			self::store_secret( Mailer::BREVO_KEY_OPTION, (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', self::sanitize_password( $settings['brevo_key'] ?? '' ) ) );
 		}

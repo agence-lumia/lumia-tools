@@ -199,6 +199,80 @@ cmd_install_lumia() {
 	wp plugin install "/e2e/out/${zip_name}" --force --activate
 }
 
+# write_snippet <name>: stdin becomes wp-content/e2e-snippets/<name>.php, loaded by the
+# e2e-snippets mu-plugin like a FluentSnippets or theme snippet.
+write_snippet() {
+	# shellcheck disable=SC2016 # $1 is expanded by the container shell on purpose.
+	dc --progress quiet run --rm -T cli sh -c 'mkdir -p /var/www/html/wp-content/e2e-snippets && cat > "/var/www/html/wp-content/e2e-snippets/$1.php"' sh "$1"
+}
+
+remove_snippets() {
+	dc --progress quiet run --rm -T cli sh -c 'rm -rf /var/www/html/wp-content/e2e-snippets' >/dev/null 2>&1 || true
+}
+
+# assert-compat: the SKMT compatibility layer, on a bench where the renamed plugin is
+# installed. Legacy SKMT_* constants and skmt_* hooks must keep working, and the
+# deprecation of the hooks must reach debug.log.
+cmd_assert_compat() {
+	local failures=0 folder code location log
+
+	check() { # check <label> <status: 0 = ok>
+		if [ "$2" -eq 0 ]; then
+			echo "  ok   $1"
+		else
+			echo "  FAIL $1"
+			failures=$((failures + 1))
+		fi
+	}
+
+	folder="$(working_tree_plugin)"
+	wp plugin is-active "${folder}" >/dev/null 2>&1 || die "${folder} is not active: run 'install-lumia' first"
+	trap remove_snippets EXIT
+	remove_snippets
+
+	# Security on, with its defaults (custom login URL /connexion): wp-login.php answers 404.
+	# shellcheck disable=SC2016 # PHP code: the single quotes are on purpose.
+	wp --user=admin eval '$m = \Lumia\Tools\Core\Plugin::instance()->modules; $m->register_default_modules( false ); $m->activate( "security" );' >/dev/null
+	wp rewrite flush --hard >/dev/null
+
+	echo "In-process checks"
+	wp --user=admin eval-file /e2e/assert-compat.php || failures=$((failures + 1))
+
+	echo "SKMT_DISABLE_LOGIN_URL (wp-config style constant)"
+	code="$(curl -s -o /dev/null -w '%{http_code}' "${SITE_URL}/wp-login.php")"
+	check "baseline: wp-login.php answers 404 behind the custom login URL (got ${code})" "$([ "${code}" = 404 ] && echo 0 || echo 1)"
+	write_snippet skmt-constant <<'EOF'
+<?php
+define( 'SKMT_DISABLE_LOGIN_URL', true );
+EOF
+	code="$(curl -s -o /dev/null -w '%{http_code}' "${SITE_URL}/wp-login.php")"
+	check "wp-login.php answers 200 with SKMT_DISABLE_LOGIN_URL (got ${code})" "$([ "${code}" = 200 ] && echo 0 || echo 1)"
+	remove_snippets
+
+	echo "skmt_custom_login_redirect (theme or snippet filter)"
+	write_snippet skmt-filter <<'EOF'
+<?php
+add_filter(
+	'skmt_custom_login_redirect',
+	static function () {
+		return home_url( '/e2e-skmt-redirect/' );
+	}
+);
+EOF
+	dc --progress quiet run --rm -T cli sh -c 'rm -f /var/www/html/wp-content/debug.log'
+	location="$(curl -s -o /dev/null -D - -H 'X-E2E-User: admin' "${SITE_URL}/connexion/" | tr -d '\r' | sed -n 's/^[Ll]ocation: //p')"
+	check "a logged-in visit of /connexion/ is redirected by the legacy filter (got '${location}')" "$([ "${location}" = "${SITE_URL}/e2e-skmt-redirect/" ] && echo 0 || echo 1)"
+	log="$(dc --progress quiet run --rm -T cli sh -c 'cat /var/www/html/wp-content/debug.log 2>/dev/null' || true)"
+	check "debug.log carries the deprecation of skmt_custom_login_redirect" "$(grep -q 'skmt_custom_login_redirect' <<<"${log}" && echo 0 || echo 1)"
+	check "the notice names the replacement lumia_custom_login_redirect" "$(grep -q 'lumia_custom_login_redirect' <<<"${log}" && echo 0 || echo 1)"
+	remove_snippets
+
+	if [ "${failures}" -gt 0 ]; then
+		die "assert-compat: ${failures} check(s) failed"
+	fi
+	echo "assert-compat: all checks passed."
+}
+
 usage() {
 	cat <<'EOF'
 Usage: tools/e2e/run.sh <command> [args]
@@ -209,6 +283,7 @@ Usage: tools/e2e/run.sh <command> [args]
                                        install SKMT (commit 8d4cd85) and seed realistic data
   capture <output-dir> [page-slug]     write the admin text to out/<output-dir>/ (slug defaults to studio-kyne-mini-tools)
   install-lumia                        install and activate the plugin built from the working tree
+  assert-compat                        check the SKMT compatibility layer (constants, hooks, tables) on an installed bench
 EOF
 }
 
@@ -222,6 +297,7 @@ case "${command}" in
 	seed-skmt) cmd_seed_skmt "$@" ;;
 	capture) cmd_capture "$@" ;;
 	install-lumia) cmd_install_lumia ;;
+	assert-compat) cmd_assert_compat ;;
 	-h | --help | help) usage ;;
 	*)
 		echo "unknown command: ${command}" >&2

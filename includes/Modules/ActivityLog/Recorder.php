@@ -3,6 +3,7 @@ namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Core\Compat;
 use Lumia\Tools\Modules\Security\ClientIp;
 
 /**
@@ -283,8 +284,8 @@ class Recorder {
 		 *
 		 * @param string[] $keys
 		 */
-		$keys = (array) apply_filters(
-			'lumia_activity_log_content_meta_keys',
+		$keys = (array) Compat::apply_filters(
+			'activity_log_content_meta_keys',
 			[
 				'_bricks_page_content_2',
 				'_bricks_page_header_2',
@@ -646,8 +647,8 @@ class Recorder {
 		 *
 		 * @param array<string, string> $options Option name => label.
 		 */
-		return (array) apply_filters(
-			'lumia_activity_log_tracked_options',
+		return (array) Compat::apply_filters(
+			'activity_log_tracked_options',
 			[
 				'blogname'               => __( 'Site title', 'lumia-tools' ),
 				'blogdescription'        => __( 'Tagline', 'lumia-tools' ),
@@ -714,8 +715,8 @@ class Recorder {
 		 *
 		 * @param array<string, mixed>|false $row Row to write; false to skip it.
 		 */
-		$row = apply_filters(
-			'lumia_activity_log_record',
+		$row = Compat::apply_filters(
+			'activity_log_record',
 			[
 				'user_id'      => $actor ? $actor->ID : 0,
 				'user_login'   => $actor ? $actor->user_login : '',
@@ -866,7 +867,7 @@ class Recorder {
 			 *
 			 * @param string[] $types
 			 */
-			$types = (array) apply_filters( 'lumia_activity_log_post_types', array_values( get_post_types( [ 'show_ui' => true ] ) ) );
+			$types = (array) Compat::apply_filters( 'activity_log_post_types', array_values( get_post_types( [ 'show_ui' => true ] ) ) );
 		}
 
 		return in_array( $post->post_type, $types, true );

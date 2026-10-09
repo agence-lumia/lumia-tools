@@ -4,6 +4,7 @@ namespace Lumia\Tools\Modules\MenuCreator;
 defined( 'ABSPATH' ) || exit;
 
 use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Core\Compat;
 use Lumia\Tools\Modules\ImageOptimizer\SvgHandler;
 use Lumia\Tools\Modules\WhiteLabel\MenuProfileManager;
 
@@ -739,8 +740,8 @@ class Module extends AbstractModule {
 	 * @return array<int, string>
 	 */
 	private function editor_excluded_slugs(): array {
-		return (array) apply_filters(
-			'lumia_mc_editor_excluded_slugs',
+		return (array) Compat::apply_filters(
+			'mc_editor_excluded_slugs',
 			[
 				'link-manager.php',
 			]

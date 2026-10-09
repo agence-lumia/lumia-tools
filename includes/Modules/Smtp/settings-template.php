@@ -13,12 +13,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Lumia\Tools\Core\Compat;
 use Lumia\Tools\Modules\Smtp\Crypto;
 use Lumia\Tools\Modules\Smtp\Mailer;
 use Lumia\Tools\Modules\Smtp\Providers;
 
-$smtp_user_const = defined( 'LUMIA_SMTP_USER' );
-$smtp_pass_const = defined( 'LUMIA_SMTP_PASSWORD' );
+$smtp_user_const = Compat::has_constant( 'SMTP_USER' );
+$smtp_pass_const = Compat::has_constant( 'SMTP_PASSWORD' );
 $smtp_has_pass   = $smtp_pass_const || '' !== (string) get_option( Mailer::PASSWORD_OPTION, '' );
 $smtp_pass_ok    = null !== Mailer::password();
 $smtp_override   = Mailer::wp_mail_override();
@@ -26,7 +27,7 @@ $smtp_mailer     = new Mailer( $module_settings );
 $smtp_ready      = $smtp_mailer->smtp_ready();
 $smtp_brevo      = $smtp_mailer->brevo_ready();
 $smtp_transport  = Mailer::transport( $module_settings );
-$smtp_key_const  = defined( 'LUMIA_BREVO_API_KEY' );
+$smtp_key_const  = Compat::has_constant( 'BREVO_API_KEY' );
 $smtp_has_key    = Mailer::has_brevo_key();
 $smtp_key_ok     = null !== Mailer::brevo_key();
 $smtp_encryption = (string) $module_settings['encryption'];
@@ -204,7 +205,7 @@ $smtp_provider   = (string) $module_settings['provider'];
 						<?php endif; ?>
 					</label>
 					<input type="text" id="lumia_sm_username" name="lumia_module_settings[username]" class="lumia-input lumia-input--sm"
-						value="<?php echo esc_attr( $smtp_user_const ? (string) LUMIA_SMTP_USER : (string) $module_settings['username'] ); ?>"
+						value="<?php echo esc_attr( $smtp_user_const ? (string) Compat::constant( 'SMTP_USER' ) : (string) $module_settings['username'] ); ?>"
 						autocomplete="off" spellcheck="false" <?php disabled( $smtp_user_const ); ?>>
 				</div>
 				<div class="lumia-form__group lumia-sm__wide">

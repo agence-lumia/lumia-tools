@@ -4,6 +4,7 @@ namespace Lumia\Tools\Modules\Security;
 defined( 'ABSPATH' ) || exit;
 
 use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Core\Compat;
 
 /**
  * Security module.
@@ -178,7 +179,7 @@ class Module extends AbstractModule {
 	 *     define( 'LUMIA_DISABLE_LOGIN_URL', true );
 	 */
 	public static function login_url_disabled(): bool {
-		return defined( 'LUMIA_DISABLE_LOGIN_URL' ) && LUMIA_DISABLE_LOGIN_URL;
+		return (bool) Compat::constant( 'DISABLE_LOGIN_URL' );
 	}
 
 	/**

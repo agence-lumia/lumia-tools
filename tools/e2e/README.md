@@ -21,6 +21,7 @@ tools/e2e/run.sh up                    # démarre le banc (idempotent)
 tools/e2e/run.sh seed-skmt             # installe SKMT 8d4cd85 + données
 tools/e2e/run.sh capture baseline      # texte de l'admin → tools/e2e/out/baseline/
 tools/e2e/run.sh install-lumia         # zip de l'arbre de travail, installé et activé
+tools/e2e/run.sh assert-compat         # couche de compatibilité SKMT_* / skmt_* (bench avec Lümia installé)
 tools/e2e/run.sh down                  # arrête et supprime les données
 ```
 
@@ -71,6 +72,17 @@ Les attributs lus par l'utilisateur (`placeholder`, `title`, `aria-label`, `alt`
 seul du JavaScript affiche (modales, toasts) n'apparaissent pas.
 
 `out/` est ignoré par git ; la capture de référence n'est pas commitée.
+
+## Couche de compatibilité (`assert-compat`)
+
+Sur un banc où Lümia est installé (`install-lumia`), vérifie `Core\Compat` : constantes
+`SKMT_*` (lecture, priorité de `LUMIA_*`), filtres et actions `skmt_*` (ordre, arguments,
+dépréciation 2.0.0), constantes SMTP et clé de chiffrement, attribution des tables
+(`{prefix}lumia_*` à Lümia Tools, `{prefix}skmt_*` orpheline), puis en HTTP :
+`wp-login.php` répond 200 avec `SKMT_DISABLE_LOGIN_URL`, `skmt_custom_login_redirect`
+est appliqué et la dépréciation arrive dans `debug.log`. Les snippets de test sont
+déposés dans `wp-content/e2e-snippets/` (chargé par le mu-plugin `e2e-snippets.php`,
+banc seulement) puis supprimés. Active Sécurité (réglages par défaut) si besoin.
 
 ## Journaux et bruit connu
 

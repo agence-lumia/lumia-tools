@@ -3,6 +3,8 @@ namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Core\Compat;
+
 /**
  * Plugs PHPMailer (the core one) into the configured SMTP server or API and
  * enforces the sender.
@@ -250,8 +252,8 @@ class Mailer {
 	 * @param array<string, mixed> $settings
 	 */
 	public static function username( array $settings ): string {
-		if ( defined( 'LUMIA_SMTP_USER' ) ) {
-			return (string) LUMIA_SMTP_USER;
+		if ( Compat::has_constant( 'SMTP_USER' ) ) {
+			return (string) Compat::constant( 'SMTP_USER' );
 		}
 
 		return (string) ( $settings['username'] ?? '' );
@@ -263,15 +265,15 @@ class Mailer {
 	 * @return string|null null if the option can no longer be decrypted (site keys changed).
 	 */
 	public static function password(): ?string {
-		if ( defined( 'LUMIA_SMTP_PASSWORD' ) ) {
-			return (string) LUMIA_SMTP_PASSWORD;
+		if ( Compat::has_constant( 'SMTP_PASSWORD' ) ) {
+			return (string) Compat::constant( 'SMTP_PASSWORD' );
 		}
 
 		return Crypto::decrypt( (string) get_option( self::PASSWORD_OPTION, '' ) );
 	}
 
 	public static function has_brevo_key(): bool {
-		return defined( 'LUMIA_BREVO_API_KEY' ) || '' !== (string) get_option( self::BREVO_KEY_OPTION, '' );
+		return Compat::has_constant( 'BREVO_API_KEY' ) || '' !== (string) get_option( self::BREVO_KEY_OPTION, '' );
 	}
 
 	/**
@@ -280,8 +282,8 @@ class Mailer {
 	 * @return string|null null if the option can no longer be decrypted.
 	 */
 	public static function brevo_key(): ?string {
-		if ( defined( 'LUMIA_BREVO_API_KEY' ) ) {
-			return (string) LUMIA_BREVO_API_KEY;
+		if ( Compat::has_constant( 'BREVO_API_KEY' ) ) {
+			return (string) Compat::constant( 'BREVO_API_KEY' );
 		}
 
 		return Crypto::decrypt( (string) get_option( self::BREVO_KEY_OPTION, '' ) );
