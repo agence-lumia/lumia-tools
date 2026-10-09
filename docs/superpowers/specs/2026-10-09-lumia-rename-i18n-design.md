@@ -38,11 +38,12 @@ Hors périmètre : modules MCP et Motion, nouvelles fonctionnalités, release st
 | Zip de release (`release-please.yml`, `release-dev.yml`) | `lumia-tools-<version>.zip`, dossier `lumia-tools/` |
 | Groupes de concurrence CI `skmt-*` | `lumia-*` |
 
-**Exceptions — ne pas renommer :**
+**Aucun nom `skmt` ne survit sur un site Lümia**, y compris les deux cas sensibles, traités par la migration (section 2) :
 
-- `'skmt-smtp|'` dans `Smtp\Crypto` : contexte de dérivation de la clé de chiffrement. Le changer rend illisibles les mots de passe SMTP et clés Brevo enregistrés.
-- `skmt-originals` (`ImageOptimizer\Module::BACKUP_DIR`) : dossier des originaux sur disque, référencé par la meta `_backup_file` de chaque image.
-- La couche de compatibilité (section 3), qui lit volontairement les anciens noms.
+- `'skmt-smtp|'` (`Smtp\Crypto`, contexte de dérivation de la clé AES-256-GCM) devient `'lumia-smtp|'`. Les secrets enregistrés sont **rechiffrés** pendant la migration.
+- `skmt-originals-{jeton}` (`ImageOptimizer\Module::BACKUP_DIR`, originaux sur disque) devient `lumia-originals-{jeton}`. Le dossier est **renommé** pendant la migration ; la meta `_backup_file` stocke un chemin relatif à ce dossier, elle reste valable.
+
+Seule la couche de compatibilité (section 3) mentionne encore les anciens noms, pour lire les données d'un site migré.
 
 ## 2. Migration des données (`Core\Migration\FromSkmt`)
 
@@ -58,6 +59,8 @@ Hors périmètre : modules MCP et Motion, nouvelles fonctionnalités, release st
 | Taxonomie `skmt_media_folder` | Renommée en place (`UPDATE term_taxonomy SET taxonomy = 'lumia_media_folder'`), cache des termes vidé. |
 | Crons `skmt_smtp_log_purge`, `skmt_activity_log_purge`, `skmt_image_optimizer_cron` | `wp_clear_scheduled_hook` sur l'ancien ; le module reprogramme le nouveau à son `init()` (bulk de l'optimiseur : reprogrammé avec ses arguments s'il était en cours). |
 | Slug de page `studio-kyne-mini-tools` stocké dans les profils de menu (WhiteLabel, MenuCreator) | Remplacé par `lumia-tools` dans les options copiées (parcours récursif des tableaux, remplacement exact de la valeur et du préfixe `studio-kyne-mini-tools&`). |
+| `skmt_smtp_password`, `skmt_smtp_brevo_key` (chiffrés) | **Rechiffrés** : déchiffrés avec l'ancienne clé (`'skmt-smtp|'` + même matériau : `SKMT_ENCRYPTION_KEY` ou sels), chiffrés avec la nouvelle (`'lumia-smtp|'`), écrits dans `lumia_*`. GCM est authentifié : un déchiffrement raté est détecté. Si l'ancienne valeur était déjà illisible (sels régénérés), elle est copiée telle quelle — même état qu'avant, l'admin ressaisit le mot de passe. |
+| Dossier `uploads/skmt-originals-{jeton}` | **Renommé** en `lumia-originals-{jeton}` (`rename()`, même système de fichiers, atomique). Si le renommage échoue (droits), `get_backup_dir()` lit l'ancien dossier tant qu'il existe et que le nouveau n'existe pas : rien n'est perdu, la migration ne s'arrête pas pour ça. |
 | Transients `_skmt_rl_*`, `skmt_wl_menu_user_*`, `skmt_github_update*`, `skmt_image_caps_*` | Ignorés (reconstruits). Le compteur de rate limiting repart à zéro : accepté. |
 
 En fin de migration : **désactivation de SKMT** (`deactivate_plugins`), sinon les deux plugins accrochent les mêmes hooks (URL de connexion, SMTP, white label). Puis notice persistante : « Migration depuis Studio Kyne Mini Tools terminée. Vous pouvez supprimer l'ancien plugin. »
@@ -97,11 +100,11 @@ Documenter dans `docs/core.md` la procédure pour ajouter une chaîne (make-pot,
 2. **Docker** (`wordpress:6.9+` / 7.1.2, PHP 8.x, MariaDB, wp-cli) :
    - installer SKMT au commit de départ (`8d4cd85`), locale `fr_FR`, tous les modules actifs, et créer des données réelles : réglages modifiés sur chaque module, images optimisées (meta + `skmt-originals`), dossiers de médias avec images, entrées des deux journaux, mot de passe SMTP enregistré (chiffré), URL de connexion personnalisée, profil de menu WhiteLabel/MenuCreator, avatar local, notice utilisateur ;
    - **capture de référence** : texte visible (DOM sans balises, normalisé) de chaque page d'admin du plugin et de chaque onglet de module, plus l'écran de connexion ;
-   - installer le zip Lümia Tools, l'activer → contrôler chaque ligne du tableau de la section 2 (requêtes SQL), mot de passe SMTP déchiffrable, URL de connexion fonctionnelle et `wp-login.php` toujours bloqué, rate limiting actif, crons programmés sous `lumia_*`, SKMT désactivé ;
+   - installer le zip Lümia Tools, l'activer → contrôler chaque ligne du tableau de la section 2 (requêtes SQL), mot de passe SMTP et clé Brevo déchiffrables, dossier `lumia-originals-*` présent et « Restaurer l'original » fonctionnel, URL de connexion fonctionnelle et `wp-login.php` toujours bloqué, rate limiting actif, crons programmés sous `lumia_*`, SKMT désactivé ;
    - **recapture** : diff vide avec la référence, au nom du plugin près ;
    - supprimer SKMT par l'admin (exécute son `uninstall.php`) → données Lümia intactes ;
    - réactiver Lümia Tools : migration non rejouée.
-3. Recherche de résidus : aucun `skmt`/`SKMT`/`studio-kyne`/`StudioKyne` hors liste d'exceptions et couche de compatibilité ; aucun caractère accentué français dans `includes/`, `templates/`, `assets/` hors `languages/` (seule exception : « Lümia »).
+3. Recherche de résidus : aucun `skmt`/`SKMT`/`studio-kyne`/`StudioKyne` hors couche de compatibilité ; aucun caractère accentué français dans `includes/`, `templates/`, `assets/` hors `languages/` (seule exception : « Lümia »).
 
 ## 6. Déroulé Git et GitHub
 
@@ -115,7 +118,7 @@ Documenter dans `docs/core.md` la procédure pour ajouter une chaîne (make-pot,
 | Risque | Parade |
 |---|---|
 | Une chaîne française change de forme à la traduction aller-retour | Paires stockant la chaîne **d'origine** + diff de texte visible avant/après |
-| Un sous-agent renomme une exception (`skmt-smtp|`, `skmt-originals`) | Renommage mécanique fait **avant** et une seule fois par script, avec liste d'exceptions ; vérification par recherche en fin de chantier |
+| Mot de passe SMTP ou originaux perdus au renommage | Rechiffrement et renommage du dossier dans la migration, testés en Docker (déchiffrement + restauration d'un original après migration) |
 | Migration partielle sur un site | Étapes idempotentes, marqueur en fin, modules non chargés tant que SKMT est actif, `wp db export` avant chaque site |
 | Snippet FluentSnippets ou thème qui utilise un hook `skmt_*` | Hooks dépréciés encore appliqués |
 | Diff énorme, revue difficile | Un commit par étape et par module |
