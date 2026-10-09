@@ -1,13 +1,13 @@
 <?php
 /**
- * Template des réglages du module Marque Blanche.
+ * Settings template of the White Label module.
  *
- * Variables disponibles (via module-settings.php) :
- * @var string          $module_id       ID du module (white_label)
- * @var array           $module          Infos du module
- * @var ModuleInterface $instance        Instance du module
- * @var array           $module_settings Settings actuels
- * @var string          $tab             Onglet actif
+ * Available variables (via module-settings.php):
+ * @var string          $module_id       Module ID (white_label)
+ * @var array           $module          Module info
+ * @var ModuleInterface $instance        Module instance
+ * @var array           $module_settings Current settings
+ * @var string          $tab             Active tab
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,11 +25,11 @@ $avatars = $module_settings['avatars'] ?? [];
 	<input type="hidden" name="action" value="lumia_save_settings">
 	<input type="hidden" name="lumia_tab" value="<?php echo esc_attr( $tab ); ?>">
 
-	<div class="lumia-tabs" role="tablist" data-lumia-tabs="white_label" aria-label="<?php esc_attr_e( 'Sections de la marque blanche', 'lumia-tools' ); ?>">
-		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="adminbar"><?php esc_html_e( 'Barre d\'administration', 'lumia-tools' ); ?></button>
+	<div class="lumia-tabs" role="tablist" data-lumia-tabs="white_label" aria-label="<?php esc_attr_e( 'White label sections', 'lumia-tools' ); ?>">
+		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="adminbar"><?php esc_html_e( 'Admin bar', 'lumia-tools' ); ?></button>
 		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="avatars"><?php esc_html_e( 'Avatars', 'lumia-tools' ); ?></button>
-		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="profile"><?php esc_html_e( 'Page de profil', 'lumia-tools' ); ?></button>
-		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="footer"><?php esc_html_e( 'Pied de page', 'lumia-tools' ); ?></button>
+		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="profile"><?php esc_html_e( 'Profile page', 'lumia-tools' ); ?></button>
+		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="footer"><?php esc_html_e( 'Footer', 'lumia-tools' ); ?></button>
 	</div>
 
 	<div class="lumia-module-form__scroll">
@@ -37,20 +37,20 @@ $avatars = $module_settings['avatars'] ?? [];
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="white_label" data-lumia-tab-panel="adminbar">
 
 	<!-- ============================================================
-		BARRE D'ADMINISTRATION
+		ADMIN BAR
 		============================================================ -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php esc_html_e( 'Barre d\'administration', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Masquez les éléments inutiles de la barre d\'administration WordPress.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php esc_html_e( 'Admin bar', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Hide the unnecessary items from the WordPress admin bar.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Logo WordPress -->
+			<!-- WordPress logo -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le logo WordPress', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime le logo WP et son menu déroulant en haut à gauche.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the WordPress logo', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the WP logo and its dropdown menu at the top left.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -61,11 +61,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Icône d'accueil / nom du site -->
+			<!-- Home icon / site name -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer l\'icône d\'accueil et le nom du site', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime l\'icône maison et le nom du site dans la barre admin.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the home icon and the site name', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the house icon and the site name from the admin bar.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -76,11 +76,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Palette de commandes -->
+			<!-- Command palette -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer la palette de commandes', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Disponible depuis WordPress 6.7+. Supprime le bouton de palette de commandes.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the command palette', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Available from WordPress 6.7 onward. Removes the command palette button.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -91,11 +91,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Compteur de mises à jour -->
+			<!-- Updates counter -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le compteur de mises à jour', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime l\'icône et le badge indiquant les mises à jour disponibles.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the updates counter', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the icon and badge showing available updates.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -106,11 +106,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Compteur de commentaires -->
+			<!-- Comments counter -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le compteur de commentaires', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime l\'icône et le badge indiquant les commentaires en attente.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the comments counter', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the icon and badge showing pending comments.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -121,11 +121,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Menu Ajouter -->
+			<!-- New menu -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le menu « Ajouter »', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime le bouton « + Ajouter » permettant de créer rapidement du contenu.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the "New" menu', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the "+ New" button used to quickly create content.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -136,11 +136,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Bouton Aide -->
+			<!-- Help button -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le bouton Aide', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Masque l\'onglet « Aide » en haut à droite de chaque page admin.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the Help button', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Hides the "Help" tab at the top right of every admin page.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -151,11 +151,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Options de l'écran -->
+			<!-- Screen options -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le bouton Options de l\'écran', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Masque l\'onglet « Options de l\'écran » en haut à droite de chaque page admin.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the Screen Options button', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Hides the "Screen Options" tab at the top right of every admin page.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -166,11 +166,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Supprimer Howdy -->
+			<!-- Remove Howdy -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Supprimer la salutation', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime « Howdy, » / « Bonjour, » devant le nom de l\'utilisateur connecté, quelle que soit la langue.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Remove the greeting', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes "Howdy," / "Hello," in front of the logged-in user name, whatever the language.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -181,11 +181,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Masquer barre côté site -->
+			<!-- Hide bar on the front end -->
 			<div class="lumia-option lumia-option--frontend-separator">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer la barre d\'administration sur le site', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Cache entièrement la barre d\'administration pour les visiteurs du site (front-end).', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the admin bar on the site', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Completely hides the admin bar for site visitors (front end).', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -208,15 +208,15 @@ $avatars = $module_settings['avatars'] ?? [];
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php esc_html_e( 'Avatars', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Hébergez les avatars localement plutôt que de dépendre de Gravatar.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Host avatars locally instead of relying on Gravatar.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Avatars locaux -->
+			<!-- Local avatars -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Activer les avatars locaux', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Ajoute un champ « Avatar local » sur chaque profil. L\'avatar téléversé est prioritaire ; à défaut, WordPress retombe sur Gravatar (comportement par défaut).', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Enable local avatars', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Adds a "Local avatar" field to every profile. The uploaded avatar takes priority; otherwise WordPress falls back to Gravatar (default behavior).', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -234,20 +234,20 @@ $avatars = $module_settings['avatars'] ?? [];
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="white_label" data-lumia-tab-panel="profile" hidden>
 
 	<!-- ============================================================
-		PAGE DE PROFIL
+		PROFILE PAGE
 		============================================================ -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php esc_html_e( 'Page de profil', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( "Masquage visuel uniquement : chaque fonctionnalité reste active côté serveur. Ces cases épurent l'écran, elles ne retirent aucun droit.", 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Épurez la page de profil des utilisateurs (profile.php) en masquant les options superflues.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php esc_html_e( 'Profile page', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Visual hiding only: every feature stays active on the server side. These checkboxes declutter the screen, they do not remove any permission.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></h2>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Declutter the user profile page (profile.php) by hiding unneeded options.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Jeu de couleurs de l'administration -->
+			<!-- Admin color scheme -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le jeu de couleurs de l\'administration', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime le sélecteur de thème de couleurs de l\'admin.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the admin color scheme', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the admin color scheme picker.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -258,11 +258,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Raccourcis clavier -->
+			<!-- Keyboard shortcuts -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer les raccourcis clavier', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime l\'option d\'activation des raccourcis de modération des commentaires.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide keyboard shortcuts', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the option to enable comment moderation shortcuts.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -273,11 +273,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Barre d'outils -->
+			<!-- Toolbar -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer l\'option Barre d\'outils', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime la case « Afficher la barre d\'outils lorsque vous visitez le site ».', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the Toolbar option', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the "Show Toolbar when viewing site" checkbox.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -288,11 +288,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Mots de passe d'application -->
+			<!-- Application passwords -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer les mots de passe d\'application', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Masque la section « Mots de passe d\'application » (la fonctionnalité reste active côté serveur).', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide application passwords', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Hides the "Application Passwords" section (the feature stays active on the server side).', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -303,11 +303,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Sélecteur de langue -->
+			<!-- Language selector -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer le sélecteur de langue', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime la ligne « Langue » (locale de l\'utilisateur).', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the language selector', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the "Language" row (user locale).', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -318,11 +318,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Informations biographiques -->
+			<!-- Biographical info -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer les informations biographiques', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime le champ « Informations biographiques » de la section « À propos de vous ».', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the biographical info', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the "Biographical Info" field from the "About Yourself" section.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -336,8 +336,8 @@ $avatars = $module_settings['avatars'] ?? [];
 			<!-- Sessions -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer les sessions', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime le bouton « Se déconnecter partout ailleurs ».', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide sessions', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the "Log Out Everywhere Else" button.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -348,11 +348,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Options de l'éditeur -->
+			<!-- Editor options -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer les options de l\'éditeur', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime « Désactiver l\'éditeur visuel » et « Coloration syntaxique ».', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the editor options', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes "Disable the visual editor" and "Syntax Highlighting".', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -370,27 +370,27 @@ $avatars = $module_settings['avatars'] ?? [];
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="white_label" data-lumia-tab-panel="footer" hidden>
 
 	<!-- ============================================================
-		PIED DE PAGE
+		FOOTER
 		============================================================ -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php esc_html_e( 'Pied de page', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Personnalisez les textes affichés dans le pied de page de l\'administration WordPress.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php esc_html_e( 'Footer', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Customize the texts displayed in the footer of the WordPress admin.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Texte gauche -->
+			<!-- Left text -->
 			<div class="lumia-form__group">
-				<label class="lumia-form__label" for="lumia-wl-left-text"><?php esc_html_e( 'Texte gauche du footer', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( "Le HTML est filtré comme un contenu d'article : scripts et attributs d'événement sont retirés à l'enregistrement.", 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+				<label class="lumia-form__label" for="lumia-wl-left-text"><?php esc_html_e( 'Footer left text', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'HTML is filtered like post content: scripts and event attributes are removed when saving.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 				<textarea class="lumia-input" id="lumia-wl-left-text" name="lumia_module_settings[footer][left_text]" rows="2"><?php echo esc_textarea( $footer['left_text'] ?? '' ); ?></textarea>
-				<p class="lumia-form__help"><?php esc_html_e( 'Supporte le HTML basique (liens, balises em/strong). Laissez vide pour garder la valeur WordPress par défaut.', 'lumia-tools' ); ?></p>
+				<p class="lumia-form__help"><?php esc_html_e( 'Supports basic HTML (links, em/strong tags). Leave empty to keep the default WordPress value.', 'lumia-tools' ); ?></p>
 			</div>
 
-			<!-- Masquer version WordPress -->
+			<!-- Hide WordPress version -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<p class="lumia-option__label"><?php esc_html_e( 'Masquer la version WordPress (texte droit)', 'lumia-tools' ); ?></p>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Supprime l\'indication « Version X.X.X » en bas à droite de chaque page admin.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__label"><?php esc_html_e( 'Hide the WordPress version (right text)', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Removes the "Version X.X.X" notice at the bottom right of every admin page.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -401,11 +401,11 @@ $avatars = $module_settings['avatars'] ?? [];
 				</div>
 			</div>
 
-			<!-- Texte droit custom -->
+			<!-- Custom right text -->
 			<div class="lumia-form__group">
-				<label class="lumia-form__label" for="lumia-wl-right-text"><?php esc_html_e( 'Texte droit du footer (si non masqué)', 'lumia-tools' ); ?></label>
+				<label class="lumia-form__label" for="lumia-wl-right-text"><?php esc_html_e( 'Footer right text (if not hidden)', 'lumia-tools' ); ?></label>
 				<input type="text" class="lumia-input" id="lumia-wl-right-text" name="lumia_module_settings[footer][right_text]" value="<?php echo esc_attr( $footer['right_text'] ?? '' ); ?>">
-				<p class="lumia-form__help"><?php esc_html_e( 'Remplace « Version X.X.X ». Laissez vide pour garder la valeur WordPress par défaut.', 'lumia-tools' ); ?></p>
+				<p class="lumia-form__help"><?php esc_html_e( 'Replaces "Version X.X.X". Leave empty to keep the default WordPress value.', 'lumia-tools' ); ?></p>
 			</div>
 
 		</div>
