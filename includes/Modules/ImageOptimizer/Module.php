@@ -7,11 +7,11 @@ use Lumia\Tools\Core\AbstractModule;
 use Lumia\Tools\Admin\Admin;
 
 /**
- * Module Image Optimizer — orchestrateur.
+ * Image Optimizer module — orchestrator.
  *
- * Délègue le traitement des fichiers à ImageProcessor,
- * le workflow bulk à BulkProcessor,
- * et l'UI médiathèque à MediaLibrary.
+ * Delegates file processing to ImageProcessor,
+ * the bulk workflow to BulkProcessor,
+ * and the media library UI to MediaLibrary.
  */
 class Module extends AbstractModule {
 
@@ -20,18 +20,18 @@ class Module extends AbstractModule {
 	private const STATS_SUFFIX      = '_stats';
 	private const BULK_STATE_SUFFIX = '_bulk_state';
 
-	/** Dossier (sous uploads) des originaux intacts, suffixé d'un jeton : voir get_backup_dir(). */
+	/** Folder (under uploads) holding the untouched originals, suffixed with a token: see get_backup_dir(). */
 	private const BACKUP_DIR          = 'lumia-originals';
 	private const BACKUP_TOKEN_SUFFIX = '_backup_token';
 
 	/**
-	 * Méta : fichiers source laissés à côté des convertis (keep_original),
-	 * chemins relatifs au dossier uploads. Absents des métadonnées WordPress,
-	 * ils ne partiraient pas avec le média sans cette liste.
+	 * Meta: source files left next to the converted ones (keep_original),
+	 * paths relative to the uploads folder. Absent from the WordPress metadata,
+	 * they would not leave with the media item without this list.
 	 */
 	private const FALLBACK_META = '_lumia_fallback_files';
 
-	/** Métas qui décrivent l'optimisation d'un média (effacées à la restauration). */
+	/** Metas describing a media item's optimization (cleared on restore). */
 	private const OPTIMIZATION_META = [
 		'_lumia_optimized',
 		'_lumia_original_bytes',
@@ -45,7 +45,7 @@ class Module extends AbstractModule {
 	];
 
 	/* ================================================================
-	 * SOUS-OBJETS (initialisés dans init())
+	 * SUB-OBJECTS (set up in init())
 	 * ================================================================ */
 
 	private ImageProcessor $processor;
@@ -54,35 +54,35 @@ class Module extends AbstractModule {
 	private SvgHandler $svg;
 
 	/**
-	 * Réglages actifs du module (cache mémoire).
+	 * Active module settings (in-memory cache).
 	 *
 	 * @var array<string, mixed>
 	 */
 	private array $settings = [];
 
 	/**
-	 * Paires d'URLs en attente de réécriture pendant un lot du bulk : elles
-	 * sont réunies puis passées en un seul appel à UrlRewriter (une requête
-	 * par table pour tout le lot, au lieu d'une par image).
+	 * URL pairs waiting to be rewritten during a bulk batch: they are
+	 * collected, then handed to UrlRewriter in a single call (one query
+	 * per table for the whole batch, instead of one per image).
 	 *
 	 * @var array<string, string>
 	 */
 	private array $pending_url_pairs = [];
 
-	/** Vrai entre begin_deferred_url_rewrites() et flush_url_rewrites(). */
+	/** True between begin_deferred_url_rewrites() and flush_url_rewrites(). */
 	private bool $defer_url_rewrites = false;
 
 	/* ================================================================
-	 * INITIALISATION
+	 * INITIALIZATION
 	 * ================================================================ */
 
 	/**
-	 * Charge les réglages, crée les sous-objets et enregistre les hooks.
+	 * Loads the settings, creates the sub-objects and registers the hooks.
 	 */
 	public function init(): void {
 		$this->settings = $this->get_settings();
 
-		// Sous-objets
+		// Sub-objects
 		$this->processor = new ImageProcessor( $this->settings );
 
 		$this->bulk = new BulkProcessor(
@@ -99,19 +99,19 @@ class Module extends AbstractModule {
 		$this->media_library = new MediaLibrary( $this, $this->processor );
 		$this->media_library->init();
 
-		// Support SVG sécurisé (ne branche ses filtres que si activé).
+		// Secure SVG support (only hooks its filters when enabled).
 		$this->svg = new SvgHandler( $this->settings );
 		$this->svg->init();
 
-		// Hook d'upload : tout le pipeline (original + miniatures) passe par
-		// wp_generate_attachment_metadata, qui mesure la vraie taille d'origine.
+		// Upload hook: the whole pipeline (original + thumbnails) goes through
+		// wp_generate_attachment_metadata, which measures the real original size.
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'optimize_attachment_sizes' ], 10, 2 );
 
-		// Alt text automatique
+		// Automatic alt text
 		add_action( 'add_attachment', [ $this, 'generate_alt_text' ] );
 
-		// L'original conservé et les fichiers de repli suivent le média dans
-		// la corbeille définitive.
+		// The kept original and the fallback files follow the media item
+		// when it is permanently deleted.
 		add_action( 'delete_attachment', [ $this, 'delete_kept_files' ] );
 
 		// Bulk AJAX
@@ -124,7 +124,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * RÉGLAGES
+	 * SETTINGS
 	 * ================================================================ */
 
 	/**
@@ -172,7 +172,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Ne conserve que des slugs de rôles WordPress réellement existants.
+	 * Keeps only role slugs that actually exist in WordPress.
 	 *
 	 * @param mixed $roles
 	 * @return string[]
@@ -186,7 +186,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * ASSETS ADMIN
+	 * ADMIN ASSETS
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
@@ -208,41 +208,42 @@ class Module extends AbstractModule {
 		return [
 			'bulkState' => $this->bulk->get_state(),
 			'i18n'      => [
-				'bulkScanning'  => __( 'Analyse…', 'lumia-tools' ),
-				'bulkRunning'   => __( 'Optimisation en cours…', 'lumia-tools' ),
-				'bulkProcessed' => __( 'Traité :', 'lumia-tools' ),
-				'bulkRemaining' => __( 'Restant :', 'lumia-tools' ),
-				'bulkDone'      => __( 'Optimisation terminée', 'lumia-tools' ),
-				'bulkComplete'  => __( 'Toutes les images ont été optimisées.', 'lumia-tools' ),
-				'bulkRetry'     => __( 'Réessayer', 'lumia-tools' ),
-				'mediaRunning'  => __( 'Traitement…', 'lumia-tools' ),
-				'mediaError'    => __( 'Erreur', 'lumia-tools' ),
-				'cancel'        => __( 'Annuler', 'lumia-tools' ),
-				'format'        => __( 'Format cible', 'lumia-tools' ),
+				'bulkScanning'  => __( 'Scanning…', 'lumia-tools' ),
+				'bulkRunning'   => __( 'Optimizing…', 'lumia-tools' ),
+				'bulkProcessed' => __( 'Processed:', 'lumia-tools' ),
+				'bulkRemaining' => __( 'Remaining:', 'lumia-tools' ),
+				'bulkDone'      => __( 'Optimization complete', 'lumia-tools' ),
+				'bulkComplete'  => __( 'All images have been optimized.', 'lumia-tools' ),
+				'bulkRetry'     => __( 'Try again', 'lumia-tools' ),
+				'networkError'  => __( 'Network error', 'lumia-tools' ),
+				'mediaRunning'  => __( 'Processing…', 'lumia-tools' ),
+				'mediaError'    => __( 'Error', 'lumia-tools' ),
+				'cancel'        => __( 'Cancel', 'lumia-tools' ),
+				'format'        => __( 'Target format', 'lumia-tools' ),
 				'reoptimize'    => [
-					'title'    => __( "Ré-optimiser l'image ?", 'lumia-tools' ),
-					'backup'   => __( "L'image est retraitée depuis l'original conservé, avec les réglages actuels.", 'lumia-tools' ),
-					'nobackup' => __( "Aucun original n'a été conservé : l'image est recompressée depuis sa version actuelle, et la qualité baisse un peu à chaque passage.", 'lumia-tools' ),
-					'confirm'  => __( 'Ré-optimiser', 'lumia-tools' ),
+					'title'    => __( 'Re-optimize this image?', 'lumia-tools' ),
+					'backup'   => __( 'The image is reprocessed from the kept original, using the current settings.', 'lumia-tools' ),
+					'noBackup' => __( 'No original was kept: the image is recompressed from its current version, and the quality drops a little with each pass.', 'lumia-tools' ),
+					'confirm'  => __( 'Re-optimize', 'lumia-tools' ),
 				],
 				'convert'       => [
-					'title'   => __( "Convertir l'image", 'lumia-tools' ),
-					'message' => __( "Le fichier et ses miniatures changent d'extension ; les URL déjà insérées dans le site sont réécrites.", 'lumia-tools' ),
-					'confirm' => __( 'Convertir', 'lumia-tools' ),
+					'title'   => __( 'Convert image', 'lumia-tools' ),
+					'message' => __( 'The file and its thumbnails change extension; URLs already inserted in the site are rewritten.', 'lumia-tools' ),
+					'confirm' => __( 'Convert', 'lumia-tools' ),
 				],
 				'restore'       => [
-					'title'   => __( "Restaurer l'original ?", 'lumia-tools' ),
-					'message' => __( "Les versions optimisées sont supprimées, les miniatures régénérées depuis l'original et les URL du site réécrites vers lui.", 'lumia-tools' ),
-					'confirm' => __( 'Restaurer', 'lumia-tools' ),
+					'title'   => __( 'Restore the original?', 'lumia-tools' ),
+					'message' => __( 'The optimized versions are deleted, the thumbnails are regenerated from the original and the site URLs are rewritten to point to it.', 'lumia-tools' ),
+					'confirm' => __( 'Restore', 'lumia-tools' ),
 				],
 			],
 		];
 	}
 
 	/**
-	 * Ajoute une notice persistante à l'utilisateur qui a lancé le bulk,
-	 * pour qu'il soit informé même si le lot s'est terminé pendant qu'il
-	 * avait quitté la page (ou via une reprise cron en arrière-plan).
+	 * Adds a persistent notice for the user who started the bulk run,
+	 * so they are informed even if the batch finished while they had
+	 * left the page (or through a background cron resumption).
 	 */
 	private function notify_bulk_complete( int $user_id ): void {
 		if ( ! $user_id ) {
@@ -250,7 +251,7 @@ class Module extends AbstractModule {
 		}
 		Admin::add_persistent_notice(
 			'image_optimizer_bulk_done',
-			__( 'Optimisation en masse des images terminée.', 'lumia-tools' ),
+			__( 'Bulk image optimization complete.', 'lumia-tools' ),
 			'success',
 			$user_id
 		);
@@ -261,7 +262,7 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function on_deactivate(): void {
-		// Supprimer les crons en attente.
+		// Remove pending crons.
 		$timestamp = wp_next_scheduled( 'lumia_image_optimizer_cron' );
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'lumia_image_optimizer_cron' );
@@ -269,7 +270,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * STATIC : INSTALL / UNINSTALL
+	 * STATIC: INSTALL / UNINSTALL
 	 * ================================================================ */
 
 	public static function get_uninstall_keys(): array {
@@ -280,24 +281,24 @@ class Module extends AbstractModule {
 				'lumia_module_image_optimizer' . self::BULK_STATE_SUFFIX,
 				'lumia_module_image_optimizer' . self::BACKUP_TOKEN_SUFFIX,
 			],
-			// Les fichiers de lumia-originals/ restent sur le disque : ce sont
-			// des photos du client, pas des données du plugin.
+			// The files in lumia-originals/ stay on disk: they are the
+			// client's photos, not plugin data.
 			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META ] ),
 		];
 	}
 
 	/* ================================================================
-	 * HOOK D'UPLOAD
+	 * UPLOAD HOOK
 	 * ================================================================ */
 
 	/**
-	 * Hook wp_generate_attachment_metadata : optimise + convertit original et miniatures.
+	 * Hook wp_generate_attachment_metadata: optimizes + converts the original and the thumbnails.
 	 *
-	 * Unique point d'optimisation à l'upload : il s'exécute après la génération
-	 * des miniatures et mesure la taille réelle du fichier d'origine. Ne PAS
-	 * pré-optimiser le fichier dans wp_handle_upload — sinon la mesure « avant »
-	 * porte sur un fichier déjà compressé et le gain affiché est nul (l'image est
-	 * quand même marquée « optimisée »).
+	 * Single optimization point on upload: it runs after the thumbnails are
+	 * generated and measures the real size of the original file. Do NOT
+	 * pre-optimize the file in wp_handle_upload — otherwise the "before" measure
+	 * is taken on an already compressed file and the displayed saving is zero (the
+	 * image is still marked "optimized").
 	 *
 	 * @param array<string, mixed> $metadata
 	 * @return array<string, mixed>
@@ -307,20 +308,20 @@ class Module extends AbstractModule {
 			return $metadata;
 		}
 
-		// wp_generate_attachment_metadata ne sert pas qu'aux téléversements :
-		// un outil de régénération de miniatures le rejoue sur des médias déjà
-		// insérés en page. On réécrit donc ici aussi ; sur un vrai
-		// téléversement le balayage ne trouve simplement rien.
+		// wp_generate_attachment_metadata is not only used for uploads:
+		// a thumbnail regeneration tool replays it on media items already
+		// inserted in pages. So we rewrite here too; on a real
+		// upload the sweep simply finds nothing.
 		return $this->process_attachment_metadata( $metadata, $attachment_id, false );
 	}
 
 	/* ================================================================
-	 * TRAITEMENT D'UN ATTACHMENT
+	 * PROCESSING AN ATTACHMENT
 	 * ================================================================ */
 
 	/**
-	 * Point d'entrée public : traite un attachment et met à jour ses métadonnées WP.
-	 * Utilisé par MediaLibrary (single) et BulkProcessor (batch).
+	 * Public entry point: processes an attachment and updates its WP metadata.
+	 * Used by MediaLibrary (single) and BulkProcessor (batch).
 	 */
 	public function process_and_update_attachment( int $attachment_id, bool $force = true ): void {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
@@ -334,9 +335,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Traite toutes les tailles d'un attachment (optimisation + conversion).
+	 * Processes every size of an attachment (optimization + conversion).
 	 *
-	 * @param bool $force Ignore le flag "déjà optimisé".
+	 * @param bool $force Ignore the "already optimized" flag.
 	 * @param array<string, mixed> $metadata
 	 * @return array<string, mixed>
 	 */
@@ -370,22 +371,22 @@ class Module extends AbstractModule {
 		$main_before = 0;
 		$main_after  = 0;
 
-		// --- Miniatures ---
+		// --- Thumbnails ---
 		$sizes        = $this->process_sizes( $metadata, $mime_type, $sizes_path, $rel_dir );
 		$total_before = $sizes['before'];
 		$total_after  = $sizes['after'];
 		$size_updates = $sizes['updates'];
-		$url_pairs    = $sizes['url_pairs']; // ancien chemin relatif uploads => nouveau (voir UrlRewriter)
+		$url_pairs    = $sizes['url_pairs']; // old path relative to uploads => new one (see UrlRewriter)
 
-		// --- Fichier original ---
+		// --- Original file ---
 		$original_file      = $base_path . $metadata['file'];
 		$original_converted = false;
 		$original_new_file  = '';
 
 		if ( file_exists( $original_file ) ) {
-			// Sauvegarde AVANT optimize() : c'est lui qui recompresse et
-			// redimensionne en place. Un média déjà optimisé n'a plus d'original
-			// à sauver — on ne copierait qu'une version dégradée.
+			// Backup BEFORE optimize(): it is what recompresses and
+			// resizes in place. An already optimized media item has no original
+			// left to save — we would only copy a degraded version.
 			if ( ! $this->is_already_optimized( $attachment_id ) ) {
 				$this->backup_original( $attachment_id, $original_file, str_replace( '\\', '/', $metadata['file'] ) );
 			}
@@ -410,13 +411,13 @@ class Module extends AbstractModule {
 			}
 		}
 
-		// Avec keep_original, convert() laisse la source à côté du converti.
-		// Les clés de $url_pairs sont justement les anciens chemins.
+		// With keep_original, convert() leaves the source next to the converted file.
+		// The keys of $url_pairs are precisely the old paths.
 		$this->record_fallbacks( $attachment_id, array_keys( $url_pairs ), $base_path );
 
-		// Un fichier renommé est un lien cassé partout où son URL a déjà été
-		// insérée : on réécrit dans le même traitement. En lot (bulk), les
-		// paires sont accumulées et réécrites en une fois par flush.
+		// A renamed file is a broken link wherever its URL has already been
+		// inserted: we rewrite within the same processing. In a bulk run, the
+		// pairs are accumulated and rewritten in one go by flush.
 		if ( $url_pairs ) {
 			if ( $this->defer_url_rewrites ) {
 				$this->pending_url_pairs += $url_pairs;
@@ -425,7 +426,7 @@ class Module extends AbstractModule {
 			}
 		}
 
-		// --- Mise à jour des métadonnées WP ---
+		// --- WP metadata update ---
 		if ( $original_converted ) {
 			$metadata = $this->update_metadata_after_conversion( $metadata, $original_file, $original_new_file, $size_updates );
 		} elseif ( ! empty( $size_updates ) ) {
@@ -434,7 +435,7 @@ class Module extends AbstractModule {
 
 		$metadata = $this->refresh_metadata_filesizes( $metadata, $base_path );
 
-		// --- Stats et marquage ---
+		// --- Stats and marking ---
 		if ( $total_before > 0 ) {
 			$bytes_saved = max( $total_before - $total_after, 0 );
 			$this->update_stats( $bytes_saved, $total_before );
@@ -459,7 +460,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Optimise et convertit les miniatures d'un attachment.
+	 * Optimizes and converts the thumbnails of an attachment.
 	 *
 	 * @param array<string, mixed> $metadata
 	 * @return array{before: int, after: int, updates: array<string, array<string, string>>, url_pairs: array<string, string>}
@@ -504,15 +505,15 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Accumule les réécritures d'URL au lieu de les exécuter une par une.
-	 * À appeler avant chaque image d'un lot ; flush_url_rewrites() les vide.
+	 * Accumulates URL rewrites instead of running them one by one.
+	 * Call before each image of a batch; flush_url_rewrites() empties them.
 	 */
 	public function begin_deferred_url_rewrites(): void {
 		$this->defer_url_rewrites = true;
 	}
 
 	/**
-	 * Réécrit en une seule passe tout ce qu'un lot a accumulé.
+	 * Rewrites in a single pass everything a batch has accumulated.
 	 */
 	public function flush_url_rewrites(): void {
 		$this->defer_url_rewrites = false;
@@ -525,16 +526,16 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * ACTIONS SUR UN MÉDIA (panneau de la fiche)
+	 * ACTIONS ON A MEDIA ITEM (attachment details panel)
 	 * ================================================================ */
 
 	/**
-	 * Chemin absolu de l'original conservé, '' s'il n'y en a pas.
+	 * Absolute path of the kept original, '' if there is none.
 	 */
 	public function get_backup_path( int $attachment_id ): string {
 		$rel = (string) get_post_meta( $attachment_id, '_lumia_backup_file', true );
 
-		// Le chemin finit dans copy() et wp_delete_file() : pas de « .. ».
+		// The path ends up in copy() and wp_delete_file(): no "..".
 		if ( '' === $rel || 0 !== validate_file( $rel ) ) {
 			return '';
 		}
@@ -545,12 +546,12 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Dossier des originaux : uploads/lumia-originals-{jeton}.
+	 * Originals folder: uploads/lumia-originals-{token}.
 	 *
-	 * Les originaux gardent leurs EXIF (GPS compris), et uploads/ est servi
-	 * tel quel : un nom fixe rendrait chaque copie devinable depuis l'URL
-	 * publique de l'image. Le .htaccess ne protège que sous Apache (nginx
-	 * l'ignore) ; c'est le jeton aléatoire, propre au site, qui protège.
+	 * The originals keep their EXIF (GPS included), and uploads/ is served
+	 * as is: a fixed name would make every copy guessable from the public
+	 * URL of the image. The .htaccess only protects under Apache (nginx
+	 * ignores it); it is the random, per-site token that protects.
 	 */
 	private function get_backup_dir(): string {
 		$key   = $this->get_module_option_key() . self::BACKUP_TOKEN_SUFFIX;
@@ -564,9 +565,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Copie le fichier principal intact dans lumia-originals/, une seule fois.
+	 * Copies the intact main file into lumia-originals/, only once.
 	 *
-	 * @param string $rel Chemin relatif au dossier uploads (metadata['file']).
+	 * @param string $rel Path relative to the uploads folder (metadata['file']).
 	 */
 	private function backup_original( int $attachment_id, string $file, string $rel ): void {
 		if ( ! $this->settings['keep_original'] || '' !== $this->get_backup_path( $attachment_id ) || 0 !== validate_file( $rel ) ) {
@@ -580,22 +581,22 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		// Pas de listage du dossier, et refus d'accès sous Apache.
+		// No directory listing, and access denied under Apache.
 		if ( ! file_exists( $dir . '/index.php' ) ) {
-			file_put_contents( $dir . '/index.php', "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- fichier local créé une fois.
-			file_put_contents( $dir . '/.htaccess', "Require all denied\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- idem.
+			file_put_contents( $dir . '/index.php', "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local file created once.
+			file_put_contents( $dir . '/.htaccess', "Require all denied\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- same.
 		}
 
 		update_post_meta( $attachment_id, '_lumia_backup_file', $rel );
 	}
 
 	/**
-	 * Mémorise les fichiers source restés sur le disque après conversion.
+	 * Remembers the source files left on disk after conversion.
 	 *
-	 * L'extension d'origine n'est plus connue une fois les métadonnées
-	 * réécrites : c'est maintenant ou jamais.
+	 * The original extension is no longer known once the metadata has
+	 * been rewritten: it is now or never.
 	 *
-	 * @param string[] $rels Chemins relatifs au dossier uploads.
+	 * @param string[] $rels Paths relative to the uploads folder.
 	 */
 	private function record_fallbacks( int $attachment_id, array $rels, string $base_path ): void {
 		$rels = array_filter(
@@ -615,8 +616,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Hook delete_attachment : supprime l'original conservé et les fichiers
-	 * de repli du média.
+	 * Hook delete_attachment: deletes the kept original and the fallback
+	 * files of the media item.
 	 */
 	public function delete_kept_files( int $attachment_id ): void {
 		$backup = $this->get_backup_path( $attachment_id );
@@ -634,14 +635,14 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		// Supprimé à la main puis re-téléversé, un fichier de repli peut être
-		// devenu le fichier d'un autre média, ou son propre repli : on ne
-		// touche pas à ce qui appartient à un autre.
+		// Deleted by hand then re-uploaded, a fallback file may have
+		// become another media item's file, or its own fallback: we
+		// do not touch what belongs to another.
 		global $wpdb;
 		$like  = implode( ' OR ', array_fill( 0, count( $rels ), 'meta_value LIKE %s' ) );
-		$other = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- suppression ponctuelle, rien à mettre en cache.
+		$other = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off deletion, nothing to cache.
 			$wpdb->prepare(
-				"SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id <> %d AND ( ( meta_key = '_wp_attached_file' AND meta_value IN (" . implode( ',', array_fill( 0, count( $rels ), '%s' ) ) . ") ) OR ( meta_key = %s AND ( {$like} ) ) )", // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- un %s par chemin.
+				"SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id <> %d AND ( ( meta_key = '_wp_attached_file' AND meta_value IN (" . implode( ',', array_fill( 0, count( $rels ), '%s' ) ) . ") ) OR ( meta_key = %s AND ( {$like} ) ) )", // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- one %s per path.
 				array_merge(
 					[ $attachment_id ],
 					$rels,
@@ -658,8 +659,8 @@ class Module extends AbstractModule {
 
 		$taken = [];
 		foreach ( $other as $row ) {
-			// Le fichier principal d'un autre média : ses tailles portent le
-			// même nom de base, aucun de nos replis n'est sûr.
+			// Another media item's main file: its sizes share the same
+			// base name, none of our fallbacks is safe.
 			if ( '_wp_attached_file' === $row->meta_key ) {
 				return;
 			}
@@ -676,19 +677,19 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Ré-optimise un média avec les réglages actuels, éventuellement vers un
-	 * autre format.
+	 * Re-optimizes a media item with the current settings, possibly to another
+	 * format.
 	 *
-	 * Repart de l'original conservé s'il existe : sinon chaque passage
-	 * recompresse une image déjà compressée.
+	 * Starts again from the kept original if there is one: otherwise every pass
+	 * recompresses an already compressed image.
 	 *
-	 * @param string $format '' (réglages) ou 'webp' / 'avif'.
+	 * @param string $format '' (settings) or 'webp' / 'avif'.
 	 */
 	public function reprocess_attachment( int $attachment_id, string $format = '' ): ?\WP_Error {
 		if ( '' !== $format ) {
 			$cap = $this->processor->get_capabilities();
 			if ( ! in_array( $format, [ 'webp', 'avif' ], true ) || empty( $cap[ $format ] ) ) {
-				return new \WP_Error( 'lumia_format', __( 'Ce format n\'est pas disponible sur ce serveur.', 'lumia-tools' ) );
+				return new \WP_Error( 'lumia_format', __( 'This format is not available on this server.', 'lumia-tools' ) );
 			}
 		}
 
@@ -700,9 +701,9 @@ class Module extends AbstractModule {
 				return $error;
 			}
 		} else {
-			// Les métas restent : le média est toujours « optimisé », et
-			// process_attachment_metadata() ne sauvegarde pas sa version
-			// dégradée comme s'il s'agissait d'un original.
+			// The metas stay: the media item is still "optimized", and
+			// process_attachment_metadata() does not save its degraded version
+			// as if it were an original.
 			$this->unrecord_stats( $attachment_id );
 		}
 
@@ -713,9 +714,9 @@ class Module extends AbstractModule {
 			}
 		);
 
-		// convert() ne garde le format demandé que s'il allège l'image. Parti
-		// de l'original, un WebP converti en vain vers l'AVIF retomberait en
-		// JPEG : on le ré-encode dans son format précédent.
+		// convert() only keeps the requested format if it lightens the image.
+		// Starting from the original, a WebP converted in vain to AVIF would
+		// fall back to JPEG: we re-encode it in its previous format.
 		$result = strtolower( pathinfo( (string) get_attached_file( $attachment_id ), PATHINFO_EXTENSION ) );
 		if ( '' !== $format && $result !== $format && $result !== $previous
 			&& in_array( $previous, [ 'webp', 'avif' ], true ) && ! empty( $this->processor->get_capabilities()[ $previous ] ) ) {
@@ -726,7 +727,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Exécute $callback avec un format de conversion imposé ('' : réglages).
+	 * Runs $callback with a forced conversion format (empty string: settings).
 	 */
 	private function with_format( string $format, callable $callback ): void {
 		$processor = $this->processor;
@@ -742,29 +743,29 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Recrée les miniatures depuis le fichier principal, puis les optimise
-	 * si le média l'est.
+	 * Recreates the thumbnails from the main file, then optimizes them
+	 * if the media item is.
 	 */
 	public function regenerate_thumbnails( int $attachment_id ): ?\WP_Error {
 		$old_metadata = wp_get_attachment_metadata( $attachment_id );
 		$file         = (string) get_attached_file( $attachment_id );
 
 		if ( ! is_array( $old_metadata ) || '' === $file || ! file_exists( $file ) ) {
-			return new \WP_Error( 'lumia_missing', __( 'Fichier introuvable.', 'lumia-tools' ) );
+			return new \WP_Error( 'lumia_missing', __( 'File not found.', 'lumia-tools' ) );
 		}
 
 		$metadata = $this->generate_metadata( $attachment_id, $file, $old_metadata );
 		if ( null === $metadata ) {
-			return new \WP_Error( 'lumia_regenerate', __( 'La génération des miniatures a échoué.', 'lumia-tools' ) );
+			return new \WP_Error( 'lumia_regenerate', __( 'Thumbnail generation failed.', 'lumia-tools' ) );
 		}
 
 		if ( $this->is_already_optimized( $attachment_id ) ) {
 			$subdir  = dirname( $metadata['file'] );
 			$rel_dir = ( '.' === $subdir || '' === $subdir ) ? '' : trailingslashit( str_replace( '\\', '/', $subdir ) );
 
-			// Les miniatures suivent le format du fichier principal : après une
-			// conversion en WebP depuis la fiche, les réglages (AVIF, auto…)
-			// donneraient un principal WebP et des miniatures AVIF.
+			// The thumbnails follow the main file's format: after a conversion
+			// to WebP from the details panel, the settings (AVIF, auto…)
+			// would give a WebP main file and AVIF thumbnails.
 			$format = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
 			$this->with_format(
 				in_array( $format, [ 'webp', 'avif' ], true ) ? $format : '',
@@ -787,24 +788,24 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Remet l'original conservé à la place des versions optimisées.
+	 * Puts the kept original back in place of the optimized versions.
 	 *
-	 * @param bool $keep_backup Garder la copie (ré-optimisation depuis
-	 *                          l'original) ou la supprimer (restauration).
+	 * @param bool $keep_backup Keep the copy (re-optimization from
+	 *                          the original) or delete it (restore).
 	 */
 	public function restore_original( int $attachment_id, bool $keep_backup = false ): ?\WP_Error {
 		$backup       = $this->get_backup_path( $attachment_id );
 		$old_metadata = wp_get_attachment_metadata( $attachment_id );
 
 		if ( '' === $backup || ! is_array( $old_metadata ) || empty( $old_metadata['file'] ) ) {
-			return new \WP_Error( 'lumia_no_backup', __( 'Aucun original conservé pour ce média.', 'lumia-tools' ) );
+			return new \WP_Error( 'lumia_no_backup', __( 'No original kept for this media item.', 'lumia-tools' ) );
 		}
 
 		$target  = trailingslashit( wp_upload_dir()['basedir'] ) . get_post_meta( $attachment_id, '_lumia_backup_file', true );
 		$current = (string) get_attached_file( $attachment_id );
 
 		if ( ! copy( $backup, $target ) ) {
-			return new \WP_Error( 'lumia_restore', __( 'Impossible de recopier l\'original.', 'lumia-tools' ) );
+			return new \WP_Error( 'lumia_restore', __( 'Could not copy the original back.', 'lumia-tools' ) );
 		}
 
 		if ( wp_normalize_path( $current ) !== wp_normalize_path( $target ) ) {
@@ -813,7 +814,7 @@ class Module extends AbstractModule {
 
 		$metadata = $this->generate_metadata( $attachment_id, $target, $old_metadata );
 		if ( null === $metadata ) {
-			return new \WP_Error( 'lumia_regenerate', __( 'La génération des miniatures a échoué.', 'lumia-tools' ) );
+			return new \WP_Error( 'lumia_regenerate', __( 'Thumbnail generation failed.', 'lumia-tools' ) );
 		}
 
 		$this->replace_metadata( $attachment_id, $old_metadata, $metadata );
@@ -823,8 +824,8 @@ class Module extends AbstractModule {
 			delete_post_meta( $attachment_id, $key );
 		}
 
-		// Les fichiers de repli sont redevenus les fichiers du média, ou ont
-		// été écrasés : une liste périmée finirait par viser ceux d'un autre.
+		// The fallback files have become the media item's files again, or have
+		// been overwritten: a stale list would end up targeting another item's.
 		delete_post_meta( $attachment_id, self::FALLBACK_META );
 
 		if ( ! $keep_backup ) {
@@ -836,7 +837,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Métadonnées WordPress recalculées depuis $file, sans notre traitement.
+	 * WordPress metadata recomputed from $file, without our processing.
 	 *
 	 * @param array<string, mixed> $old_metadata
 	 * @return array<string, mixed>|null
@@ -844,10 +845,10 @@ class Module extends AbstractModule {
 	private function generate_metadata( int $attachment_id, string $file, array $old_metadata ): ?array {
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-		// Grande image : WordPress tire les miniatures de l'original d'avant
-		// « -scaled » (photo-150x150.jpg), pas du fichier réduit
-		// (photo-scaled-150x150.jpg). On fait de même, sinon chaque miniature
-		// change de nom et toute URL hors base (cache, CDN, e-mail) casse.
+		// Large image: WordPress derives the thumbnails from the original from before
+		// "-scaled" (photo-150x150.jpg), not from the reduced file
+		// (photo-scaled-150x150.jpg). We do the same, otherwise every thumbnail
+		// changes name and any URL outside the database (cache, CDN, e-mail) breaks.
 		$original = empty( $old_metadata['original_image'] ) ? '' : path_join( dirname( $file ), $old_metadata['original_image'] );
 		if ( '' !== $original && file_exists( $original ) ) {
 			$metadata          = $old_metadata;
@@ -859,15 +860,15 @@ class Module extends AbstractModule {
 				$metadata['height'] = $dimensions[1];
 			}
 
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- filtre du cœur, appliqué comme dans wp_create_image_subsizes().
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter, applied as in wp_create_image_subsizes().
 			$sizes = apply_filters( 'intermediate_image_sizes_advanced', wp_get_registered_image_subsizes(), $metadata, $attachment_id );
 
 			return _wp_make_subsizes( $sizes, $original, $metadata, $attachment_id );
 		}
 
-		// Sans notre filtre : l'appelant décide de ce qui s'optimise. Sans le
-		// seuil « big image » : le fichier principal est déjà le bon, WordPress
-		// en ferait sinon un « -scaled » de plus.
+		// Without our filter: the caller decides what gets optimized. Without the
+		// "big image" threshold: the main file is already the right one, WordPress
+		// would otherwise make yet another "-scaled" of it.
 		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'optimize_attachment_sizes' ], 10 );
 		add_filter( 'big_image_size_threshold', '__return_false', 999 );
 
@@ -884,8 +885,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Enregistre les nouvelles métadonnées, supprime les fichiers qui n'y
-	 * figurent plus et réécrit les URL des fichiers renommés.
+	 * Saves the new metadata, deletes the files that no longer
+	 * appear in it and rewrites the URLs of the renamed files.
 	 *
 	 * @param array<string, mixed> $old_metadata
 	 * @param array<string, mixed> $metadata
@@ -896,7 +897,7 @@ class Module extends AbstractModule {
 		$old_files = $this->metadata_files( $old_metadata );
 		$new_files = $this->metadata_files( $metadata );
 
-		// Même clé (fichier principal, taille « medium »…) : ancien → nouveau.
+		// Same key (main file, "medium" size…): old → new.
 		$url_pairs = [];
 		foreach ( $old_files as $key => $rel ) {
 			if ( isset( $new_files[ $key ] ) && $new_files[ $key ] !== $rel ) {
@@ -922,8 +923,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Fichiers d'un attachment, relatifs au dossier uploads, indexés par rôle
-	 * ('' pour le principal, nom de la taille sinon).
+	 * Files of an attachment, relative to the uploads folder, indexed by role
+	 * ('' for the main one, the size name otherwise).
 	 *
 	 * @param array<string, mixed> $metadata
 	 * @return array<string, string>
@@ -948,8 +949,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Recalcule le poids final d'un média optimisé après régénération de ses
-	 * miniatures, et reporte l'écart dans les statistiques globales.
+	 * Recomputes the final weight of an optimized media item after its thumbnails
+	 * have been regenerated, and reports the difference in the global statistics.
 	 *
 	 * @param array<string, mixed> $metadata
 	 */
@@ -972,8 +973,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retire un média optimisé des statistiques globales, avant de le
-	 * retraiter ou de le restaurer : sinon il compterait deux fois.
+	 * Removes an optimized media item from the global statistics, before
+	 * reprocessing or restoring it: otherwise it would be counted twice.
 	 */
 	private function unrecord_stats( int $attachment_id ): void {
 		if ( ! $this->is_already_optimized( $attachment_id ) ) {
@@ -992,7 +993,7 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	/**
-	 * Génère automatiquement le texte alternatif depuis le nom de fichier.
+	 * Automatically generates the alt text from the file name.
 	 */
 	public function generate_alt_text( int $attachment_id ): void {
 		if ( ! $this->settings['generate_alt'] ) {
@@ -1022,7 +1023,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Compteurs globaux tels qu'enregistrés (sans les capacités serveur).
+	 * Global counters as saved (without the server capabilities).
 	 *
 	 * @return array{optimized: int, bytes_saved: int, original_bytes: int}
 	 */
@@ -1059,7 +1060,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Estimation des gains pour le bulk (utilisée par le template de réglages).
+	 * Savings estimate for the bulk run (used by the settings template).
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -1068,7 +1069,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * META ATTACHMENTS
+	 * ATTACHMENT META
 	 * ================================================================ */
 
 	public function is_already_optimized( int $attachment_id ): bool {
@@ -1100,7 +1101,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * MÉTADONNÉES WP
+	 * WP METADATA
 	 * ================================================================ */
 
 	private function update_attachment_database_refs( int $attachment_id, string $old_file, string $new_file ): void {
@@ -1116,9 +1117,9 @@ class Module extends AbstractModule {
 			);
 		}
 
-		// Le guid porte l'URL d'origine du fichier ; certains outils le lisent
-		// comme URL. wp_update_post() ne le réécrit pas sur une mise à jour :
-		// on passe par $wpdb, puis on purge le cache de l'objet.
+		// The guid carries the original URL of the file; some tools read it
+		// as a URL. wp_update_post() does not rewrite it on an update:
+		// we go through $wpdb, then purge the object cache.
 		global $wpdb;
 		$guid = (string) get_post_field( 'guid', $attachment_id );
 		if ( '' !== $guid && false !== strpos( $guid, basename( $old_file ) ) ) {
@@ -1186,7 +1187,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * DÉLÉGATION BULK (hooks cron + AJAX)
+	 * BULK DELEGATION (cron hooks + AJAX)
 	 * ================================================================ */
 
 	public function ajax_bulk_scan(): void {
@@ -1206,7 +1207,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * COMPATIBILITÉ : capacités serveur (utilisées dans le template réglages)
+	 * COMPATIBILITY: server capabilities (used in the settings template)
 	 * ================================================================ */
 
 	/**

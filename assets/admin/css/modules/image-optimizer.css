@@ -3,7 +3,7 @@
  */
 
 /* ================================================================
- * TÉLÉCHARGEMENTS SVG — sélecteur de rôles pleine largeur
+ * SVG UPLOADS — full-width role picker
  * ================================================================ */
 .lumia-svg-roles {
   margin-top: 16px;
@@ -34,9 +34,9 @@
 
 .lumia-svg-roles__grid {
   display: grid;
-  /* Colonnes assez larges pour que les noms de rôles longs
-	 ("Administrateur/administratrice") tiennent sur une seule ligne
-	 au lieu de renvoyer une lettre isolée à la ligne suivante. */
+  /* Columns wide enough for long role names
+	 (e.g. the French "Administrateur/administratrice") to fit on a single line
+	 instead of wrapping a lone letter onto the next line. */
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 8px;
 }
@@ -57,7 +57,7 @@
   border-color: var(--lumia-accent);
 }
 
-/* Le toggle ne doit jamais être écrasé par un libellé de rôle long. */
+/* The toggle must never be squashed by a long role label. */
 .lumia-svg-role .lumia-toggle {
   flex-shrink: 0;
 }
@@ -69,20 +69,20 @@
   line-height: 1.3;
   color: var(--lumia-text);
   user-select: none;
-  /* Filet de sécurité pour les écrans très étroits : évite le débordement
-	 hors de la carte (les noms de rôles sont des mots insécables). Sur les
-	 colonnes larges définies ci-dessus, aucun retour à la ligne ne se produit. */
+  /* Safety net for very narrow screens: prevents overflow
+	 outside the card (role names are unbreakable words). On the
+	 wide columns defined above, no line wrap happens. */
   overflow-wrap: anywhere;
 }
 
-/* Master toggle off → rôles grisés et non interactifs */
+/* Master toggle off → roles greyed out and non-interactive */
 .lumia-svg-roles.is-disabled {
   opacity: 0.5;
   pointer-events: none;
 }
 
 /* ================================================================
- * OPTIMISATION EN MASSE
+ * BULK OPTIMIZATION
  * ================================================================ */
 .lumia-bulk {
   padding: 18px 20px;
@@ -91,7 +91,7 @@
   background: var(--lumia-n50);
 }
 
-/* État initial : invitation au scan */
+/* Initial state: prompt to scan */
 .lumia-bulk__scan {
   display: flex;
   align-items: center;
@@ -113,7 +113,7 @@
   height: 15px;
 }
 
-/* Résultat du scan : stats + action */
+/* Scan result: stats + action */
 .lumia-bulk__result {
   display: flex;
   align-items: center;

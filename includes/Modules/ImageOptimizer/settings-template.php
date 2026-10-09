@@ -1,8 +1,8 @@
 <?php
 /**
- * Template des réglages du module Image Optimizer.
+ * Settings template of the Image Optimizer module.
  *
- * Variables disponibles : $instance, $tab, $module_id, $module
+ * Available variables: $instance, $tab, $module_id, $module
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -15,27 +15,27 @@ $module_settings = $instance->get_settings();
 	<input type="hidden" name="action" value="lumia_save_settings">
 	<input type="hidden" name="lumia_tab" value="<?php echo esc_attr( $tab ); ?>">
 
-	<div class="lumia-tabs" role="tablist" data-lumia-tabs="image_optimizer" aria-label="<?php esc_attr_e( 'Sections de l\'Image Optimizer', 'lumia-tools' ); ?>">
-		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="settings"><?php esc_html_e( 'Réglages', 'lumia-tools' ); ?></button>
+	<div class="lumia-tabs" role="tablist" data-lumia-tabs="image_optimizer" aria-label="<?php esc_attr_e( 'Image Optimizer sections', 'lumia-tools' ); ?>">
+		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="settings"><?php esc_html_e( 'Settings', 'lumia-tools' ); ?></button>
 		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="svg"><?php esc_html_e( 'SVG', 'lumia-tools' ); ?></button>
-		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="bulk"><?php esc_html_e( 'Optimisation en masse', 'lumia-tools' ); ?></button>
+		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="bulk"><?php esc_html_e( 'Bulk optimization', 'lumia-tools' ); ?></button>
 	</div>
 
 	<div class="lumia-module-form__scroll">
 
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="image_optimizer" data-lumia-tab-panel="settings">
 
-	<!-- Comportement -->
+	<!-- Behavior -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php echo esc_html__( 'Comportement', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Configurez comment les images sont traitées lors de l\'upload.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'Behavior', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Configure how images are processed on upload.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_optimize_on_upload" class="lumia-option__label"><?php echo esc_html__( 'Optimiser à l\'upload', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Redimensionne, compresse et convertit automatiquement les images.', 'lumia-tools' ); ?></p>
+					<label for="lumia_optimize_on_upload" class="lumia-option__label"><?php echo esc_html__( 'Optimize on upload', 'lumia-tools' ); ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Automatically resizes, compresses and converts images.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -51,8 +51,8 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_format_mode" class="lumia-option__label"><?php echo esc_html__( 'Format de sortie', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( "« Auto » prend AVIF si le serveur sait l'encoder, sinon WebP. Un format choisi explicitement mais non supporté ne convertit rien du tout : il n'y a pas de repli.", 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Format de conversion automatique des images.', 'lumia-tools' ); ?></p>
+					<label for="lumia_format_mode" class="lumia-option__label"><?php echo esc_html__( 'Output format', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( '“Auto” picks AVIF if the server can encode it, otherwise WebP. A format chosen explicitly but not supported converts nothing at all: there is no fallback.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Automatic image conversion format.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<select id="lumia_format_mode"
@@ -75,15 +75,15 @@ $module_settings = $instance->get_settings();
 
 	<div class="lumia-divider"></div>
 
-	<!-- Qualité et dimensions -->
+	<!-- Quality and dimensions -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php echo esc_html__( 'Qualité et dimensions', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Ajustez la qualité de compression et les dimensions maximales.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'Quality and dimensions', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Adjust the compression quality and the maximum dimensions.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-form__group">
-				<label for="lumia_quality" class="lumia-form__label"><?php echo esc_html__( 'Qualité de compression (1-100)', 'lumia-tools' ); ?></label>
+				<label for="lumia_quality" class="lumia-form__label"><?php echo esc_html__( 'Compression quality (1-100)', 'lumia-tools' ); ?></label>
 				<input type="number"
 						id="lumia_quality"
 						name="lumia_module_settings[quality]"
@@ -95,7 +95,7 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-form__row">
 				<div class="lumia-form__group">
-					<label for="lumia_max_width" class="lumia-form__label"><?php echo esc_html__( 'Largeur max (px)', 'lumia-tools' ); ?></label>
+					<label for="lumia_max_width" class="lumia-form__label"><?php echo esc_html__( 'Max width (px)', 'lumia-tools' ); ?></label>
 					<input type="number"
 							id="lumia_max_width"
 							name="lumia_module_settings[max_width]"
@@ -105,7 +105,7 @@ $module_settings = $instance->get_settings();
 				</div>
 
 				<div class="lumia-form__group">
-					<label for="lumia_max_height" class="lumia-form__label"><?php echo esc_html__( 'Hauteur max (px)', 'lumia-tools' ); ?></label>
+					<label for="lumia_max_height" class="lumia-form__label"><?php echo esc_html__( 'Max height (px)', 'lumia-tools' ); ?></label>
 					<input type="number"
 							id="lumia_max_height"
 							name="lumia_module_settings[max_height]"
@@ -119,17 +119,17 @@ $module_settings = $instance->get_settings();
 
 	<div class="lumia-divider"></div>
 
-	<!-- Options avancées -->
+	<!-- Advanced options -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php echo esc_html__( 'Options avancées', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Options supplémentaires pour le traitement des images.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'Advanced options', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Additional options for image processing.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_strip_exif" class="lumia-option__label"><?php echo esc_html__( 'Supprimer les métadonnées EXIF', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( "Irréversible, et le nettoyage emporte tout le bloc : mention de copyright et profil colorimétrique compris. À laisser actif sauf si le site publie des photos d'auteur.", 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Retire les données GPS, appareil photo, etc.', 'lumia-tools' ); ?></p>
+					<label for="lumia_strip_exif" class="lumia-option__label"><?php echo esc_html__( 'Remove EXIF metadata', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Irreversible, and the cleanup takes the whole block with it, copyright notice and color profile included. Leave it enabled unless the site publishes author-credited photos.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Removes GPS data, camera details, etc.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -145,8 +145,8 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_generate_alt" class="lumia-option__label"><?php echo esc_html__( 'Générer le texte alternatif', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( "Ne s'applique qu'aux nouveaux téléversements et n'écrase jamais un texte alternatif déjà saisi. Le nom du fichier vaut ce qu'il vaut : à relire pour les images porteuses de sens.", 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Crée automatiquement le alt text depuis le nom du fichier.', 'lumia-tools' ); ?></p>
+					<label for="lumia_generate_alt" class="lumia-option__label"><?php echo esc_html__( 'Generate alt text', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Only applies to new uploads and never overwrites alt text that has already been entered. A file name is only worth so much: review it for images that carry meaning.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Automatically creates the alt text from the file name.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -162,8 +162,8 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_keep_original" class="lumia-option__label"><?php echo esc_html__( 'Conserver l\'original', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( "Double l'espace disque occupé par la médiathèque. À garder tant que la conversion n'a pas été validée sur le site, à couper ensuite.", 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( "Garde une copie intacte du fichier source, qui permet de restaurer ou de ré-optimiser l'image sans perte depuis sa fiche.", 'lumia-tools' ); ?></p>
+					<label for="lumia_keep_original" class="lumia-option__label"><?php echo esc_html__( 'Keep the original', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Doubles the disk space used by the media library. Keep it on until the conversion has been validated on the site, then turn it off.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Keeps an untouched copy of the source file, so the image can be restored or re-optimized without loss from its details screen.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -182,18 +182,18 @@ $module_settings = $instance->get_settings();
 
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="image_optimizer" data-lumia-tab-panel="svg" hidden>
 
-	<!-- Téléchargements SVG -->
+	<!-- SVG uploads -->
 	<?php $svg_enabled = ! empty( $module_settings['svg_upload'] ); ?>
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php echo esc_html__( 'Téléchargements SVG', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Les fichiers SVG sont du XML et peuvent contenir du code malveillant. Une fois activés, chaque SVG téléversé est automatiquement assaini (suppression du JavaScript, des gestionnaires d\'événements et des références externes).', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'SVG uploads', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'SVG files are XML and may contain malicious code. Once enabled, every uploaded SVG is automatically sanitized (JavaScript, event handlers and external references are removed).', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_svg_upload" class="lumia-option__label"><?php echo esc_html__( 'Autoriser l\'upload de SVG', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Active l\'upload de fichiers .svg assainis dans la médiathèque.', 'lumia-tools' ); ?></p>
+					<label for="lumia_svg_upload" class="lumia-option__label"><?php echo esc_html__( 'Allow SVG uploads', 'lumia-tools' ); ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Enables uploading sanitized .svg files to the media library.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -211,8 +211,8 @@ $module_settings = $instance->get_settings();
 			<?php $svg_roles = (array) ( $module_settings['svg_roles'] ?? [] ); ?>
 			<div class="lumia-svg-roles<?php echo $svg_enabled ? '' : ' is-disabled'; ?>" id="lumia-svg-roles">
 				<div class="lumia-svg-roles__head">
-					<span class="lumia-svg-roles__title"><?php echo esc_html__( 'Rôles autorisés', 'lumia-tools' ); ?></span>
-					<span class="lumia-svg-roles__hint"><?php echo esc_html__( 'Seuls ces rôles pourront téléverser des SVG.', 'lumia-tools' ); ?></span>
+					<span class="lumia-svg-roles__title"><?php echo esc_html__( 'Allowed roles', 'lumia-tools' ); ?></span>
+					<span class="lumia-svg-roles__hint"><?php echo esc_html__( 'Only these roles will be able to upload SVG files.', 'lumia-tools' ); ?></span>
 				</div>
 				<div class="lumia-svg-roles__grid">
 					<?php foreach ( wp_roles()->get_names() as $role_slug => $role_name ) : ?>
@@ -235,46 +235,46 @@ $module_settings = $instance->get_settings();
 
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="image_optimizer" data-lumia-tab-panel="bulk" hidden>
 
-	<!-- Optimisation en masse -->
+	<!-- Bulk optimization -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php echo esc_html__( 'Optimisation en masse', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Optimise les images déjà présentes dans la médiathèque.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'Bulk optimization', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Optimizes the images already in the media library.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-bulk" id="lumia-bulk">
 
-				<!-- État initial : lancer un scan avant d'afficher des chiffres -->
+				<!-- Initial state: run a scan before showing figures -->
 				<div class="lumia-bulk__scan" id="lumia-bulk-scan-intro">
 					<p class="lumia-bulk__scan-hint">
-						<?php echo esc_html__( 'Analysez la médiathèque pour connaître le nombre d\'images restant à optimiser.', 'lumia-tools' ); ?>
+						<?php echo esc_html__( 'Scan the media library to find out how many images are left to optimize.', 'lumia-tools' ); ?>
 					</p>
 					<button type="button" id="lumia-bulk-scan" class="lumia-btn lumia-btn--secondary">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-						<?php echo esc_html__( 'Scanner la médiathèque', 'lumia-tools' ); ?>
+						<?php echo esc_html__( 'Scan the media library', 'lumia-tools' ); ?>
 					</button>
 				</div>
 
-				<!-- Résultat du scan (révélé par le JS) -->
+				<!-- Scan result (revealed by the JS) -->
 				<div class="lumia-bulk__result" id="lumia-bulk-result" style="display: none;">
 					<div class="lumia-bulk__stats">
 						<div class="lumia-bulk__stat">
 							<span class="lumia-bulk__stat-value" id="lumia-bulk-remaining">0</span>
-							<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'images à optimiser', 'lumia-tools' ); ?></span>
+							<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'images to optimize', 'lumia-tools' ); ?></span>
 						</div>
 						<div class="lumia-bulk__stat" id="lumia-bulk-potential-tile" style="display: none;">
 							<span class="lumia-bulk__stat-value" id="lumia-bulk-potential">—</span>
-							<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'gains potentiels estimés', 'lumia-tools' ); ?></span>
+							<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'estimated potential savings', 'lumia-tools' ); ?></span>
 						</div>
 					</div>
 					<div class="lumia-bulk__action">
 						<button type="button" id="lumia-bulk-start" class="lumia-btn lumia-btn--primary" disabled>
-							<?php echo esc_html__( 'Lancer l\'optimisation', 'lumia-tools' ); ?>
+							<?php echo esc_html__( 'Start optimization', 'lumia-tools' ); ?>
 						</button>
 					</div>
 				</div>
 
-				<!-- Progression -->
+				<!-- Progress -->
 				<div class="lumia-bulk__progress lumia-bulk-status__progress" style="display: none;">
 					<div class="lumia-progress">
 						<div class="lumia-progress__bar" style="width: 0%"></div>

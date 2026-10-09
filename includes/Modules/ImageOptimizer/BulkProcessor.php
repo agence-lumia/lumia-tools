@@ -4,42 +4,42 @@ namespace Lumia\Tools\Modules\ImageOptimizer;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gère le workflow d'optimisation en masse :
- * AJAX start/status, traitement par batch, planification cron.
+ * Handles the bulk optimization workflow:
+ * AJAX start/status, batch processing, cron scheduling.
  *
- * Reçoit ses dépendances via closures pour éviter le couplage circulaire.
+ * Receives its dependencies through closures to avoid circular coupling.
  */
 class BulkProcessor {
 
 	private const CRON_HOOK = 'lumia_image_optimizer_cron';
 
 	/**
-	 * Clé WordPress pour persister l'état du bulk.
+	 * WordPress key used to persist the bulk state.
 	 */
 	private string $state_key;
 
 	/**
-	 * Callable : traite un attachment (optimise + alt text).
-	 * Signature : function( int $attachment_id ): void
+	 * Callable: processes an attachment (optimization + alt text).
+	 * Signature: function( int $attachment_id ): void
 	 */
 	private \Closure $process_fn;
 
 	/**
-	 * Callable : retourne les stats globales pour estimer les gains.
-	 * Signature : function(): array
+	 * Callable: returns the global stats to estimate the savings.
+	 * Signature: function(): array
 	 */
 	private \Closure $get_stats_fn;
 
 	/**
-	 * Callable optionnel : appelé une fois quand le bulk passe de "running" à "terminé".
-	 * Signature : function( int $user_id ): void
+	 * Optional callable: called once when the bulk run goes from "running" to "finished".
+	 * Signature: function( int $user_id ): void
 	 */
 	private ?\Closure $on_complete_fn;
 
 	/**
-	 * Callable optionnel : appelé après chaque lot, que ses images aient
-	 * réussi ou non. Le module y réécrit les URLs accumulées du lot.
-	 * Signature : function(): void
+	 * Optional callable: called after each batch, whether its images
+	 * succeeded or not. The module uses it to rewrite the URLs accumulated by the batch.
+	 * Signature: function(): void
 	 */
 	private ?\Closure $after_batch_fn;
 
@@ -62,13 +62,13 @@ class BulkProcessor {
 	 * ================================================================ */
 
 	/**
-	 * Lance ou reprend l'optimisation en masse.
+	 * Starts or resumes the bulk optimization.
 	 */
 	public function ajax_start( int $batch_size ): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Permissions insuffisantes.', 'lumia-tools' ) );
+			wp_send_json_error( __( 'Insufficient permissions.', 'lumia-tools' ) );
 		}
 
 		$state = $this->get_state();
@@ -107,14 +107,14 @@ class BulkProcessor {
 	}
 
 	/**
-	 * Scan à la demande : compte les images restantes et estime les gains,
-	 * sans rien lancer. Alimente l'UI « Scanner la médiathèque ».
+	 * On-demand scan: counts the remaining images and estimates the savings,
+	 * without starting anything. Feeds the "Scan the media library" UI.
 	 */
 	public function ajax_scan(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Permissions insuffisantes.', 'lumia-tools' ) );
+			wp_send_json_error( __( 'Insufficient permissions.', 'lumia-tools' ) );
 		}
 
 		$preview = $this->get_preview();
@@ -129,18 +129,18 @@ class BulkProcessor {
 	}
 
 	/**
-	 * Retourne l'état courant du bulk (polling JS).
+	 * Returns the current bulk state (JS polling).
 	 */
 	public function ajax_status( int $batch_size ): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Permissions insuffisantes.', 'lumia-tools' ) );
+			wp_send_json_error( __( 'Insufficient permissions.', 'lumia-tools' ) );
 		}
 
 		$state = $this->get_state();
 
-		// Relance un batch si le cron est en retard (> 20 s sans mise à jour).
+		// Restarts a batch if the cron is late (> 20 s without an update).
 		if ( $state['running'] && $state['updated_at'] && ( time() - (int) $state['updated_at'] ) > 20 ) {
 			$this->run_batch( $batch_size );
 			$state = $this->get_state();
@@ -161,12 +161,12 @@ class BulkProcessor {
 	}
 
 	/* ================================================================
-	 * TRAITEMENT PAR BATCH
+	 * BATCH PROCESSING
 	 * ================================================================ */
 
 	/**
-	 * Traite un lot d'images non optimisées.
-	 * Appelé via cron WP ou directement depuis les handlers AJAX.
+	 * Processes a batch of non-optimized images.
+	 * Called through WP cron or directly from the AJAX handlers.
 	 */
 	public function run_batch( int $batch_size ): void {
 		$state = $this->get_state();
@@ -194,14 +194,14 @@ class BulkProcessor {
 			try {
 				( $this->process_fn )( $attachment_id );
 			} catch ( \Throwable $e ) {
-				// Un attachment en erreur ne bloque pas les suivants, mais on le signale.
-				error_log( sprintf( '[LUMIA Image Optimizer] traitement en lot : attachment %d en erreur : %s', $attachment_id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- journal d'erreur volontaire, sans interface pour l'afficher.
+				// An attachment that fails does not block the following ones, but we report it.
+				error_log( sprintf( '[LUMIA Image Optimizer] batch processing: attachment %d failed: %s', $attachment_id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- deliberate error log, no UI to display it.
 			}
 			++$processed_now;
 		}
 
-		// Toujours, même après une erreur : ce qui a été converti avant doit
-		// voir ses URLs réécrites.
+		// Always, even after an error: whatever was converted before must
+		// have its URLs rewritten.
 		if ( $this->after_batch_fn ) {
 			( $this->after_batch_fn )();
 		}
@@ -224,11 +224,11 @@ class BulkProcessor {
 	}
 
 	/* ================================================================
-	 * ÉTAT ET PRÉVISUALISATION
+	 * STATE AND PREVIEW
 	 * ================================================================ */
 
 	/**
-	 * Retourne l'état courant du bulk avec ses valeurs par défaut.
+	 * Returns the current bulk state with its default values.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -246,7 +246,7 @@ class BulkProcessor {
 	}
 
 	/**
-	 * Calcule une estimation des gains potentiels du bulk.
+	 * Computes an estimate of the potential savings of the bulk run.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -273,11 +273,11 @@ class BulkProcessor {
 	}
 
 	/* ================================================================
-	 * REQUÊTES MÉDIATHÈQUE
+	 * MEDIA LIBRARY QUERIES
 	 * ================================================================ */
 
 	/**
-	 * Compte les images sans le meta _lumia_optimized (accurate count).
+	 * Counts the images without the _lumia_optimized meta (accurate count).
 	 */
 	public function count_unoptimized(): int {
 		$query = new \WP_Query(
@@ -294,7 +294,7 @@ class BulkProcessor {
 	}
 
 	/**
-	 * Retourne un lot d'IDs non optimisés.
+	 * Returns a batch of non-optimized IDs.
 	 *
 	 * @return int[]
 	 */
@@ -311,7 +311,7 @@ class BulkProcessor {
 			)
 		);
 
-		// fields => ids : WP_Query renvoie des entiers, mais son type déclaré reste int|WP_Post.
+		// fields => ids: WP_Query returns integers, but its declared type remains int|WP_Post.
 		return array_map(
 			static fn( $post ): int => $post instanceof \WP_Post ? (int) $post->ID : (int) $post,
 			(array) $query->posts
@@ -327,7 +327,7 @@ class BulkProcessor {
 			'post_mime_type' => [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif' ],
 			'post_status'    => 'inherit',
 			'fields'         => 'ids',
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- repérer les images non optimisées n'a pas d'alternative sans index dédié.
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- finding the non-optimized images has no alternative without a dedicated index.
 			'meta_query'     => [
 				[
 					'key'     => '_lumia_optimized',
@@ -338,7 +338,7 @@ class BulkProcessor {
 	}
 
 	/* ================================================================
-	 * PERSISTENCE ET CRON
+	 * PERSISTENCE AND CRON
 	 * ================================================================ */
 
 	/**

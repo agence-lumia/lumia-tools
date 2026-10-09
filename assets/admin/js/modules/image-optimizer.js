@@ -1,6 +1,6 @@
 /**
  * Lümia Tools - Image Optimizer admin JS
- * Script dédié au module Image Optimizer.
+ * Script dedicated to the Image Optimizer module.
  */
 (function () {
   "use strict";
@@ -11,7 +11,7 @@
     initSvgRolesToggle();
   });
 
-  // Grise le sélecteur de rôles quand l'upload SVG est désactivé.
+  // Greys out the role picker when SVG upload is disabled.
   function initSvgRolesToggle() {
     const master = document.querySelector("[data-svg-master]");
     const roles = document.getElementById("lumia-svg-roles");
@@ -43,18 +43,18 @@
     var pollInterval = POLL_MIN;
     var isRunning = false;
 
-    // Bascule de l'invite « scanner » vers le bloc résultat (stats + bouton).
+    // Switches from the "scan" prompt to the result block (stats + button).
     function revealResult() {
       if (introEl) introEl.style.display = "none";
       if (resultEl) resultEl.style.display = "flex";
     }
 
-    // Scan à la demande : compte les images et estime les gains.
+    // On-demand scan: counts the images and estimates the savings.
     if (scanBtn) {
       scanBtn.addEventListener("click", function () {
         scanBtn.disabled = true;
         var originalLabel = scanBtn.textContent;
-        scanBtn.textContent = lumiaAdmin.i18n.bulkScanning || "Analyse…";
+        scanBtn.textContent = lumiaAdmin.i18n.bulkScanning;
 
         const formData = new FormData();
         formData.append("action", "lumia_image_optimizer_bulk_scan");
@@ -74,7 +74,7 @@
 
             if (!data.success) {
               if (typeof window.lumiaShowToast === "function") {
-                window.lumiaShowToast(data.data || "Erreur", "error");
+                window.lumiaShowToast(data.data || lumiaAdmin.i18n.error, "error");
               }
               return;
             }
@@ -85,7 +85,7 @@
 
             if (remainingEl) remainingEl.textContent = remaining;
 
-            // On n'affiche l'estimation que si un historique la rend crédible.
+            // The estimate is only shown when a history makes it credible.
             if (potentialTile) {
               if (estimated > 0) {
                 if (potentialEl) potentialEl.textContent = formatBytes(estimated);
@@ -102,7 +102,7 @@
             scanBtn.disabled = false;
             scanBtn.textContent = originalLabel;
             if (typeof window.lumiaShowToast === "function") {
-              window.lumiaShowToast(err.message || "Erreur réseau", "error");
+              window.lumiaShowToast(err.message || lumiaAdmin.i18n.networkError, "error");
             }
           });
       });
@@ -114,8 +114,7 @@
       pollInterval = POLL_MIN;
 
       startBtn.disabled = true;
-      startBtn.textContent =
-        lumiaAdmin.i18n.bulkRunning || "Optimisation en cours…";
+      startBtn.textContent = lumiaAdmin.i18n.bulkRunning;
 
       if (progressEl) {
         progressEl.style.display = "flex";
@@ -124,9 +123,9 @@
       startBulk();
     });
 
-    // Resync : si un bulk tourne déjà côté serveur (lancé avant un
-    // rechargement/une fermeture de page), on reprend l'affichage et le
-    // polling au lieu de laisser la page paraître inactive.
+    // Resync: if a bulk run is already going on server-side (started before a
+    // reload/page close), we resume the display and the polling
+    // instead of leaving the page looking idle.
     var initialState = lumiaAdmin.bulkState;
     if (initialState && initialState.running) {
       isRunning = true;
@@ -135,8 +134,7 @@
       revealResult();
 
       startBtn.disabled = true;
-      startBtn.textContent =
-        lumiaAdmin.i18n.bulkRunning || "Optimisation en cours…";
+      startBtn.textContent = lumiaAdmin.i18n.bulkRunning;
 
       if (progressEl) {
         progressEl.style.display = "flex";
@@ -166,7 +164,7 @@
         })
         .then(function (data) {
           if (!data.success) {
-            showError(data.data || "Erreur");
+            showError(data.data || lumiaAdmin.i18n.error);
             return;
           }
 
@@ -181,7 +179,7 @@
           pollStatus();
         })
         .catch(function (err) {
-          showError(err.message || "Erreur réseau");
+          showError(err.message || lumiaAdmin.i18n.networkError);
         });
     }
 
@@ -200,7 +198,7 @@
         })
         .then(function (data) {
           if (!data.success) {
-            showError(data.data || "Erreur");
+            showError(data.data || lumiaAdmin.i18n.error);
             return;
           }
 
@@ -216,7 +214,7 @@
           pollInterval = Math.min(pollInterval + 500, POLL_MAX);
         })
         .catch(function (err) {
-          showError(err.message || "Erreur réseau");
+          showError(err.message || lumiaAdmin.i18n.networkError);
         });
     }
 
@@ -230,10 +228,12 @@
 
       if (messageEl) {
         messageEl.textContent =
-          (lumiaAdmin.i18n.bulkProcessed || "Traité : ") +
+          lumiaAdmin.i18n.bulkProcessed +
+          " " +
           result.processed +
           " — " +
-          (lumiaAdmin.i18n.bulkRemaining || "Restant : ") +
+          lumiaAdmin.i18n.bulkRemaining +
+          " " +
           result.remaining;
       }
 
@@ -247,10 +247,9 @@
     function finishBulk() {
       isRunning = false;
       startBtn.disabled = false;
-      startBtn.textContent = lumiaAdmin.i18n.bulkDone || "Optimisation terminée";
+      startBtn.textContent = lumiaAdmin.i18n.bulkDone;
 
-      var completeMsg =
-        lumiaAdmin.i18n.bulkComplete || "Toutes les images ont été optimisées.";
+      var completeMsg = lumiaAdmin.i18n.bulkComplete;
 
       if (messageEl) {
         messageEl.textContent = completeMsg;
@@ -268,7 +267,7 @@
     function showError(msg) {
       isRunning = false;
       startBtn.disabled = false;
-      startBtn.textContent = lumiaAdmin.i18n.bulkRetry || "Réessayer";
+      startBtn.textContent = lumiaAdmin.i18n.bulkRetry;
 
       if (messageEl) {
         messageEl.textContent = msg;
@@ -278,9 +277,9 @@
   }
 
   /* ================================================================
-   * PANNEAU DE LA FICHE MÉDIA
-   * Chaque action renvoie le panneau rendu côté serveur : on le remplace
-   * tel quel au lieu de recalculer tailles et boutons en JS.
+   * MEDIA DETAILS PANEL
+   * Each action returns the server-rendered panel: we replace it
+   * as is instead of recomputing sizes and buttons in JS.
    * ================================================================ */
 
   var MODAL_ID = "lumia-io-modal";
@@ -304,7 +303,7 @@
         var hasBackup = button.getAttribute("data-has-backup") === "1";
         confirmAction({
           title: i18n.reoptimize.title,
-          message: hasBackup ? i18n.reoptimize.backup : i18n.reoptimize.nobackup,
+          message: hasBackup ? i18n.reoptimize.backup : i18n.reoptimize.noBackup,
           confirm: i18n.reoptimize.confirm,
           onConfirm: run,
         });
@@ -337,7 +336,7 @@
       b.disabled = true;
     });
     var label = button.textContent;
-    button.textContent = lumiaAdmin.i18n.mediaRunning || "…";
+    button.textContent = lumiaAdmin.i18n.mediaRunning;
 
     var formData = new FormData();
     formData.append("action", "lumia_image_optimizer_media_" + action);
@@ -363,8 +362,8 @@
         panel.outerHTML = data.data.html;
         toast(data.data.message, data.data.type);
 
-        // Grille de la médiathèque : le modèle Backbone garde l'ancienne URL
-        // (et l'ancien panneau) tant qu'on ne le recharge pas.
+        // Media library grid: the Backbone model keeps the old URL
+        // (and the old panel) until it is reloaded.
         if (window.wp && wp.media && typeof wp.media.attachment === "function") {
           wp.media.attachment(attachmentId).fetch();
         }
@@ -378,8 +377,8 @@
       });
   }
 
-  // Modale nommée du design system, créée une fois dans <body> : les écrans
-  // de médias n'ont pas le singleton #lumia-modal-overlay des pages du plugin.
+  // Named design-system modal, created once in <body>: the media screens
+  // do not have the #lumia-modal-overlay singleton of the plugin pages.
   function confirmAction(options) {
     var modal = document.getElementById(MODAL_ID);
     if (!modal) {
@@ -440,7 +439,7 @@
     confirmBtn.focus();
   }
 
-  // Le conteneur de toasts n'existe que sur les pages du plugin.
+  // The toast container only exists on the plugin pages.
   function toast(message, type) {
     if (typeof window.lumiaShowToast !== "function") return;
     if (!document.getElementById("lumia-toast-container")) {

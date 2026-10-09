@@ -4,10 +4,10 @@ namespace Lumia\Tools\Modules\ImageOptimizer;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Traitement pur des fichiers image : optimisation, conversion de format,
- * détection des capacités serveur.
+ * Pure image-file processing: optimization, format conversion,
+ * server capability detection.
  *
- * Pas de hooks WordPress — reçoit ses réglages à la construction.
+ * No WordPress hooks — receives its settings at construction.
  */
 class ImageProcessor {
 
@@ -17,14 +17,14 @@ class ImageProcessor {
 	private array $settings;
 
 	/**
-	 * Cache des capacités serveur (Imagick/GD, AVIF/WebP).
+	 * Cache of the server capabilities (Imagick/GD, AVIF/WebP).
 	 *
 	 * @var array<string, bool|string>|null
 	 */
 	private ?array $capabilities = null;
 
 	/**
-	 * Fichiers déjà optimisés sur cette requête (déduplication).
+	 * Files already optimized during this request (deduplication).
 	 *
 	 * @var array<string, true>
 	 */
@@ -38,19 +38,19 @@ class ImageProcessor {
 	}
 
 	/* ================================================================
-	 * CAPACITÉS SERVEUR
+	 * SERVER CAPABILITIES
 	 * ================================================================ */
 
-	/** Durée de vie du cache des capacités (24 h). */
+	/** Lifetime of the capabilities cache (24 h). */
 	private const CAPABILITIES_TTL = DAY_IN_SECONDS;
 
 	/**
-	 * Détecte et met en cache les capacités image du serveur.
+	 * Detects and caches the server's image capabilities.
 	 *
-	 * Les sondes sont de vrais encodages : les refaire à chaque requête
-	 * (téléversement, lot du bulk, écran de réglages) coûtait quatre encodages
-	 * par appel. Le résultat vit en transient, sous une clé liée aux versions
-	 * de PHP, GD et Imagick : un changement de build invalide le cache seul.
+	 * The probes are real encodings: redoing them on every request
+	 * (upload, bulk batch, settings screen) cost four encodings
+	 * per call. The result lives in a transient, under a key tied to the PHP,
+	 * GD and Imagick versions: a build change invalidates the cache by itself.
 	 *
 	 * @return array<string, bool|string>
 	 */
@@ -69,12 +69,12 @@ class ImageProcessor {
 		$has_imagick = extension_loaded( 'imagick' );
 		$has_gd      = extension_loaded( 'gd' );
 
-		// Capacité d'encodage par moteur ET par format. Indispensable car un
-		// format peut être *enregistré* (queryFormats) sans délégué d'encodage
-		// réel : la conversion échoue alors à l'exécution (« Unable to set image
-		// format », « no decode delegate »). On teste donc chaque paire par un
-		// vrai encodage 1×1, et on route ensuite la conversion vers le moteur qui
-		// fonctionne réellement (l'un peut savoir, l'autre non).
+		// Encoding capability per engine AND per format. Essential because a
+		// format can be *registered* (queryFormats) without a real encoding
+		// delegate: the conversion then fails at run time ("Unable to set image
+		// format", "no decode delegate"). So we test each pair with a
+		// real 1x1 encoding, and then route the conversion to the engine that
+		// actually works (one may know how, the other not).
 		$imagick_avif = false;
 		$imagick_webp = false;
 		$gd_avif      = false;
@@ -87,9 +87,9 @@ class ImageProcessor {
 		}
 
 		if ( $has_gd ) {
-			// On sonde par un vrai encodage plutôt que de se fier à gd_info() :
-			// imagewebp()/imageavif() existent toujours en PHP 8.1+ même sans la
-			// lib sous-jacente, et gd_info() peut mentir sur certains builds.
+			// We probe with a real encoding rather than trusting gd_info():
+			// imagewebp()/imageavif() always exist in PHP 8.1+ even without the
+			// underlying lib, and gd_info() can lie on some builds.
 			$gd_avif = $this->gd_can_encode( 'avif' );
 			$gd_webp = $this->gd_can_encode( 'webp' );
 		}
@@ -112,9 +112,9 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Vérifie qu'Imagick peut réellement *encoder* un format donné, en tentant
-	 * un encodage d'une image 1×1. Contourne les builds où le format est
-	 * enregistré (queryFormats) mais dont le délégué d'encodage est absent/cassé.
+	 * Checks that Imagick can really *encode* a given format, by attempting
+	 * to encode a 1x1 image. Works around builds where the format is
+	 * registered (queryFormats) but whose encoding delegate is missing/broken.
 	 */
 	private function imagick_can_encode( string $format ): bool {
 		try {
@@ -132,9 +132,9 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Vérifie que GD peut réellement *encoder* un format, par un vrai encodage
-	 * en mémoire. imagewebp()/imageavif() existent toujours en PHP 8.1+ même si
-	 * la lib (libwebp/libavif) n'est pas compilée : seul un encodage réel tranche.
+	 * Checks that GD can really *encode* a format, with a real in-memory
+	 * encoding. imagewebp()/imageavif() always exist in PHP 8.1+ even if
+	 * the lib (libwebp/libavif) is not compiled in: only a real encoding settles it.
 	 */
 	private function gd_can_encode( string $format ): bool {
 		$fn = 'webp' === $format ? 'imagewebp' : ( 'avif' === $format ? 'imageavif' : '' );
@@ -160,8 +160,8 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Détermine le format de conversion cible selon les réglages et capacités.
-	 * Retourne '' si aucune conversion possible/souhaitée.
+	 * Determines the target conversion format from the settings and capabilities.
+	 * Returns '' if no conversion is possible or wanted.
 	 */
 	public function get_target_format(): string {
 		$cap  = $this->get_capabilities();
@@ -188,12 +188,12 @@ class ImageProcessor {
 	}
 
 	/* ================================================================
-	 * OPTIMISATION (compression + redimensionnement + strip EXIF)
+	 * OPTIMIZATION (compression + resizing + EXIF strip)
 	 * ================================================================ */
 
 	/**
-	 * Optimise un fichier image en place.
-	 * Idempotent sur cette requête (les fichiers déjà traités sont ignorés).
+	 * Optimizes an image file in place.
+	 * Idempotent within this request (files already processed are skipped).
 	 */
 	public function optimize( string $file_path ): void {
 		if ( ! file_exists( $file_path ) || isset( $this->optimized_paths[ $file_path ] ) ) {
@@ -234,7 +234,7 @@ class ImageProcessor {
 			$imagick->setImageCompressionQuality( (int) ( $this->settings['quality'] ?? 75 ) );
 			$imagick->writeImage( $file_path );
 		} catch ( \Throwable $e ) {
-			// Ne pas bloquer l'upload, mais tracer l'erreur pour diagnostic.
+			// Do not block the upload, but log the error for diagnosis.
 			$this->log_error( 'optimize/imagick', $file_path, $e );
 		} finally {
 			if ( $imagick instanceof \Imagick ) {
@@ -269,18 +269,18 @@ class ImageProcessor {
 	}
 
 	/* ================================================================
-	 * CONVERSION DE FORMAT (AVIF / WebP)
+	 * FORMAT CONVERSION (AVIF / WebP)
 	 * ================================================================ */
 
 	/**
-	 * Convertit un fichier vers le format cible.
+	 * Converts a file to the target format.
 	 *
-	 * Retourne le chemin du fichier converti, ou false si la conversion
-	 * n'est pas possible ou ne réduit pas la taille.
+	 * Returns the path of the converted file, or false if the conversion
+	 * is not possible or does not reduce the size.
 	 *
-	 * @param string $file_path     Chemin du fichier source.
-	 * @param string $mime_type     MIME type connu (évite une détection inutile).
-	 * @param int    $attachment_id Pour la détection MIME via WP si mime_type vide.
+	 * @param string $file_path     Path of the source file.
+	 * @param string $mime_type     Known MIME type (avoids a needless detection).
+	 * @param int    $attachment_id For MIME detection through WP if mime_type is empty.
 	 * @return string|false
 	 */
 	public function convert( string $file_path, string $mime_type = '', int $attachment_id = 0 ) {
@@ -304,7 +304,7 @@ class ImageProcessor {
 
 		$info = pathinfo( $file_path );
 
-		// Déjà dans le bon format
+		// Already in the right format
 		if ( strtolower( $info['extension'] ?? '' ) === $target_format ) {
 			return $file_path;
 		}
@@ -314,9 +314,9 @@ class ImageProcessor {
 
 		$cap = $this->get_capabilities();
 
-		// Router vers le moteur qui sait réellement encoder CE format. Ne pas se
-		// contenter de « Imagick d'abord » : sur certains serveurs Imagick a le
-		// format enregistré mais pas le délégué, alors que GD sait l'encoder.
+		// Route to the engine that can really encode THIS format. Do not just
+		// settle for "Imagick first": on some servers Imagick has the format
+		// registered but not the delegate, while GD can encode it.
 		$imagick_ok = 'avif' === $target_format ? $cap['imagick_avif'] : $cap['imagick_webp'];
 		$gd_ok      = 'avif' === $target_format ? $cap['gd_avif'] : $cap['gd_webp'];
 
@@ -332,7 +332,7 @@ class ImageProcessor {
 			return false;
 		}
 
-		// Ne conserver la conversion que si elle réduit la taille.
+		// Only keep the conversion if it reduces the size.
 		$after = filesize( $output_path );
 		if ( $before > 0 && $after >= $before ) {
 			wp_delete_file( $output_path );
@@ -373,24 +373,24 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Convertit via l'extension GD *directement* (imagewebp/imageavif).
+	 * Converts through the GD extension *directly* (imagewebp/imageavif).
 	 *
-	 * On n'utilise pas wp_get_image_editor() ici : quand Imagick est présent,
-	 * WordPress renvoie l'éditeur Imagick — donc un serveur dont le délégué
-	 * Imagick est cassé mais dont GD sait encoder ne serait jamais servi par GD.
-	 * On appelle donc GD sans intermédiaire.
+	 * We do not use wp_get_image_editor() here: when Imagick is present,
+	 * WordPress returns the Imagick editor — so a server whose Imagick
+	 * delegate is broken but whose GD can encode would never be served by GD.
+	 * So we call GD with no intermediary.
 	 */
 	private function convert_with_gd( string $source, string $output, string $format ): bool {
 		if ( ! function_exists( 'imagecreatefromstring' ) ) {
 			return false;
 		}
 
-		$data = file_get_contents( $source ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- fichier local.
-		// GD émet un warning sur une image corrompue : l'échec est traité juste après.
+		$data = file_get_contents( $source ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file.
+		// GD emits a warning on a corrupt image: the failure is handled right after.
 		$image = false !== $data ? @imagecreatefromstring( $data ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( false === $image ) {
-			$this->log_error( 'convert/gd', $source, 'imagecreatefromstring a échoué' );
+			$this->log_error( 'convert/gd', $source, 'imagecreatefromstring failed' );
 			return false;
 		}
 
@@ -410,10 +410,10 @@ class ImageProcessor {
 			$ok = false;
 		}
 
-		// GdImage est un objet libéré par le GC (PHP 8.0+) : pas d'imagedestroy().
+		// GdImage is an object freed by the garbage collector (PHP 8.0+): no imagedestroy().
 
 		if ( ! $ok ) {
-			$this->log_error( 'convert/gd', $source, 'encodage ' . $format . ' via GD a échoué' );
+			$this->log_error( 'convert/gd', $source, 'encoding to ' . $format . ' via GD failed' );
 			return false;
 		}
 
@@ -421,11 +421,11 @@ class ImageProcessor {
 	}
 
 	/* ================================================================
-	 * UTILITAIRES
+	 * UTILITIES
 	 * ================================================================ */
 
 	/**
-	 * Vérifie si un type MIME est pris en charge pour optimisation/conversion.
+	 * Checks whether a MIME type is supported for optimization/conversion.
 	 */
 	public function is_supported_mime( string $mime_type ): bool {
 		if ( strpos( $mime_type, 'image/' ) !== 0 ) {
@@ -441,15 +441,15 @@ class ImageProcessor {
 		return ! in_array( $mime_type, $excluded, true );
 	}
 
-	/** Formats qui peuvent contenir plusieurs images. */
+	/** Formats that can contain several images. */
 	private const ANIMATABLE_MIMES = [ 'image/gif', 'image/webp', 'image/png', 'image/apng', 'image/avif' ];
 
 	/**
-	 * Détecte si une image est animée (GIF animé, WebP animé, APNG…).
+	 * Detects whether an image is animated (animated GIF, animated WebP, APNG…).
 	 *
-	 * Le test court-circuite par MIME : un JPEG ne peut pas être animé, et le
-	 * charger dans Imagick pour compter ses frames — une fois par taille —
-	 * lisait chaque fichier en entier pour rien.
+	 * The test short-circuits by MIME: a JPEG cannot be animated, and
+	 * loading it into Imagick to count its frames — once per size —
+	 * read every file entirely for nothing.
 	 */
 	public function is_animated( string $file_path, string $mime_type ): bool {
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
@@ -487,7 +487,7 @@ class ImageProcessor {
 	}
 
 	private function is_animated_gif( string $file_path ): bool {
-		// Lecture par blocs d'un fichier local : WP_Filesystem n'offre aucune lecture en flux.
+		// Chunked reading of a local file: WP_Filesystem offers no streamed reading.
 		// phpcs:disable WordPress.WP.AlternativeFunctions
 		$handle = fopen( $file_path, 'rb' );
 		if ( ! $handle ) {
@@ -509,8 +509,8 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Détecte le type MIME d'un fichier.
-	 * Préfère le MIME enregistré en base WP si un attachment_id est fourni.
+	 * Detects the MIME type of a file.
+	 * Prefers the MIME type stored in the WP database if an attachment_id is provided.
 	 */
 	public function get_mime_type( string $file_path, int $attachment_id = 0 ): string {
 		if ( $attachment_id > 0 ) {
@@ -540,8 +540,8 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Convertit un nom de fichier en texte alternatif lisible.
-	 * Ex: "mon-image-1920x1080" → "Mon image"
+	 * Converts a file name into readable alternative text.
+	 * E.g. "my-image-1920x1080" → "My image"
 	 */
 	public function filename_to_alt( string $filename ): string {
 		$alt = preg_replace( '/-\d+x\d+$/', '', $filename );
@@ -550,17 +550,17 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Trace une erreur de traitement image dans le log PHP.
+	 * Logs an image processing error in the PHP log.
 	 *
-	 * Les échecs Imagick/GD étaient jusqu'ici avalés en silence : impossible de
-	 * savoir pourquoi une image ne se compressait/convertissait pas. On les logge
-	 * désormais (préfixe grep-able). Sur les hébergements qui redirigent error_log
-	 * vers stderr, le message apparaît directement dans les logs du conteneur,
-	 * même avec WP_DEBUG désactivé.
+	 * Imagick/GD failures used to be swallowed silently: impossible to
+	 * know why an image was not compressed/converted. They are now logged
+	 * (grep-able prefix). On hosts that redirect error_log
+	 * to stderr, the message shows up directly in the container logs,
+	 * even with WP_DEBUG disabled.
 	 *
-	 * @param string                     $context   Étape concernée (ex. « convert/imagick »).
-	 * @param string                     $file_path Fichier en cause.
-	 * @param \Throwable|\WP_Error|string $error    Exception, WP_Error ou message brut.
+	 * @param string                     $context   Step concerned (e.g. "convert/imagick").
+	 * @param string                     $file_path File concerned.
+	 * @param \Throwable|\WP_Error|string $error    Exception, WP_Error or raw message.
 	 */
 	private function log_error( string $context, string $file_path, $error ): void {
 		if ( $error instanceof \Throwable ) {
@@ -571,13 +571,13 @@ class ImageProcessor {
 			$message = (string) $error;
 		}
 
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- journal d'erreur volontaire, sans interface pour l'afficher.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- deliberate error log, no UI to display it.
 		error_log(
 			sprintf(
-				'[LUMIA Image Optimizer] %s a échoué pour %s : %s',
+				'[LUMIA Image Optimizer] %s failed for %s: %s',
 				$context,
 				$file_path,
-				'' !== $message ? $message : 'erreur inconnue'
+				'' !== $message ? $message : 'unknown error'
 			)
 		);
 	}
