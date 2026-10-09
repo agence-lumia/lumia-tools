@@ -1,23 +1,26 @@
 /**
- * Module Médias — dossiers virtuels dans la médiathèque WordPress.
+ * Media module — virtual folders in the WordPress media library.
  *
- * Deux points de montage, un seul composant :
- *   1. Extension de wp.media.view.AttachmentsBrowser → la sidebar apparaît
- *      partout où WordPress affiche une médiathèque (upload.php en grille,
- *      modales d'insertion, Gutenberg, constructeurs frontend type Bricks),
- *      sans qu'on déplace le moindre nœud du DOM de WordPress.
- *   2. Montage autonome dans upload.php?mode=list, où wp.media n'est pas
- *      chargé du tout et où la liste est une WP_List_Table classique.
+ * Two mount points, one component:
+ *   1. Extension of wp.media.view.AttachmentsBrowser → the sidebar appears
+ *      wherever WordPress displays a media library (upload.php in grid mode,
+ *      insert modals, Gutenberg, frontend builders such as Bricks), without
+ *      moving a single node of the WordPress DOM.
+ *   2. Standalone mount in upload.php?mode=list, where wp.media is not
+ *      loaded at all and the list is a classic WP_List_Table.
  *
- * Le panneau (FolderPanel) est agnostique : il parle à une « cible » qui sait
- * lire et écrire le dossier courant. En grille c'est un prop de la collection
- * Backbone, en vue liste c'est un paramètre d'URL.
+ * The panel (FolderPanel) is agnostic: it talks to a "target" that knows how
+ * to read and write the current folder. In grid mode it is a prop of the
+ * Backbone collection, in list view it is a URL parameter.
  *
- * Le filtrage est intégralement serveur (voir Module.php) : aucune liste d'IDs
- * ne transite, la pagination et le scroll infini natifs restent intacts.
+ * Filtering is entirely server-side (see Module.php): no ID list travels,
+ * native pagination and infinite scroll remain intact.
  *
- * Dépendances : jquery, admin.js (modales nommées), notifications.js
- * (window.lumiaShowToast), sortable.min.js. media-views uniquement en grille.
+ * Strings come from window.lumiaMedia.i18n: this script runs on native
+ * WordPress screens, where window.lumiaAdmin does not exist.
+ *
+ * Dependencies: jquery, admin.js (named modals), notifications.js
+ * (window.lumiaShowToast), sortable.min.js. media-views only in grid mode.
  */
 (function ($) {
   "use strict";
@@ -32,30 +35,30 @@
   var COLOR_LABELS = cfg.colorLabels || {};
 
   /**
-   * L'utilisateur peut-il modifier l'ARBORESCENCE (créer, renommer, supprimer,
-   * déplacer, colorer un dossier) ?
+   * May the user change the TREE (create, rename, delete,
+   * move, color a folder)?
    *
-   * Miroir de Media\Module::CAP_MANAGE. Purement cosmétique : la décision
-   * appartient à guard_manage() côté serveur, qui ne lit rien de ce que le
-   * client envoie. On s'en sert pour ne pas montrer des commandes qui ne
-   * feraient que renvoyer un refus.
+   * Mirror of Media\Module::CAP_MANAGE. Purely cosmetic: the decision
+   * belongs to guard_manage() on the server, which reads nothing of what the
+   * client sends. It is used to avoid showing controls that would only
+   * return a refusal.
    *
-   * PIÈGE — wp_localize_script() convertit TOUTES les valeurs en chaînes : un
-   * `false` PHP arrive ici en `""`, et un `true` en `"1"`. Un test du genre
-   * `cfg.canManage !== false` serait donc toujours vrai, et le drapeau
-   * n'aurait jamais rien masqué. On compare aux deux formes possibles.
+   * PITFALL — wp_localize_script() converts ALL values to strings: a PHP
+   * `false` arrives here as `""`, and a `true` as `"1"`. A test such as
+   * `cfg.canManage !== false` would therefore always be true, and the flag
+   * would never have hidden anything. We compare against both possible forms.
    */
   var CAN_MANAGE = cfg.canManage === true || cfg.canManage === "1";
 
-  /** Valeur du filtre « aucun dossier sélectionné ». */
+  /** Filter value meaning "no folder selected". */
   var ALL = "";
 
   /* ================================================================
    * HELPERS
    * ================================================================ */
 
-  function t(key, fallback) {
-    return i18n[key] || fallback || key;
+  function t(key) {
+    return i18n[key] || "";
   }
 
   function escHtml(str) {
@@ -70,7 +73,7 @@
     }
   }
 
-  // Le conteneur de toasts vit dans le layout LUMIA, absent des pages natives.
+  // The toast container lives in the LUMIA layout, absent from native pages.
   function ensureToastContainer() {
     if (document.getElementById("lumia-toast-container")) return;
     var c = document.createElement("div");
@@ -97,19 +100,19 @@
       .then(function (r) { return r.json(); })
       .then(function (res) {
         if (res && res.success) return res.data || {};
-        var msg = (res && res.data && res.data.message) || "Erreur";
+        var msg = (res && res.data && res.data.message) || t("error");
         toast(msg, "error");
         return Promise.reject(new Error(msg));
       })
       .catch(function (err) {
-        if (!(err instanceof Error)) toast("Erreur réseau", "error");
+        if (!(err instanceof Error)) toast(t("networkError"), "error");
         throw err;
       });
   }
 
   /* ================================================================
-   * STORE — une seule source de vérité pour tous les panneaux montés
-   * (une page peut afficher deux médiathèques : la grille et une modale).
+   * STORE — a single source of truth for all mounted panels
+   * (a page may display two media libraries: the grid and a modal).
    * ================================================================ */
 
   var store = { folders: [], unorganized: 0, loading: null, listeners: [] };
@@ -145,7 +148,7 @@
   }
 
   /* ================================================================
-   * ICÔNES (Lucide, inline)
+   * ICONS (Lucide, inline)
    * ================================================================ */
 
   var ICON_GRID = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>';
@@ -153,35 +156,35 @@
   var ICON_DOTS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
   var ICON_PLUS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>';
 
-  // Toutes ces icônes sont du Lucide non modifié (layout-grid, folder, ellipsis,
-  // plus). Ne jamais en bricoler une : demander le SVG (voir CLAUDE.md).
-  // « Non classés » utilise le folder standard — folder-dashed n'existe pas chez
-  // Lucide ; la distinction se fait par la teinte atténuée (media.css).
+  // All these icons are unmodified Lucide (layout-grid, folder, ellipsis,
+  // plus). Never tinker with one: ask for the SVG (see CLAUDE.md).
+  // "Unfiled" uses the standard folder — folder-dashed does not exist in
+  // Lucide; the distinction is made with a muted tint (media.css).
   function folderIcon(value) {
     if (value === ALL) return ICON_GRID;
     return ICON_FOLDER;
   }
 
   /* ================================================================
-   * MODALES — créées une seule fois, dans <body>
+   * MODALS — created once, inside <body>
    * ================================================================ */
 
   var modals = { ready: false, parent: 0, rename: 0, remove: 0, onDone: null };
 
-  function modalBlock(id, titleKey, titleFallback, body, confirmId, confirmKey, confirmFallback, danger) {
+  function modalBlock(id, titleKey, body, confirmId, confirmKey, danger) {
     return '<div id="' + id + '" class="lumia-modal-overlay lumia-media-modal" role="dialog" aria-modal="true" aria-labelledby="' + id + '-title">' +
       '<div class="lumia-modal">' +
-      '<div class="lumia-modal__header"><h3 id="' + id + '-title" class="lumia-modal__title">' + escHtml(t(titleKey, titleFallback)) + "</h3></div>" +
+      '<div class="lumia-modal__header"><h3 id="' + id + '-title" class="lumia-modal__title">' + escHtml(t(titleKey)) + "</h3></div>" +
       '<div class="lumia-modal__body">' + body + "</div>" +
       '<div class="lumia-modal__footer">' +
-      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal-close">' + escHtml(t("cancel", "Annuler")) + "</button>" +
-      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--' + (danger ? "danger" : "primary") + '" id="' + confirmId + '">' + escHtml(t(confirmKey, confirmFallback)) + "</button>" +
+      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal-close">' + escHtml(t("cancel")) + "</button>" +
+      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--' + (danger ? "danger" : "primary") + '" id="' + confirmId + '">' + escHtml(t(confirmKey)) + "</button>" +
       "</div></div></div>";
   }
 
   function field(inputId) {
     return '<div class="lumia-form__group">' +
-      '<label class="lumia-form__label" for="' + inputId + '">' + escHtml(t("folderName", "Nom du dossier")) + "</label>" +
+      '<label class="lumia-form__label" for="' + inputId + '">' + escHtml(t("folderName")) + "</label>" +
       '<input type="text" class="lumia-input" id="' + inputId + '" autocomplete="off">' +
       "</div>";
   }
@@ -193,12 +196,12 @@
     var host = document.createElement("div");
     host.id = "lumia-media-modals";
     host.innerHTML =
-      modalBlock("lumia-media-modal-new-folder", "newFolder", "Nouveau dossier",
-        field("lumia-media-new-folder-name"), "lumia-media-create-folder-confirm", "create", "Créer", false) +
-      modalBlock("lumia-media-modal-rename", "rename", "Renommer",
-        field("lumia-media-rename-name"), "lumia-media-rename-confirm", "save", "Enregistrer", false) +
-      modalBlock("lumia-media-modal-delete", "deleteFolder", "Supprimer le dossier ?",
-        "<p>" + escHtml(t("deleteFolderMsg", "")) + "</p>", "lumia-media-delete-confirm", "delete", "Supprimer", true);
+      modalBlock("lumia-media-modal-new-folder", "newFolder",
+        field("lumia-media-new-folder-name"), "lumia-media-create-folder-confirm", "create", false) +
+      modalBlock("lumia-media-modal-rename", "rename",
+        field("lumia-media-rename-name"), "lumia-media-rename-confirm", "save", false) +
+      modalBlock("lumia-media-modal-delete", "deleteFolder",
+        "<p>" + escHtml(t("deleteFolderMsg")) + "</p>", "lumia-media-delete-confirm", "delete", true);
     document.body.appendChild(host);
 
     var nameInput = document.getElementById("lumia-media-new-folder-name");
@@ -210,7 +213,7 @@
       ajax("lumia_media_create_folder", { name: name, parent_id: modals.parent }).then(function (data) {
         window.lumiaModalClose("lumia-media-modal-new-folder");
         commit(data);
-        toast(t("folderCreated", "Dossier créé."), "success");
+        toast(t("folderCreated"), "success");
       });
     }
 
@@ -220,7 +223,7 @@
       ajax("lumia_media_rename_folder", { id: modals.rename, name: name }).then(function (data) {
         window.lumiaModalClose("lumia-media-modal-rename");
         commit(data);
-        toast(t("folderRenamed", "Dossier renommé."), "success");
+        toast(t("folderRenamed"), "success");
       });
     }
 
@@ -232,7 +235,7 @@
         modals.remove = 0;
         commit(data);
         if (typeof modals.onDone === "function") modals.onDone(removed);
-        toast(t("folderDeleted", "Dossier supprimé."), "success");
+        toast(t("folderDeleted"), "success");
       });
     }
 
@@ -275,7 +278,7 @@
   }
 
   /* ================================================================
-   * DROPDOWN d'actions (couleur / renommer / sous-dossier / supprimer)
+   * Actions DROPDOWN (color / rename / subfolder / delete)
    * ================================================================ */
 
   function closeDropdown() {
@@ -301,7 +304,7 @@
     var swatches = COLORS.map(function (c) {
       var isNone = c === "";
       var isSel = (folder.color || "") === c;
-      var label = isNone ? t("defaultColor", "Par défaut") : (COLOR_LABELS[c] || c);
+      var label = isNone ? t("defaultColor") : (COLOR_LABELS[c] || c);
       return '<button type="button" class="lumia-media-swatch' + (isNone ? " is-none" : "") + (isSel ? " is-selected" : "") +
         '" data-color="' + escHtml(c) + '" ' + (c ? 'style="background:' + escHtml(c) + '" ' : "") +
         'title="' + escHtml(label) + '" ' +
@@ -312,12 +315,12 @@
     dd.className = "lumia-media-dropdown";
     dd.dataset.folderId = String(folderId);
     dd.innerHTML =
-      '<div class="lumia-media-dropdown__label">' + escHtml(t("color", "Couleur")) + "</div>" +
+      '<div class="lumia-media-dropdown__label">' + escHtml(t("color")) + "</div>" +
       '<div class="lumia-media-dropdown__colors">' + swatches + "</div>" +
       '<div class="lumia-media-dropdown__sep"></div>' +
-      '<button type="button" class="lumia-media-dropdown__action" data-action="rename">' + escHtml(t("rename", "Renommer")) + "</button>" +
-      '<button type="button" class="lumia-media-dropdown__action" data-action="subfolder">' + escHtml(t("newSubfolder", "Nouveau sous-dossier")) + "</button>" +
-      '<button type="button" class="lumia-media-dropdown__action is-danger" data-action="delete">' + escHtml(t("delete", "Supprimer")) + "</button>";
+      '<button type="button" class="lumia-media-dropdown__action" data-action="rename">' + escHtml(t("rename")) + "</button>" +
+      '<button type="button" class="lumia-media-dropdown__action" data-action="subfolder">' + escHtml(t("newSubfolder")) + "</button>" +
+      '<button type="button" class="lumia-media-dropdown__action is-danger" data-action="delete">' + escHtml(t("delete")) + "</button>";
 
     document.body.appendChild(dd);
 
@@ -346,7 +349,7 @@
         else if (action === "subfolder") openCreateModal(folderId);
         else if (action === "delete") {
           openDeleteModal(folderId, function (removed) {
-            // Si la vue affichait le dossier supprimé, on revient à « tous ».
+            // If the view was showing the deleted folder, go back to "all".
             if (String(panel.current()) === String(removed)) panel.select(ALL);
           });
         }
@@ -355,10 +358,10 @@
   }
 
   /* ================================================================
-   * CIBLES — d'où vient et où va le dossier courant
+   * TARGETS — where the current folder comes from and goes to
    *
-   * C'est la seule chose qui change entre la grille (collection Backbone) et
-   * la vue liste (paramètre d'URL). Tout le reste du panneau est identique.
+   * This is the only thing that changes between the grid (Backbone collection)
+   * and the list view (URL parameter). Everything else in the panel is identical.
    * ================================================================ */
 
   function collectionTarget(collection) {
@@ -368,7 +371,7 @@
         return v === undefined || v === null ? ALL : v;
       },
       set: function (value) {
-        // Backbone déclenche la requête tout seul sur changement de prop.
+        // Backbone fires the request by itself when a prop changes.
         if (value === ALL) collection.props.unset(QUERY_VAR);
         else collection.props.set(QUERY_VAR, value);
       },
@@ -388,7 +391,7 @@
         var url = new URL(window.location.href);
         if (value === ALL) url.searchParams.delete(QUERY_VAR);
         else url.searchParams.set(QUERY_VAR, value);
-        // Changer de dossier remet la pagination à zéro.
+        // Changing folder resets the pagination.
         url.searchParams.delete("paged");
         window.location.href = url.toString();
       },
@@ -397,11 +400,11 @@
   }
 
   /* ================================================================
-   * PANNEAU DE DOSSIERS
+   * FOLDER PANEL
    *
-   * Volontairement en JS natif plutôt qu'en vue Backbone : il doit aussi
-   * fonctionner sur upload.php?mode=list, où wp.media (et donc wp.Backbone)
-   * n'est pas chargé.
+   * Deliberately written in plain JS rather than as a Backbone view: it must
+   * also work on upload.php?mode=list, where wp.media (hence wp.Backbone)
+   * is not loaded.
    * ================================================================ */
 
   function FolderPanel(target, el) {
@@ -431,12 +434,12 @@
   FolderPanel.prototype.render = function () {
     this.el.innerHTML =
       '<div class="lumia-media-sidebar__header">' +
-      '<span class="lumia-media-sidebar__title">' + escHtml(t("folders", "Dossiers")) + "</span>" +
+      '<span class="lumia-media-sidebar__title">' + escHtml(t("folders")) + "</span>" +
       (CAN_MANAGE
-        ? '<button type="button" class="lumia-media-sidebar__add-btn" title="' + escHtml(t("newFolder", "Nouveau dossier")) + '" data-lumia-tip="' + escHtml(t("newFolder", "Nouveau dossier")) + '" aria-label="' + escHtml(t("newFolder", "Nouveau dossier")) + '">' + ICON_PLUS + "</button>"
+        ? '<button type="button" class="lumia-media-sidebar__add-btn" title="' + escHtml(t("newFolder")) + '" data-lumia-tip="' + escHtml(t("newFolder")) + '" aria-label="' + escHtml(t("newFolder")) + '">' + ICON_PLUS + "</button>"
         : "") +
       "</div>" +
-      '<div class="lumia-media-sidebar__tree"><div class="lumia-media-loading">' + escHtml(t("loading", "Chargement…")) + "</div></div>";
+      '<div class="lumia-media-sidebar__tree"><div class="lumia-media-loading">' + escHtml(t("loading")) + "</div></div>";
 
     var addBtn = this.el.querySelector(".lumia-media-sidebar__add-btn");
     if (addBtn) {
@@ -452,8 +455,8 @@
     if (!tree) return;
 
     var self = this;
-    var html = this.item({ value: ALL, name: t("allMedia", "Tous les médias"), count: null });
-    html += this.item({ value: UNASSIGNED, name: t("unorganized", "Non classés"), count: store.unorganized });
+    var html = this.item({ value: ALL, name: t("allMedia"), count: null });
+    html += this.item({ value: UNASSIGNED, name: t("unorganized"), count: store.unorganized });
 
     function walk(parentId, depth) {
       var out = "";
@@ -481,14 +484,14 @@
       ? ""
       : '<span class="lumia-media-folder__count">' + parseInt(o.count, 10) + "</span>";
     var menu = isFolder && CAN_MANAGE
-      ? '<button type="button" class="lumia-media-folder__menu-btn" data-folder-id="' + escHtml(value) + '" aria-label="Actions">' + ICON_DOTS + "</button>"
+      ? '<button type="button" class="lumia-media-folder__menu-btn" data-folder-id="' + escHtml(value) + '" aria-label="' + escHtml(t("actions")) + '">' + ICON_DOTS + "</button>"
       : "";
     var indent = o.depth ? ' style="--lumia-depth:' + parseInt(o.depth, 10) + '"' : "";
 
-    // « Non classés » est aussi une cible de dépôt, avec l'id 0 : y lâcher des
-    // médias les sort de tout dossier, y lâcher un dossier le remonte à la
-    // racine. Une seule cible pour les deux gestes, cohérente côté serveur
-    // (folder_id 0 = aucun terme, parent_id 0 = racine).
+    // "Unfiled" is also a drop target, with id 0: dropping media on it takes
+    // them out of every folder, dropping a folder on it moves it up to the
+    // root. A single target for both gestures, consistent on the server
+    // (folder_id 0 = no term, parent_id 0 = root).
     var droppable = isFolder || value === UNASSIGNED;
     var attrs = ' data-value="' + escHtml(value) + '"';
     if (droppable) attrs += ' data-droppable="true" data-drop-id="' + (isFolder ? parseInt(value, 10) : 0) + '"';
@@ -521,11 +524,11 @@
   };
 
   /**
-   * Applique un dépôt de médias résolu par hit-test.
+   * Applies a media drop resolved by hit-test.
    *
-   * @param {number} folderId Dossier cible (0 = sortir de tout dossier).
-   * @param {Array}  ids      Pièces jointes concernées.
-   * @param {string} mode     replace | add | remove — voir ajax_move_items().
+   * @param {number} folderId Target folder (0 = leave every folder).
+   * @param {Array}  ids      Attachments concerned.
+   * @param {string} mode     replace | add | remove — see ajax_move_items().
    */
   FolderPanel.prototype.dropInto = function (folderId, ids, mode) {
     var self = this;
@@ -538,15 +541,15 @@
       commit(data);
 
       var key = mode === "add" ? "itemsAdded" : mode === "remove" ? "itemsRemoved" : "itemsMoved";
-      toast(n + " " + t(key, "média(s) déplacé(s)."), "success");
+      toast(n + " " + t(key), "success");
 
-      // Le serveur écarte les médias que l'utilisateur n'a pas le droit
-      // d'éditer. Le taire ferait passer un refus légitime pour un bug.
+      // The server discards media the user is not allowed to edit.
+      // Staying silent would make a legitimate refusal look like a bug.
       if (data && data.refused) {
-        toast(data.refused + " " + t("itemsRefused", "média(s) ignoré(s)."), "warning");
+        toast(data.refused + " " + t("itemsRefused"), "warning");
       }
 
-      // Un média sorti du dossier affiché doit disparaître de la vue.
+      // A media removed from the displayed folder must disappear from the view.
       if (self.current() !== ALL) self.target.refresh();
     });
   };
@@ -554,38 +557,38 @@
   FolderPanel.prototype.moveFolder = function (folderId, parentId) {
     ajax("lumia_media_move_folder", { id: folderId, parent_id: parentId }).then(function (data) {
       commit(data);
-      toast(t("folderMoved", "Dossier déplacé."), "success");
+      toast(t("folderMoved"), "success");
     });
   };
 
   FolderPanel.prototype.destroyFolderDrag = function () {
     var tree = this.el.querySelector(".lumia-media-sidebar__tree");
     if (tree && tree._lumiaSortable) {
-      try { tree._lumiaSortable.destroy(); } catch (e) { /* déjà détachée */ }
+      try { tree._lumiaSortable.destroy(); } catch (e) { /* already detached */ }
       tree._lumiaSortable = null;
     }
   };
 
   /**
-   * Rend les dossiers eux-mêmes déplaçables (re-parentage à la souris).
+   * Makes the folders themselves draggable (re-parenting with the mouse).
    *
-   * Comme pour la grille, SortableJS ne sert qu'à porter le geste et la
-   * vignette flottante : la cible est résolue par hit-test. `sort: false` et
-   * l'absence de `group` empêchent tout réordonnancement dans la liste.
+   * As for the grid, SortableJS only carries the gesture and the floating
+   * thumbnail: the target is resolved by hit-test. `sort: false` and the
+   * absence of `group` prevent any reordering within the list.
    */
   FolderPanel.prototype.bindFolderDrag = function () {
     if (typeof Sortable === "undefined") return;
 
-    // Re-parenter un dossier est une mutation de l'arborescence : sans droit,
-    // le geste n'est même pas proposé (guard_manage() le refuserait de toute
-    // façon). Le dépôt de MÉDIAS dans un dossier reste ouvert, lui.
+    // Re-parenting a folder is a mutation of the tree: without the right,
+    // the gesture is not even offered (guard_manage() would refuse it anyway).
+    // Dropping MEDIA into a folder remains open.
     if (!CAN_MANAGE) return;
 
     var tree = this.el.querySelector(".lumia-media-sidebar__tree");
     if (!tree) return;
 
-    // renderTree() vient de remplacer le contenu : on repart d'une instance
-    // propre plutôt que d'en laisser une pointer vers des nœuds détachés.
+    // renderTree() has just replaced the content: start again from a clean
+    // instance rather than leaving one pointing to detached nodes.
     this.destroyFolderDrag();
 
     var self = this;
@@ -614,7 +617,7 @@
 
         var parentId = parseInt(zone.dataset.dropId, 10);
         var folder = findFolder(folderId);
-        // Déjà à cet emplacement : on évite un aller-retour serveur inutile.
+        // Already at this location: avoid a pointless server round-trip.
         if (folder && parseInt(folder.parent, 10) === parentId) return;
 
         self.moveFolder(folderId, parentId);
@@ -623,17 +626,17 @@
   };
 
   /* ================================================================
-   * CIBLE D'UPLOAD
+   * UPLOAD TARGET
    *
-   * Un média téléversé depuis un dossier doit y être rangé directement. On
-   * pousse le dossier courant dans les multipart_params de plupload, que
-   * add_attachment relit côté PHP.
+   * A media uploaded from a folder must be filed into it directly. The
+   * current folder is pushed into plupload's multipart_params, which
+   * add_attachment reads back on the PHP side.
    *
-   * param() est une méthode d'INSTANCE (elle lit this.uploader.settings) :
-   * l'appeler sur le prototype lève une TypeError. On vise donc l'uploader
-   * vivant de la frame, plus les réglages par défaut pour ceux créés ensuite.
+   * param() is an INSTANCE method (it reads this.uploader.settings): calling
+   * it on the prototype throws a TypeError. We therefore target the live
+   * uploader of the frame, plus the default settings for those created later.
    *
-   * Isolé : un échec ici ne doit jamais empêcher la navigation entre dossiers.
+   * Isolated: a failure here must never prevent navigating between folders.
    * ================================================================ */
 
   function syncUploadTarget(value) {
@@ -652,31 +655,31 @@
       }
     } catch (e) {
       if (window.console && console.warn) {
-        console.warn("[LUMIA] cible d'upload non synchronisée :", e);
+        console.warn("[LUMIA] upload target not synchronized:", e);
       }
     }
   }
 
   /* ================================================================
-   * DRAG & DROP — source (la grille de médias) et résolution des cibles
+   * DRAG & DROP — source (the media grid) and target resolution
    *
-   * forceFallback:true → SortableJS gère le drag par événements souris plutôt
-   * que par l'API HTML5 native, ce qui évite de déclencher le dropzone d'upload
-   * de WordPress (« Déposez vos fichiers pour les téléverser »).
+   * forceFallback:true → SortableJS handles the drag with mouse events rather
+   * than the native HTML5 API, which avoids triggering WordPress's upload
+   * dropzone ("Drop files to upload").
    * ================================================================ */
 
   var dragState = { ids: [], folder: 0, grid: null, point: null, hovered: null };
 
   /**
-   * Résout le dossier survolé à partir des coordonnées du curseur.
+   * Resolves the hovered folder from the cursor coordinates.
    *
-   * SortableJS n'est utilisé QUE pour la source : ses cibles de dépôt sont des
-   * listes triables, sémantique inadaptée ici. Avec des dossiers de 34 px
-   * empilés, son heuristique d'insertion pour listes vides
-   * (emptyInsertThreshold) faisait atterrir le média dans le dossier voisin.
+   * SortableJS is used ONLY for the source: its drop targets are sortable
+   * lists, semantics unsuited here. With 34px folders stacked, its
+   * insertion heuristic for empty lists (emptyInsertThreshold) made the
+   * media land in the neighboring folder.
    *
-   * La vignette flottante est en pointer-events:none (media.css), elle n'est
-   * donc jamais retournée par elementFromPoint.
+   * The floating thumbnail is pointer-events:none (media.css), so it is
+   * never returned by elementFromPoint.
    */
   function zoneAt(point) {
     if (!point) return null;
@@ -684,7 +687,7 @@
     return el ? el.closest('[data-droppable="true"]') : null;
   }
 
-  /** Un dossier ne peut pas être déplacé dans lui-même ni dans sa descendance. */
+  /** A folder cannot be moved into itself or into its descendants. */
   function isDescendantOf(candidateId, ancestorId) {
     var current = findFolder(candidateId);
     var guard = 0;
@@ -699,7 +702,7 @@
 
   function isValidTarget(zone) {
     if (!zone) return false;
-    if (!dragState.folder) return true; // drag de médias : toute cible convient
+    if (!dragState.folder) return true; // media drag: any target will do
 
     var target = parseInt(zone.dataset.dropId, 10);
     if (target === dragState.folder) return false;
@@ -709,8 +712,8 @@
   function trackPointer(e) {
     dragState.point = { x: e.clientX, y: e.clientY };
 
-    // Relu à chaque mouvement : la touche peut être enfoncée en cours de geste.
-    // Ctrl (Cmd sur Mac) = ajouter au dossier sans retirer des autres.
+    // Re-read on every move: the key may be pressed mid-gesture.
+    // Ctrl (Cmd on Mac) = add to the folder without removing from the others.
     dragState.additive = !!(e.ctrlKey || e.metaKey);
     document.body.classList.toggle("lumia-media-additive", dragState.additive && !dragState.folder);
 
@@ -745,10 +748,10 @@
     var grid = browserEl.querySelector("ul.attachments");
     if (!grid || grid._lumiaSortable) return;
 
-    // La grille est recréée à chaque requête : sans destruction explicite,
-    // l'instance de l'ancienne grille reste enregistrée dans SortableJS.
+    // The grid is recreated on every request: without explicit destruction,
+    // the old grid's instance stays registered in SortableJS.
     if (dragState.grid) {
-      try { dragState.grid.destroy(); } catch (e) { /* déjà détachée */ }
+      try { dragState.grid.destroy(); } catch (e) { /* already detached */ }
       dragState.grid = null;
     }
 
@@ -767,7 +770,7 @@
         var id = parseInt(el.dataset.id, 10);
         var selected = browserEl.querySelectorAll("li.attachment.selected");
 
-        // Drag d'un élément déjà sélectionné → on emmène toute la sélection.
+        // Dragging an already selected item → take the whole selection along.
         if (selected.length > 0 && el.classList.contains("selected")) {
           dragState.ids = Array.prototype.slice.call(selected)
             .map(function (s) { return parseInt(s.dataset.id, 10); })
@@ -794,11 +797,11 @@
   }
 
   /**
-   * Rend les lignes de upload.php?mode=list déplaçables vers le panneau.
+   * Makes the upload.php?mode=list rows draggable to the panel.
    *
-   * Même dispositif qu'en grille : SortableJS ne porte que le geste, la cible
-   * est résolue par hit-test. `sort: false` empêche tout réordonnancement du
-   * tableau, qui n'aurait aucun sens ici.
+   * Same setup as in grid mode: SortableJS only carries the gesture, the
+   * target is resolved by hit-test. `sort: false` prevents any reordering of
+   * the table, which would make no sense here.
    */
   function makeListDraggable() {
     if (typeof Sortable === "undefined") return;
@@ -823,7 +826,7 @@
         var id = rowId(evt.item);
         var checked = body.querySelectorAll('input[name="media[]"]:checked');
 
-        // Ligne déjà cochée → on emmène toute la sélection, comme en grille.
+        // Row already checked → take the whole selection along, as in grid mode.
         var isChecked = evt.item.querySelector('input[name="media[]"]:checked');
         if (checked.length > 0 && isChecked) {
           dragState.ids = Array.prototype.slice.call(checked)
@@ -857,7 +860,7 @@
   }
 
   /**
-   * Applique un dépôt de médias, quelle que soit la source (grille ou liste).
+   * Applies a media drop, whatever the source (grid or list).
    */
   function applyItemDrop(zone, ids, additive) {
     if (!zone || !ids.length) return;
@@ -873,10 +876,10 @@
     if (dropId > 0) {
       mode = additive ? "add" : "replace";
     } else {
-      // Dépôt sur « Non classés ». Depuis un dossier affiché, le geste veut
-      // dire « sortir de CE dossier » — sinon on retirerait aussi le média
-      // des autres dossiers auxquels il appartient. Depuis « Tous les
-      // médias », il n'y a pas d'ambiguïté : on le sort de partout.
+      // Drop on "Unfiled". From a displayed folder, the gesture means
+      // "leave THIS folder" — otherwise we would also remove the media from
+      // the other folders it belongs to. From "All media", there is no
+      // ambiguity: take it out of everywhere.
       var currentId = parseInt(panel.current(), 10);
       if (currentId > 0) {
         mode = "remove";
@@ -888,15 +891,15 @@
   }
 
   /* ================================================================
-   * DOSSIERS D'UN MÉDIA — panneau de détails
+   * A MEDIA'S FOLDERS — details panel
    *
-   * Le drag & drop ne dit pas dans QUELS dossiers se trouve un média, et ne
-   * permet pas de l'en retirer d'un seul quand il en a plusieurs. Ce bloc
-   * ajoute donc la vue inverse : depuis la fiche du média, ses dossiers.
+   * Drag & drop does not tell WHICH folders a media is in, and does not
+   * allow removing it from just one when it has several. This block
+   * therefore adds the reverse view: from the media's panel, its folders.
    *
-   * Les identifiants viennent du modèle Backbone lui-même (clé lumiaFolders,
-   * injectée par wp_prepare_attachment_for_js côté PHP) : aucune requête
-   * supplémentaire à l'ouverture de la fiche.
+   * The IDs come from the Backbone model itself (lumiaFolders key, injected
+   * by wp_prepare_attachment_for_js on the PHP side): no additional request
+   * when the panel opens.
    * ================================================================ */
 
   var FIELD_CLASS = "lumia-media-attachment-folders";
@@ -914,13 +917,13 @@
       host = document.createElement("div");
       host.className = FIELD_CLASS;
 
-      // Le champ se place avec les autres réglages du média. Le conteneur
-      // .settings n'existe que dans la fiche deux colonnes (mode grille) ;
-      // dans la barre latérale des modales, les réglages sont des enfants
-      // directs de la vue, on se pose donc après le dernier d'entre eux.
-      // .attachment-compat accueille les champs des extensions tierces et se
-      // place en fin de réglages : on se glisse avant, avec les champs du
-      // média proprement dits.
+      // The field goes with the media's other settings. The .settings
+      // container only exists in the two-column panel (grid mode);
+      // in the modals' sidebar, the settings are direct children of the view,
+      // so we go after the last of them.
+      // .attachment-compat hosts third-party plugins' fields and sits at the
+      // end of the settings: we slip in before it, with the media's own
+      // fields.
       var settings = view.$el.find(".settings").first();
       var compat = view.$el.find(".attachment-compat").first();
 
@@ -939,11 +942,11 @@
 
     if (!store.folders.length) {
       host.innerHTML = '<span class="lumia-media-attachment-folders__label">' +
-        escHtml(t("folders", "Dossiers")) + "</span>" +
-        '<div class="lumia-media-loading">' + escHtml(t("loading", "Chargement…")) + "</div>";
+        escHtml(t("folders")) + "</span>" +
+        '<div class="lumia-media-loading">' + escHtml(t("loading")) + "</div>";
 
-      // Fiche ouverte avant que l'arborescence soit chargée : on re-rend une
-      // fois arrivée, mais seulement si la vue est encore à l'écran.
+      // Panel opened before the tree is loaded: re-render once it has
+      // arrived, but only if the view is still on screen.
       loadFolders().then(function () {
         if (view.el && view.el.isConnected) renderFolderField(view);
       });
@@ -967,9 +970,9 @@
     })(0, 0);
 
     host.innerHTML = '<span class="lumia-media-attachment-folders__label">' +
-      escHtml(t("folders", "Dossiers")) + "</span>" +
+      escHtml(t("folders")) + "</span>" +
       '<div class="lumia-media-attachment-folders__list">' +
-      (rows || '<span class="lumia-media-attachment-folders__empty">' + escHtml(t("noFolder", "Aucun dossier")) + "</span>") +
+      (rows || '<span class="lumia-media-attachment-folders__empty">' + escHtml(t("noFolder")) + "</span>") +
       "</div>";
 
     host.querySelectorAll('input[type="checkbox"]').forEach(function (box) {
@@ -994,14 +997,14 @@
         var next = attachmentFolderIds(model).filter(function (f) { return f !== folderId; });
         if (checked) next.push(folderId);
 
-        // set() suffit : la fiche se re-rend, et la grille lit le même modèle.
+        // set() is enough: the panel re-renders, and the grid reads the same model.
         model.set("lumiaFolders", next);
 
         commit(data);
-        toast(t("folderUpdated", "Dossiers mis à jour."), "success");
+        toast(t("folderUpdated"), "success");
       })
       .catch(function () {
-        // L'appel a échoué : la case doit refléter l'état réel, pas l'intention.
+        // The call failed: the checkbox must reflect the real state, not the intent.
         box.checked = !checked;
       })
       .then(function () {
@@ -1010,12 +1013,12 @@
   }
 
   /**
-   * Greffe le champ sur les fiches de média.
+   * Grafts the field onto the media panels.
    *
-   * Appelé au DOM ready et non au parse : la fiche deux colonnes
-   * (Attachment.Details.TwoColumn) est définie par media-grid.js, qui peut être
-   * imprimé après nous. À ready, les deux classes existent, et aucune fiche
-   * n'a encore été instanciée.
+   * Called on DOM ready and not at parse time: the two-column panel
+   * (Attachment.Details.TwoColumn) is defined by media-grid.js, which may be
+   * printed after us. On ready, both classes exist, and no panel has been
+   * instantiated yet.
    */
   function patchDetailsViews() {
     var Attachment = window.wp && wp.media && wp.media.view && wp.media.view.Attachment;
@@ -1035,9 +1038,9 @@
       });
     }
 
-    // Backbone recopie les propriétés statiques du parent sur l'enfant :
-    // Details.TwoColumn survit au remplacement de Details, mais continue
-    // d'hériter de l'ancienne classe. On la corrige donc séparément.
+    // Backbone copies the parent's static properties onto the child:
+    // Details.TwoColumn survives the replacement of Details, but keeps
+    // inheriting from the old class. We therefore fix it separately.
     var TwoColumn = Attachment.Details.TwoColumn;
     patch(Attachment, "Details");
     if (TwoColumn) {
@@ -1047,19 +1050,19 @@
   }
 
   /* ================================================================
-   * HAUTEUR DE LA ZONE MÉDIATHÈQUE (mode grille uniquement)
+   * MEDIA LIBRARY AREA HEIGHT (grid mode only)
    *
-   * En modale, WordPress dimensionne déjà tout : on n'y touche pas.
-   * En grille, la zone est en flux normal et grandit avec son contenu — d'où
-   * une sidebar qui s'étire et une page qui défile. On lui donne la hauteur
-   * réellement disponible sous l'en-tête, mesurée plutôt que devinée : le
-   * décalage haut dépend de la barre d'admin, du titre et des avis éventuels.
+   * In a modal, WordPress already sizes everything: we leave it alone.
+   * In grid mode, the area is in normal flow and grows with its content —
+   * hence a stretching sidebar and a scrolling page. We give it the height
+   * actually available below the header, measured rather than guessed: the
+   * top offset depends on the admin bar, the title and any notices.
    * ================================================================ */
 
-  /** Plancher : en deçà, mieux vaut laisser la page défiler qu'écraser la zone. */
+  /** Floor: below it, better let the page scroll than squash the area. */
   var MIN_HEIGHT = 360;
 
-  /** Vrai pour la médiathèque pleine page (upload.php), faux en modale. */
+  /** True for the full-page media library (upload.php), false in a modal. */
   function isGridFrame(view) {
     if (view && view.el && view.el.closest && view.el.closest(".media-modal")) return false;
     return !!document.querySelector(".media-frame.mode-grid");
@@ -1071,19 +1074,19 @@
 
     var footer = document.getElementById("wpfooter");
 
-    // L'admin WordPress étire sa colonne de contenu : tant que le contenu est
-    // court, le pied de page reste collé au bas de la fenêtre. Mesurer l'espace
-    // sous la médiathèque dans cet état est donc dégénéré — il vaut toujours
-    // « ce qu'il faut pour remplir », quelle que soit notre hauteur.
+    // The WordPress admin stretches its content column: as long as the content
+    // is short, the footer stays stuck to the bottom of the window. Measuring
+    // the space below the media library in that state is therefore degenerate
+    // — it always equals "what it takes to fill", whatever our height.
     //
-    // On gonfle donc la zone le temps de la mesure : la page déborde à coup
-    // sûr, le pied de page redevient positionné par le contenu, et l'espace
-    // qu'il occupe (padding-bas de #wpbody-content, marges, pied lui-même)
-    // devient une vraie constante. Aucun scintillement : le navigateur ne
-    // repeint qu'une fois, à la fin de la fonction.
+    // So we inflate the area for the duration of the measurement: the page
+    // overflows for sure, the footer is positioned by the content again, and
+    // the space it takes up (bottom padding of #wpbody-content, margins, the
+    // footer itself) becomes a real constant. No flicker: the browser only
+    // repaints once, at the end of the function.
     browser.style.setProperty("--lumia-media-h", window.innerHeight * 2 + "px");
 
-    // Coordonnées DOCUMENT (rect + scrollY) : justes même page défilée.
+    // DOCUMENT coordinates (rect + scrollY): correct even when the page is scrolled.
     var rect = browser.getBoundingClientRect();
     var docTop = rect.top + window.scrollY;
 
@@ -1106,7 +1109,7 @@
   window.addEventListener("resize", scheduleHeightSync);
 
   /* ================================================================
-   * MONTAGE 1 — extension de la vue WordPress (grille + modales)
+   * MOUNT 1 — extension of the WordPress view (grid + modals)
    * ================================================================ */
 
   if (window.wp && wp.media && wp.media.view && wp.media.view.AttachmentsBrowser) {
@@ -1132,14 +1135,14 @@
 
     wp.media.view.AttachmentsBrowser = Browser.extend({
       initialize: function () {
-        // En mode grille, WordPress fait défiler la PAGE et écoute le scroll
-        // infini sur `document`. On veut au contraire que la grille défile dans
-        // sa propre colonne, à côté d'une sidebar de hauteur fixe.
+        // In grid mode, WordPress scrolls the PAGE and listens for infinite
+        // scroll on `document`. We want the grid to scroll in its own column
+        // instead, next to a fixed-height sidebar.
         //
-        // wp.media.view.Attachments fait : scrollElement = scrollElement || this.el.
-        // En le vidant, WordPress attache donc lui-même son scroll infini à
-        // ul.attachments — c'est déjà ce qu'il fait dans ses modales. On ne
-        // réimplémente rien, on bascule sur son autre mode natif.
+        // wp.media.view.Attachments does: scrollElement = scrollElement || this.el.
+        // By emptying it, WordPress itself attaches its infinite scroll to
+        // ul.attachments — which is already what it does in its modals. We
+        // reimplement nothing, we switch to its other native mode.
         if (isGridFrame(this)) {
           this.options.scrollElement = null;
         }
@@ -1154,9 +1157,9 @@
           collection: this.collection,
         });
 
-        // Enregistrée auprès du gestionnaire de vues de WordPress : elle survit
-        // aux re-render du navigateur de médias. Son placement est purement CSS
-        // (position absolue), l'ordre dans le DOM n'a donc pas d'importance.
+        // Registered with WordPress's view manager: it survives the media
+        // browser's re-renders. Its placement is purely CSS (absolute position),
+        // so the order in the DOM does not matter.
         this.views.add(this.lumiaSidebar);
         this.$el.addClass("lumia-has-folders");
       },
@@ -1164,8 +1167,8 @@
       createAttachments: function () {
         Browser.prototype.createAttachments.apply(this, arguments);
 
-        // La grille est recréée à chaque changement de requête : on ré-arme le
-        // drag après coup, sur le tick suivant (le DOM n'est pas encore posé).
+        // The grid is recreated on every query change: we re-arm the drag
+        // afterwards, on the next tick (the DOM is not laid out yet).
         var el = this.el;
         setTimeout(function () {
           makeGridDraggable(el);
@@ -1176,12 +1179,11 @@
   }
 
   /* ================================================================
-   * MONTAGE 2 — vue liste (upload.php?mode=list)
+   * MOUNT 2 — list view (upload.php?mode=list)
    *
-   * Ici pas de wp.media : la liste est une WP_List_Table classique. On insère
-   * le panneau dans .wrap et on décale le formulaire. Contrairement à la
-   * grille, ce DOM n'appartient à aucun gestionnaire de vues — l'insertion est
-   * donc sans risque de se faire écraser.
+   * No wp.media here: the list is a classic WP_List_Table. We insert the
+   * panel into .wrap and shift the form. Unlike the grid, this DOM belongs
+   * to no view manager — the insertion is therefore safe from being overwritten.
    * ================================================================ */
 
   function mountListView() {
@@ -1195,12 +1197,11 @@
 
     wrap.classList.add("lumia-media-list-layout");
 
-    // Le panneau doit être `position: sticky` pour suivre le défilement de la
-    // page sans s'étirer sur toute la hauteur du tableau. Sticky n'agit que
-    // dans le flux : on met donc panneau et formulaire côte à côte dans une
-    // rangée flex. Déplacer #posts-filter est sans risque ici — contrairement
-    // à la grille, ce DOM n'appartient à aucun gestionnaire de vues, et son id
-    // (utilisé par les actions groupées) est préservé.
+    // The panel must be `position: sticky` to follow the page scroll without
+    // stretching over the whole table height. Sticky only works in flow: we
+    // therefore put panel and form side by side in a flex row. Moving
+    // #posts-filter is safe here — unlike the grid, this DOM belongs to no
+    // view manager, and its id (used by bulk actions) is preserved.
     var row = document.createElement("div");
     row.className = "lumia-media-list-row";
     wrap.insertBefore(row, form);
