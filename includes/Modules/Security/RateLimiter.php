@@ -4,8 +4,8 @@ namespace Lumia\Tools\Modules\Security;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gestionnaire de rate limiting par IP.
- * Stocke les tentatives via transients WordPress (TTL auto-expiration).
+ * Per-IP rate limiter.
+ * Stores attempts in WordPress transients (self-expiring TTL).
  */
 class RateLimiter {
 
@@ -13,7 +13,7 @@ class RateLimiter {
 	private const DEFAULT_ATTEMPTS = 5;
 	private const DEFAULT_WINDOW   = 900;   // 15 min
 	private const DEFAULT_LOCKOUT  = 1800;  // 30 min
-	private const TRANSIENT_TTL    = 86400; // 24 h max de vie
+	private const TRANSIENT_TTL    = 86400; // 24 h max lifetime
 
 	private int $max_attempts;
 	private int $window;
@@ -36,11 +36,11 @@ class RateLimiter {
 	}
 
 	/**
-	 * IP du client, résolue par ClientIp.
+	 * Client IP, resolved by ClientIp.
 	 *
-	 * Une seule implémentation pour tout le module : le compteur doit être
-	 * incrémenté sur exactement la même clé que celle que consulte le blocage,
-	 * sinon on compte des tentatives que l'on ne relit jamais.
+	 * A single implementation for the whole module: the counter must be
+	 * incremented on exactly the same key the lockout reads, otherwise we
+	 * count attempts that are never read back.
 	 */
 	public function get_client_ip(): string {
 		return ClientIp::resolve( $this->ip_source );
@@ -83,7 +83,7 @@ class RateLimiter {
 			return;
 		}
 
-		// Fenêtre expirée → reset le compteur
+		// Window expired → reset the counter
 		if ( $data['last_attempt'] > 0 && ( $now - $data['last_attempt'] ) > $this->window ) {
 			$data = [
 				'count'        => 0,
@@ -117,8 +117,8 @@ class RateLimiter {
 			return new \WP_Error(
 				'too_many_attempts',
 				sprintf(
-					/* translators: %d: minutes restantes avant déblocage. */
-					__( '<b>Accès bloqué :</b> Trop de tentatives de connexion. Réessayez dans %d minute(s).', 'lumia-tools' ),
+					/* translators: %d: minutes left before the lockout ends. */
+					__( '<b>Access blocked:</b> Too many login attempts. Try again in %d minute(s).', 'lumia-tools' ),
 					$remaining_minutes
 				)
 			);
@@ -128,11 +128,11 @@ class RateLimiter {
 	}
 
 	/**
-	 * L'IP courante est-elle sous blocage ?
+	 * Is the current IP locked out?
 	 *
-	 * Extrait de maybe_block_login() pour les chemins d'authentification qui ne
-	 * traversent pas le filtre `authenticate` et n'ont donc pas de WP_Error à
-	 * rendre — les mots de passe d'application, notamment.
+	 * Extracted from maybe_block_login() for the authentication paths that do
+	 * not go through the `authenticate` filter and so have no WP_Error to
+	 * return — application passwords, notably.
 	 */
 	public function is_locked(): bool {
 		if ( $this->is_whitelisted() ) {

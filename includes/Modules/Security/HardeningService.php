@@ -4,23 +4,23 @@ namespace Lumia\Tools\Modules\Security;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Service de hardening WordPress.
+ * WordPress hardening service.
  *
- * Désactiver XML-RPC, empêcher énumération utilisateurs, masquer version WP.
+ * Disable XML-RPC, prevent user enumeration, hide the WP version.
  */
 class HardeningService {
 
 	// === XML-RPC ===
 
 	/**
-	 * Désactive XML-RPC via filtre xmlrpc_enabled.
+	 * Disables XML-RPC through the xmlrpc_enabled filter.
 	 */
 	public function filter_xmlrpc_enabled(): bool {
 		return false;
 	}
 
 	/**
-	 * Bloque l'accès au serveur XML-RPC avec un 403.
+	 * Blocks access to the XML-RPC server with a 403.
 	 */
 	public function block_xmlrpc_server_class(): string {
 		http_response_code( 403 );
@@ -30,23 +30,23 @@ class HardeningService {
 	// === USER ENUMERATION ===
 
 	/**
-	 * Hook parse_request @1 : neutralise toute requête d'archive d'auteur.
+	 * Hook parse_request @1: neutralizes any author archive request.
 	 *
-	 * L'ancienne version se branchait sur `template_redirect` à la priorité par
-	 * défaut, donc APRÈS `redirect_canonical` : WordPress répondait
-	 * `301 Location: /author/lumia/` avant que le blocage n'ait la parole,
-	 * et l'identifiant était divulgué par l'en-tête `Location` lui-même. Seule
-	 * la page d'archive finale était protégée.
+	 * The previous version hooked `template_redirect` at the default priority,
+	 * hence AFTER `redirect_canonical`: WordPress answered
+	 * `301 Location: /author/lumia/` before the block could act, and the
+	 * identifier was leaked by the `Location` header itself. Only the final
+	 * archive page was protected.
 	 *
-	 * On intervient donc sur `parse_request`, qui court bien avant la boucle et
-	 * avant tout redirect canonique, et on traite les DEUX variables : `author`
-	 * (?author=N) et `author_name` (/author/slug/).
+	 * We therefore act on `parse_request`, which runs well before the loop and
+	 * before any canonical redirect, and handle BOTH variables: `author`
+	 * (?author=N) and `author_name` (/author/slug/).
 	 *
-	 * La réponse est un 404, pas un 403 : les trois codes distincts d'avant
-	 * (301 / 403 / 404) formaient à eux seuls un oracle — on savait qu'un
-	 * compte existait sans même lire la page. Un 404 uniforme ne dit plus rien.
+	 * The answer is a 404, not a 403: the three distinct codes of before
+	 * (301 / 403 / 404) were an oracle on their own — one could tell an account
+	 * existed without even reading the page. A uniform 404 says nothing.
 	 *
-	 * @param \WP $wp Requête en cours d'analyse.
+	 * @param \WP $wp Request being parsed.
 	 */
 	public function block_author_query( \WP $wp ): void {
 		if ( is_admin() ) {
@@ -59,13 +59,13 @@ class HardeningService {
 
 		unset( $wp->query_vars['author'], $wp->query_vars['author_name'] );
 
-		// Sans ce forçage, la requête dépouillée de son auteur se rabattrait
-		// sur la liste des articles et répondrait 200.
+		// Without this forcing, the request stripped of its author would fall
+		// back to the post list and answer 200.
 		add_action( 'wp', [ $this, 'force_404' ], 1 );
 	}
 
 	/**
-	 * Force un 404 sur la requête courante (voir block_author_query()).
+	 * Forces a 404 on the current request (see block_author_query()).
 	 */
 	public function force_404(): void {
 		global $wp_query;
@@ -79,9 +79,9 @@ class HardeningService {
 	}
 
 	/**
-	 * Hook template_redirect : filet de sécurité si une archive d'auteur
-	 * atteint malgré tout la boucle (règle de réécriture tierce, requête
-	 * reconstruite en PHP par une extension).
+	 * Hook template_redirect: safety net in case an author archive still
+	 * reaches the loop (third-party rewrite rule, request rebuilt in PHP by a
+	 * plugin).
 	 */
 	public function prevent_user_enumeration(): void {
 		if ( is_admin() || ! is_author() ) {
@@ -92,18 +92,17 @@ class HardeningService {
 	}
 
 	/**
-	 * Hook rest_request_before_callbacks : bloque /wp/v2/users pour les non-admins.
+	 * Hook rest_request_before_callbacks: blocks /wp/v2/users for non-admins.
 	 *
-	 * Deux réserves apprises à l'usage :
+	 * Two caveats learned the hard way:
 	 *
-	 *  - `/wp/v2/users/me` est la route de l'utilisateur COURANT. L'éditeur de
-	 *    blocs, les préférences d'écran et bon nombre d'extensions l'appellent
-	 *    au chargement. La bloquer renvoyait un 403 à tout auteur ou
-	 *    contributeur — éditeur cassé — alors qu'elle ne divulgue que le compte
-	 *    de l'appelant, qui le connaît déjà. Elle passe donc pour tout
-	 *    utilisateur connecté.
-	 *  - le test portait sur `strpos()`, qui reconnaît la sous-chaîne n'importe
-	 *    où dans la route. On l'ancre au début.
+	 *  - `/wp/v2/users/me` is the route of the CURRENT user. The block editor,
+	 *    screen preferences and many plugins call it on load. Blocking it
+	 *    returned a 403 to every author or contributor — broken editor — while
+	 *    it only discloses the caller's own account, which they already know.
+	 *    It therefore passes for any logged-in user.
+	 *  - the test used `strpos()`, which matches the substring anywhere in the
+	 *    route. It is now anchored at the start.
 	 *
 	 * @param mixed            $response
 	 * @param mixed            $handler
@@ -120,7 +119,7 @@ class HardeningService {
 		if ( ! current_user_can( 'list_users' ) && preg_match( '#^/wp/v2/users(/|$)#', $route ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'Accès interdit.', 'lumia-tools' ),
+				__( 'Access forbidden.', 'lumia-tools' ),
 				[ 'status' => 403 ]
 			);
 		}
@@ -129,16 +128,16 @@ class HardeningService {
 	}
 
 	/**
-	 * Filtre oembed_response_data : retire l'auteur de la réponse oEmbed.
+	 * Filter oembed_response_data: removes the author from the oEmbed response.
 	 *
-	 * `prevent_rest_user_enumeration()` ne regardait que `/wp/v2/users`, alors
-	 * que `/wp-json/oembed/1.0/embed?url=…` sert `author_name` et surtout
-	 * `author_url`, d'où l'identifiant se lit directement — sans
-	 * authentification, et pour n'importe quel article. On vide les deux clés
-	 * plutôt que de fermer la route : l'oEmbed reste bon pour ce à quoi il sert
-	 * (l'aperçu), et l'iframe d'intégration continue de s'afficher.
+	 * `prevent_rest_user_enumeration()` only looked at `/wp/v2/users`, whereas
+	 * `/wp-json/oembed/1.0/embed?url=…` serves `author_name` and above all
+	 * `author_url`, from which the identifier can be read directly — without
+	 * authentication, and for any post. Both keys are emptied rather than
+	 * closing the route: oEmbed stays good for what it is used for (the
+	 * preview), and the embed iframe keeps being displayed.
 	 *
-	 * @param mixed $data Données oEmbed préparées par le cœur.
+	 * @param mixed $data oEmbed data prepared by the core.
 	 * @return mixed
 	 */
 	public function filter_oembed_response_data( $data ) {
@@ -150,15 +149,15 @@ class HardeningService {
 	}
 
 	/**
-	 * Filtre wp_sitemaps_add_provider : retire les auteurs du plan de site.
+	 * Filter wp_sitemaps_add_provider: removes authors from the sitemap.
 	 *
-	 * `/wp-sitemap-users-1.xml` liste l'URL d'archive de chaque auteur ayant
-	 * publié : c'est la divulgation de `?author=N`, servie sur un plateau et
-	 * indexée par les moteurs. La bloquer ailleurs sans la retirer d'ici
-	 * laisserait la liste accessible dans le cache des moteurs.
+	 * `/wp-sitemap-users-1.xml` lists the archive URL of every author who has
+	 * published: it is the disclosure of `?author=N`, served on a plate and
+	 * indexed by search engines. Blocking it elsewhere without removing it from
+	 * here would leave the list available in the search engines' cache.
 	 *
-	 * @param mixed  $provider Fournisseur du cœur.
-	 * @param string $name     Nom du fournisseur.
+	 * @param mixed  $provider Core provider.
+	 * @param string $name     Provider name.
 	 * @return mixed
 	 */
 	public function filter_sitemap_providers( $provider, string $name ) {
@@ -166,11 +165,11 @@ class HardeningService {
 	}
 
 	/**
-	 * Codes d'erreur de connexion qui trahissent l'existence d'un compte.
+	 * Login error codes that betray the existence of an account.
 	 *
-	 * `invalid_username` / `invalid_email` disent « ce compte n'existe pas »,
-	 * `incorrect_password` dit « il existe, mais pas avec ce mot de passe ».
-	 * `invalidcombo` est l'équivalent du formulaire de mot de passe oublié.
+	 * `invalid_username` / `invalid_email` say "this account does not exist",
+	 * `incorrect_password` says "it exists, but not with this password".
+	 * `invalidcombo` is the equivalent on the lost password form.
 	 */
 	private const LOGIN_ORACLE_CODES = [
 		'invalid_username',
@@ -180,28 +179,28 @@ class HardeningService {
 	];
 
 	/**
-	 * Filtre wp_login_errors : message unique sur les erreurs qui trahissent
-	 * l'existence d'un compte.
+	 * Filter wp_login_errors: a single message for the errors that betray the
+	 * existence of an account.
 	 *
-	 * Le formulaire de connexion distingue « cet identifiant n'est pas inscrit »
-	 * de « ce mot de passe ne correspond pas à l'identifiant X » : c'est l'oracle
-	 * d'énumération le plus commode qui soit, et il vivait dans le module qui
-	 * promet justement de bloquer l'énumération.
+	 * The login form tells "this identifier is not registered" apart from "this
+	 * password does not match identifier X": it is the most convenient
+	 * enumeration oracle there is, and it lived in the very module that
+	 * promises to block enumeration.
 	 *
-	 * PIÈGE — on ne peut PAS passer par le filtre `login_errors` (la chaîne
-	 * formatée) en lisant le `$errors` global : `LoginUrlHandler::wp_loaded()`
-	 * charge wp-login.php avec un `require_once` **depuis une méthode**, si bien
-	 * que le `$errors` de wp-login.php est une variable locale de cette méthode
-	 * et n'atteint jamais la portée globale. `wp_login_errors` reçoit l'objet
-	 * WP_Error en argument : il est indifférent à la portée, et il couvre les
-	 * deux formulaires (connexion et mot de passe oublié).
+	 * PITFALL — we can NOT go through the `login_errors` filter (the formatted
+	 * string) by reading the global `$errors`: `LoginUrlHandler::wp_loaded()`
+	 * loads wp-login.php with a `require_once` **from a method**, so the
+	 * `$errors` of wp-login.php is a local variable of that method and never
+	 * reaches the global scope. `wp_login_errors` receives the WP_Error object
+	 * as an argument: it does not care about scope, and it covers both forms
+	 * (login and lost password).
 	 *
-	 * On remplace le message en CONSERVANT le code : wp-login.php se sert de
-	 * `incorrect_password` juste après pour repré-remplir le champ identifiant.
-	 * Les codes qui ne disent rien d'un compte — mot de passe vide, cookies
-	 * bloqués — sont laissés intacts : l'utilisateur légitime en a besoin.
+	 * The message is replaced while KEEPING the code: wp-login.php uses
+	 * `incorrect_password` right after to pre-fill the identifier field. Codes
+	 * that say nothing about an account — empty password, blocked cookies — are
+	 * left intact: the legitimate user needs them.
 	 *
-	 * @param mixed $errors WP_Error de la page de connexion.
+	 * @param mixed $errors WP_Error of the login page.
 	 * @return mixed
 	 */
 	public function filter_login_errors( $errors ) {
@@ -209,7 +208,7 @@ class HardeningService {
 			return $errors;
 		}
 
-		$generic = __( 'Identifiant ou mot de passe incorrect.', 'lumia-tools' );
+		$generic = __( 'Incorrect username or password.', 'lumia-tools' );
 
 		foreach ( self::LOGIN_ORACLE_CODES as $code ) {
 			if ( ! in_array( $code, $errors->get_error_codes(), true ) ) {
@@ -218,34 +217,34 @@ class HardeningService {
 
 			$data = $errors->get_error_data( $code );
 			$errors->remove( $code );
-			$errors->add( $code, '<strong>' . esc_html__( 'Erreur :', 'lumia-tools' ) . '</strong> ' . esc_html( $generic ), $data );
+			$errors->add( $code, '<strong>' . esc_html__( 'Error:', 'lumia-tools' ) . '</strong> ' . esc_html( $generic ), $data );
 		}
 
 		return $errors;
 	}
 
 	/**
-	 * Action lost_password : aligne la réponse du formulaire « mot de passe
-	 * oublié » sur celle d'un compte existant.
+	 * Action lost_password: aligns the response of the "lost password" form
+	 * with that of an existing account.
 	 *
-	 * Réécrire le message ne suffit pas ici, l'oracle est dans la FORME de la
-	 * réponse : un compte connu déclenche l'envoi puis une redirection vers
-	 * `?checkemail=confirm`, un compte inconnu réaffiche le formulaire avec une
-	 * erreur. On voit donc la différence sans même lire le texte.
+	 * Rewriting the message is not enough here, the oracle is in the SHAPE of
+	 * the response: a known account triggers the sending then a redirect to
+	 * `?checkemail=confirm`, an unknown account redisplays the form with an
+	 * error. The difference is visible without even reading the text.
 	 *
-	 * Quand `invalidcombo` est la seule erreur, on rejoue la sortie du cas
-	 * nominal — même redirection, même page. Aucun e-mail n'est envoyé, et il
-	 * n'y a personne à qui en envoyer un.
+	 * When `invalidcombo` is the only error, the output of the nominal case is
+	 * replayed — same redirect, same page. No e-mail is sent, and there is
+	 * nobody to send one to.
 	 *
-	 * Réserve assumée : `retrieve_password_email_failure` reste distinguable.
-	 * Le masquer priverait l'administrateur du seul signal qui lui dit que
-	 * l'envoi d'e-mails de son site est cassé — et sur un site dont l'envoi
-	 * fonctionne, ce code n'apparaît jamais.
+	 * Accepted caveat: `retrieve_password_email_failure` remains
+	 * distinguishable. Masking it would deprive the administrator of the only
+	 * signal telling them their site's e-mail sending is broken — and on a
+	 * site whose sending works, that code never appears.
 	 *
-	 * Le filtre `lostpassword_errors` ne convient pas : le cœur ajoute
-	 * `invalidcombo` APRÈS l'avoir appliqué.
+	 * The `lostpassword_errors` filter is not suitable: the core adds
+	 * `invalidcombo` AFTER applying it.
 	 *
-	 * @param mixed $errors WP_Error du formulaire.
+	 * @param mixed $errors WP_Error of the form.
 	 */
 	public function mask_lost_password_oracle( $errors ): void {
 		if ( ! $errors instanceof \WP_Error || ! $errors->has_errors() ) {
@@ -263,7 +262,7 @@ class HardeningService {
 	// === HIDE WP VERSION ===
 
 	/**
-	 * Hook wp_headers : retire les headers exposant la version.
+	 * Hook wp_headers: removes the headers exposing the version.
 	 *
 	 * @param array<string, string> $headers
 	 * @return array<string, string>
@@ -274,17 +273,17 @@ class HardeningService {
 	}
 
 	/**
-	 * Retire l'en-tête X-Powered-By ajouté par PHP lui-même.
+	 * Removes the X-Powered-By header added by PHP itself.
 	 *
-	 * `unset( $headers['X-Powered-By'] )` ne porte que sur le tableau d'en-têtes
-	 * que WordPress s'apprête à émettre. Or cet en-tête-là vient de PHP
-	 * (`expose_php`), qui l'a déjà posé : le réglage était activé et
-	 * `X-Powered-By: PHP/8.5.7` sortait sur toutes les réponses.
+	 * `unset( $headers['X-Powered-By'] )` only acts on the header array that
+	 * WordPress is about to emit. That header comes from PHP (`expose_php`),
+	 * which has already set it: the setting was enabled and
+	 * `X-Powered-By: PHP/8.5.7` went out on every response.
 	 *
-	 * `header_remove()` ne peut agir qu'avant l'envoi des en-têtes, d'où le
-	 * branchement au plus tôt. La vraie solution reste `expose_php = Off` dans
-	 * la configuration PHP : elle couvre aussi les réponses qui ne passent pas
-	 * par WordPress (pages d'erreur du serveur, scripts hors cœur).
+	 * `header_remove()` can only act before the headers are sent, hence the
+	 * earliest possible hook. The real solution remains `expose_php = Off` in
+	 * the PHP configuration: it also covers responses that do not go through
+	 * WordPress (server error pages, scripts outside the core).
 	 */
 	public function remove_powered_by_header(): void {
 		if ( ! headers_sent() ) {
@@ -293,7 +292,7 @@ class HardeningService {
 	}
 
 	/**
-	 * Hook init : supprime le generator WP de toutes les sorties (head, feeds).
+	 * Hook init: removes the WP generator from all outputs (head, feeds).
 	 */
 	public function remove_wp_version_generators(): void {
 		$actions = [ 'wp_head', 'rss2_head', 'commentsrss2_head', 'rss_head', 'rdf_header', 'atom_head', 'comments_atom_head', 'opml_head', 'app_head' ];
@@ -304,7 +303,7 @@ class HardeningService {
 	}
 
 	/**
-	 * Filtre script_loader_src / style_loader_src : remplace la version WP par un hash.
+	 * Filter script_loader_src / style_loader_src: replaces the WP version with a hash.
 	 */
 	public function obfuscate_version_in_src( string $src ): string {
 		if ( is_admin() ) {

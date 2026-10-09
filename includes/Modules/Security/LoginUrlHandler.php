@@ -4,42 +4,42 @@ namespace Lumia\Tools\Modules\Security;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gestionnaire de l'URL de connexion.
+ * Login URL handler.
  *
- * Intercepte les requêtes vers l'URL personnalisée et les traite comme wp-login.php
- * sans dépendre de la configuration du serveur (Nginx, Apache).
+ * Intercepts requests to the custom URL and handles them like wp-login.php,
+ * without depending on the server configuration (Nginx, Apache).
  */
 class LoginUrlHandler {
 
 	/**
-	 * Actions de wp-login.php qui ne présentent aucun formulaire de connexion
-	 * et doivent rester servies à leur adresse d'origine.
+	 * wp-login.php actions that show no login form and must keep being served
+	 * at their original address.
 	 *
-	 * `postpass` : le formulaire des contenus protégés par mot de passe poste
-	 * sur `wp-login.php?action=postpass`, et filter_site_url() laisse cette
-	 * URL intacte à dessein. La bloquer avec le reste rendait 404 à tout
-	 * visiteur qui déverrouille un article protégé.
-	 * `confirmaction` : confirmation des demandes de données personnelles.
+	 * `postpass`: the form of password-protected content posts to
+	 * `wp-login.php?action=postpass`, and filter_site_url() leaves that URL
+	 * untouched on purpose. Blocking it with the rest returned a 404 to every
+	 * visitor unlocking a protected post.
+	 * `confirmaction`: confirmation of personal data requests.
 	 */
 	private const PASSTHROUGH_ACTIONS = [ 'postpass', 'confirmaction' ];
 
 	private string $custom_login_url;
 
 	/**
-	 * Constructeur.
+	 * Constructor.
 	 *
-	 * @param string $custom_login_url URL de connexion personnalisée (ex: /connexion).
+	 * @param string $custom_login_url Custom login URL (e.g. /connexion).
 	 */
 	public function __construct( string $custom_login_url = '/connexion' ) {
 		$this->custom_login_url = ltrim( $custom_login_url, '/' );
 	}
 
 	/**
-	 * Racine de l'installation WordPress, sans slash final.
+	 * Root of the WordPress installation, without trailing slash.
 	 *
-	 * Vaut '' à la racine du domaine, '/wp' pour une installation en
-	 * sous-répertoire. On lit l'option brute plutôt que site_url() : cette
-	 * classe filtre justement 'site_url', l'appeler ici boucherait à l'infini.
+	 * '' at the domain root, '/wp' for a subdirectory install. The raw option
+	 * is read rather than site_url(): this class filters 'site_url', calling it
+	 * here would loop forever.
 	 */
 	private function install_path(): string {
 		$path = (string) wp_parse_url( (string) get_option( 'siteurl' ), PHP_URL_PATH );
@@ -48,25 +48,25 @@ class LoginUrlHandler {
 		return '' === $path ? '' : '/' . $path;
 	}
 
-	/** Chemin absolu de la page de connexion, ex '/connexion' ou '/wp/connexion'. */
+	/** Absolute path of the login page, e.g. '/connexion' or '/wp/connexion'. */
 	private function login_path(): string {
 		return $this->install_path() . '/' . $this->custom_login_url;
 	}
 
-	/** URL absolue de la page de connexion, avec slash final. */
+	/** Absolute URL of the login page, with trailing slash. */
 	private function login_url(): string {
 		return trailingslashit( (string) get_option( 'siteurl' ) ) . $this->custom_login_url . '/';
 	}
 
 	/**
-	 * Vérifie si un CHEMIN correspond à la connexion personnalisée.
+	 * Checks whether a PATH matches the custom login.
 	 *
-	 * Le chemin est comparé en absolu, racine d'installation comprise : sur un
-	 * WordPress en sous-répertoire, la requête arrive sur '/wp/connexion' et un
-	 * motif ancré sur '/connexion' ne reconnaîtrait jamais rien — la page de
-	 * connexion deviendrait inaccessible alors que wp-login.php est bloqué.
+	 * The path is compared as an absolute one, installation root included: on a
+	 * subdirectory WordPress the request arrives on '/wp/connexion' and a
+	 * pattern anchored on '/connexion' would never match anything — the login
+	 * page would become unreachable while wp-login.php is blocked.
 	 *
-	 * @param string $path Chemin de la requête, déjà extrait de l'URI.
+	 * @param string $path Request path, already extracted from the URI.
 	 */
 	private function is_custom_login_uri( string $path ): bool {
 		$path   = '/' . ltrim( $path, '/' );
@@ -76,11 +76,11 @@ class LoginUrlHandler {
 	}
 
 	/**
-	 * Hook wp_loaded : gère à la fois le blocage de wp-login.php et le service de l'URL personnalisée.
+	 * Hook wp_loaded: handles both the blocking of wp-login.php and the serving of the custom URL.
 	 *
-	 * wp_loaded fire dans les deux cas de figure :
-	 * - Requête via index.php (URL custom /connexion)
-	 * - Requête directe wp-login.php (celui-ci charge wp-load.php qui fire tous les hooks)
+	 * wp_loaded fires in both cases:
+	 * - Request through index.php (custom URL /connexion)
+	 * - Direct wp-login.php request (it loads wp-load.php, which fires all the hooks)
 	 *
 	 * @return void
 	 */
@@ -92,21 +92,21 @@ class LoginUrlHandler {
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$request     = wp_parse_url( rawurldecode( $request_uri ) );
 		$path        = $request['path'] ?? '';
-		$action      = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- routage de wp-login.php, l'action est rejouée par WordPress qui vérifie ses propres nonces.
+		$action      = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- wp-login.php routing, the action is replayed by WordPress, which checks its own nonces.
 
 		if ( in_array( $action, self::PASSTHROUGH_ACTIONS, true ) ) {
 			return;
 		}
 
-		// Bloquer l'accès direct à wp-login.php : remplacer l'URI par une URL
-		// inexistante et laisser WordPress générer un vrai 404 via son template.
+		// Block direct access to wp-login.php: replace the URI with a
+		// non-existent URL and let WordPress generate a real 404 through its template.
 		//
-		// On teste le nom de fichier du CHEMIN, jamais l'URI entière : un
-		// simple ?redirect_to=…/wp-login.php — que WordPress produit lui-même —
-		// suffisait à faire répondre 404 à des pages parfaitement légitimes.
+		// The file name of the PATH is tested, never the whole URI: a plain
+		// ?redirect_to=…/wp-login.php — which WordPress itself produces —
+		// was enough to answer 404 on perfectly legitimate pages.
 		if ( 'wp-login.php' === basename( $path ) && ! is_admin() ) {
 			global $pagenow;
-			$pagenow = 'index.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- voulu : WordPress doit traiter la requête comme le front pour servir son 404.
+			$pagenow = 'index.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- intended: WordPress must treat the request as the front end to serve its 404.
 
 			if ( ! defined( 'WP_USE_THEMES' ) ) {
 				define( 'WP_USE_THEMES', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
@@ -119,7 +119,7 @@ class LoginUrlHandler {
 			die;
 		}
 
-		// Servir l'URL de connexion personnalisée (/connexion)
+		// Serve the custom login URL (/connexion)
 		if ( empty( $path ) || ! $this->is_custom_login_uri( $path ) ) {
 			return;
 		}
@@ -131,19 +131,19 @@ class LoginUrlHandler {
 			die();
 		}
 
-		// wp-login.php lit ces globales sans les initialiser : on les pose comme
-		// le ferait un accès direct, sinon notices « undefined variable ».
+		// wp-login.php reads these globals without initializing them: set them as
+		// a direct access would, otherwise "undefined variable" notices appear.
 		global $error, $user_login;
-		$error      = ''; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- initialisation attendue par wp-login.php.
-		$user_login = ''; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- initialisation attendue par wp-login.php.
+		$error      = ''; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- initialization expected by wp-login.php.
+		$user_login = ''; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- initialization expected by wp-login.php.
 
 		require_once ABSPATH . 'wp-login.php';
 		die;
 	}
 
 	/**
-	 * Filtre site_url() et network_site_url() pour remplacer wp-login.php
-	 * par l'URL personnalisée. Couvre notamment l'action du formulaire de connexion.
+	 * Filters site_url() and network_site_url() to replace wp-login.php
+	 * with the custom URL. Notably covers the login form action.
 	 *
 	 * @param string $url
 	 * @return string
@@ -156,9 +156,9 @@ class LoginUrlHandler {
 		if ( strpos( $url, 'wp-login.php' ) !== false ) {
 			$parts = explode( '?', $url, 2 );
 
-			// site_url() et non home_url() : la connexion vit dans le répertoire
-			// d'installation de WordPress, qui diffère de l'adresse du site dès
-			// que le cœur est installé dans un sous-dossier.
+			// site_url() and not home_url(): the login lives in the WordPress
+			// installation directory, which differs from the site address as soon
+			// as the core is installed in a subfolder.
 			$base = $this->login_url();
 
 			if ( isset( $parts[1] ) ) {
@@ -173,7 +173,7 @@ class LoginUrlHandler {
 	}
 
 	/**
-	 * Filtre les URLs de connexion pour pointer vers l'URL personnalisée.
+	 * Filters login URLs to point to the custom URL.
 	 *
 	 * @param string $login_url
 	 * @return string

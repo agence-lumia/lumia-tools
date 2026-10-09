@@ -1,6 +1,6 @@
 /**
  * Lümia Tools - Security admin JS
- * Visibilité conditionnelle des sous-options + conversion dynamique secondes → minutes.
+ * Conditional visibility of sub-options + live seconds → minutes conversion.
  */
 (function () {
   "use strict";
@@ -11,8 +11,8 @@
   });
 
   /* ================================================================
-   * VISIBILITÉ CONDITIONNELLE
-   * Toggles [data-security-toggle] → affiche/masque [data-depends-on]
+   * CONDITIONAL VISIBILITY
+   * [data-security-toggle] toggles → show/hide [data-depends-on]
    * ================================================================ */
 
   function initSecurityToggles() {
@@ -32,12 +32,17 @@
   }
 
   /* ================================================================
-   * CONVERSION SECONDES → MINUTES EN TEMPS RÉEL
-   * Inputs [data-seconds-field] mettent à jour [data-minutes-display]
+   * LIVE SECONDS → MINUTES CONVERSION
+   * [data-seconds-field] inputs update [data-minutes-display]
    * ================================================================ */
 
   function initSecondsToMinutes() {
     var fields = document.querySelectorAll("[data-seconds-field]");
+    var i18n = (window.lumiaAdmin && window.lumiaAdmin.i18n) || {};
+
+    function format(template, value) {
+      return (template || "").replace("%d", value);
+    }
 
     fields.forEach(function (input) {
       var targetId = input.getAttribute("data-seconds-field");
@@ -51,10 +56,10 @@
           return;
         }
         if (seconds < 60) {
-          display.textContent = seconds + " s";
+          display.textContent = format(i18n.secondsFormat, seconds);
         } else {
           var mins = Math.round(seconds / 60);
-          display.textContent = mins + " min";
+          display.textContent = format(i18n.minutesFormat, mins);
         }
       }
 

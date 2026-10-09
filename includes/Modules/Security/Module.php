@@ -6,22 +6,22 @@ defined( 'ABSPATH' ) || exit;
 use Lumia\Tools\Core\AbstractModule;
 
 /**
- * Module Sécurité.
+ * Security module.
  *
- * Authentification (rate limiting, URL custom).
- * Hardening (XML-RPC, énumération users, version WP).
+ * Authentication (rate limiting, custom URL).
+ * Hardening (XML-RPC, user enumeration, WP version).
  */
 class Module extends AbstractModule {
 
 	/**
-	 * Premiers segments interdits pour l'URL de connexion personnalisée.
+	 * Forbidden first segments for the custom login URL.
 	 *
-	 * `admin` et `login` sont redirigés par le cœur vers wp-admin / wp-login
-	 * (wp_redirect_admin_locations) ; `index` et `xmlrpc` sont des fichiers ;
-	 * `feed`, `embed`, `comments` sont des bases de réécriture. Tout segment en
-	 * `wp-` est refusé d'un bloc (wp-admin, wp-login, wp-content, wp-json…).
-	 * Un slug réservé enferme l'administrateur hors du site, sans autre issue
-	 * que la constante LUMIA_DISABLE_LOGIN_URL.
+	 * `admin` and `login` are redirected by the core to wp-admin / wp-login
+	 * (wp_redirect_admin_locations); `index` and `xmlrpc` are files;
+	 * `feed`, `embed`, `comments` are rewrite bases. Any segment starting with
+	 * `wp-` is refused as a whole (wp-admin, wp-login, wp-content, wp-json…).
+	 * A reserved slug locks the administrator out of the site, with no way out
+	 * other than the LUMIA_DISABLE_LOGIN_URL constant.
 	 */
 	private const RESERVED_LOGIN_SEGMENTS = [ 'admin', 'login', 'index', 'index-php', 'xmlrpc', 'xmlrpc-php', 'feed', 'embed', 'comments' ];
 
@@ -34,7 +34,7 @@ class Module extends AbstractModule {
 	private array $settings = [];
 
 	/**
-	 * Initialise le module et enregistre tous les hooks.
+	 * Initializes the module and registers all the hooks.
 	 */
 	public function init(): void {
 		$this->settings = $this->get_module_settings( self::get_defaults() );
@@ -57,18 +57,18 @@ class Module extends AbstractModule {
 			add_action( 'wp_login', [ $this, 'handle_login_success' ], 10, 2 );
 			add_action( 'wp_login_failed', [ $this, 'handle_login_failed' ] );
 
-			// Les mots de passe d'application ne traversent PAS wp_authenticate() :
-			// wp_validate_application_password() appelle directement
-			// wp_authenticate_application_password(). Le filtre `authenticate` —
-			// donc maybe_block_login() — n'est jamais consulté, et aucun
-			// `wp_login_failed` n'est déclenché. Ils étaient donc devinables sans
-			// aucune limite, y compris depuis une IP déjà bloquée sur le formulaire.
+			// Application passwords do NOT go through wp_authenticate():
+			// wp_validate_application_password() calls
+			// wp_authenticate_application_password() directly. The `authenticate`
+			// filter — hence maybe_block_login() — is never consulted, and no
+			// `wp_login_failed` is fired. They were therefore guessable with no
+			// limit at all, even from an IP already blocked on the form.
 			//
-			// Le cœur n'offre pas de filtre de blocage sur ce chemin ; le seul
-			// point d'arrêt antérieur à la vérification du mot de passe est
-			// `application_password_is_api_request`. Répondre `false` fait sortir
-			// la fonction avant toute comparaison : la requête redevient anonyme
-			// et repart en 401, ce qui est exactement le refus voulu.
+			// The core offers no blocking filter on this path; the only stopping
+			// point before the password check is
+			// `application_password_is_api_request`. Answering `false` makes the
+			// function return before any comparison: the request becomes anonymous
+			// again and goes out as a 401, which is exactly the intended refusal.
 			add_filter( 'application_password_is_api_request', [ $this, 'filter_application_password_allowed' ], 999 );
 			add_action( 'application_password_failed_authentication', [ $this, 'handle_application_password_failed' ] );
 		}
@@ -89,8 +89,8 @@ class Module extends AbstractModule {
 		}
 
 		if ( $this->settings['hardening']['prevent_user_enum'] ?? false ) {
-			// parse_request @1 : avant redirect_canonical, qui divulguait
-			// l'identifiant dans l'en-tête Location. Voir HardeningService.
+			// parse_request @1: before redirect_canonical, which leaked the
+			// identifier in the Location header. See HardeningService.
 			add_action( 'parse_request', [ $this->hardening, 'block_author_query' ], 1 );
 			add_action( 'template_redirect', [ $this->hardening, 'prevent_user_enumeration' ], 1 );
 			add_filter( 'rest_request_before_callbacks', [ $this->hardening, 'prevent_rest_user_enumeration' ], 10, 3 );
@@ -102,8 +102,8 @@ class Module extends AbstractModule {
 
 		if ( $this->settings['hardening']['hide_wp_version'] ?? false ) {
 			add_filter( 'wp_headers', [ $this->hardening, 'hide_wp_version_headers' ] );
-			// Priorité 0 : header_remove() n'a d'effet que tant que les en-têtes
-			// ne sont pas partis.
+			// Priority 0: header_remove() only has an effect as long as the
+			// headers have not been sent.
 			add_action( 'init', [ $this->hardening, 'remove_powered_by_header' ], 0 );
 			add_action( 'send_headers', [ $this->hardening, 'remove_powered_by_header' ], 0 );
 			add_action( 'init', [ $this->hardening, 'remove_wp_version_generators' ] );
@@ -112,11 +112,11 @@ class Module extends AbstractModule {
 			add_filter( 'style_loader_src', [ $this->hardening, 'obfuscate_version_in_src' ], PHP_INT_MAX );
 		}
 
-		// Les transients du rate limiter expirent automatiquement — pas besoin de cron.
+		// The rate limiter transients expire on their own — no cron needed.
 	}
 
 	/**
-	 * Hook wp_login — reset le compteur de tentatives après connexion réussie.
+	 * Hook wp_login — resets the attempt counter after a successful login.
 	 *
 	 * @param string   $user_login
 	 * @param \WP_User $user
@@ -127,7 +127,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Hook wp_login_failed — incrémente le compteur de tentatives échouées.
+	 * Hook wp_login_failed — increments the failed attempt counter.
 	 *
 	 * @param string $username
 	 * @return void
@@ -137,14 +137,14 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Filtre application_password_is_api_request — refuse l'authentification par
-	 * mot de passe d'application tant que l'IP est bloquée.
+	 * Filter application_password_is_api_request — refuses application
+	 * password authentication while the IP is blocked.
 	 *
-	 * Répondre `false` fait sortir wp_authenticate_application_password() avant
-	 * la moindre comparaison de mot de passe : rien n'est vérifié, donc rien
-	 * n'est devinable. Voir le commentaire du branchement dans init().
+	 * Answering `false` makes wp_authenticate_application_password() return
+	 * before any password comparison: nothing is checked, so nothing can be
+	 * guessed. See the comment on the hook in init().
 	 *
-	 * @param bool $is_api_request Décision du cœur.
+	 * @param bool $is_api_request Core decision.
 	 * @return bool
 	 */
 	public function filter_application_password_allowed( $is_api_request ): bool {
@@ -156,12 +156,12 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Hook application_password_failed_authentication — compte l'échec.
+	 * Hook application_password_failed_authentication — counts the failure.
 	 *
-	 * Ce chemin ne déclenche aucun `wp_login_failed` : sans ce branchement, mille
-	 * essais de mot de passe d'application laisseraient le compteur à zéro.
+	 * This path fires no `wp_login_failed`: without this hook, a thousand
+	 * application password attempts would leave the counter at zero.
 	 *
-	 * @param \WP_Error $error Erreur d'authentification remontée par le cœur.
+	 * @param \WP_Error $error Authentication error raised by the core.
 	 * @return void
 	 */
 	public function handle_application_password_failed( $error = null ): void {
@@ -169,11 +169,11 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Porte de sortie : desactive l'URL de connexion personnalisee.
+	 * Escape hatch: disables the custom login URL.
 	 *
-	 * A poser dans wp-config.php quand le slug a ete oublie ou mal saisi —
-	 * sans quoi wp-login.php reste bloque et le site devient inaccessible,
-	 * sans aucun recours depuis le navigateur.
+	 * To be set in wp-config.php when the slug was forgotten or mistyped —
+	 * otherwise wp-login.php stays blocked and the site becomes inaccessible,
+	 * with no recourse from the browser.
 	 *
 	 *     define( 'LUMIA_DISABLE_LOGIN_URL', true );
 	 */
@@ -182,11 +182,11 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * IP du client — déléguée au rate limiter, qui applique la source déclarée.
+	 * Client IP — delegated to the rate limiter, which applies the declared source.
 	 *
-	 * Il y avait ici une seconde implémentation qui retenait la PREMIÈRE entrée
-	 * de X-Forwarded-For quand RateLimiter retenait la dernière : les tentatives
-	 * étaient donc comptées sous une clé que le blocage ne relisait jamais.
+	 * There used to be a second implementation here that kept the FIRST entry
+	 * of X-Forwarded-For while RateLimiter kept the last: attempts were thus
+	 * counted under a key the lockout never read back.
 	 *
 	 * @return string
 	 */
@@ -195,13 +195,13 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Aplatit les réglages stockés vers la forme du formulaire.
+	 * Flattens the stored settings into the form shape.
 	 *
-	 * Le module stocke sous authentication/hardening mais save_settings() lit
-	 * des clés à plat : sans cette conversion, un import écraserait tout par
-	 * les valeurs par défaut.
+	 * The module stores under authentication/hardening but save_settings() reads
+	 * flat keys: without this conversion, an import would overwrite everything
+	 * with the default values.
 	 *
-	 * @param array<string, mixed> $stored Réglages tels qu'ils sont en base.
+	 * @param array<string, mixed> $stored Settings as they are in the database.
 	 * @return array<string, mixed>
 	 */
 	public function to_form_payload( array $stored ): array {
@@ -210,7 +210,7 @@ class Module extends AbstractModule {
 
 		$payload = array_merge( $auth, $hardening );
 
-		// La liste blanche arrive du formulaire sous forme de textarea.
+		// The whitelist comes from the form as a textarea.
 		if ( isset( $payload['rate_limit_whitelist'] ) && is_array( $payload['rate_limit_whitelist'] ) ) {
 			$payload['rate_limit_whitelist'] = implode( PHP_EOL, $payload['rate_limit_whitelist'] );
 		}
@@ -219,14 +219,14 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retourne les settings du module.
+	 * Returns the module settings.
 	 *
 	 * @return array<string, mixed>
 	 */
 	public function get_settings(): array {
-		// Une instance créée hors du cycle d'initialisation (import de
-		// configuration, module désactivé) n'a jamais rempli $this->settings :
-		// on lit alors la base, comme le font les autres modules.
+		// An instance created outside the initialization cycle (settings
+		// import, disabled module) never filled $this->settings: the database
+		// is then read, as the other modules do.
 		if ( ! $this->settings ) {
 			$this->settings = $this->get_module_settings( self::get_defaults() );
 		}
@@ -235,7 +235,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Sauvegarde les settings du module.
+	 * Saves the module settings.
 	 *
 	 * @param array<string, mixed> $settings
 	 * @return bool
@@ -251,8 +251,8 @@ class Module extends AbstractModule {
 		$current['authentication']['enable_custom_login_url'] = ! empty( $settings['enable_custom_login_url'] );
 
 		if ( isset( $settings['custom_login_url'] ) ) {
-			// Un slug refusé laisse la valeur précédente en place : mieux vaut
-			// un réglage inchangé qu'une connexion impossible à router.
+			// A refused slug leaves the previous value in place: better an
+			// unchanged setting than a login that cannot be routed.
 			$slug = self::sanitize_login_slug( (string) wp_unslash( $settings['custom_login_url'] ) );
 			if ( null !== $slug ) {
 				$current['authentication']['custom_login_url'] = '/' . $slug;
@@ -262,8 +262,8 @@ class Module extends AbstractModule {
 		$current['authentication']['ip_source'] = ClientIp::sanitize_source( $settings['ip_source'] ?? '' );
 
 		if ( isset( $settings['rate_limit_whitelist'] ) ) {
-			// Seules de vraies IP sont retenues : une entrée invalide ne
-			// correspondrait à rien et donnerait une whitelist qu'on croit active.
+			// Only real IPs are kept: an invalid entry would match nothing and
+			// give a whitelist that is believed to be active.
 			$lines = explode( "\n", (string) wp_unslash( $settings['rate_limit_whitelist'] ) );
 			$ips   = array_filter(
 				array_map( 'trim', $lines ),
@@ -283,13 +283,11 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Normalise un slug de connexion saisi par l'utilisateur, ou null s'il est
-	 * inutilisable.
+	 * Normalizes a login slug typed by the user, or null if it is unusable.
 	 *
-	 * Chaque segment passe par sanitize_title() : seuls `[a-z0-9-]` et le
-	 * séparateur `/` survivent, donc rien qui ne puisse être comparé au chemin
-	 * d'une requête. Le premier segment ne doit pas être réservé (voir
-	 * RESERVED_LOGIN_SEGMENTS).
+	 * Each segment goes through sanitize_title(): only `[a-z0-9-]` and the `/`
+	 * separator survive, so nothing that cannot be compared to a request path.
+	 * The first segment must not be reserved (see RESERVED_LOGIN_SEGMENTS).
 	 */
 	public static function sanitize_login_slug( string $raw ): ?string {
 		$segments = array_values( array_filter( array_map( 'sanitize_title', explode( '/', trim( $raw ) ) ) ) );
@@ -306,7 +304,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retourne les CSS du module.
+	 * Returns the module CSS files.
 	 *
 	 * @return string[]
 	 */
@@ -317,7 +315,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retourne les JS du module.
+	 * Returns the module JS files.
 	 *
 	 * @return string[]
 	 */
@@ -328,20 +326,24 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retourne les données JS du module.
+	 * Returns the module JS data.
 	 *
 	 * @return array<string, mixed>
 	 */
 	public function get_admin_js_data(): array {
 		return [
 			'i18n' => [
-				'settings' => __( 'Paramètres de sécurité mis à jour', 'lumia-tools' ),
+				'settings'      => __( 'Security settings updated', 'lumia-tools' ),
+				/* translators: %d: number of seconds, shown next to a delay field. */
+				'secondsFormat' => __( '%d s', 'lumia-tools' ),
+				/* translators: %d: number of minutes, shown next to a delay field. */
+				'minutesFormat' => __( '%d min', 'lumia-tools' ),
 			],
 		];
 	}
 
 	/**
-	 * Retourne les defaults du module.
+	 * Returns the module defaults.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -355,8 +357,8 @@ class Module extends AbstractModule {
 				'rate_limit_window'       => 900,
 				'rate_limit_lockout'      => 1800,
 				'rate_limit_whitelist'    => [],
-				// REMOTE_ADDR par défaut : c'est la seule valeur qu'un client ne
-				// peut pas falsifier. Voir ClientIp.
+				// REMOTE_ADDR by default: it is the only value a client cannot
+				// forge. See ClientIp.
 				'ip_source'               => ClientIp::SOURCE_REMOTE_ADDR,
 			],
 			'hardening'      => [
@@ -368,7 +370,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retourne les clés à supprimer à la désinstallation.
+	 * Returns the keys to delete on uninstall.
 	 *
 	 * @return array{options?: string[], meta?: string[], user_meta?: string[], post_type?: string[], taxonomy?: string[]}
 	 */
