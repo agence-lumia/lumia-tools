@@ -1,7 +1,7 @@
-# Module Login
+# Login module
 
-`includes/Modules/Login/Module.php`. Réglages sous `lumia_module_login`.
+`includes/Modules/Login/Module.php`. Settings stored under `lumia_module_login`.
 
-Personnalise la page de connexion WordPress via les hooks `login_*` : `login_enqueue_scripts`, variables CSS dans `login_head`, logo via `login_headerurl`/`login_headertext`, panneau latéral et retouches DOM via `login_footer`. Chaque masquage/bascule optionnel (menu de langue, mot de passe oublié, retour au site) est enregistré conditionnellement.
+Customizes the WordPress login page through the `login_*` hooks: `login_enqueue_scripts`, CSS variables in `login_head`, the logo via `login_headerurl`/`login_headertext`, the side panel and DOM tweaks via `login_footer`. Each optional hide/toggle (language menu, lost password, back to site) is registered conditionally.
 
-L'URL de connexion personnalisée ne relève pas de ce module mais de [Security](security.md) (`LoginUrlHandler`).
+The custom login URL is not handled by this module but by [Security](security.md) (`LoginUrlHandler`).

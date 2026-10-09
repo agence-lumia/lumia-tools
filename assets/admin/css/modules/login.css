@@ -1,5 +1,5 @@
 /*
- * Module Connexion — styles de l'interface admin
+ * Login module: admin interface styles
  */
 
 /* ================================================================
@@ -39,7 +39,7 @@
   display: block;
 }
 
-/* Version logo (carré) */
+/* Logo variant (square) */
 .lumia-media-preview--logo {
   max-width: 180px;
   height: 100px;
@@ -114,7 +114,7 @@
 }
 
 /* ================================================================
- * INPUT AVEC UNITÉ
+ * INPUT WITH UNIT
  * ================================================================ */
 
 .lumia-input-unit {
@@ -142,7 +142,7 @@
 }
 
 /* ================================================================
- * OPTION COLUMN (media pickers qui prennent toute la largeur)
+ * OPTION COLUMN (media pickers that take the full width)
  * ================================================================ */
 
 .lumia-option--column {

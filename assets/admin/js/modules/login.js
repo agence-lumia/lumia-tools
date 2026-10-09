@@ -1,6 +1,6 @@
 /**
- * Module Connexion — JS admin
- * Gère les media pickers (logo + image panneau) et les color pickers.
+ * Login module: admin JS
+ * Handles the media pickers (logo + panel image) and the color pickers.
  */
 (function () {
   "use strict";
@@ -28,15 +28,15 @@
       var frame;
 
       selectBtn.addEventListener("click", function () {
-        // Réutilise la frame si déjà ouverte
+        // Reuses the frame if already open
         if (frame) {
           frame.open();
           return;
         }
 
         frame = wp.media({
-          title: selectBtn.dataset.title || "Choisir une image",
-          button: { text: selectBtn.dataset.button || "Utiliser cette image" },
+          title: selectBtn.dataset.title || "",
+          button: { text: selectBtn.dataset.button || "" },
           multiple: false,
           library: { type: "image" },
         });
@@ -84,7 +84,7 @@
           if (preview) preview.classList.remove("has-image");
           removeBtn.classList.add("is-hidden");
 
-          // Réinitialise la frame pour forcer une nouvelle sélection
+          // Resets the frame to force a new selection
           frame = null;
         });
       }
@@ -92,7 +92,7 @@
   }
 
   /* ================================================================
-   * COLOR PICKERS — met à jour la valeur hex affichée en live
+   * COLOR PICKERS: updates the displayed hex value live
    * ================================================================ */
 
   function initColorPickers() {

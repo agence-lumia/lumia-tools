@@ -1,13 +1,13 @@
 <?php
 /**
- * Template des réglages du module Connexion.
+ * Settings template of the Login module.
  *
- * Variables disponibles (via module-settings.php) :
- * @var string          $module_id       ID du module (login)
- * @var array           $module          Infos du module
- * @var ModuleInterface $instance        Instance du module
- * @var array           $module_settings Settings actuels
- * @var string          $tab             Onglet actif
+ * Available variables (via module-settings.php):
+ * @var string          $module_id       Module ID (login)
+ * @var array           $module          Module info
+ * @var ModuleInterface $instance        Module instance
+ * @var array           $module_settings Current settings
+ * @var string          $tab             Active tab
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,7 +18,7 @@ $layout   = $module_settings['layout'] ?? [];
 $branding = $module_settings['branding'] ?? [];
 $form     = $module_settings['form'] ?? [];
 
-// Images courantes
+// Current images
 $panel_img_id  = absint( $layout['panel_image_id'] ?? 0 );
 $panel_img_url = $panel_img_id ? wp_get_attachment_image_url( $panel_img_id, 'medium' ) : '';
 
@@ -31,8 +31,8 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 	<input type="hidden" name="action" value="lumia_save_settings">
 	<input type="hidden" name="lumia_tab" value="<?php echo esc_attr( $tab ); ?>">
 
-	<div class="lumia-tabs" role="tablist" data-lumia-tabs="login" aria-label="<?php esc_attr_e( 'Sections du module Connexion', 'lumia-tools' ); ?>">
-		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="appearance"><?php esc_html_e( 'Apparence', 'lumia-tools' ); ?></button>
+	<div class="lumia-tabs" role="tablist" data-lumia-tabs="login" aria-label="<?php esc_attr_e( 'Login module sections', 'lumia-tools' ); ?>">
+		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="appearance"><?php esc_html_e( 'Appearance', 'lumia-tools' ); ?></button>
 		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="options"><?php esc_html_e( 'Options', 'lumia-tools' ); ?></button>
 	</div>
 
@@ -41,20 +41,20 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="login" data-lumia-tab-panel="appearance">
 
 	<!-- ============================================================
-		LAYOUT — PANNEAU IMAGE
+		LAYOUT — IMAGE PANEL
 		============================================================ -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php esc_html_e( 'Layout', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Panneau visuel affiché à droite du formulaire de connexion.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Visual panel displayed to the right of the login form.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Image du panneau -->
+			<!-- Panel image -->
 			<div class="lumia-option lumia-option--column">
 				<div class="lumia-option__content">
-					<span class="lumia-option__label"><?php esc_html_e( 'Image du panneau', 'lumia-tools' ); ?></span>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Image de fond du panneau droit. Si vide, la couleur de fond est utilisée.', 'lumia-tools' ); ?></p>
+					<span class="lumia-option__label"><?php esc_html_e( 'Panel image', 'lumia-tools' ); ?></span>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Background image of the right-hand panel. If empty, the background color is used.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control lumia-option__control--full">
 					<div class="lumia-media-picker" data-picker="panel_image">
@@ -65,24 +65,24 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 							<?php endif; ?>
 						</div>
 						<div class="lumia-media-actions">
-							<button type="button" class="lumia-btn lumia-btn--secondary lumia-btn--sm lumia-media-select" data-title="<?php esc_attr_e( 'Choisir une image', 'lumia-tools' ); ?>" data-button="<?php esc_attr_e( 'Utiliser cette image', 'lumia-tools' ); ?>">
-								<?php esc_html_e( 'Choisir une image', 'lumia-tools' ); ?>
+							<button type="button" class="lumia-btn lumia-btn--secondary lumia-btn--sm lumia-media-select" data-title="<?php esc_attr_e( 'Choose an image', 'lumia-tools' ); ?>" data-button="<?php esc_attr_e( 'Use this image', 'lumia-tools' ); ?>">
+								<?php esc_html_e( 'Choose an image', 'lumia-tools' ); ?>
 							</button>
 							<button type="button" class="lumia-btn lumia-btn--secondary lumia-btn--sm lumia-media-remove <?php echo ! $panel_img_url ? 'is-hidden' : ''; ?>">
-								<?php esc_html_e( 'Supprimer', 'lumia-tools' ); ?>
+								<?php esc_html_e( 'Remove', 'lumia-tools' ); ?>
 							</button>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<!-- Couleur de fond panneau -->
+			<!-- Panel background color -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_panel_bg_color" class="lumia-option__label">
-						<?php esc_html_e( 'Couleur de fond du panneau', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Panel background color', 'lumia-tools' ); ?>
 					</label>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Utilisée comme fallback si aucune image n\'est définie.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Used as a fallback if no image is set.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<div class="lumia-color-field">
@@ -93,7 +93,7 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 							value="<?php echo esc_attr( $layout['panel_bg_color'] ?? '#eaeaea' ); ?>"
 						>
 						<span class="lumia-color-field__value"><?php echo esc_html( $layout['panel_bg_color'] ?? '#eaeaea' ); ?></span>
-						<button type="button" class="lumia-color-reset" data-default="#eaeaea" data-lumia-tip="<?php esc_attr_e( 'Réinitialiser', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Réinitialiser la couleur', 'lumia-tools' ); ?>">↩</button>
+						<button type="button" class="lumia-color-reset" data-default="#eaeaea" data-lumia-tip="<?php esc_attr_e( 'Reset', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Reset color', 'lumia-tools' ); ?>">↩</button>
 					</div>
 				</div>
 			</div>
@@ -109,15 +109,15 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php esc_html_e( 'Branding', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Remplacez le logo WordPress par le vôtre.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Replace the WordPress logo with your own.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Logo custom -->
+			<!-- Custom logo -->
 			<div class="lumia-option lumia-option--column">
 				<div class="lumia-option__content">
-					<span class="lumia-option__label"><?php esc_html_e( 'Logo personnalisé', 'lumia-tools' ); ?></span>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Remplace le logo WordPress par défaut. Format recommandé : PNG transparent ou SVG.', 'lumia-tools' ); ?></p>
+					<span class="lumia-option__label"><?php esc_html_e( 'Custom logo', 'lumia-tools' ); ?></span>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Replaces the default WordPress logo. Recommended format: transparent PNG or SVG.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control lumia-option__control--full">
 					<div class="lumia-media-picker" data-picker="logo">
@@ -128,24 +128,24 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 							<?php endif; ?>
 						</div>
 						<div class="lumia-media-actions">
-							<button type="button" class="lumia-btn lumia-btn--secondary lumia-btn--sm lumia-media-select" data-title="<?php esc_attr_e( 'Choisir un logo', 'lumia-tools' ); ?>" data-button="<?php esc_attr_e( 'Utiliser ce logo', 'lumia-tools' ); ?>">
-								<?php esc_html_e( 'Choisir un logo', 'lumia-tools' ); ?>
+							<button type="button" class="lumia-btn lumia-btn--secondary lumia-btn--sm lumia-media-select" data-title="<?php esc_attr_e( 'Choose a logo', 'lumia-tools' ); ?>" data-button="<?php esc_attr_e( 'Use this logo', 'lumia-tools' ); ?>">
+								<?php esc_html_e( 'Choose a logo', 'lumia-tools' ); ?>
 							</button>
 							<button type="button" class="lumia-btn lumia-btn--secondary lumia-btn--sm lumia-media-remove <?php echo ! $logo_url ? 'is-hidden' : ''; ?>">
-								<?php esc_html_e( 'Supprimer', 'lumia-tools' ); ?>
+								<?php esc_html_e( 'Remove', 'lumia-tools' ); ?>
 							</button>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<!-- Largeur du logo -->
+			<!-- Logo width -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_logo_width" class="lumia-option__label">
-						<?php esc_html_e( 'Largeur du logo', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Logo width', 'lumia-tools' ); ?>
 					</label>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Largeur maximale du logo en pixels (entre 40 et 600).', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Maximum logo width in pixels (between 40 and 600).', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<div class="lumia-input-unit">
@@ -170,68 +170,68 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 	<div class="lumia-divider"></div>
 
 	<!-- ============================================================
-		COULEURS
+		COLORS
 		============================================================ -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
-			<h2 class="lumia-section__title"><?php esc_html_e( 'Couleurs', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Personnalisez les couleurs du formulaire de connexion.', 'lumia-tools' ); ?></p>
+			<h2 class="lumia-section__title"><?php esc_html_e( 'Colors', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Customize the login form colors.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Couleur de fond -->
+			<!-- Background color -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_bg_color" class="lumia-option__label"><?php esc_html_e( 'Fond de la page', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Couleur de fond de la zone formulaire.', 'lumia-tools' ); ?></p>
+					<label for="lumia_bg_color" class="lumia-option__label"><?php esc_html_e( 'Page background', 'lumia-tools' ); ?></label>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Background color of the form area.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<div class="lumia-color-field">
 						<input type="color" id="lumia_bg_color" name="lumia_module_settings[form][bg_color]" value="<?php echo esc_attr( $form['bg_color'] ?? '#f7f7f7' ); ?>">
 						<span class="lumia-color-field__value"><?php echo esc_html( $form['bg_color'] ?? '#f7f7f7' ); ?></span>
-						<button type="button" class="lumia-color-reset" data-default="#f7f7f7" data-lumia-tip="<?php esc_attr_e( 'Réinitialiser', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Réinitialiser la couleur', 'lumia-tools' ); ?>">↩</button>
+						<button type="button" class="lumia-color-reset" data-default="#f7f7f7" data-lumia-tip="<?php esc_attr_e( 'Reset', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Reset color', 'lumia-tools' ); ?>">↩</button>
 					</div>
 				</div>
 			</div>
 
-			<!-- Couleur bouton -->
+			<!-- Button color -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_btn_bg_color" class="lumia-option__label"><?php esc_html_e( 'Fond du bouton', 'lumia-tools' ); ?></label>
+					<label for="lumia_btn_bg_color" class="lumia-option__label"><?php esc_html_e( 'Button background', 'lumia-tools' ); ?></label>
 				</div>
 				<div class="lumia-option__control">
 					<div class="lumia-color-field">
 						<input type="color" id="lumia_btn_bg_color" name="lumia_module_settings[form][btn_bg_color]" value="<?php echo esc_attr( $form['btn_bg_color'] ?? '#615FFF' ); ?>">
 						<span class="lumia-color-field__value"><?php echo esc_html( $form['btn_bg_color'] ?? '#615FFF' ); ?></span>
-						<button type="button" class="lumia-color-reset" data-default="#615FFF" data-lumia-tip="<?php esc_attr_e( 'Réinitialiser', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Réinitialiser la couleur', 'lumia-tools' ); ?>">↩</button>
+						<button type="button" class="lumia-color-reset" data-default="#615FFF" data-lumia-tip="<?php esc_attr_e( 'Reset', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Reset color', 'lumia-tools' ); ?>">↩</button>
 					</div>
 				</div>
 			</div>
 
-			<!-- Couleur texte bouton -->
+			<!-- Button text color -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_btn_text_color" class="lumia-option__label"><?php esc_html_e( 'Texte du bouton', 'lumia-tools' ); ?></label>
+					<label for="lumia_btn_text_color" class="lumia-option__label"><?php esc_html_e( 'Button text', 'lumia-tools' ); ?></label>
 				</div>
 				<div class="lumia-option__control">
 					<div class="lumia-color-field">
 						<input type="color" id="lumia_btn_text_color" name="lumia_module_settings[form][btn_text_color]" value="<?php echo esc_attr( $form['btn_text_color'] ?? '#ffffff' ); ?>">
 						<span class="lumia-color-field__value"><?php echo esc_html( $form['btn_text_color'] ?? '#ffffff' ); ?></span>
-						<button type="button" class="lumia-color-reset" data-default="#ffffff" data-lumia-tip="<?php esc_attr_e( 'Réinitialiser', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Réinitialiser la couleur', 'lumia-tools' ); ?>">↩</button>
+						<button type="button" class="lumia-color-reset" data-default="#ffffff" data-lumia-tip="<?php esc_attr_e( 'Reset', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Reset color', 'lumia-tools' ); ?>">↩</button>
 					</div>
 				</div>
 			</div>
 
-			<!-- Couleur liens -->
+			<!-- Link color -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_link_color" class="lumia-option__label"><?php esc_html_e( 'Couleur des liens', 'lumia-tools' ); ?></label>
+					<label for="lumia_link_color" class="lumia-option__label"><?php esc_html_e( 'Link color', 'lumia-tools' ); ?></label>
 				</div>
 				<div class="lumia-option__control">
 					<div class="lumia-color-field">
 						<input type="color" id="lumia_link_color" name="lumia_module_settings[form][link_color]" value="<?php echo esc_attr( $form['link_color'] ?? '#615FFF' ); ?>">
 						<span class="lumia-color-field__value"><?php echo esc_html( $form['link_color'] ?? '#615FFF' ); ?></span>
-						<button type="button" class="lumia-color-reset" data-default="#615FFF" data-lumia-tip="<?php esc_attr_e( 'Réinitialiser', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Réinitialiser la couleur', 'lumia-tools' ); ?>">↩</button>
+						<button type="button" class="lumia-color-reset" data-default="#615FFF" data-lumia-tip="<?php esc_attr_e( 'Reset', 'lumia-tools' ); ?>" aria-label="<?php esc_attr_e( 'Reset color', 'lumia-tools' ); ?>">↩</button>
 					</div>
 				</div>
 			</div>
@@ -243,23 +243,23 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="login" data-lumia-tab-panel="options" hidden>
 
 	<!-- ============================================================
-		OPTIONS DIVERSES
+		MISCELLANEOUS OPTIONS
 		============================================================ -->
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php esc_html_e( 'Options', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php esc_html_e( 'Éléments à masquer sur la page de connexion.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Elements to hide on the login page.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 
-			<!-- Masquer sélecteur de langue -->
+			<!-- Hide language switcher -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_hide_language" class="lumia-option__label">
-						<?php esc_html_e( 'Masquer le sélecteur de langue', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hide the language switcher', 'lumia-tools' ); ?>
 					</label>
 					<p class="lumia-option__desc">
-						<?php esc_html_e( 'Cache le menu déroulant de sélection de langue en bas du formulaire.', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hides the language selection dropdown at the bottom of the form.', 'lumia-tools' ); ?>
 					</p>
 				</div>
 				<div class="lumia-option__control">
@@ -276,14 +276,14 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 				</div>
 			</div>
 
-			<!-- Masquer mot de passe oublié -->
+			<!-- Hide lost password -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_hide_lost_password" class="lumia-option__label">
-						<?php esc_html_e( 'Masquer le lien « Mot de passe oublié »', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hide the “Lost your password?” link', 'lumia-tools' ); ?>
 					</label>
 					<p class="lumia-option__desc">
-						<?php esc_html_e( 'Cache le lien de récupération de mot de passe sous le formulaire.', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hides the password recovery link below the form.', 'lumia-tools' ); ?>
 					</p>
 				</div>
 				<div class="lumia-option__control">
@@ -300,14 +300,14 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 				</div>
 			</div>
 
-			<!-- Masquer lien retour au site -->
+			<!-- Hide back-to-site link -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_hide_back_to_blog" class="lumia-option__label">
-						<?php esc_html_e( 'Masquer le lien « Aller sur le site »', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hide the “Go to site” link', 'lumia-tools' ); ?>
 					</label>
 					<p class="lumia-option__desc">
-						<?php esc_html_e( 'Cache le lien de retour vers l\'accueil du site en bas du formulaire.', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hides the link back to the site home page at the bottom of the form.', 'lumia-tools' ); ?>
 					</p>
 				</div>
 				<div class="lumia-option__control">
@@ -324,14 +324,14 @@ $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 				</div>
 			</div>
 
-			<!-- Masquer le lien Politique de confidentialité -->
+			<!-- Hide the Privacy Policy link -->
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_hide_privacy_policy" class="lumia-option__label">
-						<?php esc_html_e( 'Masquer le lien « Politique de confidentialité »', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hide the “Privacy Policy” link', 'lumia-tools' ); ?>
 					</label>
 					<p class="lumia-option__desc">
-						<?php esc_html_e( 'Cache le lien affiché par WordPress quand une page de politique de confidentialité est définie.', 'lumia-tools' ); ?>
+						<?php esc_html_e( 'Hides the link WordPress displays when a privacy policy page is set.', 'lumia-tools' ); ?>
 					</p>
 				</div>
 				<div class="lumia-option__control">

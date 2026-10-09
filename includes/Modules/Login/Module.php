@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 use Lumia\Tools\Core\AbstractModule;
 
 /**
- * Module Connexion — personnalisation de la page de connexion WordPress.
+ * Login module: customizes the WordPress login page.
  */
 class Module extends AbstractModule {
 
@@ -16,7 +16,7 @@ class Module extends AbstractModule {
 	private array $settings = [];
 
 	/**
-	 * Initialise les hooks WordPress.
+	 * Registers the WordPress hooks.
 	 */
 	public function init(): void {
 		$this->settings = $this->get_settings();
@@ -45,12 +45,12 @@ class Module extends AbstractModule {
 			add_action( 'login_head', [ $this, 'hide_privacy_policy_css' ], 99 );
 		}
 
-		// Charge le media uploader WP sur la page de réglages du module.
+		// Loads the WP media uploader on the module settings page.
 		add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_media' ] );
 	}
 
 	/**
-	 * Enqueue le CSS de la page de connexion.
+	 * Enqueues the login page CSS.
 	 */
 	public function enqueue_login_assets(): void {
 		wp_enqueue_style(
@@ -62,7 +62,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Injecte les variables CSS custom dans <head> de la page de connexion.
+	 * Prints the custom CSS variables in the <head> of the login page.
 	 */
 	public function inject_css_variables(): void {
 		$s = $this->settings;
@@ -74,7 +74,7 @@ class Module extends AbstractModule {
 		$link_color = $this->sanitize_color( $s['form']['link_color'] ?? '#615FFF' );
 		$logo_width = absint( $s['branding']['logo_width'] ?? 150 );
 
-		// Image du panneau
+		// Panel image
 		$panel_img_url = '';
 		$panel_img_id  = absint( $s['layout']['panel_image_id'] ?? 0 );
 		if ( $panel_img_id > 0 ) {
@@ -84,7 +84,7 @@ class Module extends AbstractModule {
 			}
 		}
 
-		// Logo custom
+		// Custom logo
 		$logo_url = '';
 		$logo_id  = absint( $s['branding']['logo_id'] ?? 0 );
 		if ( $logo_id > 0 ) {
@@ -122,45 +122,45 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Injecte un style pour masquer le lien "Mot de passe oublié".
+	 * Prints a style that hides the "Lost your password?" link.
 	 */
 	public function hide_lost_password_css(): void {
 		echo '<style>#nav{display:none!important}</style>';
 	}
 
 	/**
-	 * Injecte un style pour masquer le lien "Aller à NOM DU SITE".
+	 * Prints a style that hides the "Go to SITE NAME" link.
 	 */
 	public function hide_back_to_blog_css(): void {
 		echo '<style>#backtoblog{display:none!important}</style>';
 	}
 
 	/**
-	 * Injecte un style pour masquer le lien "Politique de confidentialité".
+	 * Prints a style that hides the "Privacy Policy" link.
 	 *
-	 * Masquage CSS et non filtre `the_privacy_policy_link` : ce filtre est global,
-	 * il retirerait aussi le lien du pied de page public du thème.
+	 * CSS hiding rather than the `the_privacy_policy_link` filter: that filter is global,
+	 * it would also remove the link from the theme's public footer.
 	 */
 	public function hide_privacy_policy_css(): void {
 		echo '<style>.privacy-policy-page-link{display:none!important}</style>';
 	}
 
 	/**
-	 * Remplace l'URL du logo par l'accueil du site.
+	 * Replaces the logo URL with the site home page.
 	 */
 	public function filter_logo_url( string $url ): string {
 		return home_url( '/' );
 	}
 
 	/**
-	 * Remplace le texte alternatif du logo par le nom du site.
+	 * Replaces the logo alternative text with the site name.
 	 */
 	public function filter_logo_text( string $text ): string {
 		return get_bloginfo( 'name' );
 	}
 
 	/**
-	 * Ajoute la classe CSS pour le layout split.
+	 * Adds the CSS class for the split layout.
 	 *
 	 * @param string[] $classes
 	 * @return string[]
@@ -175,17 +175,17 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Injecte le panneau image/couleur côté droit après le formulaire.
+	 * Prints the image/color panel on the right-hand side after the form.
 	 */
 	public function render_side_panel(): void {
 		echo '<div class="lumia-login-panel" aria-hidden="true"></div>';
 	}
 
 	/**
-	 * Injecte les tweaks DOM JS de la page de connexion :
-	 * - Titre "Se connecter" entre logo et formulaire
-	 * - Password header (label + lien MDP oublié en space-between)
-	 * - Réordonnancement bouton → "Se souvenir de moi"
+	 * Prints the JS DOM tweaks of the login page:
+	 * - "Log in" title between the logo and the form
+	 * - Password header (label + lost password link in space-between)
+	 * - Reorders the button before "Remember Me"
 	 */
 	public function render_login_dom_tweaks(): void {
 		?>
@@ -203,7 +203,7 @@ class Module extends AbstractModule {
 			if (h1) {
 				var title = document.createElement('p');
 				title.className = 'lumia-login-title';
-				title.textContent = '<?php echo esc_js( __( 'Se connecter', 'lumia-tools' ) ); ?>';
+				title.textContent = '<?php echo esc_js( __( 'Log in', 'lumia-tools' ) ); ?>';
 				h1.insertAdjacentElement('afterend', title);
 			}
 
@@ -229,7 +229,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Charge wp_enqueue_media() uniquement sur la page de réglages du module.
+	 * Loads wp_enqueue_media() only on the module settings page.
 	 */
 	public function maybe_enqueue_media( string $hook ): void {
 		if ( strpos( $hook, 'lumia-tools' ) === false ) {
@@ -254,7 +254,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Valide et sauvegarde les settings.
+	 * Validates and saves the settings.
 	 *
 	 * @param array<string, mixed> $settings
 	 */
@@ -273,7 +273,7 @@ class Module extends AbstractModule {
 			$current['branding']['logo_width'] = min( 600, max( 40, absint( $settings['branding']['logo_width'] ?? 150 ) ) );
 		}
 
-		// Formulaire
+		// Form
 		if ( isset( $settings['form'] ) && is_array( $settings['form'] ) ) {
 			$current['form']['hide_language_switcher'] = ! empty( $settings['form']['hide_language_switcher'] );
 			$current['form']['hide_lost_password']     = ! empty( $settings['form']['hide_lost_password'] );
@@ -290,7 +290,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Valeurs par défaut des settings.
+	 * Default values of the settings.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -318,7 +318,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Clés à supprimer lors de la désinstallation.
+	 * Keys to delete on uninstall.
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
@@ -328,25 +328,25 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Assets CSS pour la page de réglages admin.
+	 * CSS assets for the admin settings page.
 	 */
 	public function get_admin_css(): array {
 		return [ LUMIA_ASSETS_URL . 'admin/css/modules/login.css' ];
 	}
 
 	/**
-	 * Assets JS pour la page de réglages admin.
+	 * JS assets for the admin settings page.
 	 */
 	public function get_admin_js(): array {
 		return [ LUMIA_ASSETS_URL . 'admin/js/modules/login.js' ];
 	}
 
 	/* ================================================================
-	 * HELPERS PRIVÉS
+	 * PRIVATE HELPERS
 	 * ================================================================ */
 
 	/**
-	 * Valide une couleur hex. Retourne la valeur par défaut si invalide.
+	 * Validates a hex color. Returns the fallback value if invalid.
 	 */
 	private function sanitize_color( string $color, string $fallback = '' ): string {
 		$color = sanitize_hex_color( trim( $color ) );
