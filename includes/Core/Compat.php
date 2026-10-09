@@ -37,6 +37,19 @@ final class Compat {
 	}
 
 	/**
+	 * Value of the legacy `SKMT_{$name}` constant alone, ignoring `LUMIA_{$name}`.
+	 * Only to read back data written by Studio Kyne Mini Tools with its own
+	 * material (Smtp\Crypto::reencrypt_from_legacy()): everything else reads
+	 * constant().
+	 *
+	 * @param string $name Constant name without prefix.
+	 * @return mixed Null if the constant is not defined.
+	 */
+	public static function legacy_constant( string $name ) {
+		return defined( 'SKMT_' . $name ) ? constant( 'SKMT_' . $name ) : null;
+	}
+
+	/**
 	 * Whether `LUMIA_{$name}` or `SKMT_{$name}` is defined.
 	 *
 	 * @param string $name Constant name without prefix.

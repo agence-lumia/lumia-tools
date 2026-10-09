@@ -20,14 +20,18 @@ use Lumia\Tools\Modules\Smtp\Crypto;
  *
  * Every step checks its own state and can run again: a migration stopped by a
  * failure resumes where it stopped at the next activation, without duplicating
- * anything. The marker is set last; on failure, the step is recorded in
- * ERROR_OPTION (and the database error in ERROR_DETAIL_OPTION), SKMT stays
- * active and Plugin keeps every module off (see on_hold()).
+ * anything. Each step is recorded in ERROR_OPTION BEFORE it runs, so that a
+ * request killed inside it (fatal error, timeout, lock wait) still leaves a
+ * trace; a step that returns false also gets ERROR_DETAIL_OPTION (the database
+ * error, possibly ''). ERROR_OPTION without ERROR_DETAIL_OPTION therefore means
+ * "interrupted" (see interrupted()). The marker is set last and clears both. On
+ * failure SKMT stays active and Plugin keeps every module off (see on_hold()).
  *
  * Overwriting: a first run never overwrites an existing `lumia_*` option. A
- * resumed run (ERROR_OPTION set) refreshes the copies from `skmt_*`: Lumia was
- * on hold since the failed attempt, so nothing of Lumia wrote them, while SKMT,
- * still the live plugin, may have changed its settings or secrets. Likewise a
+ * resumed run (ERROR_OPTION set: failed or interrupted) refreshes the copies
+ * from `skmt_*`: Lumia was on hold (or inactive) since that attempt, so nothing
+ * of Lumia wrote them, while SKMT, still the live plugin, may have changed its
+ * settings or secrets. Likewise a
  * `_skmt_*` meta written by SKMT on an object whose meta was already renamed
  * replaces the `_lumia_*` one instead of duplicating it.
  *
@@ -38,16 +42,25 @@ use Lumia\Tools\Modules\Smtp\Crypto;
  */
 final class FromSkmt {
 
-	/** Main file of the former plugin, relative to the plugins folder. */
+	/**
+	 * Main file of the former plugin, relative to the plugins folder, when it
+	 * lives in its usual folder. Read legacy_plugin() instead.
+	 */
 	public const LEGACY_PLUGIN = 'studio-kyne-mini-tools/studio-kyne-mini-tools.php';
 
 	/** Set when the migration is complete; value: timestamp. */
 	public const MARKER = 'lumia_migrated_from_skmt';
 
-	/** Set when a step fails; value: the step name. Autoloaded, see on_hold(). */
+	/**
+	 * Step being run or at which the migration stopped (written before each
+	 * step, deleted once the migration completes). Autoloaded, see on_hold().
+	 */
 	public const ERROR_OPTION = 'lumia_migration_error';
 
-	/** Database error of the failed step ('' when the failure was not a query). */
+	/**
+	 * Database error of the failed step ('' when the failure was not a query).
+	 * Absent while ERROR_OPTION is set: the step was interrupted, not failed.
+	 */
 	public const ERROR_DETAIL_OPTION = 'lumia_migration_error_detail';
 
 	/** Set when the migration completes, until an administrator gets the success notice. Autoloaded. */
@@ -98,6 +111,13 @@ final class FromSkmt {
 
 	/** Copied options that may store the admin page slug (menu profiles). */
 	private const SLUG_OPTIONS = [ 'skmt_wl_menu_profiles', 'skmt_module_menu_creator' ];
+
+	/**
+	 * Other admin menu slugs of SKMT that a menu profile may store, mapped
+	 * exactly (closed list): the separator SKMT added to its own submenu,
+	 * which the MenuCreator editor lists as a child item of the plugin page.
+	 */
+	private const LEGACY_MENU_SLUGS = [ 'skmt-separator' => 'lumia-separator' ];
 
 	/** Encrypted options: re-encrypted with the Lumia key while copied. */
 	private const SECRETS = [ 'skmt_smtp_password', 'skmt_smtp_brevo_key' ];
@@ -189,6 +209,17 @@ final class FromSkmt {
 	}
 
 	/**
+	 * Basename of SKMT's main file (`folder/file.php`). SKMT may live in another
+	 * folder than its usual one (a `-main` suffix left by a GitHub archive, a
+	 * renamed folder): when it is loaded in this request, its own constant says
+	 * where. SKMT is loaded iff it is active, so the fallback only serves when
+	 * it is not, where the name does not matter.
+	 */
+	public static function legacy_plugin(): string {
+		return defined( 'SKMT_PLUGIN_FILE' ) ? plugin_basename( (string) constant( 'SKMT_PLUGIN_FILE' ) ) : self::LEGACY_PLUGIN;
+	}
+
+	/**
 	 * Whether SKMT's image optimizer must be frozen in this request: SKMT is
 	 * loaded and a migration has started (failed attempt) or completed (SKMT
 	 * re-enabled since). Its optimized images then no longer carry
@@ -250,6 +281,15 @@ final class FromSkmt {
 	}
 
 	/**
+	 * Whether the last migration was interrupted inside failed_step() rather
+	 * than stopped by a failure of it: the request ended before the step
+	 * returned (PHP fatal error, timeout, killed process), see run().
+	 */
+	public static function interrupted(): bool {
+		return '' !== self::failed_step() && false === get_option( self::ERROR_DETAIL_OPTION );
+	}
+
+	/**
 	 * Forgets a failed attempt.
 	 */
 	public static function clear_error(): void {
@@ -272,15 +312,35 @@ final class FromSkmt {
 	public static function run(): bool {
 		global $wpdb;
 
+		// Renaming meta on a large media library takes time and memory: as much as
+		// an admin request may get. A killed request is still detected (below),
+		// but better avoided. A PHP-FPM request_terminate_timeout is not lifted by
+		// set_time_limit(): hence the WP-CLI activation of the migration guide.
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 0 );
+		}
+
 		// A database error must not be printed: during an activation, any output
 		// is reported as "unexpected output". It still reaches the PHP error log.
 		$show_errors = $wpdb->hide_errors();
 
-		// Resuming after a failure: SKMT's current values win (see the class doc).
+		// Resuming after a failed or interrupted attempt: SKMT's current values
+		// win (see the class doc).
 		self::$refresh = false !== get_option( self::ERROR_OPTION );
 
 		try {
 			foreach ( self::STEPS as $step ) {
+				// Recorded BEFORE the step runs, without detail: if the request dies
+				// inside it, Lumia is not even active (WordPress adds it to
+				// active_plugins only once the activation hook returns), and this
+				// option is the only trace left — `wp option get` shows the step,
+				// and the next activation resumes in refresh mode.
+				update_option( self::ERROR_OPTION, $step, true );
+				delete_option( self::ERROR_DETAIL_OPTION );
+
 				// last_error would otherwise still hold an error of an earlier,
 				// unrelated query of the request. Each step checks it right after
 				// its own queries (wpdb clears it at every query); not after the
@@ -288,9 +348,7 @@ final class FromSkmt {
 				$wpdb->last_error = '';
 
 				if ( ! self::run_step( $step ) ) {
-					$detail = (string) $wpdb->last_error;
-					update_option( self::ERROR_OPTION, $step, true );
-					update_option( self::ERROR_DETAIL_OPTION, $detail, false );
+					update_option( self::ERROR_DETAIL_OPTION, (string) $wpdb->last_error, false );
 					return false;
 				}
 			}
@@ -592,11 +650,13 @@ final class FromSkmt {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		if ( in_array( self::LEGACY_PLUGIN, (array) get_option( 'active_plugins', [] ), true ) ) {
-			deactivate_plugins( self::LEGACY_PLUGIN, false, false );
+		$legacy = self::legacy_plugin();
+
+		if ( in_array( $legacy, (array) get_option( 'active_plugins', [] ), true ) ) {
+			deactivate_plugins( $legacy, false, false );
 		}
 
-		return ! in_array( self::LEGACY_PLUGIN, (array) get_option( 'active_plugins', [] ), true );
+		return ! in_array( $legacy, (array) get_option( 'active_plugins', [] ), true );
 	}
 
 	/* ================================================================
@@ -655,7 +715,8 @@ final class FromSkmt {
 
 	/**
 	 * Replaces the admin page slug in stored menu profiles: any string equal to
-	 * the legacy slug, or starting with it followed by `&` (a tab of the page).
+	 * the legacy slug, or starting with it followed by `&` (a tab of the page),
+	 * and any string equal to one of LEGACY_MENU_SLUGS.
 	 *
 	 * @param mixed $value
 	 * @return mixed
@@ -670,6 +731,10 @@ final class FromSkmt {
 
 		if ( is_string( $value ) && ( self::LEGACY_SLUG === $value || 0 === strpos( $value, self::LEGACY_SLUG . '&' ) ) ) {
 			return self::SLUG . substr( $value, strlen( self::LEGACY_SLUG ) );
+		}
+
+		if ( is_string( $value ) && isset( self::LEGACY_MENU_SLUGS[ $value ] ) ) {
+			return self::LEGACY_MENU_SLUGS[ $value ];
 		}
 
 		return $value;

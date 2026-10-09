@@ -52,7 +52,7 @@ class Crypto {
 
 		$iv     = random_bytes( self::IV_LENGTH );
 		$tag    = '';
-		$cipher = openssl_encrypt( $plain, self::CIPHER, self::key( self::CONTEXT ), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LENGTH );
+		$cipher = openssl_encrypt( $plain, self::CIPHER, self::key(), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LENGTH );
 
 		if ( false === $cipher ) {
 			return '';
@@ -67,13 +67,14 @@ class Crypto {
 	 *                     value was tampered with.
 	 */
 	public static function decrypt( string $stored ): ?string {
-		return self::decrypt_with( $stored, self::key( self::CONTEXT ) );
+		return self::decrypt_with( $stored, self::key() );
 	}
 
 	/**
 	 * Re-encrypts a value written by Studio Kyne Mini Tools (`'skmt-smtp|'`
-	 * context) with the Lumia key. Both keys share the same material, so a site
-	 * that fixed it with `SKMT_ENCRYPTION_KEY` keeps reading its secret.
+	 * context, see legacy_key()) with the Lumia key. On a site without
+	 * `LUMIA_ENCRYPTION_KEY` both keys share the same material, so a site that
+	 * fixed it with `SKMT_ENCRYPTION_KEY` keeps reading its secret.
 	 *
 	 * @return string The Lumia cipher text; `$stored` unchanged when the legacy
 	 *                value cannot be decrypted (salts regenerated since, value
@@ -81,7 +82,7 @@ class Crypto {
 	 *                the administrator types the secret again.
 	 */
 	public static function reencrypt_from_legacy( string $stored ): string {
-		$plain = self::decrypt_with( $stored, self::key( self::LEGACY_CONTEXT ) );
+		$plain = self::decrypt_with( $stored, self::legacy_key() );
 
 		if ( null === $plain || '' === $plain ) {
 			return $stored;
@@ -123,13 +124,26 @@ class Crypto {
 	 * Key derived from the site keys. `LUMIA_ENCRYPTION_KEY` (or the legacy
 	 * `SKMT_ENCRYPTION_KEY`) allows setting one that survives a regeneration of
 	 * the `wp-config.php` salts.
-	 *
-	 * @param string $context self::CONTEXT, or self::LEGACY_CONTEXT to read a
-	 *                        value written by Studio Kyne Mini Tools.
 	 */
-	private static function key( string $context ): string {
-		$constant = Compat::constant( 'ENCRYPTION_KEY' );
+	private static function key(): string {
+		return self::derive( self::CONTEXT, Compat::constant( 'ENCRYPTION_KEY' ) );
+	}
 
+	/**
+	 * Key Studio Kyne Mini Tools encrypted with, from ITS material order:
+	 * `SKMT_ENCRYPTION_KEY`, else the salts, else wp_salt(). Never
+	 * `LUMIA_ENCRYPTION_KEY`: SKMT did not know it, and a site that defined it
+	 * before migrating (the help texts name it) must still decrypt its secrets.
+	 */
+	private static function legacy_key(): string {
+		return self::derive( self::LEGACY_CONTEXT, Compat::legacy_constant( 'ENCRYPTION_KEY' ) );
+	}
+
+	/**
+	 * @param string $context  self::CONTEXT or self::LEGACY_CONTEXT.
+	 * @param mixed  $constant Value of the encryption-key constant, null if undefined.
+	 */
+	private static function derive( string $context, $constant ): string {
 		if ( null !== $constant && '' !== (string) $constant ) {
 			$material = (string) $constant;
 		} else {

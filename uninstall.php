@@ -20,8 +20,12 @@ $module_classes = \Lumia\Tools\Core\Activator::MODULE_CLASSES;
 delete_option( 'lumia_settings' );
 delete_site_option( 'lumia_settings' );
 
-// State of the migration from Studio Kyne Mini Tools.
-delete_option( \Lumia\Tools\Core\Migration\FromSkmt::MARKER );
+// State of the migration from Studio Kyne Mini Tools. The marker
+// (FromSkmt::MARKER) is deliberately KEPT, as a tombstone: SKMT removed with
+// `wp plugin delete` (files only, its uninstall.php never runs) leaves its
+// `skmt_*` options behind, and without the marker a later reinstall of Lumia
+// would migrate them again — months-old settings, login slug, SMTP secret and
+// module states replacing the site's current ones. One small row, not autoloaded.
 delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_OPTION );
 delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_DETAIL_OPTION );
 delete_option( \Lumia\Tools\Core\Migration\FromSkmt::NOTICE_OPTION );

@@ -40,6 +40,10 @@ class Activator {
 		// (`lumia_settings` with every module off, `lumia_module_*`), the copy,
 		// which never overwrites a `lumia_*` option, would skip them.
 		if ( FromSkmt::needed() ) {
+			// A request killed inside run() never comes back here, and WordPress
+			// then leaves Lumia inactive: run() records each step before running
+			// it, so `wp option get lumia_migration_error` still names it and the
+			// next activation resumes (see FromSkmt::interrupted()).
 			if ( ! FromSkmt::run() ) {
 				self::cli_report( false );
 				// Stopped half-way: no defaults either, they would block the

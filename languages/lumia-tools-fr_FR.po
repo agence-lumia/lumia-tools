@@ -253,26 +253,26 @@ msgstr "Nonce invalide."
 msgid "Invalid parameters."
 msgstr "Paramètres invalides."
 
-#: includes/Core/Activator.php:99
-#: includes/Core/Plugin.php:158
+#: includes/Core/Activator.php:103
+#: includes/Core/Plugin.php:160
 msgid "Migration from Studio Kyne Mini Tools complete. You can delete the old plugin."
 msgstr "Migration depuis Studio Kyne Mini Tools terminée. Vous pouvez supprimer l'ancien plugin."
 
 #. translators: %s: identifier of the migration step that failed, e.g. post_meta.
-#: includes/Core/Activator.php:104
+#: includes/Core/Activator.php:108
 #: includes/Core/Plugin.php:115
 #, php-format
 msgid "The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it."
 msgstr "La migration depuis Studio Kyne Mini Tools s'est arrêtée à l'étape %s : Lümia Tools ne charge aucun de ses modules tant qu'elle n'est pas terminée. Ne supprimez pas Studio Kyne Mini Tools d'ici là : sa désinstallation effacerait les données pas encore migrées. Désactivez puis réactivez Lümia Tools pour la reprendre."
 
 #. translators: %s: database error message.
-#: includes/Core/Activator.php:108
+#: includes/Core/Activator.php:112
 #: includes/Core/Plugin.php:123
 #, php-format
 msgid "Database error: %s"
 msgstr "Erreur de base de données : %s"
 
-#: includes/Core/Migration/FromSkmt.php:235
+#: includes/Core/Migration/FromSkmt.php:266
 msgid "Image optimization is paused until the migration to Lümia Tools is complete."
 msgstr "L'optimisation des images est suspendue jusqu'à la fin de la migration vers Lümia Tools."
 
@@ -411,7 +411,11 @@ msgstr "Envoi des mails par un serveur SMTP authentifié ou l'API Brevo, mail de
 msgid "Configure email sending"
 msgstr "Configurer l'envoi des mails"
 
-#: includes/Core/Plugin.php:139
+#: includes/Core/Plugin.php:127
+msgid "The request ended before this step completed (PHP fatal error or timeout): see the PHP error log."
+msgstr "La requête s'est terminée avant la fin de cette étape (erreur fatale PHP ou délai dépassé) : voir le journal d'erreurs PHP."
+
+#: includes/Core/Plugin.php:141
 msgid "Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated."
 msgstr "Studio Kyne Mini Tools est toujours actif : Lümia Tools ne charge aucun de ses modules tant qu'il n'est pas désactivé."
 
@@ -4952,4 +4956,3 @@ msgstr "Gérer les modules"
 #: templates/components/sidebar.php:27
 msgid "Global configuration"
 msgstr "Configuration globale"
-

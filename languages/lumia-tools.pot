@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-09T21:33:00+00:00\n"
+"POT-Creation-Date: 2026-10-09T22:02:36+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -251,26 +251,26 @@ msgstr ""
 msgid "Invalid parameters."
 msgstr ""
 
-#: includes/Core/Activator.php:99
-#: includes/Core/Plugin.php:158
+#: includes/Core/Activator.php:103
+#: includes/Core/Plugin.php:160
 msgid "Migration from Studio Kyne Mini Tools complete. You can delete the old plugin."
 msgstr ""
 
 #. translators: %s: identifier of the migration step that failed, e.g. post_meta.
-#: includes/Core/Activator.php:104
+#: includes/Core/Activator.php:108
 #: includes/Core/Plugin.php:115
 #, php-format
 msgid "The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it."
 msgstr ""
 
 #. translators: %s: database error message.
-#: includes/Core/Activator.php:108
+#: includes/Core/Activator.php:112
 #: includes/Core/Plugin.php:123
 #, php-format
 msgid "Database error: %s"
 msgstr ""
 
-#: includes/Core/Migration/FromSkmt.php:235
+#: includes/Core/Migration/FromSkmt.php:266
 msgid "Image optimization is paused until the migration to Lümia Tools is complete."
 msgstr ""
 
@@ -409,7 +409,11 @@ msgstr ""
 msgid "Configure email sending"
 msgstr ""
 
-#: includes/Core/Plugin.php:139
+#: includes/Core/Plugin.php:127
+msgid "The request ended before this step completed (PHP fatal error or timeout): see the PHP error log."
+msgstr ""
+
+#: includes/Core/Plugin.php:141
 msgid "Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated."
 msgstr ""
 

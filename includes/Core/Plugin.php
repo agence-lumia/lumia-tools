@@ -123,6 +123,8 @@ class Plugin {
 					esc_html__( 'Database error: %s', 'lumia-tools' ),
 					'<code>' . esc_html( $detail ) . '</code>'
 				);
+			} elseif ( FromSkmt::interrupted() ) {
+				$message .= '<br>' . esc_html__( 'The request ended before this step completed (PHP fatal error or timeout): see the PHP error log.', 'lumia-tools' );
 			}
 
 			wp_admin_notice(
