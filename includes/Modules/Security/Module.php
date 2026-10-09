@@ -52,7 +52,7 @@ class Module extends AbstractModule {
 
 		// === AUTHENTICATION HOOKS ===
 
-		if ( $this->settings['authentication']['rate_limiting'] ?? false ) {
+		if ( $this->settings['authentication']['rate_limiting'] ?? true ) {
 			add_filter( 'authenticate', [ $this->rate_limiter, 'maybe_block_login' ], 999 );
 			add_action( 'wp_login', [ $this, 'handle_login_success' ], 10, 2 );
 			add_action( 'wp_login_failed', [ $this, 'handle_login_failed' ] );
@@ -350,7 +350,7 @@ class Module extends AbstractModule {
 			'authentication' => [
 				'enable_custom_login_url' => true,
 				'custom_login_url'        => '/connexion',
-				'rate_limiting'           => false,
+				'rate_limiting'           => true,
 				'rate_limit_attempts'     => 5,
 				'rate_limit_window'       => 900,
 				'rate_limit_lockout'      => 1800,

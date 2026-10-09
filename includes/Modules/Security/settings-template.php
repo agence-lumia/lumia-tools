@@ -73,7 +73,7 @@ $ip_sources = [
 							name="skmt_module_settings[rate_limiting]"
 							value="1"
 							data-security-toggle="rate_limiting"
-							<?php checked( $auth['rate_limiting'] ?? false ); ?>
+							<?php checked( $auth['rate_limiting'] ?? true ); ?>
 						/>
 						<span class="skmt-toggle__slider"></span>
 					</label>
@@ -84,7 +84,7 @@ $ip_sources = [
 			<div
 				data-depends-on="rate_limiting"
 				class="skmt-security-sub"
-				<?php echo ( $auth['rate_limiting'] ?? false ) ? '' : 'style="display:none;"'; ?>
+				<?php echo ( $auth['rate_limiting'] ?? true ) ? '' : 'style="display:none;"'; ?>
 			>
 				<div class="skmt-form__row">
 					<div class="skmt-form__group">
