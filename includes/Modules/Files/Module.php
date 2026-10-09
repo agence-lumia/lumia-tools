@@ -7,7 +7,7 @@ use Lumia\Tools\Core\AbstractModule;
 use Lumia\Tools\Admin\Admin;
 
 /**
- * Module Fichiers — gestionnaire de fichiers WordPress.
+ * Files module — WordPress file manager.
  */
 class Module extends AbstractModule {
 
@@ -32,25 +32,25 @@ class Module extends AbstractModule {
 		add_action( 'wp_ajax_lumia_files_upload', [ $this, 'ajax_upload' ] );
 		add_action( 'admin_post_lumia_files_download', [ $this, 'handle_download' ] );
 
-		// L'éditeur de code s'appuie sur CodeMirror, livré avec WordPress. Le
-		// core ne le charge pas de lui-même : il faut appeler wp_enqueue_code_editor()
-		// pendant admin_enqueue_scripts, ce que get_admin_js() ne permet pas
-		// d'exprimer (il ne retourne que des URL).
+		// The code editor relies on CodeMirror, shipped with WordPress. The core
+		// does not load it by itself: wp_enqueue_code_editor() must be called
+		// during admin_enqueue_scripts, which get_admin_js() cannot express
+		// (it only returns URLs).
 		//
-		// Priorité 5 : Admin::enqueue_assets() lit get_admin_js_data() à la
-		// priorité 10, et les réglages CodeMirror doivent y être présents.
+		// Priority 5: Admin::enqueue_assets() reads get_admin_js_data() at
+		// priority 10, and the CodeMirror settings must be there by then.
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_code_editor' ], 5 );
 	}
 
 	/* ================================================================
-	 * ÉDITEUR DE CODE
+	 * CODE EDITOR
 	 * ================================================================ */
 
 	/**
-	 * Extensions ouvrables dans l'éditeur, et donc coloriables.
+	 * Extensions that can be opened in the editor, and therefore highlighted.
 	 *
-	 * Doit rester alignée sur isEditable() dans files.js : c'est cette liste
-	 * qui décide des modes CodeMirror préparés côté serveur.
+	 * Must stay aligned with isEditable() in files.js: this list decides which
+	 * CodeMirror modes are prepared on the server side.
 	 */
 	const EDITABLE_EXTENSIONS = [
 		'php',
@@ -80,13 +80,13 @@ class Module extends AbstractModule {
 	];
 
 	/**
-	 * Réglages CodeMirror par extension, remplis par enqueue_code_editor().
+	 * CodeMirror settings per extension, filled by enqueue_code_editor().
 	 *
 	 * @var array<string, array<string, mixed>>
 	 */
 	private array $code_editor_settings = [];
 
-	/** Vrai uniquement sur l'onglet Fichiers du plugin. */
+	/** True only on the plugin's Files tab. */
 	private function is_files_screen(): bool {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
@@ -97,15 +97,16 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Charge CodeMirror (coloration syntaxique, autocomplétion, linting).
+	 * Loads CodeMirror (syntax highlighting, autocompletion, linting).
 	 *
-	 * Tout vient de WordPress : wp-codemirror embarque les modes et l'add-on
-	 * show-hint, et wp-admin/js/code-editor.js déclenche déjà l'autocomplétion
-	 * à la frappe pour HTML, CSS, JS et PHP. Rien à embarquer de notre côté.
+	 * Everything comes from WordPress: wp-codemirror bundles the modes and the
+	 * show-hint add-on, and wp-admin/js/code-editor.js already triggers
+	 * as-you-type autocompletion for HTML, CSS, JS and PHP. Nothing to bundle
+	 * on our side.
 	 *
-	 * L'appel se fait une fois par extension : chaque type amène ses propres
-	 * linters (csslint, jshint, htmlhint, jsonlint) et wp_enqueue_script est
-	 * idempotent. On récupère au passage les réglages à passer au JS.
+	 * The call is made once per extension: each type brings its own linters
+	 * (csslint, jshint, htmlhint, jsonlint) and wp_enqueue_script is
+	 * idempotent. The settings to hand to the JS are collected along the way.
 	 */
 	public function enqueue_code_editor(): void {
 		if ( ! $this->is_files_screen() || ! current_user_can( static::get_required_capability() ) ) {
@@ -117,8 +118,8 @@ class Module extends AbstractModule {
 		foreach ( self::EDITABLE_EXTENSIONS as $ext ) {
 			$settings = wp_enqueue_code_editor( [ 'file' => 'lumia.' . $ext ] );
 
-			// false = l'utilisateur a désactivé la coloration syntaxique dans son
-			// profil. On respecte ce choix : l'éditeur restera en texte brut.
+			// false = the user turned syntax highlighting off in their profile.
+			// We respect that choice: the editor stays plain text.
 			if ( false === $settings ) {
 				$this->code_editor_settings = [];
 				return;
@@ -129,12 +130,12 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * SÉCURITÉ
+	 * SECURITY
 	 * ================================================================ */
 
 	/**
-	 * Sous multisite, `manage_options` est une capacité par site : ce module
-	 * donne accès aux fichiers du RÉSEAU. Voir AbstractModule.
+	 * On multisite, `manage_options` is a per-site capability: this module
+	 * gives access to the NETWORK's files. See AbstractModule.
 	 */
 	public static function get_required_capability(): string {
 		return is_multisite() ? 'manage_network_options' : 'manage_options';
@@ -143,44 +144,43 @@ class Module extends AbstractModule {
 	private function check_nonce(): void {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'lumia_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permission refusée.', 'lumia-tools' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'lumia-tools' ) ], 403 );
 		}
 	}
 
 	/**
-	 * Refuse toute écriture quand l'administrateur a posé DISALLOW_FILE_MODS ou
-	 * DISALLOW_FILE_EDIT dans wp-config.php.
+	 * Refuses any write when the administrator has set DISALLOW_FILE_MODS or
+	 * DISALLOW_FILE_EDIT in wp-config.php.
 	 *
-	 * Ces deux constantes ne sont pas un réglage cosmétique : elles disent
-	 * « personne ne modifie de fichier depuis le navigateur sur ce site ».
-	 * Un gestionnaire de fichiers qui les ignore vide de son sens le geste de
-	 * l'administrateur qui les a posées — et il est plus permissif que
-	 * l'éditeur du cœur qu'elles désactivent.
+	 * These two constants are not a cosmetic setting: they say "nobody modifies
+	 * a file from the browser on this site". A file manager that ignores them
+	 * empties the gesture of the administrator who set them of its meaning —
+	 * and it is more permissive than the core editor they disable.
 	 *
-	 * Les deux ne portent pas sur la même chose :
-	 *  - DISALLOW_FILE_EDIT désigne l'ÉDITION de code depuis l'admin. On refuse
-	 *    donc l'enregistrement d'un contenu et le téléversement ;
-	 *  - DISALLOW_FILE_MODS est plus large (aucune modification de fichier,
-	 *    installation comprise) : on refuse alors toute mutation, y compris
-	 *    renommer, déplacer, supprimer, créer un dossier, zipper, extraire.
+	 * The two do not cover the same thing:
+	 *  - DISALLOW_FILE_EDIT means code EDITING from the admin. We therefore
+	 *    refuse saving a content and uploading;
+	 *  - DISALLOW_FILE_MODS is broader (no file modification at all,
+	 *    installation included): we then refuse every mutation, including
+	 *    rename, move, delete, create a folder, zip, extract.
 	 *
-	 * La lecture (listing, aperçu, téléchargement) reste ouverte dans les deux
-	 * cas : aucune des deux constantes ne parle de lecture.
+	 * Reading (listing, preview, download) stays open in both cases: neither
+	 * constant says anything about reading.
 	 *
-	 * DISALLOW_FILE_MODS se lit via wp_is_file_mod_allowed(), qui applique le
-	 * filtre `file_mod_allowed` : un hébergeur qui verrouille les fichiers par
-	 * ce filtre plutôt que par la constante est ainsi respecté lui aussi.
+	 * DISALLOW_FILE_MODS is read through wp_is_file_mod_allowed(), which applies
+	 * the `file_mod_allowed` filter: a host that locks files through that
+	 * filter rather than through the constant is respected as well.
 	 *
-	 * @param bool $edition true si l'appel écrit un CONTENU (édition/upload).
+	 * @param bool $editing True if the call writes a CONTENT (edit/upload).
 	 */
-	private function check_file_mods( bool $edition = false ): void {
-		$bloque = ! wp_is_file_mod_allowed( 'lumia_files' )
-			|| ( $edition && defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT );
+	private function check_file_mods( bool $editing = false ): void {
+		$blocked = ! wp_is_file_mod_allowed( 'lumia_files' )
+			|| ( $editing && defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT );
 
-		if ( $bloque ) {
+		if ( $blocked ) {
 			wp_send_json_error(
 				[
-					'message' => __( 'La modification de fichiers est désactivée sur ce site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS ou filtre file_mod_allowed).', 'lumia-tools' ),
+					'message' => __( 'File modification is disabled on this site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS or the file_mod_allowed filter).', 'lumia-tools' ),
 				],
 				403
 			);
@@ -188,7 +188,7 @@ class Module extends AbstractModule {
 	}
 
 	private function get_post_path( string $key = 'path' ): string {
-		$raw = isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par check_nonce().
+		$raw = isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_nonce().
 		return rawurldecode( $raw );
 	}
 
@@ -224,13 +224,13 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * AJAX — OPÉRATIONS
+	 * AJAX — OPERATIONS
 	 * ================================================================ */
 
 	public function ajax_delete(): void {
 		$this->check_nonce();
 		$this->check_file_mods( false );
-		$paths  = isset( $_POST['paths'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['paths'] ) ) : []; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par check_nonce().
+		$paths  = isset( $_POST['paths'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['paths'] ) ) : []; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_nonce().
 		$errors = [];
 
 		foreach ( $paths as $path ) {
@@ -245,18 +245,18 @@ class Module extends AbstractModule {
 			wp_send_json_error( [ 'message' => implode( ', ', $errors ) ] );
 		}
 
-		wp_send_json_success( [ 'message' => __( 'Supprimé avec succès.', 'lumia-tools' ) ] );
+		wp_send_json_success( [ 'message' => __( 'Deleted successfully.', 'lumia-tools' ) ] );
 	}
 
 	public function ajax_rename(): void {
 		$this->check_nonce();
 		$this->check_file_mods( false );
 		$path     = $this->get_post_path();
-		$new_name = isset( $_POST['new_name'] ) ? sanitize_file_name( wp_unslash( $_POST['new_name'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par check_nonce().
+		$new_name = isset( $_POST['new_name'] ) ? sanitize_file_name( wp_unslash( $_POST['new_name'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_nonce().
 
 		try {
 			$this->fm->rename( $path, $new_name );
-			wp_send_json_success( [ 'message' => __( 'Renommé avec succès.', 'lumia-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Renamed successfully.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -270,7 +270,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->move( $src, $dst );
-			wp_send_json_success( [ 'message' => __( 'Déplacé avec succès.', 'lumia-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Moved successfully.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -280,12 +280,12 @@ class Module extends AbstractModule {
 		$this->check_nonce();
 		$this->check_file_mods( false );
 		$parent = $this->get_post_path( 'parent' );
-		$name   = isset( $_POST['name'] ) ? sanitize_file_name( wp_unslash( $_POST['name'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par check_nonce() juste au-dessus.
+		$name   = isset( $_POST['name'] ) ? sanitize_file_name( wp_unslash( $_POST['name'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_nonce() just above.
 		$rel    = ( '' !== $parent ) ? rtrim( $parent, '/' ) . '/' . $name : $name;
 
 		try {
 			$this->fm->create_folder( $rel );
-			wp_send_json_success( [ 'message' => __( 'Dossier créé.', 'lumia-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Folder created.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -294,8 +294,8 @@ class Module extends AbstractModule {
 	public function ajax_zip(): void {
 		$this->check_nonce();
 		$this->check_file_mods( false );
-		$paths  = isset( $_POST['paths'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['paths'] ) ) : []; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par check_nonce().
-		$name   = isset( $_POST['name'] ) ? sanitize_file_name( wp_unslash( $_POST['name'] ) ) : 'archive.zip'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par check_nonce().
+		$paths  = isset( $_POST['paths'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['paths'] ) ) : []; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_nonce().
+		$name   = isset( $_POST['name'] ) ? sanitize_file_name( wp_unslash( $_POST['name'] ) ) : 'archive.zip'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_nonce().
 		$parent = $this->get_post_path( 'parent' );
 		$dest   = ( '' !== $parent ) ? rtrim( $parent, '/' ) . '/' . $name : $name;
 
@@ -305,7 +305,7 @@ class Module extends AbstractModule {
 			$download_url = $this->build_download_url( $rel );
 			wp_send_json_success(
 				[
-					'message'      => __( 'Archive créée.', 'lumia-tools' ),
+					'message'      => __( 'Archive created.', 'lumia-tools' ),
 					'path'         => $rel,
 					'download_url' => $download_url,
 				]
@@ -322,7 +322,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->extract_zip( $path );
-			wp_send_json_success( [ 'message' => __( 'Archive extraite.', 'lumia-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Archive extracted.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -349,11 +349,11 @@ class Module extends AbstractModule {
 		$this->check_nonce();
 		$this->check_file_mods( true );
 		$path    = $this->get_post_path();
-		$content = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce vérifié par check_nonce() ; contenu de fichier source enregistré tel quel, écriture réservée à get_required_capability() et bloquée par DISALLOW_FILE_EDIT.
+		$content = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by check_nonce(); source file content saved as is, writing restricted to get_required_capability() and blocked by DISALLOW_FILE_EDIT.
 
 		try {
 			$this->fm->save_content( $path, $content );
-			wp_send_json_success( [ 'message' => __( 'Fichier enregistré.', 'lumia-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'File saved.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -362,7 +362,7 @@ class Module extends AbstractModule {
 	public function ajax_upload(): void {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'lumia_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permission refusée.', 'lumia-tools' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'lumia-tools' ) ], 403 );
 		}
 		$this->check_file_mods( true );
 
@@ -370,7 +370,7 @@ class Module extends AbstractModule {
 		$files = $_FILES['files'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 
 		if ( ! $files ) {
-			wp_send_json_error( [ 'message' => __( 'Aucun fichier reçu.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'No file received.', 'lumia-tools' ) ] );
 		}
 
 		$uploaded = [];
@@ -407,7 +407,7 @@ class Module extends AbstractModule {
 			[
 				'message' => sprintf(
 					/* translators: %d: number of files */
-					_n( '%d fichier uploadé.', '%d fichiers uploadés.', count( $uploaded ), 'lumia-tools' ),
+					_n( '%d file uploaded.', '%d files uploaded.', count( $uploaded ), 'lumia-tools' ),
 					count( $uploaded )
 				),
 				'paths'   => $uploaded,
@@ -416,13 +416,13 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * TÉLÉCHARGEMENT
+	 * DOWNLOAD
 	 * ================================================================ */
 
 	public function handle_download(): void {
 		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'lumia_files_download' ) || ! current_user_can( static::get_required_capability() ) ) {
-			wp_die( esc_html__( 'Permission refusée.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'Permission denied.', 'lumia-tools' ) );
 		}
 
 		$path = isset( $_GET['path'] ) ? sanitize_text_field( wp_unslash( $_GET['path'] ) ) : '';
@@ -430,7 +430,7 @@ class Module extends AbstractModule {
 		try {
 			$abs = $this->fm->resolve( $path );
 		} catch ( \Exception $e ) {
-			wp_die( esc_html__( 'Fichier introuvable.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'File not found.', 'lumia-tools' ) );
 		}
 
 		if ( is_dir( $abs ) ) {
@@ -439,7 +439,7 @@ class Module extends AbstractModule {
 		}
 
 		if ( ! is_file( $abs ) ) {
-			wp_die( esc_html__( 'Fichier introuvable.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'File not found.', 'lumia-tools' ) );
 		}
 
 		$mime = (string) mime_content_type( $abs );
@@ -450,30 +450,30 @@ class Module extends AbstractModule {
 		header( 'Content-Disposition: ' . Admin::content_disposition( basename( $abs ) ) );
 		header( 'Content-Length: ' . filesize( $abs ) );
 		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- envoi en flux d'un fichier local, sans le charger en mémoire.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streams a local file without loading it into memory.
 		readfile( $abs );
 		exit;
 	}
 
 	/**
-	 * Zippe un dossier dans un fichier temp, le streame, puis le supprime.
+	 * Zips a folder into a temp file, streams it, then deletes it.
 	 */
 	private function stream_dir_as_zip( string $abs ): void {
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			wp_die( esc_html__( 'ZipArchive non disponible sur ce serveur.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'ZipArchive is not available on this server.', 'lumia-tools' ) );
 		}
 
-		// Fichier temporaire hors racine WP
+		// Temporary file outside the WP root
 		$tmp = tempnam( sys_get_temp_dir(), 'lumia_zip_' );
 		if ( false === $tmp ) {
-			wp_die( esc_html__( 'Impossible de créer le fichier temporaire.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'Could not create the temporary file.', 'lumia-tools' ) );
 		}
 
-		// tempnam crée un fichier vide — ZipArchive::CREATE l'écrase
+		// tempnam creates an empty file — ZipArchive::OVERWRITE overwrites it
 		$zip = new \ZipArchive();
 		if ( $zip->open( $tmp, \ZipArchive::OVERWRITE ) !== true ) {
 			wp_delete_file( $tmp );
-			wp_die( esc_html__( 'Impossible de créer l\'archive.', 'lumia-tools' ) );
+			wp_die( esc_html__( 'Could not create the archive.', 'lumia-tools' ) );
 		}
 
 		$this->add_dir_to_zip( $zip, $abs, basename( $abs ) );
@@ -484,7 +484,7 @@ class Module extends AbstractModule {
 		header( 'Content-Disposition: ' . Admin::content_disposition( $filename ) );
 		header( 'Content-Length: ' . filesize( $tmp ) );
 		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- envoi en flux d'un fichier local, sans le charger en mémoire.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streams a local file without loading it into memory.
 		readfile( $tmp );
 		wp_delete_file( $tmp );
 		exit;
@@ -520,16 +520,47 @@ class Module extends AbstractModule {
 	public function get_admin_js_data(): array {
 		return [
 			'i18n'       => [
-				'confirmDelete' => __( 'Supprimer ce(s) élément(s) ? Cette action est irréversible.', 'lumia-tools' ),
-				'emptyFolder'   => __( 'Ce dossier est vide.', 'lumia-tools' ),
-				'loading'       => __( 'Chargement...', 'lumia-tools' ),
-				'uploading'     => __( 'Upload en cours...', 'lumia-tools' ),
-				'newFolderName' => __( 'Nom du nouveau dossier :', 'lumia-tools' ),
-				'downloadUrl'   => admin_url( 'admin-post.php?action=lumia_files_download' ),
-				'downloadNonce' => wp_create_nonce( 'lumia_files_download' ),
+				'confirmDelete'          => __( 'Delete this item(s)? This action cannot be undone.', 'lumia-tools' ),
+				'emptyFolder'            => __( 'This folder is empty.', 'lumia-tools' ),
+				'loading'                => __( 'Loading...', 'lumia-tools' ),
+				'uploading'              => __( 'Uploading...', 'lumia-tools' ),
+				'newFolderName'          => __( 'New folder name:', 'lumia-tools' ),
+				'networkError'           => __( 'Network error.', 'lumia-tools' ),
+				'uploadError'            => __( 'Upload error.', 'lumia-tools' ),
+				'actionEdit'             => __( 'Edit', 'lumia-tools' ),
+				'actionDownload'         => __( 'Download', 'lumia-tools' ),
+				'actionCopyLink'         => __( 'Copy link', 'lumia-tools' ),
+				'actionRename'           => __( 'Rename', 'lumia-tools' ),
+				'actionMove'             => __( 'Move', 'lumia-tools' ),
+				'actionExtract'          => __( 'Extract', 'lumia-tools' ),
+				'actionDelete'           => __( 'Delete', 'lumia-tools' ),
+				'deleted'                => __( 'Deleted successfully.', 'lumia-tools' ),
+				'archiveExtracted'       => __( 'Archive extracted.', 'lumia-tools' ),
+				'archiveCreatedDownload' => __( 'Archive created. Downloading...', 'lumia-tools' ),
+				'folderCreated'          => __( 'Folder created.', 'lumia-tools' ),
+				'renamed'                => __( 'Renamed successfully.', 'lumia-tools' ),
+				'moved'                  => __( 'Moved successfully.', 'lumia-tools' ),
+				'fileSaved'              => __( 'File saved.', 'lumia-tools' ),
+				'linkCopied'             => __( 'Link copied.', 'lumia-tools' ),
+				'copyFailed'             => __( 'Could not copy.', 'lumia-tools' ),
+				'defaultFolderName'      => __( 'folder', 'lumia-tools' ),
+				/* translators: %s: folder name */
+				'compressing'            => __( 'Compressing "%s"...', 'lumia-tools' ),
+				/* translators: %s: name of the downloaded zip file */
+				'zipDownloaded'          => __( '"%s" downloaded.', 'lumia-tools' ),
+				/* translators: %s: folder name */
+				'compressError'          => __( 'Error while compressing "%s".', 'lumia-tools' ),
+				/* translators: %d: number of selected items */
+				'selectedCount'          => __( '%d selected', 'lumia-tools' ),
+				'editorUnsavedTitle'     => _x( 'Unsaved changes', 'file editor', 'lumia-tools' ),
+				'editorUnsavedMessage'   => __( 'Do you want to leave without saving your changes?', 'lumia-tools' ),
+				'editorUnsavedLeave'     => _x( 'Leave without saving', 'file editor', 'lumia-tools' ),
+				'editorUnsavedStay'      => __( 'Stay', 'lumia-tools' ),
+				'downloadUrl'            => admin_url( 'admin-post.php?action=lumia_files_download' ),
+				'downloadNonce'          => wp_create_nonce( 'lumia_files_download' ),
 			],
-			// Vide si la coloration syntaxique est désactivée dans le profil de
-			// l'utilisateur : files.js retombe alors sur le textarea nu.
+			// Empty if syntax highlighting is turned off in the user's profile:
+			// files.js then falls back to the bare textarea.
 			'codeEditor' => $this->code_editor_settings,
 		];
 	}
@@ -549,7 +580,7 @@ class Module extends AbstractModule {
 	 * @param array<string, mixed> $settings
 	 */
 	public function save_settings( array $settings ): bool {
-		return true; // Aucun réglage : rien à écrire.
+		return true; // No setting: nothing to write.
 	}
 
 	/**

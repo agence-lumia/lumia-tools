@@ -1,6 +1,6 @@
 /**
- * Lümia Tools — Module Fichiers
- * Gestionnaire de fichiers vanilla JS.
+ * Lümia Tools — Files module
+ * Vanilla JS file manager.
  */
 (function () {
   "use strict";
@@ -8,7 +8,7 @@
   if (typeof lumiaAdmin === "undefined") return;
 
   /* ================================================================
-   * ÉTAT GLOBAL
+   * GLOBAL STATE
    * ================================================================ */
 
   var fm = {
@@ -29,7 +29,7 @@
   };
 
   /* ================================================================
-   * INITIALISATION
+   * INITIALIZATION
    * ================================================================ */
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -40,7 +40,7 @@
     fm.downloadUrl  = fm.i18n.downloadUrl || "";
     fm.downloadNonce = fm.i18n.downloadNonce || "";
 
-    // Masquer le bouton "Enregistrer" du header (pas de form dans ce module)
+    // Hide the header "Save" button (this module has no form)
     var headerSave = document.querySelector('.lumia-page__header-actions [form="lumia-module-form"]');
     if (headerSave) headerSave.style.display = "none";
 
@@ -75,11 +75,11 @@
     fetch(fm.ajaxUrl, { method: "POST", credentials: "same-origin", body: form })
       .then(function (r) { return r.json(); })
       .then(cb)
-      .catch(function () { showToast("Erreur réseau.", "error"); });
+      .catch(function () { showToast(t("networkError"), "error"); });
   }
 
   /* ================================================================
-   * NAVIGATION / CHARGEMENT
+   * NAVIGATION / LOADING
    * ================================================================ */
 
   function loadDirectory(path) {
@@ -91,7 +91,7 @@
 
     ajax("lumia_files_list", { path: path }, function (data) {
       if (!data.success) {
-        showToast((data.data && data.data.message) || "Erreur", "error");
+        showToast((data.data && data.data.message) || t("error"), "error");
         renderEmpty();
         return;
       }
@@ -105,7 +105,7 @@
 
   function renderBreadcrumb(path) {
     var bc = document.getElementById("lumia-files-breadcrumb");
-    // Garder uniquement le bouton home
+    // Keep only the home button
     while (bc.children.length > 1) bc.removeChild(bc.lastChild);
 
     if (!path) return;
@@ -132,7 +132,7 @@
     });
   }
 
-  /* Bouton home */
+  /* Home button */
   document.addEventListener("DOMContentLoaded", function () {
     var homeBtn = document.querySelector(".lumia-files__bc-home");
     if (homeBtn) {
@@ -141,7 +141,7 @@
   });
 
   /* ================================================================
-   * RENDU TABLE
+   * TABLE RENDERING
    * ================================================================ */
 
   function renderLoading() {
@@ -149,7 +149,7 @@
     if (!tbody) return;
     tbody.innerHTML =
       '<tr class="lumia-files__row-empty"><td colspan="7">' +
-      escHtml(fm.i18n.loading || "Chargement...") +
+      escHtml(t("loading")) +
       "</td></tr>";
   }
 
@@ -158,7 +158,7 @@
     if (!tbody) return;
     tbody.innerHTML =
       '<tr class="lumia-files__row-empty"><td colspan="7">' +
-      escHtml(fm.i18n.emptyFolder || "Ce dossier est vide.") +
+      escHtml(t("emptyFolder")) +
       "</td></tr>";
   }
 
@@ -197,7 +197,7 @@
     tdCb.appendChild(cb);
     tr.appendChild(tdCb);
 
-    // Nom
+    // Name
     var tdName = document.createElement("td");
     tdName.className = "lumia-files__col-name";
     var nameBtn = document.createElement("button");
@@ -217,13 +217,13 @@
     tdName.appendChild(nameBtn);
     tr.appendChild(tdName);
 
-    // Taille
+    // Size
     tr.appendChild(cell("lumia-files__col-size", item.size_fmt || (item.type === "dir" ? "—" : "")));
 
-    // Modifié
+    // Modified
     tr.appendChild(cell("lumia-files__col-modified", item.modified_fmt || ""));
 
-    // Droits
+    // Permissions
     var tdPerms = document.createElement("td");
     tdPerms.className = "lumia-files__col-perms";
     if (item.perms) {
@@ -231,7 +231,7 @@
     }
     tr.appendChild(tdPerms);
 
-    // Propriétaire
+    // Owner
     tr.appendChild(cell("lumia-files__col-owner", item.owner || ""));
 
     // Actions
@@ -252,22 +252,22 @@
   }
 
   /* ================================================================
-   * ACTIONS PAR LIGNE
+   * ROW ACTIONS
    * ================================================================ */
 
   function buildActions(item) {
     var btns = "";
     if (item.type === "file" && isEditable(item.ext)) {
-      btns += actionBtn("edit", "Éditer", ICON_EDIT, "");
+      btns += actionBtn("edit", t("actionEdit"), ICON_EDIT, "");
     }
-    btns += actionBtn("download", "Télécharger", ICON_DOWNLOAD, "");
-    btns += actionBtn("copy-link", "Copier le lien", ICON_LINK, "");
-    btns += actionBtn("rename", "Renommer", ICON_RENAME, "");
-    btns += actionBtn("move", "Déplacer", ICON_MOVE, "");
+    btns += actionBtn("download", t("actionDownload"), ICON_DOWNLOAD, "");
+    btns += actionBtn("copy-link", t("actionCopyLink"), ICON_LINK, "");
+    btns += actionBtn("rename", t("actionRename"), ICON_RENAME, "");
+    btns += actionBtn("move", t("actionMove"), ICON_MOVE, "");
     if (item.ext === "zip" || item.ext === "gz" || item.ext === "tar") {
-      btns += actionBtn("extract", "Extraire", ICON_EXTRACT, "");
+      btns += actionBtn("extract", t("actionExtract"), ICON_EXTRACT, "");
     }
-    btns += actionBtn("delete", "Supprimer", ICON_DELETE, "lumia-files__action-btn--danger");
+    btns += actionBtn("delete", t("actionDelete"), ICON_DELETE, "lumia-files__action-btn--danger");
     return '<div class="lumia-files__actions">' + btns + "</div>";
   }
 
@@ -302,24 +302,23 @@
   }
 
   /* ================================================================
-   * OPÉRATIONS FICHIER
+   * FILE OPERATIONS
    * ================================================================ */
 
   function deleteItems(paths) {
-    var msg = fm.i18n.confirmDelete || "Supprimer ce(s) élément(s) ? Cette action est irréversible.";
     window.lumiaModal.open({
-      title:        "Supprimer",
-      message:      msg,
-      confirmLabel: "Supprimer",
-      cancelLabel:  "Annuler",
+      title:        t("actionDelete"),
+      message:      t("confirmDelete"),
+      confirmLabel: t("actionDelete"),
+      cancelLabel:  t("cancel"),
       danger:       true,
       onConfirm:    function () {
         ajax("lumia_files_delete", { paths: paths }, function (data) {
           if (!data.success) {
-            showToast((data.data && data.data.message) || "Erreur", "error");
+            showToast((data.data && data.data.message) || t("error"), "error");
             return;
           }
-          showToast("Supprimé avec succès.", "success");
+          showToast(t("deleted"), "success");
           loadDirectory(fm.path);
         });
       },
@@ -329,17 +328,17 @@
   function extractZip(path) {
     ajax("lumia_files_extract", { path: path }, function (data) {
       if (!data.success) {
-        showToast((data.data && data.data.message) || "Erreur", "error");
+        showToast((data.data && data.data.message) || t("error"), "error");
         return;
       }
-      showToast("Archive extraite.", "success");
+      showToast(t("archiveExtracted"), "success");
       loadDirectory(fm.path);
     });
   }
 
   function triggerDownload(path, itemType) {
     if (itemType === "dir") {
-      var name = path.split("/").filter(Boolean).pop() || "dossier";
+      var name = path.split("/").filter(Boolean).pop() || t("defaultFolderName");
       downloadDirAsZip(path, name);
       return;
     }
@@ -352,7 +351,7 @@
 
   function downloadDirAsZip(path, name) {
     setRowDownloadLoading(path, true);
-    showToast("Compression de « " + name + " » en cours…", "info");
+    showToast(fmt(t("compressing"), name), "info");
 
     var url =
       fm.downloadUrl +
@@ -374,11 +373,11 @@
         document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(objUrl); }, 1000);
         setRowDownloadLoading(path, false);
-        showToast("« " + name + ".zip » téléchargé.", "success");
+        showToast(fmt(t("zipDownloaded"), name + ".zip"), "success");
       })
       .catch(function () {
         setRowDownloadLoading(path, false);
-        showToast("Erreur lors de la compression de « " + name + " ».", "error");
+        showToast(fmt(t("compressError"), name), "error");
       });
   }
 
@@ -405,7 +404,7 @@
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () {
-        showToast("Lien copié.", "success");
+        showToast(t("linkCopied"), "success");
       });
     } else {
       var ta = document.createElement("textarea");
@@ -415,14 +414,14 @@
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      try { document.execCommand("copy"); showToast("Lien copié.", "success"); }
-      catch (_) { showToast("Impossible de copier.", "error"); }
+      try { document.execCommand("copy"); showToast(t("linkCopied"), "success"); }
+      catch (_) { showToast(t("copyFailed"), "error"); }
       document.body.removeChild(ta);
     }
   }
 
   /* ================================================================
-   * SÉLECTION
+   * SELECTION
    * ================================================================ */
 
   function initCheckAll() {
@@ -464,14 +463,14 @@
 
     if (fm.selected.length > 0) {
       bar.style.display = "";
-      if (count) count.textContent = fm.selected.length + " sélectionné(s)";
+      if (count) count.textContent = fmt(t("selectedCount"), fm.selected.length);
     } else {
       bar.style.display = "none";
     }
   }
 
   /* ================================================================
-   * BARRE DE SÉLECTION (ZIP / SUPPRIMER EN MASSE)
+   * SELECTION BAR (BULK ZIP / DELETE)
    * ================================================================ */
 
   function initSelectionBar() {
@@ -486,10 +485,10 @@
         ajax("lumia_files_zip", { paths: fm.selected, name: name, parent: fm.path }, function (data) {
           zipBtn.disabled = false;
           if (!data.success) {
-            showToast((data.data && data.data.message) || "Erreur", "error");
+            showToast((data.data && data.data.message) || t("error"), "error");
             return;
           }
-          showToast("Archive créée. Téléchargement en cours...", "success");
+          showToast(t("archiveCreatedDownload"), "success");
           triggerDownload(data.data.path);
           loadDirectory(fm.path);
         });
@@ -505,7 +504,7 @@
   }
 
   /* ================================================================
-   * TOOLBAR (NOUVEAU DOSSIER)
+   * TOOLBAR (NEW FOLDER)
    * ================================================================ */
 
   function initToolbar() {
@@ -526,11 +525,11 @@
         if (!name) return;
         ajax("lumia_files_mkdir", { parent: fm.path, name: name }, function (data) {
           if (!data.success) {
-            showToast((data.data && data.data.message) || "Erreur", "error");
+            showToast((data.data && data.data.message) || t("error"), "error");
             return;
           }
           window.lumiaModalClose("lumia-modal-mkdir");
-          showToast("Dossier créé.", "success");
+          showToast(t("folderCreated"), "success");
           loadDirectory(fm.path);
         });
       }
@@ -567,19 +566,19 @@
       form.append("files[]", files[i], files[i].name);
     }
 
-    showToast(fm.i18n.uploading || "Upload en cours...", "info");
+    showToast(t("uploading"), "info");
 
     fetch(fm.ajaxUrl, { method: "POST", credentials: "same-origin", body: form })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (!data.success) {
-          showToast((data.data && data.data.message) || "Erreur d'upload.", "error");
+          showToast((data.data && data.data.message) || t("uploadError"), "error");
           return;
         }
         showToast(data.data.message, "success");
         loadDirectory(fm.path);
       })
-      .catch(function () { showToast("Erreur d'upload.", "error"); });
+      .catch(function () { showToast(t("uploadError"), "error"); });
   }
 
   /* ================================================================
@@ -616,7 +615,7 @@
   }
 
   /* ================================================================
-   * ÉDITEUR DE CODE
+   * CODE EDITOR
    * ================================================================ */
 
   function updateSaveBtn() {
@@ -635,7 +634,7 @@
     closeBtn.addEventListener("click", closeEditor);
     saveBtn.addEventListener("click", saveEditorContent);
 
-    // Clic sur le backdrop (hors panel) → fermer
+    // Click on the backdrop (outside the panel) → close
     if (editorEl) {
       editorEl.addEventListener("click", function (e) {
         if (e.target === editorEl) closeEditor();
@@ -646,8 +645,8 @@
       if (!editorEl || editorEl.style.display === "none") return;
 
       if (e.key === "Escape") {
-        // Échap ferme d'abord la liste d'autocomplétion : la fermer ET quitter
-        // l'éditeur d'un seul appui ferait perdre la saisie en cours.
+        // Escape first closes the autocompletion list: closing it AND leaving
+        // the editor with a single key press would lose the input in progress.
         if (fm.editorCm && fm.editorCm.codemirror.state.completionActive) return;
         e.preventDefault();
         closeEditor();
@@ -663,7 +662,7 @@
   function openEditor(path, name) {
     ajax("lumia_files_get_content", { path: path }, function (data) {
       if (!data.success) {
-        showToast((data.data && data.data.message) || "Erreur", "error");
+        showToast((data.data && data.data.message) || t("error"), "error");
         return;
       }
 
@@ -677,8 +676,8 @@
       if (editorEl) editorEl.style.display = "";
 
       if (textarea) {
-        // Une instance CodeMirror précédente survivrait au changement de
-        // fichier : on repart toujours du textarea nu.
+        // A previous CodeMirror instance would survive the file change:
+        // we always start again from the bare textarea.
         destroyCodeMirror();
 
         textarea.value = content;
@@ -706,15 +705,15 @@
   }
 
   /**
-   * Passe le textarea en CodeMirror.
+   * Turns the textarea into CodeMirror.
    *
-   * Tout vient de WordPress : wp.codeEditor.initialize() branche la coloration,
-   * le linting et l'autocomplétion à la frappe (HTML, CSS, JS, PHP). Les
-   * réglages par extension sont préparés côté serveur par
+   * Everything comes from WordPress: wp.codeEditor.initialize() wires up
+   * highlighting, linting and as-you-type autocompletion (HTML, CSS, JS, PHP).
+   * The per-extension settings are prepared on the server side by
    * Files\Module::enqueue_code_editor().
    *
-   * @param {string} name Nom du fichier, dont on tire l'extension.
-   * @return {boolean} Vrai si l'éditeur riche a bien été monté.
+   * @param {string} name File name, from which the extension is taken.
+   * @return {boolean} True if the rich editor was actually mounted.
    */
   function initCodeMirror(name) {
     var settings = (lumiaAdmin.codeEditor || {})[fileExt(name)];
@@ -723,15 +722,15 @@
     try {
       fm.editorCm = wp.codeEditor.initialize("lumia-editor-textarea", settings);
     } catch (e) {
-      // Coloration indisponible : le textarea nu reste parfaitement utilisable.
-      if (window.console && console.warn) console.warn("[LUMIA] CodeMirror :", e);
+      // Highlighting unavailable: the bare textarea remains perfectly usable.
+      if (window.console && console.warn) console.warn("[LUMIA] CodeMirror:", e);
       fm.editorCm = null;
       return false;
     }
 
     var cm = fm.editorCm.codemirror;
     cm.on("change", markEditorDirty);
-    // La hauteur est portée par le conteneur flex (voir files.css).
+    // The height is carried by the flex container (see files.css).
     cm.setSize("100%", "100%");
     setTimeout(function () { cm.refresh(); cm.focus(); }, 30);
 
@@ -742,11 +741,11 @@
     if (!fm.editorCm) return;
     try {
       fm.editorCm.codemirror.toTextArea();
-    } catch (e) { /* déjà détaché */ }
+    } catch (e) { /* already detached */ }
     fm.editorCm = null;
   }
 
-  /** Contenu courant de l'éditeur, riche ou nu. */
+  /** Current editor content, rich or bare. */
   function editorValue() {
     if (fm.editorCm) return fm.editorCm.codemirror.getValue();
     var ta = document.getElementById("lumia-editor-textarea");
@@ -761,10 +760,10 @@
   function closeEditor() {
     if (fm.editorDirty && typeof window.lumiaModal !== "undefined") {
       window.lumiaModal.open({
-        title:        "Modifications non enregistrées",
-        message:      "Voulez-vous quitter sans enregistrer vos modifications ?",
-        confirmLabel: "Quitter sans enregistrer",
-        cancelLabel:  "Rester",
+        title:        t("editorUnsavedTitle"),
+        message:      t("editorUnsavedMessage"),
+        confirmLabel: t("editorUnsavedLeave"),
+        cancelLabel:  t("editorUnsavedStay"),
         danger:       true,
         onConfirm:    doCloseEditor,
       });
@@ -792,14 +791,14 @@
 
     ajax("lumia_files_save_content", { path: fm.editorPath, content: content }, function (data) {
       if (!data.success) {
-        showToast((data.data && data.data.message) || "Erreur", "error");
-        // Réactiver le bouton en cas d'erreur
+        showToast((data.data && data.data.message) || t("error"), "error");
+        // Re-enable the button on error
         if (saveBtn) saveBtn.disabled = false;
         return;
       }
       fm.editorDirty = false;
       updateSaveBtn();
-      showToast("Fichier enregistré.", "success");
+      showToast(t("fileSaved"), "success");
     });
   }
 
@@ -813,7 +812,7 @@
   }
 
   /* ================================================================
-   * MODAL RENOMMER
+   * RENAME / MOVE MODALS
    * ================================================================ */
 
   function initModals() {
@@ -827,8 +826,8 @@
         var newName = (renameInput && renameInput.value.trim()) || "";
         if (!newName || !fm.renamePath) return;
         ajax("lumia_files_rename", { path: fm.renamePath, new_name: newName }, function (data) {
-          if (!data.success) { showToast((data.data && data.data.message) || "Erreur", "error"); return; }
-          showToast("Renommé avec succès.", "success");
+          if (!data.success) { showToast((data.data && data.data.message) || t("error"), "error"); return; }
+          showToast(t("renamed"), "success");
           window.lumiaModalClose("lumia-modal-rename");
           loadDirectory(fm.path);
         });
@@ -846,8 +845,8 @@
         var dst = (moveInput && moveInput.value.trim()) || "";
         if (!fm.movePath) return;
         ajax("lumia_files_move", { src: fm.movePath, dst: dst }, function (data) {
-          if (!data.success) { showToast((data.data && data.data.message) || "Erreur", "error"); return; }
-          showToast("Déplacé avec succès.", "success");
+          if (!data.success) { showToast((data.data && data.data.message) || t("error"), "error"); return; }
+          showToast(t("moved"), "success");
           window.lumiaModalClose("lumia-modal-move");
           loadDirectory(fm.path);
         });
@@ -876,7 +875,7 @@
   }
 
   /* ================================================================
-   * ICÔNES FICHIERS (SVG inline)
+   * FILE ICONS (inline SVG)
    * ================================================================ */
 
   var ICON_FOLDER  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
@@ -887,7 +886,7 @@
   var ICON_FILE    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>';
   var ICON_SPINNER = '<svg class="lumia-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/></svg>';
 
-  // Map extension → classe CSS (couleur par langage)
+  // Map extension → CSS class (color per language)
   var EXT_CLASS = {
     php: "php",    phtml: "php",
     js: "js",      mjs: "js",   cjs: "js",
@@ -935,7 +934,7 @@
   }
 
   /* ================================================================
-   * ICÔNES ACTIONS
+   * ACTION ICONS
    * ================================================================ */
 
   var ICON_EDIT    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
@@ -947,7 +946,7 @@
   var ICON_DELETE   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
 
   /* ================================================================
-   * UTILITAIRES
+   * UTILITIES
    * ================================================================ */
 
   function escHtml(str) {
@@ -956,6 +955,16 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  /** Translated string of the module, "" when the key is missing. */
+  function t(key) {
+    return (fm.i18n && fm.i18n[key]) || "";
+  }
+
+  /** Substitutes the single placeholder (%s or %d) of a translated format. */
+  function fmt(format, value) {
+    return String(format).replace(/%(?:\d+\$)?[sd]/, function () { return value; });
   }
 
   function showToast(message, type) {

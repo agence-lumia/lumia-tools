@@ -1,9 +1,9 @@
 /*
- * Module Fichiers — Gestionnaire de fichiers
+ * Files module — File manager
  */
 
 /* ================================================================
- * CONTENEUR PRINCIPAL
+ * MAIN CONTAINER
  * ================================================================ */
 
 .lumia-files {
@@ -14,7 +14,7 @@
   min-height: 0;
 }
 
-/* Masquer le bouton "Enregistrer" du header (pas de form dans ce module) */
+/* Hide the header "Save" button (this module has no form) */
 .lumia-page__header-actions [form="lumia-module-form"] {
   display: none !important;
 }
@@ -99,7 +99,7 @@
 }
 
 /* ================================================================
- * BARRE DE SÉLECTION
+ * SELECTION BAR
  * ================================================================ */
 
 .lumia-files__selection-bar {
@@ -160,7 +160,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  /* Entête figée pendant le scroll du corps de la table. */
+  /* Header stays fixed while the table body scrolls. */
   position: sticky;
   top: 0;
   z-index: 2;
@@ -191,7 +191,7 @@
   vertical-align: middle;
 }
 
-/* Colonnes */
+/* Columns */
 .lumia-files__col-check {
   width: 36px;
   padding-left: 16px !important;
@@ -229,7 +229,7 @@
   padding-right: 16px !important;
 }
 
-/* Ligne vide / chargement */
+/* Empty / loading row */
 .lumia-files__row-empty td {
   padding: 32px 20px;
   text-align: center;
@@ -238,7 +238,7 @@
 }
 
 /* ================================================================
- * NOM DU FICHIER
+ * FILE NAME
  * ================================================================ */
 
 .lumia-files__name-btn {
@@ -267,7 +267,7 @@
 }
 
 /* ================================================================
- * ICÔNES FICHIERS
+ * FILE ICONS
  * ================================================================ */
 
 .lumia-files__icon {
@@ -293,7 +293,7 @@
   color: var(--lumia-n400);
 }
 
-/* Couleurs par langage (brand colors) */
+/* Colors per language (brand colors) */
 .lumia-files__icon--lang-php svg {
   color: #8892bf;
 }
@@ -353,7 +353,7 @@
 }
 
 /* ================================================================
- * ACTIONS PAR LIGNE
+ * ROW ACTIONS
  * ================================================================ */
 
 .lumia-files__actions {
@@ -434,12 +434,12 @@
 }
 
 /* ================================================================
- * ÉDITEUR DE CODE
+ * CODE EDITOR
  * ================================================================ */
 
 .lumia-files-editor {
   position: fixed;
-  inset: 32px 0 0 0; /* compense la barre d'admin WP */
+  inset: 32px 0 0 0; /* offsets the WP admin bar */
   z-index: 99999;
   background: oklch(0 0 0 / 0.6);
   backdrop-filter: blur(4px);
@@ -449,7 +449,7 @@
 }
 
 .lumia-files-editor__panel {
-  cursor: default; /* annule le curseur pointer sur le panel lui-même */
+  cursor: default; /* cancels the pointer cursor on the panel itself */
 }
 
 .lumia-files-editor__panel {
@@ -501,13 +501,13 @@
 
 .lumia-files-editor__body {
   flex: 1;
-  min-height: 0; /* crucial : permet au flex child de shrink en-dessous de son contenu */
+  min-height: 0; /* crucial: lets the flex child shrink below its content */
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* ---- Éditeur en texte brut (thème sombre) ---- */
+/* ---- Plain-text editor (dark theme) ---- */
 #lumia-editor-textarea {
   flex: 1;
   width: 100%;
@@ -540,11 +540,11 @@
 }
 
 /* ================================================================
- * ÉDITEUR DE CODE — habillage sombre de CodeMirror
+ * CODE EDITOR — dark CodeMirror skin
  *
- * CodeMirror et ses modes sont ceux livrés avec WordPress (wp-codemirror) ;
- * seul le thème par défaut, clair, est fourni. On repeint donc les jetons aux
- * couleurs de l'éditeur existant plutôt que d'embarquer un thème de plus.
+ * CodeMirror and its modes are the ones shipped with WordPress (wp-codemirror);
+ * only the default, light theme is provided. We therefore repaint the tokens
+ * in the existing editor's colors rather than bundling one more theme.
  * ================================================================ */
 .lumia-files-editor .CodeMirror {
   flex: 1;
@@ -592,7 +592,7 @@
   color: #f38ba8 !important;
 }
 
-/* Jetons */
+/* Tokens */
 .lumia-files-editor .cm-comment    { color: #6c7086; font-style: italic; }
 .lumia-files-editor .cm-keyword    { color: #cba6f7; }
 .lumia-files-editor .cm-atom,
@@ -615,10 +615,10 @@
 .lumia-files-editor .cm-link        { color: #89b4fa; text-decoration: underline; }
 .lumia-files-editor .cm-error       { color: #f38ba8; }
 
-/* Autocomplétion et infobulles de lint : rendues dans <body>, donc hors du
-   panneau — elles doivent passer au-dessus de son overlay (z-index 99999). */
-/* wp-admin/css/widgets.css pose `ul.CodeMirror-hints { z-index: 101 }` : il
-   faut le même niveau de spécificité pour repasser devant l'overlay. */
+/* Autocompletion and lint tooltips: rendered in <body>, hence outside the
+   panel — they must sit above its overlay (z-index 99999). */
+/* wp-admin/css/widgets.css sets `ul.CodeMirror-hints { z-index: 101 }`: the
+   same level of specificity is needed to get back in front of the overlay. */
 ul.CodeMirror-hints {
   z-index: 100010;
   padding: 4px;

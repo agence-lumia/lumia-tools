@@ -3,14 +3,14 @@ namespace Lumia\Tools\Modules\Files;
 
 defined( 'ABSPATH' ) || exit;
 
-// Gestionnaire de fichiers : les appels PHP directs sont voulus. WP_Filesystem peut
-// passer par FTP/SSH, sous un autre utilisateur que PHP : droits affichés (is_writable)
-// et opérations réelles divergeraient. Voir docs/modules/files.md.
+// File manager: direct PHP calls are intended. WP_Filesystem may go through
+// FTP/SSH, under a different user than PHP: displayed permissions (is_writable)
+// and actual operations would diverge. See docs/modules/files.md.
 // phpcs:disable WordPress.WP.AlternativeFunctions
 
 /**
- * Moteur des opérations fichier, strictement limité à un répertoire racine.
- * Toute tentative de sortir de la racine lève une InvalidArgumentException.
+ * File operations engine, strictly limited to a root directory.
+ * Any attempt to leave the root throws an InvalidArgumentException.
  */
 class FileManager {
 
@@ -33,7 +33,7 @@ class FileManager {
 	 * ================================================================ */
 
 	/**
-	 * Résout un chemin relatif en absolu validé (le fichier/dossier doit exister).
+	 * Resolves a relative path into a validated absolute one (the file/folder must exist).
 	 */
 	public function resolve( string $rel ): string {
 		$rel = str_replace( "\0", '', $rel );
@@ -57,7 +57,7 @@ class FileManager {
 	}
 
 	/**
-	 * Résout un chemin pour un fichier qui n'existe pas encore (création/upload).
+	 * Resolves a path for a file that does not exist yet (creation/upload).
 	 */
 	private function resolve_new( string $rel ): string {
 		$rel  = str_replace( "\0", '', $rel );
@@ -69,7 +69,7 @@ class FileManager {
 
 		$abs = $this->root . DIRECTORY_SEPARATOR . $norm;
 
-		// Vérifier que le parent existe et est dans la racine.
+		// Check that the parent exists and is inside the root.
 		$parent = realpath( dirname( $abs ) );
 		if ( false === $parent || ( $this->root !== $parent && strpos( $parent, $this->root . DIRECTORY_SEPARATOR ) !== 0 ) ) {
 			throw new \InvalidArgumentException( 'Parent directory is outside root or does not exist.' );
@@ -79,7 +79,7 @@ class FileManager {
 	}
 
 	/**
-	 * Normalise un chemin relatif : supprime les segments vides, '.', '..'.
+	 * Normalizes a relative path: removes empty segments, '.', '..'.
 	 */
 	private function normalize( string $rel ): string {
 		$parts = preg_split( '#[/\\\\]#', $rel );
@@ -101,7 +101,7 @@ class FileManager {
 	}
 
 	/**
-	 * Retourne le chemin relatif à partir d'un chemin absolu.
+	 * Returns the relative path from an absolute path.
 	 */
 	public function to_relative( string $abs ): string {
 		if ( $abs === $this->root ) {
@@ -118,7 +118,7 @@ class FileManager {
 	 * ================================================================ */
 
 	/**
-	 * Liste le contenu d'un répertoire. Retourne les dossiers en premier.
+	 * Lists a directory's contents. Returns folders first.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
@@ -152,7 +152,7 @@ class FileManager {
 				'path'     => $rel_item,
 				'type'     => $is_dir ? 'dir' : 'file',
 				'ext'      => $ext,
-				// Un fichier devenu illisible entre scandir() et ici fait juste un warning PHP : on lit « au mieux ».
+				// A file that became unreadable between scandir() and here only raises a PHP warning: we read "best effort".
 				'size'     => $is_dir ? null : @filesize( $full ), // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				'modified' => @filemtime( $full ), // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				'perms'    => substr( sprintf( '%o', @fileperms( $full ) ), -4 ), // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -175,7 +175,7 @@ class FileManager {
 	}
 
 	/* ================================================================
-	 * OPÉRATIONS
+	 * OPERATIONS
 	 * ================================================================ */
 
 	public function delete( string $rel ): bool {
@@ -259,33 +259,35 @@ class FileManager {
 			throw new \InvalidArgumentException( 'Not a file.' );
 		}
 		if ( ! is_writable( $abs ) ) {
-			throw new \RuntimeException( 'Fichier en lecture seule : ' . $rel ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message renvoyé en JSON, échappé à l'affichage par le toast.
+			/* translators: %s: relative file path */
+			throw new \RuntimeException( sprintf( __( 'File is read-only: %s', 'lumia-tools' ), $rel ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
-		// L'échec doit remonter : sans exception, l'appelant annonce un
-		// enregistrement réussi alors que rien n'a été écrit sur le disque.
+		// The failure must bubble up: without an exception, the caller announces
+		// a successful save although nothing was written to disk.
 		if ( file_put_contents( $abs, $content ) === false ) {
-			throw new \RuntimeException( 'Écriture impossible : ' . $rel ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message renvoyé en JSON, échappé à l'affichage par le toast.
+			/* translators: %s: relative file path */
+			throw new \RuntimeException( sprintf( __( 'Write failed: %s', 'lumia-tools' ), $rel ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		return true;
 	}
 
 	/**
-	 * Crée une archive ZIP. Retourne le chemin absolu du zip créé.
+	 * Creates a ZIP archive. Returns the absolute path of the created zip.
 	 *
-	 * @param string[] $rel_paths Chemins relatifs à archiver.
+	 * @param string[] $rel_paths Relative paths to archive.
 	 */
 	public function create_zip( array $rel_paths, string $dest_rel ): string {
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			throw new \RuntimeException( 'ZipArchive non disponible sur ce serveur.' );
+			throw new \RuntimeException( __( 'ZipArchive is not available on this server.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$dest = $this->resolve_new( $dest_rel );
 		$zip  = new \ZipArchive();
 
 		if ( $zip->open( $dest, \ZipArchive::CREATE | \ZipArchive::OVERWRITE ) !== true ) {
-			throw new \RuntimeException( 'Impossible de créer l\'archive.' );
+			throw new \RuntimeException( __( 'Could not create the archive.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		foreach ( $rel_paths as $rel ) {
@@ -315,7 +317,7 @@ class FileManager {
 
 	public function extract_zip( string $rel ): bool {
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			throw new \RuntimeException( 'ZipArchive non disponible sur ce serveur.' );
+			throw new \RuntimeException( __( 'ZipArchive is not available on this server.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$abs  = $this->resolve( $rel );
@@ -323,25 +325,27 @@ class FileManager {
 		$zip  = new \ZipArchive();
 
 		if ( $zip->open( $abs ) !== true ) {
-			throw new \RuntimeException( 'Impossible d\'ouvrir l\'archive.' );
+			throw new \RuntimeException( __( 'Could not open the archive.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
-		// ZipArchive::extractTo() ne neutralise pas les entrées « ../x » ni les
-		// chemins absolus (hors open_basedir) : une archive forgée écrirait
-		// hors de la racine que ce gestionnaire promet de ne jamais quitter.
-		// On refuse l'archive entière plutôt que d'en extraire une partie.
+		// ZipArchive::extractTo() does not neutralize "../x" entries nor absolute
+		// paths (outside open_basedir): a forged archive would write outside
+		// the root this manager promises never to leave. We reject the whole
+		// archive rather than extract part of it.
 		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 			$name = (string) $zip->getNameIndex( $i );
 			if ( ! $this->is_safe_zip_entry( $name ) ) {
 				$zip->close();
-				throw new \RuntimeException( 'Archive refusée : entrée hors racine (' . $name . ').' ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message renvoyé en JSON, échappé à l'affichage par le toast.
+				/* translators: %s: archive entry name */
+				throw new \RuntimeException( sprintf( __( 'Archive rejected: entry outside the root (%s).', 'lumia-tools' ), $name ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 			}
-			// Un lien symbolique au nom anodin peut pointer hors de la racine ;
-			// une entrée suivante écrirait alors À TRAVERS le lien. On refuse
-			// tout lien plutôt que d'en suivre la cible.
+			// A symbolic link with an innocuous name can point outside the root;
+			// a following entry would then write THROUGH the link. We reject
+			// any link rather than follow its target.
 			if ( $this->zip_entry_is_symlink( $zip, $i ) ) {
 				$zip->close();
-				throw new \RuntimeException( 'Archive refusée : lien symbolique (' . $name . ').' ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message renvoyé en JSON, échappé à l'affichage par le toast.
+				/* translators: %s: archive entry name */
+				throw new \RuntimeException( sprintf( __( 'Archive rejected: symbolic link (%s).', 'lumia-tools' ), $name ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 			}
 		}
 
@@ -351,7 +355,7 @@ class FileManager {
 	}
 
 	/**
-	 * L'entrée est-elle un lien symbolique (attributs externes Unix, mode S_IFLNK) ?
+	 * Is the entry a symbolic link (Unix external attributes, S_IFLNK mode)?
 	 */
 	private function zip_entry_is_symlink( \ZipArchive $zip, int $index ): bool {
 		$opsys = 0;
@@ -363,13 +367,13 @@ class FileManager {
 	}
 
 	/**
-	 * Une entrée d'archive reste-t-elle sous le dossier d'extraction ?
+	 * Does an archive entry stay under the extraction folder?
 	 */
 	private function is_safe_zip_entry( string $name ): bool {
 		if ( '' === $name || false !== strpos( $name, "\0" ) ) {
 			return false;
 		}
-		// Chemin absolu (POSIX, Windows) ou UNC.
+		// Absolute path (POSIX, Windows) or UNC.
 		if ( '/' === $name[0] || '\\' === $name[0] || preg_match( '#^[a-zA-Z]:#', $name ) ) {
 			return false;
 		}
@@ -383,7 +387,7 @@ class FileManager {
 	}
 
 	/**
-	 * @param array<string, mixed> $file Entrée de $_FILES.
+	 * @param array<string, mixed> $file Entry of $_FILES.
 	 */
 	public function upload( string $dir_rel, array $file ): string {
 		$dir  = $this->resolve( $dir_rel );
@@ -402,14 +406,14 @@ class FileManager {
 	}
 
 	/* ================================================================
-	 * UTILITAIRES
+	 * UTILITIES
 	 * ================================================================ */
 
 	private function get_owner( string $path ): string {
 		if ( ! function_exists( 'posix_getpwuid' ) || ! function_exists( 'posix_getgrgid' ) ) {
 			return '';
 		}
-		// fileowner()/filegroup() émettent un warning sur un fichier inaccessible : l'échec est traité juste après.
+		// fileowner()/filegroup() emit a warning on an inaccessible file: the failure is handled right after.
 		$uid = @fileowner( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$gid = @filegroup( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		if ( false === $uid || false === $gid ) {
