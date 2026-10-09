@@ -50,33 +50,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Skipped until the fr_FR catalogue exists (tasks 4 to 16 of the English
-      # translation); the last task removes this gate and the `if:` of the steps.
-      - name: Detect the catalogue
-        id: gate
-        run: |
-          if [ -f languages/lumia-tools-fr_FR.po ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::languages/lumia-tools-fr_FR.po not found, language gate skipped."
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Set up PHP
-        if: steps.gate.outputs.present == 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           coverage: none
 
       - name: Test the language tooling
-        if: steps.gate.outputs.present == 'true'
         run: sh tools/i18n/test.sh
 
       # The .pot is regenerated from the source, so a string added without
       # touching the .po is caught here. Output goes outside the workspace.
       - name: Regenerate the .pot
-        if: steps.gate.outputs.present == 'true'
         run: |
           docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD:/app:ro" -v "$RUNNER_TEMP:/out" -w /app \
@@ -85,5 +70,4 @@ jobs:
               --slug=lumia-tools --domain=lumia-tools --exclude=vendor,tools,docs,dist
 
       - name: Check .po against the .pot and .mo against the .po
-        if: steps.gate.outputs.present == 'true'
         run: php tools/i18n/build-po.php check "$RUNNER_TEMP/lumia-tools.pot" languages/lumia-tools-fr_FR.po languages/lumia-tools-fr_FR.mo

@@ -33,7 +33,13 @@ const E2E_BLOCKS = [
 ];
 
 /** Attributes whose value is read by the user (tooltips, labels, modal copy). */
-const E2E_ATTRIBUTES = [ 'placeholder', 'title', 'aria-label', 'alt', 'data-skmt-tip', 'data-title', 'data-modal-title', 'data-modal-message', 'data-modal-confirm-label' ];
+const E2E_ATTRIBUTES = [ 'placeholder', 'title', 'aria-label', 'alt', 'data-skmt-tip', 'data-lumia-tip', 'data-title', 'data-modal-title', 'data-modal-message', 'data-modal-confirm-label' ];
+
+/**
+ * Attributes renamed by the Lumia rename, printed under their former label so a
+ * capture of the renamed plugin diffs cleanly against the SKMT baseline.
+ */
+const E2E_ATTRIBUTE_LABELS = [ 'data-lumia-tip' => 'data-skmt-tip' ];
 
 /**
  * @return array{0:int,1:string} HTTP status and body.
@@ -105,7 +111,7 @@ function e2e_walk( DOMNode $node, array &$lines, string &$current ): void {
 	foreach ( E2E_ATTRIBUTES as $attribute ) {
 		if ( $node->hasAttribute( $attribute ) && '' !== e2e_squash( $node->getAttribute( $attribute ) ) ) {
 			e2e_flush( $lines, $current );
-			$lines[] = '[' . $attribute . '] ' . e2e_squash( $node->getAttribute( $attribute ) );
+			$lines[] = '[' . ( E2E_ATTRIBUTE_LABELS[ $attribute ] ?? $attribute ) . '] ' . e2e_squash( $node->getAttribute( $attribute ) );
 		}
 	}
 

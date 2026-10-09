@@ -2,9 +2,14 @@
 
 Development only: `tools/` is never shipped (anchored `/tools` exclude in the release workflows).
 
-Source strings in the code are English; the French catalogue is built from the
+Source strings in the code are English; the French catalogue was built from the
 `.pot` plus one pair file per scope. Each pair maps the English source to the
 **original** French text (typography, non-breaking spaces and all).
+
+`languages/pairs/` was deleted once `lumia-tools-fr_FR.po` was produced: the `.po`
+is now the only source of the French text (find the pairs in the history of the
+`chore/15-rename-lumia` branch if needed). `build` and `composer i18n:po` remain for
+the tests and for rebuilding from a pairs directory.
 
 ## Pair files
 
@@ -88,6 +93,5 @@ sh tools/i18n/wp.sh i18n make-mo tools/i18n/fixtures/expected-fr_FR.po tools/i18
 ## CI
 
 Job `i18n` in `.github/workflows/lint.yml`: runs the tests, regenerates the `.pot`
-from the source (`wordpress:cli-php8.3`), then `check`. It is skipped while
-`languages/lumia-tools-fr_FR.po` does not exist; the last task of the English
-translation removes that gate.
+from the source (`wordpress:cli-php8.3`), then `check`. A string added in the code
+without a matching `.po` entry, or a `.mo` that no longer matches the `.po`, fails it.
