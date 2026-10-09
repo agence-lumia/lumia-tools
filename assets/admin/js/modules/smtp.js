@@ -29,8 +29,8 @@
     initSettings();
     initTest();
 
-    // Entrée dans un filtre soumettrait le formulaire de réglages qui englobe
-    // la liste (même piège que le journal d'activité).
+    // Enter in a filter would submit the settings form that wraps the list
+    // (same pitfall as the activity log).
     wrap.querySelector('.lumia-sm__filters').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); reload(); }
     });
@@ -66,16 +66,16 @@
 
     document.getElementById('lumia-sm-detail-resend').addEventListener('click', resend);
 
-    // Le journal ne se charge qu'à l'ouverture de son onglet. admin.js a
-    // déjà restauré l'onglet mémorisé : on regarde s'il est déjà ouvert.
+    // The log only loads when its tab is opened. admin.js has already
+    // restored the remembered tab: check whether it is already open.
     if (!wrap.closest('[data-lumia-tab-panel]').hidden) load(1);
     document.addEventListener('lumia:tab', function (e) {
       if (e.detail.group === 'smtp' && e.detail.name === 'log' && !state.loaded) load(1);
     });
   });
 
-  function t(key, fallback) {
-    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || fallback;
+  function t(key) {
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || '';
   }
 
   function format(str) {
@@ -101,7 +101,7 @@
   }
 
   /* ================================================================
-   * RÉGLAGES
+   * SETTINGS
    * ================================================================ */
 
   function initSettings() {
@@ -119,20 +119,20 @@
     var smtpFields = document.getElementById('lumia-sm-smtp-fields');
     var apiFields = document.getElementById('lumia-sm-api-fields');
 
-    // Les champs de l'autre transport sont masqués, pas vidés : ils partent
-    // quand même à l'enregistrement, et revenir en arrière ne perd rien.
+    // The fields of the other transport are hidden, not emptied: they are
+    // still submitted on save, and going back loses nothing.
     transport.addEventListener('change', function () {
       smtpFields.hidden = transport.value !== 'smtp';
       apiFields.hidden = transport.value === 'smtp';
     });
 
-    // Un préréglage remplit hôte, port, chiffrement et, s'il en impose un,
-    // l'identifiant (SendGrid : « apikey »). Tout reste modifiable ensuite ;
-    // repasser sur « personnalisé » ne vide rien.
+    // A preset fills host, port, encryption and, if it requires one, the
+    // username (SendGrid: "apikey"). Everything stays editable afterwards;
+    // going back to "custom" empties nothing.
     provider.addEventListener('change', function () {
       var preset = presets[provider.value];
       if (!preset) {
-        hint.textContent = t('smProviderHint', '');
+        hint.textContent = t('smProviderHint');
         return;
       }
       host.value = preset.host;
@@ -145,8 +145,8 @@
       hint.textContent = preset.hint;
     });
 
-    // Changer de chiffrement change le port attendu ; un port personnalisé
-    // (ni 25, ni 465, ni 587) est laissé tel quel.
+    // Changing the encryption changes the expected port; a custom port
+    // (neither 25, nor 465, nor 587) is left as is.
     encryption.addEventListener('change', function () {
       var known = Object.keys(DEFAULT_PORTS).some(function (k) { return +port.value === DEFAULT_PORTS[k]; });
       if (known || !port.value) port.value = DEFAULT_PORTS[encryption.value];
@@ -159,7 +159,7 @@
   }
 
   /* ================================================================
-   * MAIL DE TEST
+   * TEST EMAIL
    * ================================================================ */
 
   function initTest() {
@@ -173,7 +173,7 @@
     button.addEventListener('click', function () {
       var label = button.textContent;
       button.disabled = true;
-      button.textContent = t('smTesting', 'Envoi en cours…');
+      button.textContent = t('smTesting');
 
       post('lumia_smtp_test', { to: to.value.trim() })
         .then(function (res) {
@@ -181,7 +181,7 @@
           if (state.loaded) load(1);
         })
         .catch(function () {
-          showTestResult(false, t('smError', 'Erreur'), []);
+          showTestResult(false, t('smError'), []);
         })
         .then(function () {
           button.disabled = false;
@@ -203,7 +203,7 @@
   }
 
   /* ================================================================
-   * JOURNAL
+   * LOG
    * ================================================================ */
 
   function filters() {
@@ -223,20 +223,20 @@
     var data = filters();
     data.page = page;
 
-    setState(t('smLoading', 'Chargement…'));
+    setState(t('smLoading'));
 
     post('lumia_smtp_log_list', data)
       .then(function (res) {
-        // Seule la dernière requête s'affiche : une frappe rapide en lance
-        // plusieurs, qui peuvent répondre dans le désordre.
+        // Only the latest request is displayed: fast typing fires several,
+        // which may answer out of order.
         if (request !== state.request) return;
         if (!res.success) throw new Error((res.data && res.data.message) || '');
         render(res.data);
       })
       .catch(function (err) {
         if (request !== state.request) return;
-        setState(t('smError', 'Impossible de charger le journal.'));
-        toast((err && err.message) || t('smError', 'Impossible de charger le journal.'), 'error');
+        setState(t('smError'));
+        toast((err && err.message) || t('smError'), 'error');
       });
   }
 
@@ -256,13 +256,13 @@
     state.page = data.page;
     state.pages = data.pages;
 
-    el.total.textContent = format(t('smTotal', '%s mail(s)'), data.total.toLocaleString());
-    el.page.textContent = format(t('smPage', 'Page %1$s sur %2$s'), data.page, data.pages);
+    el.total.textContent = format(t('smTotal'), data.total.toLocaleString());
+    el.page.textContent = format(t('smPage'), data.page, data.pages);
     el.prev.disabled = data.page <= 1;
     el.next.disabled = data.page >= data.pages;
 
     if (!data.rows.length) {
-      setState(t('smEmpty', 'Aucun mail pour ces critères.'));
+      setState(t('smEmpty'));
       return;
     }
 
@@ -281,7 +281,7 @@
 
       tr.appendChild(cell(row.to, 'lumia-sm__to'));
 
-      var subject = cell(row.subject || t('smNoSubject', '(sans objet)'), 'lumia-sm__subject');
+      var subject = cell(row.subject || t('smNoSubject'), 'lumia-sm__subject');
       if (row.status === 'failed' && row.error) {
         var error = document.createElement('span');
         error.className = 'lumia-sm__error';
@@ -298,7 +298,7 @@
     var span = document.createElement('span');
     var sent = row.status === 'sent';
     span.className = 'lumia-badge lumia-sm__badge ' + (sent ? 'lumia-badge--success' : 'lumia-badge--danger');
-    span.textContent = sent ? t('smSent', 'Envoyé') : t('smFailed', 'Échec');
+    span.textContent = sent ? t('smSent') : t('smFailed');
     return span;
   }
 
@@ -315,10 +315,10 @@
 
   function confirmClear() {
     window.lumiaModal.open({
-      title: t('smClearTitle', 'Vider le journal des mails ?'),
-      message: t('smClearMessage', 'Tous les mails journalisés seront supprimés définitivement.'),
-      confirmLabel: t('smClearConfirm', 'Vider le journal'),
-      cancelLabel: t('smCancel', 'Annuler'),
+      title: t('smClearTitle'),
+      message: t('smClearMessage'),
+      confirmLabel: t('smClearConfirm'),
+      cancelLabel: t('cancel'),
       danger: true,
       onConfirm: function () {
         post('lumia_smtp_log_clear')
@@ -331,7 +331,7 @@
   }
 
   /* ================================================================
-   * DÉTAIL
+   * DETAIL
    * ================================================================ */
 
   function openDetail(row) {
@@ -344,31 +344,31 @@
         window.lumiaModalOpen('lumia-sm-detail-modal');
       })
       .catch(function (err) {
-        toast((err && err.message) || t('smError', 'Erreur'), 'error');
+        toast((err && err.message) || t('smError'), 'error');
       });
   }
 
   function fillDetail(mail) {
     state.current = mail;
 
-    document.getElementById('lumia-sm-detail-title').textContent = mail.subject || t('smNoSubject', '(sans objet)');
+    document.getElementById('lumia-sm-detail-title').textContent = mail.subject || t('smNoSubject');
 
     var meta = document.getElementById('lumia-sm-detail-meta');
     meta.innerHTML = '';
 
     var attachments = mail.attachments.map(function (a) {
-      return a.name + (a.exists ? '' : ' (' + t('smMissing', 'introuvable') + ')');
+      return a.name + (a.exists ? '' : ' (' + t('smMissing') + ')');
     }).join(', ');
 
     [
-      [t('smDate', 'Date'), mail.date],
-      [t('smStatus', 'Statut'), mail.status === 'sent' ? t('smSent', 'Envoyé') : t('smFailed', 'Échec')],
-      [t('smFrom', 'Expéditeur'), mail.from],
-      [t('smTo', 'Destinataire'), mail.to],
-      [t('smTransport', 'Transport'), mail.transport],
-      [t('smAttachments', 'Pièces jointes'), attachments],
-      [t('smResentOf', 'Renvoi de'), mail.resent_of ? '#' + mail.resent_of : ''],
-      [t('smTruncatedLabel', 'Tronqué'), mail.truncated ? t('smTruncated', 'Message trop long, tronqué à l\'enregistrement.') : ''],
+      [t('smDate'), mail.date],
+      [t('smStatus'), mail.status === 'sent' ? t('smSent') : t('smFailed')],
+      [t('smFrom'), mail.from],
+      [t('smTo'), mail.to],
+      [t('smTransport'), mail.transport],
+      [t('smAttachments'), attachments],
+      [t('smResentOf'), mail.resent_of ? '#' + mail.resent_of : ''],
+      [t('smTruncatedLabel'), mail.truncated ? t('smTruncated') : ''],
     ].forEach(function (pair) {
       if (!pair[1]) return;
       var dt = document.createElement('dt');
@@ -386,8 +386,8 @@
     var frame = document.getElementById('lumia-sm-detail-html');
     var text = document.getElementById('lumia-sm-detail-text');
     if (mail.is_html) {
-      // srcdoc dans un iframe sandbox="" : le HTML du mail est rendu sans
-      // script ni accès à la page d'administration.
+      // srcdoc in a sandbox="" iframe: the email HTML is rendered without
+      // script or access to the admin page.
       frame.srcdoc = mail.message;
       frame.hidden = false;
       text.hidden = true;
@@ -413,7 +413,7 @@
 
     var label = button.textContent;
     button.disabled = true;
-    button.textContent = t('smResending', 'Renvoi en cours…');
+    button.textContent = t('smResending');
 
     post('lumia_smtp_log_resend', { id: mail.id })
       .then(function (res) {
@@ -422,7 +422,7 @@
         reload();
       })
       .catch(function () {
-        toast(t('smError', 'Erreur'), 'error');
+        toast(t('smError'), 'error');
       })
       .then(function () {
         button.disabled = false;

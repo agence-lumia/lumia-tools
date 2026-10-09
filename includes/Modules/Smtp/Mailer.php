@@ -4,39 +4,39 @@ namespace Lumia\Tools\Modules\Smtp;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Branche PHPMailer (celui du cœur) sur le serveur SMTP ou l'API configurés
- * et impose l'expéditeur.
+ * Plugs PHPMailer (the core one) into the configured SMTP server or API and
+ * enforces the sender.
  *
- * FluentSMTP remplace la fonction enfichable wp_mail() tout entière pour
- * router par adresse d'expédition et parler aux API des fournisseurs. Un seul
- * relais SMTP n'en demande pas tant : `phpmailer_init` suffit, et laisse
- * wp_mail() du cœur — ses filtres, ses hooks de succès et d'échec — intact.
+ * FluentSMTP replaces the whole pluggable wp_mail() function to route by
+ * sender address and talk to provider APIs. A single SMTP relay does not need
+ * that much: `phpmailer_init` is enough, and leaves the core wp_mail() — its
+ * filters, its success and failure hooks — intact.
  */
 class Mailer {
 
-	/** Option du mot de passe chiffré, hors de `lumia_module_smtp` : voir Module::save_settings(). */
+	/** Option of the encrypted password, outside `lumia_module_smtp`: see Module::save_settings(). */
 	const PASSWORD_OPTION = 'lumia_smtp_password';
 
-	/** Option de la clé API Brevo chiffrée, même traitement que le mot de passe. */
+	/** Option of the encrypted Brevo API key, same treatment as the password. */
 	const BREVO_KEY_OPTION = 'lumia_smtp_brevo_key';
 
 	/**
-	 * Transport « API Brevo ». Défini ici et pas dans BrevoMailer : toucher une
-	 * constante de BrevoMailer charge la classe, qui étend PHPMailer, et
-	 * PHPMailer n'est chargé qu'au premier wp_mail() — erreur fatale sinon.
+	 * "Brevo API" transport. Defined here and not in BrevoMailer: touching a
+	 * BrevoMailer constant loads the class, which extends PHPMailer, and
+	 * PHPMailer is only loaded on the first wp_mail() — fatal error otherwise.
 	 */
 	const BREVO = 'brevo';
 
-	/** Transports proposés : relais SMTP ou API HTTP de Brevo. */
+	/** Available transports: SMTP relay or Brevo HTTP API. */
 	const TRANSPORTS = [ 'smtp', self::BREVO ];
 
 	/**
-	 * Délai de connexion SMTP (secondes). Le défaut de PHPMailer est de cinq
-	 * minutes : un hôte injoignable figeait la page qui envoyait le mail.
+	 * SMTP connection timeout (seconds). PHPMailer's default is five minutes:
+	 * an unreachable host froze the page that was sending the email.
 	 */
 	const TIMEOUT = 20;
 
-	/** Nom d'expéditeur par défaut de wp_mail(). */
+	/** Default sender name of wp_mail(). */
 	const WP_DEFAULT_FROM_NAME = 'WordPress';
 
 	/**
@@ -45,7 +45,7 @@ class Mailer {
 	private array $settings;
 
 	/**
-	 * @param array<string, mixed> $settings Réglages du module.
+	 * @param array<string, mixed> $settings Module settings.
 	 */
 	public function __construct( array $settings ) {
 		$this->settings = $settings;
@@ -55,13 +55,13 @@ class Mailer {
 		if ( $this->smtp_ready() ) {
 			add_action( 'phpmailer_init', [ $this, 'configure' ] );
 		} elseif ( $this->brevo_ready() ) {
-			// pre_wp_mail tourne avant que wp_mail() ne crée son instance.
+			// pre_wp_mail runs before wp_mail() creates its instance.
 			add_filter( 'pre_wp_mail', [ $this, 'install_brevo' ], PHP_INT_MAX );
 			add_action( 'phpmailer_init', [ $this, 'configure_brevo' ] );
 		}
 
-		// Priorité tardive : un expéditeur forcé doit l'emporter sur celui
-		// qu'une extension (formulaire de contact, WooCommerce) pose au défaut.
+		// Late priority: a forced sender must win over the one a plugin
+		// (contact form, WooCommerce) sets by default.
 		add_filter( 'wp_mail_from', [ $this, 'filter_from_email' ], 9999 );
 		add_filter( 'wp_mail_from_name', [ $this, 'filter_from_name' ], 9999 );
 
@@ -71,17 +71,17 @@ class Mailer {
 	}
 
 	/**
-	 * Le SMTP n'est branché que s'il est activé ET qu'un hôte est renseigné :
-	 * activer l'interrupteur sur un formulaire vide ne doit pas couper l'envoi.
+	 * SMTP is only plugged in when it is enabled AND a host is set: turning the
+	 * switch on with an empty form must not cut off sending.
 	 */
 	public function smtp_ready(): bool {
 		return ! empty( $this->settings['smtp_enabled'] ) && 'smtp' === self::transport( $this->settings ) && '' !== (string) ( $this->settings['host'] ?? '' );
 	}
 
 	/**
-	 * Même règle pour l'API : activée, et une clé enregistrée (qu'elle se
-	 * déchiffre ou non : une clé illisible doit échouer bruyamment à l'envoi,
-	 * pas retomber en silence sur mail()).
+	 * Same rule for the API: enabled, and a saved key (whether or not it can be
+	 * decrypted: an unreadable key must fail loudly when sending, not silently
+	 * fall back on mail()).
 	 */
 	public function brevo_ready(): bool {
 		return ! empty( $this->settings['smtp_enabled'] ) && self::BREVO === self::transport( $this->settings ) && self::has_brevo_key();
@@ -97,12 +97,11 @@ class Mailer {
 	}
 
 	/**
-	 * Installe BrevoMailer comme instance globale : wp_mail() garde toute
-	 * instance de PHPMailer existante. Une instance d'une autre classe (une
-	 * autre extension d'envoi) est laissée en place, et configure_brevo() ne
-	 * la touche pas.
+	 * Installs BrevoMailer as the global instance: wp_mail() keeps any existing
+	 * PHPMailer instance. An instance of another class (another sending plugin)
+	 * is left in place, and configure_brevo() does not touch it.
 	 *
-	 * @param mixed $pre Valeur du filtre, rendue telle quelle.
+	 * @param mixed $pre Filter value, returned as is.
 	 * @return mixed
 	 */
 	public function install_brevo( $pre ) {
@@ -124,8 +123,8 @@ class Mailer {
 			require_once ABSPATH . WPINC . '/class-wp-phpmailer.php';
 		}
 
-		// Comme wp_mail() : exceptions actives, validation par is_email().
-		$phpmailer = new BrevoMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- instance d'envoi de wp_mail(), remplacée à dessein.
+		// Like wp_mail(): exceptions on, validation through is_email().
+		$phpmailer = new BrevoMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- sending instance of wp_mail(), replaced on purpose.
 
 		$phpmailer::$validator = static function ( $email ) {
 			return (bool) is_email( $email );
@@ -147,11 +146,11 @@ class Mailer {
 	}
 
 	/**
-	 * L'instance PHPMailer est globale et survit d'un envoi à l'autre :
-	 * wp_mail() ne remet à zéro que les destinataires, le corps et le
-	 * transport. Toute propriété de connexion est donc assignée à chaque
-	 * appel, sans condition — une valeur posée par un envoi précédent
-	 * (identifiants, trace de débogage d'un mail de test) resterait sinon.
+	 * The PHPMailer instance is global and survives from one send to the next:
+	 * wp_mail() only resets the recipients, the body and the transport. Every
+	 * connection property is therefore assigned on each call, unconditionally —
+	 * a value set by a previous send (credentials, debug trace of a test email)
+	 * would otherwise remain.
 	 *
 	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer
 	 */
@@ -178,13 +177,12 @@ class Mailer {
 	}
 
 	/**
-	 * Enveloppe (Return-Path) sur l'adresse d'expédition configurée : les
-	 * retours de non-distribution reviennent à une boîte lue, et SPF vérifie
-	 * cette adresse-là.
+	 * Envelope (Return-Path) on the configured sender address: bounces come
+	 * back to a mailbox that is read, and SPF checks that address.
 	 *
-	 * Pas sur l'expéditeur du message : non forcé, ce peut être l'adresse
-	 * d'un visiteur (`From` d'un formulaire de contact), et le relais refuse
-	 * une enveloppe hors de ses domaines (« Sender address rejected »).
+	 * Not on the message sender: when not forced, it may be a visitor's
+	 * address (`From` of a contact form), and the relay refuses an envelope
+	 * outside its domains ("Sender address rejected").
 	 *
 	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer
 	 */
@@ -195,9 +193,9 @@ class Mailer {
 	}
 
 	/**
-	 * Non forcé, l'adresse configurée ne remplace que celle que WordPress pose
-	 * par défaut (`wordpress@domaine`) : une extension qui choisit son
-	 * expéditeur garde la main.
+	 * When not forced, the configured address only replaces the one WordPress
+	 * sets by default (`wordpress@domain`): a plugin that chooses its own
+	 * sender keeps control.
 	 *
 	 * @param mixed $email
 	 * @return mixed
@@ -235,8 +233,8 @@ class Mailer {
 	}
 
 	/**
-	 * Adresse que wp_mail() pose quand personne n'en donne, calculée comme
-	 * dans le cœur (`wordpress@` + hôte du réseau sans `www.`).
+	 * Address wp_mail() sets when nobody provides one, computed as in core
+	 * (`wordpress@` + network host without `www.`).
 	 */
 	public static function wp_default_from_email(): string {
 		$host = strtolower( (string) wp_parse_url( network_home_url(), PHP_URL_HOST ) );
@@ -260,9 +258,9 @@ class Mailer {
 	}
 
 	/**
-	 * Mot de passe en clair, depuis `LUMIA_SMTP_PASSWORD` ou l'option chiffrée.
+	 * Clear-text password, from `LUMIA_SMTP_PASSWORD` or the encrypted option.
 	 *
-	 * @return string|null null si l'option ne se déchiffre plus (clés du site changées).
+	 * @return string|null null if the option can no longer be decrypted (site keys changed).
 	 */
 	public static function password(): ?string {
 		if ( defined( 'LUMIA_SMTP_PASSWORD' ) ) {
@@ -277,9 +275,9 @@ class Mailer {
 	}
 
 	/**
-	 * Clé API Brevo en clair, depuis `LUMIA_BREVO_API_KEY` ou l'option chiffrée.
+	 * Clear-text Brevo API key, from `LUMIA_BREVO_API_KEY` or the encrypted option.
 	 *
-	 * @return string|null null si l'option ne se déchiffre plus.
+	 * @return string|null null if the option can no longer be decrypted.
 	 */
 	public static function brevo_key(): ?string {
 		if ( defined( 'LUMIA_BREVO_API_KEY' ) ) {
@@ -290,11 +288,11 @@ class Mailer {
 	}
 
 	/**
-	 * Une autre extension a-t-elle remplacé wp_mail() ? La fonction est
-	 * enfichable : FluentSMTP, Post SMTP et d'autres la redéfinissent, et
-	 * `phpmailer_init` n'est alors plus garanti d'être appelé.
+	 * Has another plugin replaced wp_mail()? The function is pluggable:
+	 * FluentSMTP, Post SMTP and others redefine it, and `phpmailer_init` is
+	 * then no longer guaranteed to be called.
 	 *
-	 * @return string Fichier qui définit wp_mail(), relatif à ABSPATH ; '' si c'est le cœur.
+	 * @return string File that defines wp_mail(), relative to ABSPATH; '' if it is core.
 	 */
 	public static function wp_mail_override(): string {
 		try {

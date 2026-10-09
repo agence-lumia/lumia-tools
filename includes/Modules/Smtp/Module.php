@@ -6,24 +6,24 @@ defined( 'ABSPATH' ) || exit;
 use Lumia\Tools\Core\AbstractModule;
 
 /**
- * Module SMTP — envoi par un serveur SMTP authentifié ou l'API Brevo, et
- * journal des mails.
+ * SMTP module — sending through an authenticated SMTP server or the Brevo API,
+ * and the email log.
  */
 class Module extends AbstractModule {
 
-	/** Hook du cron de purge quotidienne. */
+	/** Hook of the daily purge cron. */
 	const CRON_HOOK = 'lumia_smtp_log_purge';
 
-	/** Lignes par page dans la liste. */
+	/** Rows per page in the list. */
 	const PER_PAGE = 50;
 
-	/** Bornes des réglages de rétention. */
+	/** Bounds of the retention settings. */
 	const DAYS_MIN = 1;
 	const DAYS_MAX = 3650;
 	const ROWS_MIN = 100;
 	const ROWS_MAX = 1000000;
 
-	/** Chiffrements proposés : aucun, SSL implicite (465), STARTTLS (587). */
+	/** Available encryptions: none, implicit SSL (465), STARTTLS (587). */
 	const ENCRYPTIONS = [ 'none', 'ssl', 'tls' ];
 
 	private ?Logger $logger = null;
@@ -33,7 +33,7 @@ class Module extends AbstractModule {
 
 		( new Mailer( $settings ) )->register();
 
-		// Même journal coupé : la liste de l'écran lit la table.
+		// Even with logging off: the screen list reads the table.
 		Store::maybe_install();
 
 		if ( ! empty( $settings['log_enabled'] ) ) {
@@ -43,8 +43,8 @@ class Module extends AbstractModule {
 
 		add_action( self::CRON_HOOK, [ $this, 'purge' ] );
 
-		// Programmé ici et pas seulement à l'activation : un module activé par
-		// import de configuration n'appelle pas on_activate().
+		// Scheduled here and not only on activation: a module activated by a
+		// configuration import does not call on_activate().
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
 		}
@@ -57,7 +57,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * RÉGLAGES
+	 * SETTINGS
 	 * ================================================================ */
 
 	/**
@@ -68,11 +68,11 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Le mot de passe et la clé API ne sont PAS rangés dans `lumia_module_smtp` mais dans leur
-	 * propre option : l'export de configuration écrit les options de module
-	 * telles quelles dans le JSON, et le journal d'activité en liste les
-	 * champs modifiés. Champ vide = secret inchangé (le formulaire ne le
-	 * réaffiche jamais) ; l'import, qui n'en porte pas, le laisse donc en place.
+	 * The password and the API key are NOT stored in `lumia_module_smtp` but in
+	 * their own option: the configuration export writes module options as is
+	 * into the JSON, and the activity log lists the fields that changed. Empty
+	 * field = secret unchanged (the form never displays it again); the import,
+	 * which carries none, therefore leaves it in place.
 	 *
 	 * @param array<string, mixed> $settings
 	 */
@@ -106,7 +106,7 @@ class Module extends AbstractModule {
 		}
 
 		if ( ! defined( 'LUMIA_BREVO_API_KEY' ) ) {
-			// Une clé Brevo (`xkeysib-…`) n'a que des lettres, chiffres et tirets.
+			// A Brevo key (`xkeysib-…`) only has letters, digits and dashes.
 			self::store_secret( Mailer::BREVO_KEY_OPTION, (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', self::sanitize_password( $settings['brevo_key'] ?? '' ) ) );
 		}
 
@@ -114,8 +114,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Jamais en clair : sans openssl, le secret n'est pas enregistré, et
-	 * l'écran le signale (voir le gabarit). Vide = inchangé.
+	 * Never in clear text: without openssl, the secret is not saved, and the
+	 * screen reports it (see the template). Empty = unchanged.
 	 */
 	private static function store_secret( string $option, string $value ): void {
 		if ( '' === $value ) {
@@ -166,9 +166,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Hôte seul : on retire un schéma collé par erreur (`smtp://`, `https://`)
-	 * et on refuse tout caractère qui n'a rien à faire dans un nom d'hôte ou
-	 * une IP — le champ finit dans une connexion réseau.
+	 * Host only: strip a scheme pasted by mistake (`smtp://`, `https://`) and
+	 * refuse any character that has no place in a host name or an IP — the
+	 * field ends up in a network connection.
 	 */
 	private static function sanitize_host( string $host ): string {
 		$host = strtolower( trim( sanitize_text_field( $host ) ) );
@@ -179,10 +179,9 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Pas de sanitize_text_field() : il retire les balises et les séquences
-	 * `%xx`, et un mot de passe a le droit de contenir `<a` ou `%41`. On ne
-	 * retire que les caractères de contrôle (un retour chariot dans un
-	 * échange SMTP termine la commande).
+	 * No sanitize_text_field(): it strips tags and `%xx` sequences, and a
+	 * password may contain `<a` or `%41`. Only control characters are removed
+	 * (a carriage return in an SMTP exchange ends the command).
 	 *
 	 * @param mixed $value
 	 */
@@ -195,7 +194,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * CYCLE DE VIE
+	 * LIFECYCLE
 	 * ================================================================ */
 
 	public function on_activate(): void {
@@ -203,7 +202,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * La table reste : désactiver le module ne doit pas effacer l'historique.
+	 * The table stays: deactivating the module must not erase the history.
 	 */
 	public function on_deactivate(): void {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
@@ -234,33 +233,32 @@ class Module extends AbstractModule {
 		return [
 			'smProviders' => Providers::all(),
 			'i18n'        => [
-				'smLoading'        => __( 'Chargement…', 'lumia-tools' ),
-				'smEmpty'          => __( 'Aucun mail pour ces critères.', 'lumia-tools' ),
-				'smError'          => __( 'Impossible de charger le journal.', 'lumia-tools' ),
-				/* translators: %s: nombre de mails. */
-				'smTotal'          => __( '%s mail(s)', 'lumia-tools' ),
-				/* translators: 1: page courante, 2: nombre de pages. */
-				'smPage'           => __( 'Page %1$s sur %2$s', 'lumia-tools' ),
-				'smSent'           => __( 'Envoyé', 'lumia-tools' ),
-				'smFailed'         => __( 'Échec', 'lumia-tools' ),
-				'smResentOf'       => __( 'Renvoi de', 'lumia-tools' ),
-				'smNoSubject'      => __( '(sans objet)', 'lumia-tools' ),
-				'smTesting'        => __( 'Envoi en cours…', 'lumia-tools' ),
-				'smResending'      => __( 'Renvoi en cours…', 'lumia-tools' ),
-				'smClearTitle'     => __( 'Vider le journal des mails ?', 'lumia-tools' ),
-				'smClearMessage'   => __( 'Tous les mails journalisés seront supprimés définitivement.', 'lumia-tools' ),
-				'smClearConfirm'   => __( 'Vider le journal', 'lumia-tools' ),
-				'smCancel'         => __( 'Annuler', 'lumia-tools' ),
+				'smLoading'        => __( 'Loading…', 'lumia-tools' ),
+				'smEmpty'          => __( 'No emails match these criteria.', 'lumia-tools' ),
+				'smError'          => __( 'Could not load the log.', 'lumia-tools' ),
+				/* translators: %s: number of emails. */
+				'smTotal'          => __( '%s email(s)', 'lumia-tools' ),
+				/* translators: 1: current page, 2: number of pages. */
+				'smPage'           => __( 'Page %1$s of %2$s', 'lumia-tools' ),
+				'smSent'           => __( 'Sent', 'lumia-tools' ),
+				'smFailed'         => __( 'Failed', 'lumia-tools' ),
+				'smResentOf'       => __( 'Resend of', 'lumia-tools' ),
+				'smNoSubject'      => __( '(no subject)', 'lumia-tools' ),
+				'smTesting'        => __( 'Sending…', 'lumia-tools' ),
+				'smResending'      => __( 'Resending…', 'lumia-tools' ),
+				'smClearTitle'     => __( 'Clear the email log?', 'lumia-tools' ),
+				'smClearMessage'   => __( 'All logged emails will be permanently deleted.', 'lumia-tools' ),
+				'smClearConfirm'   => __( 'Clear log', 'lumia-tools' ),
 				'smDate'           => __( 'Date', 'lumia-tools' ),
-				'smStatus'         => __( 'Statut', 'lumia-tools' ),
-				'smFrom'           => __( 'Expéditeur', 'lumia-tools' ),
-				'smTo'             => __( 'Destinataire', 'lumia-tools' ),
+				'smStatus'         => __( 'Status', 'lumia-tools' ),
+				'smFrom'           => __( 'Sender', 'lumia-tools' ),
+				'smTo'             => __( 'Recipient', 'lumia-tools' ),
 				'smTransport'      => __( 'Transport', 'lumia-tools' ),
-				'smAttachments'    => __( 'Pièces jointes', 'lumia-tools' ),
-				'smMissing'        => __( 'introuvable', 'lumia-tools' ),
-				'smProviderHint'   => __( 'Choisir un fournisseur pré-remplit l\'hôte, le port et le chiffrement ; tout reste modifiable.', 'lumia-tools' ),
-				'smTruncatedLabel' => __( 'Tronqué', 'lumia-tools' ),
-				'smTruncated'      => __( 'Message trop long, tronqué à l\'enregistrement : il ne peut pas être renvoyé.', 'lumia-tools' ),
+				'smAttachments'    => __( 'Attachments', 'lumia-tools' ),
+				'smMissing'        => __( 'not found', 'lumia-tools' ),
+				'smProviderHint'   => __( 'Choosing a provider pre-fills the host, port and encryption; everything stays editable.', 'lumia-tools' ),
+				'smTruncatedLabel' => __( 'Truncated', 'lumia-tools' ),
+				'smTruncated'      => __( 'Message too long, truncated when saved: it cannot be resent.', 'lumia-tools' ),
 			],
 		];
 	}
@@ -270,21 +268,21 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	/**
-	 * Nonce partagé + capacité du module, en tête de chaque endpoint.
+	 * Shared nonce + module capability, at the top of every endpoint.
 	 */
 	private function guard(): void {
 		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ], 403 );
 		}
 	}
 
 	public function ajax_list(): void {
 		$this->guard();
 
-		$filters = $this->read_filters( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard() ; read_filters() assainit chaque champ.
-		$page    = max( 1, absint( wp_unslash( $_POST['page'] ?? 1 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
+		$filters = $this->read_filters( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by guard(); read_filters() sanitizes each field.
+		$page    = max( 1, absint( wp_unslash( $_POST['page'] ?? 1 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by guard().
 		$total   = Store::count( $filters );
 		$pages   = max( 1, (int) ceil( $total / self::PER_PAGE ) );
 		$page    = min( $page, $pages );
@@ -300,15 +298,15 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Détail d'un mail : corps, en-têtes et pièces jointes, absents de la liste.
+	 * Detail of an email: body, headers and attachments, absent from the list.
 	 */
 	public function ajax_detail(): void {
 		$this->guard();
 
-		$row = Store::get( absint( wp_unslash( $_POST['id'] ?? 0 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
+		$row = Store::get( absint( wp_unslash( $_POST['id'] ?? 0 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by guard().
 
 		if ( ! $row ) {
-			wp_send_json_error( [ 'message' => __( 'Mail introuvable.', 'lumia-tools' ) ], 404 );
+			wp_send_json_error( [ 'message' => __( 'Email not found.', 'lumia-tools' ) ], 404 );
 		}
 
 		$attachments = self::json_list( $row['attachments'] ?? '' );
@@ -337,21 +335,21 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Rejoue wp_mail() avec la demande d'origine. Les pièces jointes qui
-	 * n'existent plus sont écartées (les extensions de formulaire effacent
-	 * souvent leurs fichiers temporaires après l'envoi) et signalées.
+	 * Replays wp_mail() with the original request. Attachments that no longer
+	 * exist are dropped (form plugins often delete their temporary files after
+	 * sending) and reported.
 	 */
 	public function ajax_resend(): void {
 		$this->guard();
 
-		$row = Store::get( absint( wp_unslash( $_POST['id'] ?? 0 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
+		$row = Store::get( absint( wp_unslash( $_POST['id'] ?? 0 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by guard().
 
 		if ( ! $row ) {
-			wp_send_json_error( [ 'message' => __( 'Mail introuvable.', 'lumia-tools' ) ], 404 );
+			wp_send_json_error( [ 'message' => __( 'Email not found.', 'lumia-tools' ) ], 404 );
 		}
 
 		if ( $row['truncated'] ) {
-			wp_send_json_error( [ 'message' => __( 'Ce mail a été tronqué à l\'enregistrement : il ne peut pas être renvoyé à l\'identique.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'This email was truncated when saved: it cannot be resent as is.', 'lumia-tools' ) ] );
 		}
 
 		$attachments = [];
@@ -368,14 +366,14 @@ class Module extends AbstractModule {
 			$this->logger->set_resent_of( (int) $row['id'] );
 		}
 
-		// Rejouer les arguments de wp_mail() ne suffit pas : beaucoup
-		// d'extensions posent expéditeur et type de contenu par des filtres
-		// actifs le temps de leur envoi (WooCommerce : wp_mail_from,
-		// wp_mail_content_type). Au renvoi, ces filtres sont absents — la
-		// commande repartait de l'expéditeur par défaut, le HTML en texte
-		// brut. On réapplique donc ce qui est réellement parti, journalisé.
-		// Priorité 9000 : sous celle de l'expéditeur forcé (9999), qui garde
-		// le dernier mot.
+		// Replaying the wp_mail() arguments is not enough: many plugins set the
+		// sender and content type through filters that are only active while
+		// they send (WooCommerce: wp_mail_from, wp_mail_content_type). On
+		// resend, those filters are absent — the order went out again from the
+		// default sender, the HTML as plain text. So we reapply what actually
+		// went out, as logged.
+		// Priority 9000: below the forced sender's (9999), which keeps the
+		// last word.
 		$sent_from = self::parse_address( (string) $row['from_address'] );
 		$sent_type = (string) $row['content_type'];
 		$filters   = [
@@ -408,10 +406,10 @@ class Module extends AbstractModule {
 			wp_send_json_error( [ 'message' => $error ] );
 		}
 
-		$message = __( 'Mail renvoyé.', 'lumia-tools' );
+		$message = __( 'Email resent.', 'lumia-tools' );
 		if ( $missing ) {
-			/* translators: %s: noms des pièces jointes introuvables. */
-			$message .= ' ' . sprintf( __( 'Pièces jointes introuvables, non jointes : %s.', 'lumia-tools' ), implode( ', ', $missing ) );
+			/* translators: %s: names of the attachments that were not found. */
+			$message .= ' ' . sprintf( __( 'Attachments not found, not attached: %s.', 'lumia-tools' ), implode( ', ', $missing ) );
 		}
 
 		wp_send_json_success( [ 'message' => $message ] );
@@ -422,22 +420,22 @@ class Module extends AbstractModule {
 
 		Store::clear();
 
-		wp_send_json_success( [ 'message' => __( 'Journal vidé.', 'lumia-tools' ) ] );
+		wp_send_json_success( [ 'message' => __( 'Log cleared.', 'lumia-tools' ) ] );
 	}
 
 	/**
-	 * Mail de test, avec la transcription de l'échange SMTP (ou la réponse de
-	 * l'API) en cas d'échec :
-	 * « Could not authenticate » ne dit pas si c'est l'identifiant, le port ou
-	 * le chiffrement qui cloche, la réponse du serveur si.
+	 * Test email, with the transcript of the SMTP exchange (or the API
+	 * response) on failure:
+	 * "Could not authenticate" does not say whether the username, the port or
+	 * the encryption is wrong, the server's response does.
 	 */
 	public function ajax_test(): void {
 		$this->guard();
 
-		$to = sanitize_email( wp_unslash( (string) ( $_POST['to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
+		$to = sanitize_email( wp_unslash( (string) ( $_POST['to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by guard().
 
 		if ( ! is_email( $to ) ) {
-			wp_send_json_error( [ 'message' => __( 'Adresse de destination invalide.', 'lumia-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid destination address.', 'lumia-tools' ) ] );
 		}
 
 		$transcript = [];
@@ -451,9 +449,9 @@ class Module extends AbstractModule {
 			};
 		};
 
-		// Après Mailer::configure() (priorité 10), qui remet SMTPDebug à zéro :
-		// l'instance PHPMailer est globale, le mail suivant ne doit pas hériter
-		// de la trace.
+		// After Mailer::configure() (priority 10), which resets SMTPDebug to zero:
+		// the PHPMailer instance is global, the next email must not inherit the
+		// trace.
 		add_action( 'phpmailer_init', $debug, 1000 );
 
 		$site  = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
@@ -461,9 +459,9 @@ class Module extends AbstractModule {
 			static function () use ( $to, $site ): bool {
 				return wp_mail(
 					$to,
-					/* translators: %s: nom du site. */
-					sprintf( __( 'Mail de test — %s', 'lumia-tools' ), $site ),
-					'<p>' . esc_html__( 'Ce mail de test a été envoyé depuis Lümia Tools. Si vous le lisez, l\'envoi fonctionne.', 'lumia-tools' ) . '</p>'
+					/* translators: %s: site name. */
+					sprintf( __( 'Test email — %s', 'lumia-tools' ), $site ),
+					'<p>' . esc_html__( 'This test email was sent from Lümia Tools. If you can read it, sending works.', 'lumia-tools' ) . '</p>'
 					. '<p style="color:#666;font-size:12px">' . esc_html( home_url() ) . ' — ' . esc_html( (string) wp_date( 'Y-m-d H:i:s' ) ) . '</p>',
 					[ 'Content-Type: text/html; charset=UTF-8' ]
 				);
@@ -472,8 +470,8 @@ class Module extends AbstractModule {
 
 		remove_action( 'phpmailer_init', $debug, 1000 );
 
-		// Envoi par l'API : la réponse HTTP tient lieu de transcription. Elle
-		// ne contient pas la clé, qui ne part que dans un en-tête.
+		// Sending through the API: the HTTP response stands in for the
+		// transcript. It does not contain the key, which only goes in a header.
 		global $phpmailer;
 		if ( null !== $error && $phpmailer instanceof BrevoMailer && null !== $phpmailer->lumia_last_response ) {
 			$transcript = [
@@ -494,16 +492,16 @@ class Module extends AbstractModule {
 
 		wp_send_json_success(
 			[
-				/* translators: %s: adresse de destination. */
-				'message' => sprintf( __( 'Mail de test envoyé à %s.', 'lumia-tools' ), $to ),
+				/* translators: %s: destination address. */
+				'message' => sprintf( __( 'Test email sent to %s.', 'lumia-tools' ), $to ),
 			]
 		);
 	}
 
 	/**
-	 * Exécute un envoi et renvoie le message d'erreur, ou null si tout va bien.
-	 * wp_mail() ne renvoie que false : le détail n'existe que dans le WP_Error
-	 * passé à `wp_mail_failed`.
+	 * Runs a send and returns the error message, or null if all went well.
+	 * wp_mail() only returns false: the detail only exists in the WP_Error
+	 * passed to `wp_mail_failed`.
 	 *
 	 * @param callable(): bool $send
 	 */
@@ -523,15 +521,15 @@ class Module extends AbstractModule {
 			return null;
 		}
 
-		// Échec sans WP_Error : un pre_wp_mail a court-circuité l'envoi.
-		return '' !== (string) $error ? (string) $error : __( 'L\'envoi a échoué sans message d\'erreur (une autre extension l\'a peut-être intercepté).', 'lumia-tools' );
+		// Failure without a WP_Error: a pre_wp_mail short-circuited the send.
+		return '' !== (string) $error ? (string) $error : __( 'Sending failed without an error message (another plugin may have intercepted it).', 'lumia-tools' );
 	}
 
 	/**
-	 * Masque l'authentification dans la transcription SMTP. Au niveau de
-	 * débogage 2, PHPMailer écrit les commandes du client telles quelles : la
-	 * ligne AUTH PLAIN et les réponses à AUTH LOGIN portent l'identifiant et
-	 * le mot de passe en base64 — c'est-à-dire en clair.
+	 * Masks the authentication in the SMTP transcript. At debug level 2,
+	 * PHPMailer writes the client commands as they are: the AUTH PLAIN line and
+	 * the answers to AUTH LOGIN carry the username and password in base64 —
+	 * that is, in clear text.
 	 *
 	 * @param string[] $lines
 	 * @return string[]
@@ -541,7 +539,7 @@ class Module extends AbstractModule {
 		$in_auth  = false;
 		$client   = 'CLIENT -> SERVER:';
 		$server   = 'SERVER -> CLIENT:';
-		$redacted = '[' . __( 'masqué', 'lumia-tools' ) . ']';
+		$redacted = '[' . __( 'masked', 'lumia-tools' ) . ']';
 
 		foreach ( $lines as $line ) {
 			if ( 0 === strpos( $line, $client ) ) {
@@ -558,8 +556,8 @@ class Module extends AbstractModule {
 					continue;
 				}
 			} elseif ( $in_auth && 0 === strpos( $line, $server ) ) {
-				// 334 = le serveur attend la suite de l'authentification ; tout
-				// autre code la termine (235 réussie, 5xx refusée).
+				// 334 = the server is waiting for the rest of the authentication; any
+				// other code ends it (235 succeeded, 5xx refused).
 				$in_auth = 0 === strpos( trim( substr( $line, strlen( $server ) ) ), '334' );
 			}
 
@@ -570,11 +568,11 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * PRÉSENTATION
+	 * PRESENTATION
 	 * ================================================================ */
 
 	/**
-	 * @param array<string, mixed> $source `$_POST` d'une requête au nonce déjà vérifié.
+	 * @param array<string, mixed> $source `$_POST` of a request whose nonce is already verified.
 	 * @return array<string, string>
 	 */
 	private function read_filters( array $source ): array {
@@ -603,7 +601,7 @@ class Module extends AbstractModule {
 			'mail'     => 'PHP mail()',
 			'sendmail' => 'Sendmail',
 			'qmail'    => 'Qmail',
-			'brevo'    => 'API Brevo',
+			'brevo'    => __( 'Brevo API', 'lumia-tools' ),
 		];
 		$transport  = (string) $row['transport'];
 
@@ -621,7 +619,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * « Nom <adresse> » ou « adresse » => nom et adresse.
+	 * "Name <address>" or "address" => name and address.
 	 *
 	 * @return array{name: string, email: string}
 	 */

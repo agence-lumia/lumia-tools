@@ -4,42 +4,42 @@ namespace Lumia\Tools\Modules\Smtp;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Journalise chaque appel à wp_mail() : ce qui a été demandé, ce qui est
- * réellement parti, et l'erreur s'il y en a une.
+ * Logs every call to wp_mail(): what was requested, what actually went out,
+ * and the error if there is one.
  *
- * Trois temps, parce qu'aucun hook ne voit tout :
- * - `wp_mail` (filtre) : la demande telle que l'appelant l'a faite, en-têtes
- *   et pièces jointes compris — c'est ce qu'il faut rejouer pour un renvoi ;
- * - `phpmailer_init` : le message final (expéditeur retenu après filtres,
- *   type de contenu, transport) ;
- * - `wp_mail_succeeded` / `wp_mail_failed` : l'issue. L'échec peut survenir
- *   avant `phpmailer_init` (adresse d'expéditeur invalide) : le message final
- *   est alors inconnu et la ligne se contente de la demande.
+ * Three stages, because no single hook sees everything:
+ * - `wp_mail` (filter): the request as the caller made it, headers and
+ *   attachments included — this is what must be replayed for a resend;
+ * - `phpmailer_init`: the final message (sender kept after filters, content
+ *   type, transport);
+ * - `wp_mail_succeeded` / `wp_mail_failed`: the outcome. A failure can happen
+ *   before `phpmailer_init` (invalid sender address): the final message is
+ *   then unknown and the row only holds the request.
  *
- * Un `pre_wp_mail` qui court-circuite l'envoi ne déclenche ni succès ni
- * échec : rien n'est journalisé, rien n'est parti.
+ * A `pre_wp_mail` that short-circuits sending triggers neither success nor
+ * failure: nothing is logged, nothing was sent.
  */
 class Logger {
 
 	/**
-	 * Demande en cours (arguments de wp_mail() après filtres).
+	 * Request in progress (wp_mail() arguments after filters).
 	 *
 	 * @var array<string, mixed>|null
 	 */
 	private ?array $request = null;
 
 	/**
-	 * Message final lu sur PHPMailer.
+	 * Final message read from PHPMailer.
 	 *
 	 * @var array<string, string>
 	 */
 	private array $final = [];
 
-	/** Ligne d'origine quand l'envoi en cours est un renvoi. */
+	/** Original row when the current send is a resend. */
 	private int $resent_of = 0;
 
 	public function register(): void {
-		// Priorité maximale : on veut la demande après tous les autres filtres.
+		// Maximum priority: we want the request after all the other filters.
 		add_filter( 'wp_mail', [ $this, 'capture_request' ], PHP_INT_MAX );
 		add_action( 'phpmailer_init', [ $this, 'capture_final' ], PHP_INT_MAX );
 		add_action( 'wp_mail_succeeded', [ $this, 'on_succeeded' ] );
@@ -47,7 +47,7 @@ class Logger {
 	}
 
 	/**
-	 * Marque le prochain envoi comme renvoi de la ligne `$id`.
+	 * Marks the next send as a resend of row `$id`.
 	 */
 	public function set_resent_of( int $id ): void {
 		$this->resent_of = $id;
@@ -85,7 +85,7 @@ class Logger {
 	}
 
 	/**
-	 * @param mixed $error WP_Error dont les données portent la demande.
+	 * @param mixed $error WP_Error whose data carries the request.
 	 */
 	public function on_failed( $error ): void {
 		if ( ! $error instanceof \WP_Error ) {
@@ -127,8 +127,8 @@ class Logger {
 	}
 
 	/**
-	 * Destinataires sous la forme que wp_mail() accepte : chaîne séparée par
-	 * des virgules ou tableau.
+	 * Recipients in the form wp_mail() accepts: comma-separated string or
+	 * array.
 	 *
 	 * @param mixed $to
 	 * @return string[]
@@ -140,8 +140,8 @@ class Logger {
 	}
 
 	/**
-	 * En-têtes et pièces jointes : wp_mail() accepte une chaîne multiligne ou
-	 * un tableau. On range toujours un tableau de lignes.
+	 * Headers and attachments: wp_mail() accepts a multiline string or an
+	 * array. We always store an array of lines.
 	 *
 	 * @param mixed $value
 	 * @return string[]

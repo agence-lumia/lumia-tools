@@ -4,20 +4,21 @@ namespace Lumia\Tools\Modules\Smtp;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Chiffrement du mot de passe SMTP au repos.
+ * Encryption of the SMTP password at rest.
  *
- * Le but n'est pas de résister à qui lit `wp-config.php` — la clé en vient —
- * mais qu'une fuite de la base seule (sauvegarde, dump SQL, export de l'onglet
- * Base de données) ne livre pas le mot de passe de la boîte d'envoi.
+ * The goal is not to resist whoever can read `wp-config.php` — the key comes
+ * from there — but to make sure a leak of the database alone (backup, SQL
+ * dump, export from the Database tab) does not hand over the password of the
+ * sending mailbox.
  *
- * AES-256-GCM : chiffrement authentifié, un texte altéré ou déchiffré avec la
- * mauvaise clé échoue au lieu de rendre des octets quelconques. FluentSMTP
- * emploie AES-256-CTR, sans authentification, et détecte l'échec par un sel
- * concaténé au clair ; GCM fait la même chose proprement.
+ * AES-256-GCM: authenticated encryption, a tampered text or one decrypted with
+ * the wrong key fails instead of returning arbitrary bytes. FluentSMTP uses
+ * AES-256-CTR, without authentication, and detects the failure through a salt
+ * concatenated to the plaintext; GCM does the same thing properly.
  */
 class Crypto {
 
-	/** Préfixe de format : permet de changer d'algorithme sans casser l'existant. */
+	/** Format prefix: allows changing the algorithm without breaking existing values. */
 	const PREFIX = 'v1:';
 
 	const CIPHER = 'aes-256-gcm';
@@ -30,8 +31,8 @@ class Crypto {
 	}
 
 	/**
-	 * @return string '' si openssl manque : mieux vaut refuser d'enregistrer
-	 *                que stocker le mot de passe en clair à l'insu de l'utilisateur.
+	 * @return string '' if openssl is missing: better to refuse to save than to
+	 *                store the password in clear text without the user knowing.
 	 */
 	public static function encrypt( string $plain ): string {
 		if ( '' === $plain || ! self::available() ) {
@@ -46,13 +47,13 @@ class Crypto {
 			return '';
 		}
 
-		return self::PREFIX . base64_encode( $iv . $tag . $cipher ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- stockage binaire en option texte, pas d'obfuscation.
+		return self::PREFIX . base64_encode( $iv . $tag . $cipher ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- binary storage in a text option, not obfuscation.
 	}
 
 	/**
-	 * @return string|null null si la valeur ne se déchiffre pas : clés de
-	 *                     `wp-config.php` changées (migration, régénération des
-	 *                     sels), ou valeur altérée.
+	 * @return string|null null if the value cannot be decrypted: `wp-config.php`
+	 *                     keys changed (migration, salt regeneration), or the
+	 *                     value was tampered with.
 	 */
 	public static function decrypt( string $stored ): ?string {
 		if ( '' === $stored ) {
@@ -63,7 +64,7 @@ class Crypto {
 			return null;
 		}
 
-		$raw = base64_decode( substr( $stored, strlen( self::PREFIX ) ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- voir encrypt().
+		$raw = base64_decode( substr( $stored, strlen( self::PREFIX ) ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- see encrypt().
 
 		if ( false === $raw || strlen( $raw ) <= self::IV_LENGTH + self::TAG_LENGTH ) {
 			return null;
@@ -82,8 +83,8 @@ class Crypto {
 	}
 
 	/**
-	 * Clé dérivée des clés du site. `LUMIA_ENCRYPTION_KEY` permet d'en fixer une
-	 * qui survit à une régénération des sels de `wp-config.php`.
+	 * Key derived from the site keys. `LUMIA_ENCRYPTION_KEY` allows setting one
+	 * that survives a regeneration of the `wp-config.php` salts.
 	 */
 	private static function key(): string {
 		if ( defined( 'LUMIA_ENCRYPTION_KEY' ) && '' !== (string) LUMIA_ENCRYPTION_KEY ) {
@@ -92,8 +93,8 @@ class Crypto {
 			$material = ( defined( 'LOGGED_IN_KEY' ) ? (string) LOGGED_IN_KEY : '' ) . ( defined( 'LOGGED_IN_SALT' ) ? (string) LOGGED_IN_SALT : '' );
 		}
 
-		// Sans clé du tout (wp-config.php incomplet), on retombe sur wp_salt(),
-		// que WordPress génère et range en base : plus faible, mais jamais vide.
+		// With no key at all (incomplete wp-config.php), fall back on wp_salt(),
+		// which WordPress generates and stores in the database: weaker, but never empty.
 		if ( '' === $material ) {
 			$material = wp_salt( 'logged_in' );
 		}

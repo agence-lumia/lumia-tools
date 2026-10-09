@@ -1,5 +1,5 @@
 /* ================================================================
- * SMTP et journal des mails
+ * SMTP and email log
  * ================================================================ */
 
 .lumia-form__row .lumia-sm__wide {
@@ -7,7 +7,7 @@
   max-width: 320px;
 }
 
-/* .lumia-input--sm plafonne à 140px : trop court pour un hôte ou une adresse. */
+/* .lumia-input--sm caps at 140px: too short for a host or an address. */
 .lumia-sm__wide .lumia-input {
   width: 100%;
   max-width: none;
@@ -21,14 +21,14 @@
   max-width: 110px;
 }
 
-/* L'attribut hidden (TLS automatique, identifiants) perd face au display:flex
-   des composants : on le rétablit. */
+/* The hidden attribute (automatic TLS, credentials) loses against the
+   display:flex of the components: restore it. */
 .lumia-form__row[hidden],
 .lumia-option[hidden] {
   display: none;
 }
 
-/* ---- Mail de test ---- */
+/* ---- Test email ---- */
 
 .lumia-sm__test {
   display: flex;
@@ -67,7 +67,7 @@
   border-radius: var(--lumia-radius-sm);
 }
 
-/* ---- Filtres ---- */
+/* ---- Filters ---- */
 
 .lumia-sm__filters {
   display: flex;
@@ -93,7 +93,7 @@
   margin-left: auto;
 }
 
-/* ---- Tableau ---- */
+/* ---- Table ---- */
 
 .lumia-sm__table-wrap {
   overflow-x: auto;
@@ -161,7 +161,7 @@
   font-size: 11px;
 }
 
-/* Une liste de destinataires ou un objet peut être très long : on coupe. */
+/* A recipient list or a subject can be very long: truncate it. */
 .lumia-sm__to span,
 .lumia-sm__subject > span {
   display: -webkit-box;
@@ -185,7 +185,7 @@
   color: var(--lumia-text-muted) !important;
 }
 
-/* ---- Pied : total et pagination ---- */
+/* ---- Footer: total and pagination ---- */
 
 .lumia-sm__footer {
   display: flex;
@@ -203,7 +203,7 @@
   gap: 8px;
 }
 
-/* ---- Modale de détail ---- */
+/* ---- Detail modal ---- */
 
 .lumia-sm__detail {
   display: grid;
@@ -229,7 +229,7 @@
   height: 420px;
   border: 1px solid var(--lumia-border);
   border-radius: var(--lumia-radius-sm);
-  /* Le HTML d'un mail suppose un fond blanc, quel que soit le thème. */
+  /* An email's HTML assumes a white background, whatever the theme. */
   background: #fff;
 }
 
