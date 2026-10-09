@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: skmt-release-stable
+  group: lumia-release-stable
   cancel-in-progress: false
 
 jobs:
@@ -81,8 +81,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          sed -E -i "s/^ \* Version:[[:space:]]+.*/ * Version:     ${VERSION}/" studio-kyne-mini-tools.php
-          sed -E -i "s/(define[[:space:]]*\([[:space:]]*'SKMT_VERSION'[[:space:]]*,[[:space:]]*')[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]*)?/\1${VERSION}/" studio-kyne-mini-tools.php
+          sed -E -i "s/^ \* Version:[[:space:]]+.*/ * Version:     ${VERSION}/" lumia-tools.php
+          sed -E -i "s/(define[[:space:]]*\([[:space:]]*'LUMIA_VERSION'[[:space:]]*,[[:space:]]*')[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]*)?/\1${VERSION}/" lumia-tools.php
 
       - name: Commit release version
         env:
@@ -96,7 +96,7 @@ jobs:
             exit 0
           fi
 
-          git add studio-kyne-mini-tools.php
+          git add lumia-tools.php
           git commit -m "chore(release): v${VERSION}"
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
 
@@ -122,8 +122,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p dist/package/studio-kyne-mini-tools
-          rsync -a ./ dist/package/studio-kyne-mini-tools/ \
+          mkdir -p dist/package/lumia-tools
+          rsync -a ./ dist/package/lumia-tools/ \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.vscode' \
@@ -144,12 +144,12 @@ jobs:
             --exclude='CLAUDE.md' \
             --exclude='docs'
           cd dist/package
-          zip -r "../studio-kyne-mini-tools-${VERSION}.zip" studio-kyne-mini-tools
+          zip -r "../lumia-tools-${VERSION}.zip" lumia-tools
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          files: dist/studio-kyne-mini-tools-${{ steps.version.outputs.version }}.zip
+          files: dist/lumia-tools-${{ steps.version.outputs.version }}.zip
           prerelease: false
           generate_release_notes: true

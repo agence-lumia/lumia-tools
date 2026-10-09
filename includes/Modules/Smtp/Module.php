@@ -1,9 +1,9 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
  * Module SMTP — envoi par un serveur SMTP authentifié ou l'API Brevo, et
@@ -12,7 +12,7 @@ use StudioKyne\MiniTools\Core\AbstractModule;
 class Module extends AbstractModule {
 
 	/** Hook du cron de purge quotidienne. */
-	const CRON_HOOK = 'skmt_smtp_log_purge';
+	const CRON_HOOK = 'lumia_smtp_log_purge';
 
 	/** Lignes par page dans la liste. */
 	const PER_PAGE = 50;
@@ -49,11 +49,11 @@ class Module extends AbstractModule {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
 		}
 
-		add_action( 'wp_ajax_skmt_smtp_log_list', [ $this, 'ajax_list' ] );
-		add_action( 'wp_ajax_skmt_smtp_log_detail', [ $this, 'ajax_detail' ] );
-		add_action( 'wp_ajax_skmt_smtp_log_resend', [ $this, 'ajax_resend' ] );
-		add_action( 'wp_ajax_skmt_smtp_log_clear', [ $this, 'ajax_clear' ] );
-		add_action( 'wp_ajax_skmt_smtp_test', [ $this, 'ajax_test' ] );
+		add_action( 'wp_ajax_lumia_smtp_log_list', [ $this, 'ajax_list' ] );
+		add_action( 'wp_ajax_lumia_smtp_log_detail', [ $this, 'ajax_detail' ] );
+		add_action( 'wp_ajax_lumia_smtp_log_resend', [ $this, 'ajax_resend' ] );
+		add_action( 'wp_ajax_lumia_smtp_log_clear', [ $this, 'ajax_clear' ] );
+		add_action( 'wp_ajax_lumia_smtp_test', [ $this, 'ajax_test' ] );
 	}
 
 	/* ================================================================
@@ -68,7 +68,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Le mot de passe et la clé API ne sont PAS rangés dans `skmt_module_smtp` mais dans leur
+	 * Le mot de passe et la clé API ne sont PAS rangés dans `lumia_module_smtp` mais dans leur
 	 * propre option : l'export de configuration écrit les options de module
 	 * telles quelles dans le JSON, et le journal d'activité en liste les
 	 * champs modifiés. Champ vide = secret inchangé (le formulaire ne le
@@ -101,11 +101,11 @@ class Module extends AbstractModule {
 			'log_max_rows'       => min( self::ROWS_MAX, max( self::ROWS_MIN, absint( $settings['log_max_rows'] ?? 5000 ) ) ),
 		];
 
-		if ( ! defined( 'SKMT_SMTP_PASSWORD' ) ) {
+		if ( ! defined( 'LUMIA_SMTP_PASSWORD' ) ) {
 			self::store_secret( Mailer::PASSWORD_OPTION, self::sanitize_password( $settings['password'] ?? '' ) );
 		}
 
-		if ( ! defined( 'SKMT_BREVO_API_KEY' ) ) {
+		if ( ! defined( 'LUMIA_BREVO_API_KEY' ) ) {
 			// Une clé Brevo (`xkeysib-…`) n'a que des lettres, chiffres et tirets.
 			self::store_secret( Mailer::BREVO_KEY_OPTION, (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', self::sanitize_password( $settings['brevo_key'] ?? '' ) ) );
 		}
@@ -159,7 +159,7 @@ class Module extends AbstractModule {
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'skmt_module_smtp', Mailer::PASSWORD_OPTION, Mailer::BREVO_KEY_OPTION, Store::SCHEMA_OPTION ],
+			'options' => [ 'lumia_module_smtp', Mailer::PASSWORD_OPTION, Mailer::BREVO_KEY_OPTION, Store::SCHEMA_OPTION ],
 			'tables'  => [ Store::TABLE ],
 			'cron'    => [ self::CRON_HOOK ],
 		];
@@ -220,11 +220,11 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/smtp.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/smtp.css' ];
 	}
 
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/smtp.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/smtp.js' ];
 	}
 
 	/**
@@ -234,33 +234,33 @@ class Module extends AbstractModule {
 		return [
 			'smProviders' => Providers::all(),
 			'i18n'        => [
-				'smLoading'        => __( 'Chargement…', 'studio-kyne-mini-tools' ),
-				'smEmpty'          => __( 'Aucun mail pour ces critères.', 'studio-kyne-mini-tools' ),
-				'smError'          => __( 'Impossible de charger le journal.', 'studio-kyne-mini-tools' ),
+				'smLoading'        => __( 'Chargement…', 'lumia-tools' ),
+				'smEmpty'          => __( 'Aucun mail pour ces critères.', 'lumia-tools' ),
+				'smError'          => __( 'Impossible de charger le journal.', 'lumia-tools' ),
 				/* translators: %s: nombre de mails. */
-				'smTotal'          => __( '%s mail(s)', 'studio-kyne-mini-tools' ),
+				'smTotal'          => __( '%s mail(s)', 'lumia-tools' ),
 				/* translators: 1: page courante, 2: nombre de pages. */
-				'smPage'           => __( 'Page %1$s sur %2$s', 'studio-kyne-mini-tools' ),
-				'smSent'           => __( 'Envoyé', 'studio-kyne-mini-tools' ),
-				'smFailed'         => __( 'Échec', 'studio-kyne-mini-tools' ),
-				'smResentOf'       => __( 'Renvoi de', 'studio-kyne-mini-tools' ),
-				'smNoSubject'      => __( '(sans objet)', 'studio-kyne-mini-tools' ),
-				'smTesting'        => __( 'Envoi en cours…', 'studio-kyne-mini-tools' ),
-				'smResending'      => __( 'Renvoi en cours…', 'studio-kyne-mini-tools' ),
-				'smClearTitle'     => __( 'Vider le journal des mails ?', 'studio-kyne-mini-tools' ),
-				'smClearMessage'   => __( 'Tous les mails journalisés seront supprimés définitivement.', 'studio-kyne-mini-tools' ),
-				'smClearConfirm'   => __( 'Vider le journal', 'studio-kyne-mini-tools' ),
-				'smCancel'         => __( 'Annuler', 'studio-kyne-mini-tools' ),
-				'smDate'           => __( 'Date', 'studio-kyne-mini-tools' ),
-				'smStatus'         => __( 'Statut', 'studio-kyne-mini-tools' ),
-				'smFrom'           => __( 'Expéditeur', 'studio-kyne-mini-tools' ),
-				'smTo'             => __( 'Destinataire', 'studio-kyne-mini-tools' ),
-				'smTransport'      => __( 'Transport', 'studio-kyne-mini-tools' ),
-				'smAttachments'    => __( 'Pièces jointes', 'studio-kyne-mini-tools' ),
-				'smMissing'        => __( 'introuvable', 'studio-kyne-mini-tools' ),
-				'smProviderHint'   => __( 'Choisir un fournisseur pré-remplit l\'hôte, le port et le chiffrement ; tout reste modifiable.', 'studio-kyne-mini-tools' ),
-				'smTruncatedLabel' => __( 'Tronqué', 'studio-kyne-mini-tools' ),
-				'smTruncated'      => __( 'Message trop long, tronqué à l\'enregistrement : il ne peut pas être renvoyé.', 'studio-kyne-mini-tools' ),
+				'smPage'           => __( 'Page %1$s sur %2$s', 'lumia-tools' ),
+				'smSent'           => __( 'Envoyé', 'lumia-tools' ),
+				'smFailed'         => __( 'Échec', 'lumia-tools' ),
+				'smResentOf'       => __( 'Renvoi de', 'lumia-tools' ),
+				'smNoSubject'      => __( '(sans objet)', 'lumia-tools' ),
+				'smTesting'        => __( 'Envoi en cours…', 'lumia-tools' ),
+				'smResending'      => __( 'Renvoi en cours…', 'lumia-tools' ),
+				'smClearTitle'     => __( 'Vider le journal des mails ?', 'lumia-tools' ),
+				'smClearMessage'   => __( 'Tous les mails journalisés seront supprimés définitivement.', 'lumia-tools' ),
+				'smClearConfirm'   => __( 'Vider le journal', 'lumia-tools' ),
+				'smCancel'         => __( 'Annuler', 'lumia-tools' ),
+				'smDate'           => __( 'Date', 'lumia-tools' ),
+				'smStatus'         => __( 'Statut', 'lumia-tools' ),
+				'smFrom'           => __( 'Expéditeur', 'lumia-tools' ),
+				'smTo'             => __( 'Destinataire', 'lumia-tools' ),
+				'smTransport'      => __( 'Transport', 'lumia-tools' ),
+				'smAttachments'    => __( 'Pièces jointes', 'lumia-tools' ),
+				'smMissing'        => __( 'introuvable', 'lumia-tools' ),
+				'smProviderHint'   => __( 'Choisir un fournisseur pré-remplit l\'hôte, le port et le chiffrement ; tout reste modifiable.', 'lumia-tools' ),
+				'smTruncatedLabel' => __( 'Tronqué', 'lumia-tools' ),
+				'smTruncated'      => __( 'Message trop long, tronqué à l\'enregistrement : il ne peut pas être renvoyé.', 'lumia-tools' ),
 			],
 		];
 	}
@@ -273,10 +273,10 @@ class Module extends AbstractModule {
 	 * Nonce partagé + capacité du module, en tête de chaque endpoint.
 	 */
 	private function guard(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ], 403 );
 		}
 	}
 
@@ -308,7 +308,7 @@ class Module extends AbstractModule {
 		$row = Store::get( absint( wp_unslash( $_POST['id'] ?? 0 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! $row ) {
-			wp_send_json_error( [ 'message' => __( 'Mail introuvable.', 'studio-kyne-mini-tools' ) ], 404 );
+			wp_send_json_error( [ 'message' => __( 'Mail introuvable.', 'lumia-tools' ) ], 404 );
 		}
 
 		$attachments = self::json_list( $row['attachments'] ?? '' );
@@ -347,11 +347,11 @@ class Module extends AbstractModule {
 		$row = Store::get( absint( wp_unslash( $_POST['id'] ?? 0 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! $row ) {
-			wp_send_json_error( [ 'message' => __( 'Mail introuvable.', 'studio-kyne-mini-tools' ) ], 404 );
+			wp_send_json_error( [ 'message' => __( 'Mail introuvable.', 'lumia-tools' ) ], 404 );
 		}
 
 		if ( $row['truncated'] ) {
-			wp_send_json_error( [ 'message' => __( 'Ce mail a été tronqué à l\'enregistrement : il ne peut pas être renvoyé à l\'identique.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Ce mail a été tronqué à l\'enregistrement : il ne peut pas être renvoyé à l\'identique.', 'lumia-tools' ) ] );
 		}
 
 		$attachments = [];
@@ -408,10 +408,10 @@ class Module extends AbstractModule {
 			wp_send_json_error( [ 'message' => $error ] );
 		}
 
-		$message = __( 'Mail renvoyé.', 'studio-kyne-mini-tools' );
+		$message = __( 'Mail renvoyé.', 'lumia-tools' );
 		if ( $missing ) {
 			/* translators: %s: noms des pièces jointes introuvables. */
-			$message .= ' ' . sprintf( __( 'Pièces jointes introuvables, non jointes : %s.', 'studio-kyne-mini-tools' ), implode( ', ', $missing ) );
+			$message .= ' ' . sprintf( __( 'Pièces jointes introuvables, non jointes : %s.', 'lumia-tools' ), implode( ', ', $missing ) );
 		}
 
 		wp_send_json_success( [ 'message' => $message ] );
@@ -422,7 +422,7 @@ class Module extends AbstractModule {
 
 		Store::clear();
 
-		wp_send_json_success( [ 'message' => __( 'Journal vidé.', 'studio-kyne-mini-tools' ) ] );
+		wp_send_json_success( [ 'message' => __( 'Journal vidé.', 'lumia-tools' ) ] );
 	}
 
 	/**
@@ -437,7 +437,7 @@ class Module extends AbstractModule {
 		$to = sanitize_email( wp_unslash( (string) ( $_POST['to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! is_email( $to ) ) {
-			wp_send_json_error( [ 'message' => __( 'Adresse de destination invalide.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Adresse de destination invalide.', 'lumia-tools' ) ] );
 		}
 
 		$transcript = [];
@@ -462,8 +462,8 @@ class Module extends AbstractModule {
 				return wp_mail(
 					$to,
 					/* translators: %s: nom du site. */
-					sprintf( __( 'Mail de test — %s', 'studio-kyne-mini-tools' ), $site ),
-					'<p>' . esc_html__( 'Ce mail de test a été envoyé depuis Studio Kyne Mini Tools. Si vous le lisez, l\'envoi fonctionne.', 'studio-kyne-mini-tools' ) . '</p>'
+					sprintf( __( 'Mail de test — %s', 'lumia-tools' ), $site ),
+					'<p>' . esc_html__( 'Ce mail de test a été envoyé depuis Lümia Tools. Si vous le lisez, l\'envoi fonctionne.', 'lumia-tools' ) . '</p>'
 					. '<p style="color:#666;font-size:12px">' . esc_html( home_url() ) . ' — ' . esc_html( (string) wp_date( 'Y-m-d H:i:s' ) ) . '</p>',
 					[ 'Content-Type: text/html; charset=UTF-8' ]
 				);
@@ -475,11 +475,11 @@ class Module extends AbstractModule {
 		// Envoi par l'API : la réponse HTTP tient lieu de transcription. Elle
 		// ne contient pas la clé, qui ne part que dans un en-tête.
 		global $phpmailer;
-		if ( null !== $error && $phpmailer instanceof BrevoMailer && null !== $phpmailer->skmt_last_response ) {
+		if ( null !== $error && $phpmailer instanceof BrevoMailer && null !== $phpmailer->lumia_last_response ) {
 			$transcript = [
 				'POST ' . BrevoMailer::ENDPOINT,
-				'HTTP ' . $phpmailer->skmt_last_response['code'],
-				$phpmailer->skmt_last_response['body'],
+				'HTTP ' . $phpmailer->lumia_last_response['code'],
+				$phpmailer->lumia_last_response['body'],
 			];
 		}
 
@@ -495,7 +495,7 @@ class Module extends AbstractModule {
 		wp_send_json_success(
 			[
 				/* translators: %s: adresse de destination. */
-				'message' => sprintf( __( 'Mail de test envoyé à %s.', 'studio-kyne-mini-tools' ), $to ),
+				'message' => sprintf( __( 'Mail de test envoyé à %s.', 'lumia-tools' ), $to ),
 			]
 		);
 	}
@@ -524,7 +524,7 @@ class Module extends AbstractModule {
 		}
 
 		// Échec sans WP_Error : un pre_wp_mail a court-circuité l'envoi.
-		return '' !== (string) $error ? (string) $error : __( 'L\'envoi a échoué sans message d\'erreur (une autre extension l\'a peut-être intercepté).', 'studio-kyne-mini-tools' );
+		return '' !== (string) $error ? (string) $error : __( 'L\'envoi a échoué sans message d\'erreur (une autre extension l\'a peut-être intercepté).', 'lumia-tools' );
 	}
 
 	/**
@@ -541,7 +541,7 @@ class Module extends AbstractModule {
 		$in_auth  = false;
 		$client   = 'CLIENT -> SERVER:';
 		$server   = 'SERVER -> CLIENT:';
-		$redacted = '[' . __( 'masqué', 'studio-kyne-mini-tools' ) . ']';
+		$redacted = '[' . __( 'masqué', 'lumia-tools' ) . ']';
 
 		foreach ( $lines as $line ) {
 			if ( 0 === strpos( $line, $client ) ) {

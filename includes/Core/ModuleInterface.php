@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -42,7 +42,7 @@ interface ModuleInterface {
 	public function get_admin_js(): array;
 
 	/**
-	 * Retourne les données JS à injecter dans skmtAdmin pour ce module.
+	 * Retourne les données JS à injecter dans lumiaAdmin pour ce module.
 	 * Typiquement : ['i18n' => ['key' => 'translated string', ...]]
 	 *
 	 * @return array<string, mixed>

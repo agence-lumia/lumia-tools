@@ -1,14 +1,14 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Media;
+namespace Lumia\Tools\Modules\Media;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
  * Module Médias — organisation de la médiathèque en dossiers virtuels.
  *
- * Les dossiers sont des termes d'une taxonomie (skmt_media_folder) attachée au
+ * Les dossiers sont des termes d'une taxonomie (lumia_media_folder) attachée au
  * post type "attachment". Les fichiers ne sont jamais déplacés sur le disque :
  * seule l'association taxonomique change.
  *
@@ -20,21 +20,21 @@ use StudioKyne\MiniTools\Core\AbstractModule;
  * résoudrait sinon le query_var par slug, alors qu'on manipule des term_id.
  *
  * Conséquence : la vue ne transporte jamais de liste d'IDs. Elle envoie juste
- * skmt_folder=<id>, et la pagination / le scroll infini de WordPress continuent
+ * lumia_folder=<id>, et la pagination / le scroll infini de WordPress continuent
  * de fonctionner nativement quelle que soit la taille de la médiathèque.
  */
 class Module extends AbstractModule {
 
-	const TAXONOMY = 'skmt_media_folder';
+	const TAXONOMY = 'lumia_media_folder';
 
 	/** Query var transportant le dossier courant jusqu'à WP_Query. */
-	const QUERY_VAR = 'skmt_folder';
+	const QUERY_VAR = 'lumia_folder';
 
 	/** Valeur sentinelle : médias n'appartenant à aucun dossier. */
 	const UNASSIGNED = '__none__';
 
 	/** Clé de term meta stockant la couleur d'un dossier. */
-	const COLOR_META = 'skmt_folder_color';
+	const COLOR_META = 'lumia_folder_color';
 
 	/**
 	 * Au-delà de ce nombre de relations dossier↔média, on cesse de charger les
@@ -53,12 +53,12 @@ class Module extends AbstractModule {
 	 */
 	private static function folder_color_labels(): array {
 		return [
-			'#ef4444' => __( 'Rouge', 'studio-kyne-mini-tools' ),
-			'#f59e0b' => __( 'Orange', 'studio-kyne-mini-tools' ),
-			'#22c55e' => __( 'Vert', 'studio-kyne-mini-tools' ),
-			'#0ea5e9' => __( 'Bleu', 'studio-kyne-mini-tools' ),
-			'#8b5cf6' => __( 'Violet', 'studio-kyne-mini-tools' ),
-			'#64748b' => __( 'Gris', 'studio-kyne-mini-tools' ),
+			'#ef4444' => __( 'Rouge', 'lumia-tools' ),
+			'#f59e0b' => __( 'Orange', 'lumia-tools' ),
+			'#22c55e' => __( 'Vert', 'lumia-tools' ),
+			'#0ea5e9' => __( 'Bleu', 'lumia-tools' ),
+			'#8b5cf6' => __( 'Violet', 'lumia-tools' ),
+			'#64748b' => __( 'Gris', 'lumia-tools' ),
 		];
 	}
 
@@ -99,13 +99,13 @@ class Module extends AbstractModule {
 		// de détails puisse les afficher et les modifier sans requête dédiée.
 		add_filter( 'wp_prepare_attachment_for_js', [ $this, 'expose_attachment_folders' ], 10, 2 );
 
-		add_action( 'wp_ajax_skmt_media_get_folders', [ $this, 'ajax_get_folders' ] );
-		add_action( 'wp_ajax_skmt_media_create_folder', [ $this, 'ajax_create_folder' ] );
-		add_action( 'wp_ajax_skmt_media_rename_folder', [ $this, 'ajax_rename_folder' ] );
-		add_action( 'wp_ajax_skmt_media_delete_folder', [ $this, 'ajax_delete_folder' ] );
-		add_action( 'wp_ajax_skmt_media_move_items', [ $this, 'ajax_move_items' ] );
-		add_action( 'wp_ajax_skmt_media_move_folder', [ $this, 'ajax_move_folder' ] );
-		add_action( 'wp_ajax_skmt_media_set_folder_color', [ $this, 'ajax_set_folder_color' ] );
+		add_action( 'wp_ajax_lumia_media_get_folders', [ $this, 'ajax_get_folders' ] );
+		add_action( 'wp_ajax_lumia_media_create_folder', [ $this, 'ajax_create_folder' ] );
+		add_action( 'wp_ajax_lumia_media_rename_folder', [ $this, 'ajax_rename_folder' ] );
+		add_action( 'wp_ajax_lumia_media_delete_folder', [ $this, 'ajax_delete_folder' ] );
+		add_action( 'wp_ajax_lumia_media_move_items', [ $this, 'ajax_move_items' ] );
+		add_action( 'wp_ajax_lumia_media_move_folder', [ $this, 'ajax_move_folder' ] );
+		add_action( 'wp_ajax_lumia_media_set_folder_color', [ $this, 'ajax_set_folder_color' ] );
 	}
 
 	/* ================================================================
@@ -136,8 +136,8 @@ class Module extends AbstractModule {
 				'update_count_callback' => '_update_generic_term_count',
 
 				'labels'                => [
-					'name'          => __( 'Dossiers médias', 'studio-kyne-mini-tools' ),
-					'singular_name' => __( 'Dossier média', 'studio-kyne-mini-tools' ),
+					'name'          => __( 'Dossiers médias', 'lumia-tools' ),
+					'singular_name' => __( 'Dossier média', 'lumia-tools' ),
 				],
 			]
 		);
@@ -148,7 +148,7 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	/**
-	 * Traduit skmt_folder en tax_query pour la médiathèque AJAX (vue grille et
+	 * Traduit lumia_folder en tax_query pour la médiathèque AJAX (vue grille et
 	 * toutes les modales wp.media).
 	 *
 	 * @param array<string, mixed> $query
@@ -293,44 +293,44 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		// Design system SKMT. On charge UNIQUEMENT tokens.css (custom properties
-		// pures) + les composants : reset.css est scopé sous .skmt-admin-wrap et
+		// Design system LUMIA. On charge UNIQUEMENT tokens.css (custom properties
+		// pures) + les composants : reset.css est scopé sous .lumia-admin-wrap et
 		// layout.css override le chrome wp-admin — aucun des deux n'a sa place
 		// sur une page WordPress native.
-		wp_enqueue_style( 'skmt-tokens-css', SKMT_ASSETS_URL . 'admin/css/tokens.css', [], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-components-css', SKMT_ASSETS_URL . 'admin/css/components.css', [ 'skmt-tokens-css' ], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-buttons-css', SKMT_ASSETS_URL . 'admin/css/buttons.css', [ 'skmt-components-css' ], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-notifications-css', SKMT_ASSETS_URL . 'admin/css/notifications.css', [], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-media-css', SKMT_ASSETS_URL . 'admin/css/modules/media.css', [ 'skmt-components-css' ], SKMT_VERSION );
+		wp_enqueue_style( 'lumia-tokens-css', LUMIA_ASSETS_URL . 'admin/css/tokens.css', [], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-components-css', LUMIA_ASSETS_URL . 'admin/css/components.css', [ 'lumia-tokens-css' ], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-buttons-css', LUMIA_ASSETS_URL . 'admin/css/buttons.css', [ 'lumia-components-css' ], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-notifications-css', LUMIA_ASSETS_URL . 'admin/css/notifications.css', [], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-media-css', LUMIA_ASSETS_URL . 'admin/css/modules/media.css', [ 'lumia-components-css' ], LUMIA_VERSION );
 
-		// admin.js fournit les modales nommées (skmtModalOpen/Close) utilisées
-		// par l'UI médias ; notifications.js fournit window.skmtShowToast.
-		wp_enqueue_script( 'skmt-admin-js', SKMT_ASSETS_URL . 'admin/js/admin.js', [], SKMT_VERSION, true );
-		wp_enqueue_script( 'skmt-notifications-js', SKMT_ASSETS_URL . 'admin/js/notifications.js', [], SKMT_VERSION, true );
-		wp_enqueue_script( 'skmt-sortable-js', SKMT_ASSETS_URL . 'admin/js/vendor/sortable.min.js', [], SKMT_VERSION, true );
+		// admin.js fournit les modales nommées (lumiaModalOpen/Close) utilisées
+		// par l'UI médias ; notifications.js fournit window.lumiaShowToast.
+		wp_enqueue_script( 'lumia-admin-js', LUMIA_ASSETS_URL . 'admin/js/admin.js', [], LUMIA_VERSION, true );
+		wp_enqueue_script( 'lumia-notifications-js', LUMIA_ASSETS_URL . 'admin/js/notifications.js', [], LUMIA_VERSION, true );
+		wp_enqueue_script( 'lumia-sortable-js', LUMIA_ASSETS_URL . 'admin/js/vendor/sortable.min.js', [], LUMIA_VERSION, true );
 
 		// media-views n'est déclaré en dépendance que s'il est déjà là : l'ajouter
 		// systématiquement forcerait le chargement de toute la médiathèque
 		// Backbone sur la vue liste, qui n'en a pas besoin.
-		$deps = [ 'jquery', 'skmt-admin-js', 'skmt-notifications-js', 'skmt-sortable-js' ];
+		$deps = [ 'jquery', 'lumia-admin-js', 'lumia-notifications-js', 'lumia-sortable-js' ];
 		if ( $has_media_views ) {
 			$deps[] = 'media-views';
 		}
 
 		wp_enqueue_script(
-			'skmt-media-js',
-			SKMT_ASSETS_URL . 'admin/js/modules/media.js',
+			'lumia-media-js',
+			LUMIA_ASSETS_URL . 'admin/js/modules/media.js',
 			$deps,
-			SKMT_VERSION,
+			LUMIA_VERSION,
 			true
 		);
 
 		wp_localize_script(
-			'skmt-media-js',
-			'skmtMedia',
+			'lumia-media-js',
+			'lumiaMedia',
 			[
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-				'nonce'       => wp_create_nonce( 'skmt_admin_nonce' ),
+				'nonce'       => wp_create_nonce( 'lumia_admin_nonce' ),
 				'colors'      => self::FOLDER_COLORS,
 				'colorLabels' => self::folder_color_labels(),
 				'queryVar'    => self::QUERY_VAR,
@@ -341,32 +341,32 @@ class Module extends AbstractModule {
 				// guard_manage() ne dépend d'aucune valeur envoyée par le client.
 				'canManage'   => current_user_can( self::CAP_MANAGE ),
 				'i18n'        => [
-					'folders'         => __( 'Dossiers', 'studio-kyne-mini-tools' ),
-					'color'           => __( 'Couleur', 'studio-kyne-mini-tools' ),
-					'defaultColor'    => __( 'Par défaut', 'studio-kyne-mini-tools' ),
-					'newFolder'       => __( 'Nouveau dossier', 'studio-kyne-mini-tools' ),
-					'newSubfolder'    => __( 'Nouveau sous-dossier', 'studio-kyne-mini-tools' ),
-					'folderName'      => __( 'Nom du dossier', 'studio-kyne-mini-tools' ),
-					'allMedia'        => __( 'Tous les médias', 'studio-kyne-mini-tools' ),
-					'unorganized'     => __( 'Non classés', 'studio-kyne-mini-tools' ),
-					'deleteFolder'    => __( 'Supprimer le dossier ?', 'studio-kyne-mini-tools' ),
-					'deleteFolderMsg' => __( 'Les médias de ce dossier et de ses sous-dossiers seront déplacés à la racine.', 'studio-kyne-mini-tools' ),
-					'rename'          => __( 'Renommer', 'studio-kyne-mini-tools' ),
-					'delete'          => __( 'Supprimer', 'studio-kyne-mini-tools' ),
-					'create'          => __( 'Créer', 'studio-kyne-mini-tools' ),
-					'save'            => __( 'Enregistrer', 'studio-kyne-mini-tools' ),
-					'cancel'          => __( 'Annuler', 'studio-kyne-mini-tools' ),
-					'loading'         => __( 'Chargement…', 'studio-kyne-mini-tools' ),
-					'folderCreated'   => __( 'Dossier créé.', 'studio-kyne-mini-tools' ),
-					'folderRenamed'   => __( 'Dossier renommé.', 'studio-kyne-mini-tools' ),
-					'folderDeleted'   => __( 'Dossier supprimé.', 'studio-kyne-mini-tools' ),
-					'folderMoved'     => __( 'Dossier déplacé.', 'studio-kyne-mini-tools' ),
-					'itemsMoved'      => __( 'média(s) déplacé(s).', 'studio-kyne-mini-tools' ),
-					'itemsAdded'      => __( 'média(s) ajouté(s) au dossier.', 'studio-kyne-mini-tools' ),
-					'itemsRemoved'    => __( 'média(s) retiré(s) du dossier.', 'studio-kyne-mini-tools' ),
-					'noFolder'        => __( 'Aucun dossier', 'studio-kyne-mini-tools' ),
-					'folderUpdated'   => __( 'Dossiers mis à jour.', 'studio-kyne-mini-tools' ),
-					'itemsRefused'    => __( 'média(s) ignoré(s) : vous n\'avez pas le droit de les modifier.', 'studio-kyne-mini-tools' ),
+					'folders'         => __( 'Dossiers', 'lumia-tools' ),
+					'color'           => __( 'Couleur', 'lumia-tools' ),
+					'defaultColor'    => __( 'Par défaut', 'lumia-tools' ),
+					'newFolder'       => __( 'Nouveau dossier', 'lumia-tools' ),
+					'newSubfolder'    => __( 'Nouveau sous-dossier', 'lumia-tools' ),
+					'folderName'      => __( 'Nom du dossier', 'lumia-tools' ),
+					'allMedia'        => __( 'Tous les médias', 'lumia-tools' ),
+					'unorganized'     => __( 'Non classés', 'lumia-tools' ),
+					'deleteFolder'    => __( 'Supprimer le dossier ?', 'lumia-tools' ),
+					'deleteFolderMsg' => __( 'Les médias de ce dossier et de ses sous-dossiers seront déplacés à la racine.', 'lumia-tools' ),
+					'rename'          => __( 'Renommer', 'lumia-tools' ),
+					'delete'          => __( 'Supprimer', 'lumia-tools' ),
+					'create'          => __( 'Créer', 'lumia-tools' ),
+					'save'            => __( 'Enregistrer', 'lumia-tools' ),
+					'cancel'          => __( 'Annuler', 'lumia-tools' ),
+					'loading'         => __( 'Chargement…', 'lumia-tools' ),
+					'folderCreated'   => __( 'Dossier créé.', 'lumia-tools' ),
+					'folderRenamed'   => __( 'Dossier renommé.', 'lumia-tools' ),
+					'folderDeleted'   => __( 'Dossier supprimé.', 'lumia-tools' ),
+					'folderMoved'     => __( 'Dossier déplacé.', 'lumia-tools' ),
+					'itemsMoved'      => __( 'média(s) déplacé(s).', 'lumia-tools' ),
+					'itemsAdded'      => __( 'média(s) ajouté(s) au dossier.', 'lumia-tools' ),
+					'itemsRemoved'    => __( 'média(s) retiré(s) du dossier.', 'lumia-tools' ),
+					'noFolder'        => __( 'Aucun dossier', 'lumia-tools' ),
+					'folderUpdated'   => __( 'Dossiers mis à jour.', 'lumia-tools' ),
+					'itemsRefused'    => __( 'média(s) ignoré(s) : vous n\'avez pas le droit de les modifier.', 'lumia-tools' ),
 				],
 			]
 		);
@@ -417,9 +417,9 @@ class Module extends AbstractModule {
 
 	/** Garde de lecture : voir les dossiers, filtrer la médiathèque. */
 	private function guard(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( self::CAP_USE ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 	}
 
@@ -427,12 +427,12 @@ class Module extends AbstractModule {
 	private function guard_manage(): void {
 		$this->guard();
 		if ( ! current_user_can( self::CAP_MANAGE ) ) {
-			wp_send_json_error( [ 'message' => __( 'Vous n\'avez pas le droit de modifier l\'organisation de la médiathèque.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Vous n\'avez pas le droit de modifier l\'organisation de la médiathèque.', 'lumia-tools' ) ] );
 		}
 	}
 
 	/**
-	 * Ajoute les dossiers d'un média à son modèle Backbone (clé skmtFolders).
+	 * Ajoute les dossiers d'un média à son modèle Backbone (clé lumiaFolders).
 	 *
 	 * wp.media prépare déjà chaque pièce jointe pour le JS : on se greffe ici
 	 * plutôt que d'ouvrir un endpoint, ce qui garde le panneau de détails
@@ -445,7 +445,7 @@ class Module extends AbstractModule {
 	public function expose_attachment_folders( array $response, $attachment ): array {
 		$terms = get_the_terms( $attachment, self::TAXONOMY );
 
-		$response['skmtFolders'] = is_wp_error( $terms ) || ! $terms
+		$response['lumiaFolders'] = is_wp_error( $terms ) || ! $terms
 			? []
 			: array_values(
 				array_map(
@@ -646,10 +646,10 @@ class Module extends AbstractModule {
 		$parent_id = isset( $_POST['parent_id'] ) ? (int) $_POST['parent_id'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! $name ) {
-			wp_send_json_error( [ 'message' => __( 'Nom requis.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Nom requis.', 'lumia-tools' ) ] );
 		}
 		if ( $parent_id > 0 && ! term_exists( $parent_id, self::TAXONOMY ) ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier parent introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier parent introuvable.', 'lumia-tools' ) ] );
 		}
 
 		$result = wp_insert_term( $name, self::TAXONOMY, [ 'parent' => max( 0, $parent_id ) ] );
@@ -667,10 +667,10 @@ class Module extends AbstractModule {
 		$name = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! $id || ! $name ) {
-			wp_send_json_error( [ 'message' => __( 'Paramètres manquants.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Paramètres manquants.', 'lumia-tools' ) ] );
 		}
 		if ( ! term_exists( $id, self::TAXONOMY ) ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'lumia-tools' ) ] );
 		}
 
 		$result = wp_update_term( $id, self::TAXONOMY, [ 'name' => $name ] );
@@ -694,7 +694,7 @@ class Module extends AbstractModule {
 
 		$id = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 		if ( ! $id || ! term_exists( $id, self::TAXONOMY ) ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'lumia-tools' ) ] );
 		}
 
 		$children  = get_term_children( $id, self::TAXONOMY );
@@ -752,14 +752,14 @@ class Module extends AbstractModule {
 		}
 
 		if ( ! $attachment_ids ) {
-			wp_send_json_error( [ 'message' => __( 'Aucun média sélectionné.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Aucun média sélectionné.', 'lumia-tools' ) ] );
 		}
 		if ( $folder_id > 0 && ! term_exists( $folder_id, self::TAXONOMY ) ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'lumia-tools' ) ] );
 		}
 		// add et remove n'ont aucun sens sans dossier cible.
 		if ( $folder_id <= 0 && 'replace' !== $mode ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier cible requis.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier cible requis.', 'lumia-tools' ) ] );
 		}
 
 		$moved   = 0;
@@ -819,21 +819,21 @@ class Module extends AbstractModule {
 		$parent_id = isset( $_POST['parent_id'] ) ? (int) $_POST['parent_id'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! $id || ! term_exists( $id, self::TAXONOMY ) ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'lumia-tools' ) ] );
 		}
 		if ( $id === $parent_id ) {
-			wp_send_json_error( [ 'message' => __( 'Un dossier ne peut pas être son propre parent.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Un dossier ne peut pas être son propre parent.', 'lumia-tools' ) ] );
 		}
 
 		// Garde anti-cycle : déplacer un dossier dans l'un de ses descendants
 		// détacherait toute la branche de l'arbre.
 		if ( $parent_id > 0 ) {
 			if ( ! term_exists( $parent_id, self::TAXONOMY ) ) {
-				wp_send_json_error( [ 'message' => __( 'Dossier parent introuvable.', 'studio-kyne-mini-tools' ) ] );
+				wp_send_json_error( [ 'message' => __( 'Dossier parent introuvable.', 'lumia-tools' ) ] );
 			}
 			$descendants = get_term_children( $id, self::TAXONOMY );
 			if ( ! is_wp_error( $descendants ) && in_array( $parent_id, array_map( 'intval', $descendants ), true ) ) {
-				wp_send_json_error( [ 'message' => __( 'Impossible de déplacer un dossier dans un de ses sous-dossiers.', 'studio-kyne-mini-tools' ) ] );
+				wp_send_json_error( [ 'message' => __( 'Impossible de déplacer un dossier dans un de ses sous-dossiers.', 'lumia-tools' ) ] );
 			}
 		}
 
@@ -852,10 +852,10 @@ class Module extends AbstractModule {
 		$color = sanitize_text_field( wp_unslash( $_POST['color'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard().
 
 		if ( ! $id || ! term_exists( $id, self::TAXONOMY ) ) {
-			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Dossier introuvable.', 'lumia-tools' ) ] );
 		}
 		if ( '' !== $color && ! in_array( $color, self::FOLDER_COLORS, true ) ) {
-			wp_send_json_error( [ 'message' => __( 'Couleur non valide.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Couleur non valide.', 'lumia-tools' ) ] );
 		}
 
 		if ( '' === $color ) {

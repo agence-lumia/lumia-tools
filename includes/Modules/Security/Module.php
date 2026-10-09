@@ -1,9 +1,9 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Security;
+namespace Lumia\Tools\Modules\Security;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
  * Module Sécurité.
@@ -21,7 +21,7 @@ class Module extends AbstractModule {
 	 * `feed`, `embed`, `comments` sont des bases de réécriture. Tout segment en
 	 * `wp-` est refusé d'un bloc (wp-admin, wp-login, wp-content, wp-json…).
 	 * Un slug réservé enferme l'administrateur hors du site, sans autre issue
-	 * que la constante SKMT_DISABLE_LOGIN_URL.
+	 * que la constante LUMIA_DISABLE_LOGIN_URL.
 	 */
 	private const RESERVED_LOGIN_SEGMENTS = [ 'admin', 'login', 'index', 'index-php', 'xmlrpc', 'xmlrpc-php', 'feed', 'embed', 'comments' ];
 
@@ -175,10 +175,10 @@ class Module extends AbstractModule {
 	 * sans quoi wp-login.php reste bloque et le site devient inaccessible,
 	 * sans aucun recours depuis le navigateur.
 	 *
-	 *     define( 'SKMT_DISABLE_LOGIN_URL', true );
+	 *     define( 'LUMIA_DISABLE_LOGIN_URL', true );
 	 */
 	public static function login_url_disabled(): bool {
-		return defined( 'SKMT_DISABLE_LOGIN_URL' ) && SKMT_DISABLE_LOGIN_URL;
+		return defined( 'LUMIA_DISABLE_LOGIN_URL' ) && LUMIA_DISABLE_LOGIN_URL;
 	}
 
 	/**
@@ -312,7 +312,7 @@ class Module extends AbstractModule {
 	 */
 	public function get_admin_css(): array {
 		return [
-			SKMT_ASSETS_URL . 'admin/css/modules/security-admin.css',
+			LUMIA_ASSETS_URL . 'admin/css/modules/security-admin.css',
 		];
 	}
 
@@ -323,7 +323,7 @@ class Module extends AbstractModule {
 	 */
 	public function get_admin_js(): array {
 		return [
-			SKMT_ASSETS_URL . 'admin/js/modules/security-admin.js',
+			LUMIA_ASSETS_URL . 'admin/js/modules/security-admin.js',
 		];
 	}
 
@@ -335,7 +335,7 @@ class Module extends AbstractModule {
 	public function get_admin_js_data(): array {
 		return [
 			'i18n' => [
-				'settings' => __( 'Paramètres de sécurité mis à jour', 'studio-kyne-mini-tools' ),
+				'settings' => __( 'Paramètres de sécurité mis à jour', 'lumia-tools' ),
 			],
 		];
 	}
@@ -375,7 +375,7 @@ class Module extends AbstractModule {
 	public static function get_uninstall_keys(): array {
 		return [
 			'options' => [
-				'skmt_module_security',
+				'lumia_module_security',
 			],
 		];
 	}

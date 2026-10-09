@@ -17,16 +17,16 @@
  * ne transite, la pagination et le scroll infini natifs restent intacts.
  *
  * Dépendances : jquery, admin.js (modales nommées), notifications.js
- * (window.skmtShowToast), sortable.min.js. media-views uniquement en grille.
+ * (window.lumiaShowToast), sortable.min.js. media-views uniquement en grille.
  */
 (function ($) {
   "use strict";
 
-  var cfg = window.skmtMedia || {};
+  var cfg = window.lumiaMedia || {};
   if (!cfg.ajaxUrl) return;
 
   var i18n = cfg.i18n || {};
-  var QUERY_VAR = cfg.queryVar || "skmt_folder";
+  var QUERY_VAR = cfg.queryVar || "lumia_folder";
   var UNASSIGNED = cfg.unassigned || "__none__";
   var COLORS = cfg.colors || [];
   var COLOR_LABELS = cfg.colorLabels || {};
@@ -65,17 +65,17 @@
   }
 
   function toast(message, type) {
-    if (typeof window.skmtShowToast === "function") {
-      window.skmtShowToast(message, type || "success");
+    if (typeof window.lumiaShowToast === "function") {
+      window.lumiaShowToast(message, type || "success");
     }
   }
 
-  // Le conteneur de toasts vit dans le layout SKMT, absent des pages natives.
+  // Le conteneur de toasts vit dans le layout LUMIA, absent des pages natives.
   function ensureToastContainer() {
-    if (document.getElementById("skmt-toast-container")) return;
+    if (document.getElementById("lumia-toast-container")) return;
     var c = document.createElement("div");
-    c.id = "skmt-toast-container";
-    c.className = "skmt-toast-container";
+    c.id = "lumia-toast-container";
+    c.className = "lumia-toast-container";
     c.setAttribute("role", "region");
     c.setAttribute("aria-live", "polite");
     document.body.appendChild(c);
@@ -132,7 +132,7 @@
 
   function loadFolders() {
     if (store.loading) return store.loading;
-    store.loading = ajax("skmt_media_get_folders", {})
+    store.loading = ajax("lumia_media_get_folders", {})
       .then(commit)
       .catch(function () { return null; })
       .then(function (r) { store.loading = null; return r; });
@@ -169,20 +169,20 @@
   var modals = { ready: false, parent: 0, rename: 0, remove: 0, onDone: null };
 
   function modalBlock(id, titleKey, titleFallback, body, confirmId, confirmKey, confirmFallback, danger) {
-    return '<div id="' + id + '" class="skmt-modal-overlay skmt-media-modal" role="dialog" aria-modal="true" aria-labelledby="' + id + '-title">' +
-      '<div class="skmt-modal">' +
-      '<div class="skmt-modal__header"><h3 id="' + id + '-title" class="skmt-modal__title">' + escHtml(t(titleKey, titleFallback)) + "</h3></div>" +
-      '<div class="skmt-modal__body">' + body + "</div>" +
-      '<div class="skmt-modal__footer">' +
-      '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--secondary skmt-modal-close">' + escHtml(t("cancel", "Annuler")) + "</button>" +
-      '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--' + (danger ? "danger" : "primary") + '" id="' + confirmId + '">' + escHtml(t(confirmKey, confirmFallback)) + "</button>" +
+    return '<div id="' + id + '" class="lumia-modal-overlay lumia-media-modal" role="dialog" aria-modal="true" aria-labelledby="' + id + '-title">' +
+      '<div class="lumia-modal">' +
+      '<div class="lumia-modal__header"><h3 id="' + id + '-title" class="lumia-modal__title">' + escHtml(t(titleKey, titleFallback)) + "</h3></div>" +
+      '<div class="lumia-modal__body">' + body + "</div>" +
+      '<div class="lumia-modal__footer">' +
+      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal-close">' + escHtml(t("cancel", "Annuler")) + "</button>" +
+      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--' + (danger ? "danger" : "primary") + '" id="' + confirmId + '">' + escHtml(t(confirmKey, confirmFallback)) + "</button>" +
       "</div></div></div>";
   }
 
   function field(inputId) {
-    return '<div class="skmt-form__group">' +
-      '<label class="skmt-form__label" for="' + inputId + '">' + escHtml(t("folderName", "Nom du dossier")) + "</label>" +
-      '<input type="text" class="skmt-input" id="' + inputId + '" autocomplete="off">' +
+    return '<div class="lumia-form__group">' +
+      '<label class="lumia-form__label" for="' + inputId + '">' + escHtml(t("folderName", "Nom du dossier")) + "</label>" +
+      '<input type="text" class="lumia-input" id="' + inputId + '" autocomplete="off">' +
       "</div>";
   }
 
@@ -191,24 +191,24 @@
     modals.ready = true;
 
     var host = document.createElement("div");
-    host.id = "skmt-media-modals";
+    host.id = "lumia-media-modals";
     host.innerHTML =
-      modalBlock("skmt-media-modal-new-folder", "newFolder", "Nouveau dossier",
-        field("skmt-media-new-folder-name"), "skmt-media-create-folder-confirm", "create", "Créer", false) +
-      modalBlock("skmt-media-modal-rename", "rename", "Renommer",
-        field("skmt-media-rename-name"), "skmt-media-rename-confirm", "save", "Enregistrer", false) +
-      modalBlock("skmt-media-modal-delete", "deleteFolder", "Supprimer le dossier ?",
-        "<p>" + escHtml(t("deleteFolderMsg", "")) + "</p>", "skmt-media-delete-confirm", "delete", "Supprimer", true);
+      modalBlock("lumia-media-modal-new-folder", "newFolder", "Nouveau dossier",
+        field("lumia-media-new-folder-name"), "lumia-media-create-folder-confirm", "create", "Créer", false) +
+      modalBlock("lumia-media-modal-rename", "rename", "Renommer",
+        field("lumia-media-rename-name"), "lumia-media-rename-confirm", "save", "Enregistrer", false) +
+      modalBlock("lumia-media-modal-delete", "deleteFolder", "Supprimer le dossier ?",
+        "<p>" + escHtml(t("deleteFolderMsg", "")) + "</p>", "lumia-media-delete-confirm", "delete", "Supprimer", true);
     document.body.appendChild(host);
 
-    var nameInput = document.getElementById("skmt-media-new-folder-name");
-    var renameInput = document.getElementById("skmt-media-rename-name");
+    var nameInput = document.getElementById("lumia-media-new-folder-name");
+    var renameInput = document.getElementById("lumia-media-rename-name");
 
     function submitCreate() {
       var name = nameInput.value.trim();
       if (!name) return;
-      ajax("skmt_media_create_folder", { name: name, parent_id: modals.parent }).then(function (data) {
-        window.skmtModalClose("skmt-media-modal-new-folder");
+      ajax("lumia_media_create_folder", { name: name, parent_id: modals.parent }).then(function (data) {
+        window.lumiaModalClose("lumia-media-modal-new-folder");
         commit(data);
         toast(t("folderCreated", "Dossier créé."), "success");
       });
@@ -217,8 +217,8 @@
     function submitRename() {
       var name = renameInput.value.trim();
       if (!name || !modals.rename) return;
-      ajax("skmt_media_rename_folder", { id: modals.rename, name: name }).then(function (data) {
-        window.skmtModalClose("skmt-media-modal-rename");
+      ajax("lumia_media_rename_folder", { id: modals.rename, name: name }).then(function (data) {
+        window.lumiaModalClose("lumia-media-modal-rename");
         commit(data);
         toast(t("folderRenamed", "Dossier renommé."), "success");
       });
@@ -227,8 +227,8 @@
     function submitDelete() {
       if (!modals.remove) return;
       var removed = modals.remove;
-      ajax("skmt_media_delete_folder", { id: removed }).then(function (data) {
-        window.skmtModalClose("skmt-media-modal-delete");
+      ajax("lumia_media_delete_folder", { id: removed }).then(function (data) {
+        window.lumiaModalClose("lumia-media-modal-delete");
         modals.remove = 0;
         commit(data);
         if (typeof modals.onDone === "function") modals.onDone(removed);
@@ -236,9 +236,9 @@
       });
     }
 
-    document.getElementById("skmt-media-create-folder-confirm").addEventListener("click", submitCreate);
-    document.getElementById("skmt-media-rename-confirm").addEventListener("click", submitRename);
-    document.getElementById("skmt-media-delete-confirm").addEventListener("click", submitDelete);
+    document.getElementById("lumia-media-create-folder-confirm").addEventListener("click", submitCreate);
+    document.getElementById("lumia-media-rename-confirm").addEventListener("click", submitRename);
+    document.getElementById("lumia-media-delete-confirm").addEventListener("click", submitDelete);
 
     [[nameInput, submitCreate], [renameInput, submitRename]].forEach(function (pair) {
       pair[0].addEventListener("keydown", function (e) {
@@ -250,9 +250,9 @@
   function openCreateModal(parentId) {
     ensureModals();
     modals.parent = parentId || 0;
-    var input = document.getElementById("skmt-media-new-folder-name");
+    var input = document.getElementById("lumia-media-new-folder-name");
     input.value = "";
-    window.skmtModalOpen("skmt-media-modal-new-folder");
+    window.lumiaModalOpen("lumia-media-modal-new-folder");
     input.focus();
   }
 
@@ -260,9 +260,9 @@
     ensureModals();
     modals.rename = folderId;
     var folder = findFolder(folderId);
-    var input = document.getElementById("skmt-media-rename-name");
+    var input = document.getElementById("lumia-media-rename-name");
     input.value = folder ? folder.name : "";
-    window.skmtModalOpen("skmt-media-modal-rename");
+    window.lumiaModalOpen("lumia-media-modal-rename");
     input.focus();
     input.select();
   }
@@ -271,7 +271,7 @@
     ensureModals();
     modals.remove = folderId;
     modals.onDone = onDone;
-    window.skmtModalOpen("skmt-media-modal-delete");
+    window.lumiaModalOpen("lumia-media-modal-delete");
   }
 
   /* ================================================================
@@ -279,19 +279,19 @@
    * ================================================================ */
 
   function closeDropdown() {
-    var existing = document.querySelector(".skmt-media-dropdown");
+    var existing = document.querySelector(".lumia-media-dropdown");
     if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
   }
 
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".skmt-media-folder__menu-btn") && !e.target.closest(".skmt-media-dropdown")) {
+    if (!e.target.closest(".lumia-media-folder__menu-btn") && !e.target.closest(".lumia-media-dropdown")) {
       closeDropdown();
     }
   });
   window.addEventListener("scroll", closeDropdown, true);
 
   function openDropdown(btn, folderId, panel) {
-    var already = document.querySelector(".skmt-media-dropdown");
+    var already = document.querySelector(".lumia-media-dropdown");
     var wasSame = already && already.dataset.folderId === String(folderId);
     closeDropdown();
     if (wasSame) return; // toggle
@@ -302,22 +302,22 @@
       var isNone = c === "";
       var isSel = (folder.color || "") === c;
       var label = isNone ? t("defaultColor", "Par défaut") : (COLOR_LABELS[c] || c);
-      return '<button type="button" class="skmt-media-swatch' + (isNone ? " is-none" : "") + (isSel ? " is-selected" : "") +
+      return '<button type="button" class="lumia-media-swatch' + (isNone ? " is-none" : "") + (isSel ? " is-selected" : "") +
         '" data-color="' + escHtml(c) + '" ' + (c ? 'style="background:' + escHtml(c) + '" ' : "") +
         'title="' + escHtml(label) + '" ' +
-        'data-skmt-tip="' + escHtml(label) + '" aria-label="' + escHtml(label) + '"></button>';
+        'data-lumia-tip="' + escHtml(label) + '" aria-label="' + escHtml(label) + '"></button>';
     }).join("");
 
     var dd = document.createElement("div");
-    dd.className = "skmt-media-dropdown";
+    dd.className = "lumia-media-dropdown";
     dd.dataset.folderId = String(folderId);
     dd.innerHTML =
-      '<div class="skmt-media-dropdown__label">' + escHtml(t("color", "Couleur")) + "</div>" +
-      '<div class="skmt-media-dropdown__colors">' + swatches + "</div>" +
-      '<div class="skmt-media-dropdown__sep"></div>' +
-      '<button type="button" class="skmt-media-dropdown__action" data-action="rename">' + escHtml(t("rename", "Renommer")) + "</button>" +
-      '<button type="button" class="skmt-media-dropdown__action" data-action="subfolder">' + escHtml(t("newSubfolder", "Nouveau sous-dossier")) + "</button>" +
-      '<button type="button" class="skmt-media-dropdown__action is-danger" data-action="delete">' + escHtml(t("delete", "Supprimer")) + "</button>";
+      '<div class="lumia-media-dropdown__label">' + escHtml(t("color", "Couleur")) + "</div>" +
+      '<div class="lumia-media-dropdown__colors">' + swatches + "</div>" +
+      '<div class="lumia-media-dropdown__sep"></div>' +
+      '<button type="button" class="lumia-media-dropdown__action" data-action="rename">' + escHtml(t("rename", "Renommer")) + "</button>" +
+      '<button type="button" class="lumia-media-dropdown__action" data-action="subfolder">' + escHtml(t("newSubfolder", "Nouveau sous-dossier")) + "</button>" +
+      '<button type="button" class="lumia-media-dropdown__action is-danger" data-action="delete">' + escHtml(t("delete", "Supprimer")) + "</button>";
 
     document.body.appendChild(dd);
 
@@ -326,11 +326,11 @@
     dd.style.left = Math.max(8, left) + "px";
     dd.style.top = window.scrollY + rect.bottom + 4 + "px";
 
-    dd.querySelectorAll(".skmt-media-swatch").forEach(function (sw) {
+    dd.querySelectorAll(".lumia-media-swatch").forEach(function (sw) {
       sw.addEventListener("click", function () {
         var color = sw.dataset.color;
         closeDropdown();
-        ajax("skmt_media_set_folder_color", { id: folderId, color: color }).then(function () {
+        ajax("lumia_media_set_folder_color", { id: folderId, color: color }).then(function () {
           var f = findFolder(folderId);
           if (f) f.color = color;
           commit();
@@ -338,7 +338,7 @@
       });
     });
 
-    dd.querySelectorAll(".skmt-media-dropdown__action").forEach(function (b) {
+    dd.querySelectorAll(".lumia-media-dropdown__action").forEach(function (b) {
       b.addEventListener("click", function () {
         var action = b.dataset.action;
         closeDropdown();
@@ -407,8 +407,8 @@
   function FolderPanel(target, el) {
     this.target = target;
     this.el = el || document.createElement("div");
-    this.el.classList.add("skmt-media-sidebar");
-    this.el._skmtPanel = this;
+    this.el.classList.add("lumia-media-sidebar");
+    this.el._lumiaPanel = this;
     this.unsubscribe = onChange(this.renderTree.bind(this));
     loadFolders();
   }
@@ -430,15 +430,15 @@
 
   FolderPanel.prototype.render = function () {
     this.el.innerHTML =
-      '<div class="skmt-media-sidebar__header">' +
-      '<span class="skmt-media-sidebar__title">' + escHtml(t("folders", "Dossiers")) + "</span>" +
+      '<div class="lumia-media-sidebar__header">' +
+      '<span class="lumia-media-sidebar__title">' + escHtml(t("folders", "Dossiers")) + "</span>" +
       (CAN_MANAGE
-        ? '<button type="button" class="skmt-media-sidebar__add-btn" title="' + escHtml(t("newFolder", "Nouveau dossier")) + '" data-skmt-tip="' + escHtml(t("newFolder", "Nouveau dossier")) + '" aria-label="' + escHtml(t("newFolder", "Nouveau dossier")) + '">' + ICON_PLUS + "</button>"
+        ? '<button type="button" class="lumia-media-sidebar__add-btn" title="' + escHtml(t("newFolder", "Nouveau dossier")) + '" data-lumia-tip="' + escHtml(t("newFolder", "Nouveau dossier")) + '" aria-label="' + escHtml(t("newFolder", "Nouveau dossier")) + '">' + ICON_PLUS + "</button>"
         : "") +
       "</div>" +
-      '<div class="skmt-media-sidebar__tree"><div class="skmt-media-loading">' + escHtml(t("loading", "Chargement…")) + "</div></div>";
+      '<div class="lumia-media-sidebar__tree"><div class="lumia-media-loading">' + escHtml(t("loading", "Chargement…")) + "</div></div>";
 
-    var addBtn = this.el.querySelector(".skmt-media-sidebar__add-btn");
+    var addBtn = this.el.querySelector(".lumia-media-sidebar__add-btn");
     if (addBtn) {
       addBtn.addEventListener("click", function () { openCreateModal(0); });
     }
@@ -448,7 +448,7 @@
   };
 
   FolderPanel.prototype.renderTree = function () {
-    var tree = this.el.querySelector(".skmt-media-sidebar__tree");
+    var tree = this.el.querySelector(".lumia-media-sidebar__tree");
     if (!tree) return;
 
     var self = this;
@@ -479,11 +479,11 @@
     var iconStyle = o.color ? ' style="color:' + escHtml(o.color) + '"' : "";
     var count = o.count === null || o.count === undefined
       ? ""
-      : '<span class="skmt-media-folder__count">' + parseInt(o.count, 10) + "</span>";
+      : '<span class="lumia-media-folder__count">' + parseInt(o.count, 10) + "</span>";
     var menu = isFolder && CAN_MANAGE
-      ? '<button type="button" class="skmt-media-folder__menu-btn" data-folder-id="' + escHtml(value) + '" aria-label="Actions">' + ICON_DOTS + "</button>"
+      ? '<button type="button" class="lumia-media-folder__menu-btn" data-folder-id="' + escHtml(value) + '" aria-label="Actions">' + ICON_DOTS + "</button>"
       : "";
-    var indent = o.depth ? ' style="--skmt-depth:' + parseInt(o.depth, 10) + '"' : "";
+    var indent = o.depth ? ' style="--lumia-depth:' + parseInt(o.depth, 10) + '"' : "";
 
     // « Non classés » est aussi une cible de dépôt, avec l'id 0 : y lâcher des
     // médias les sort de tout dossier, y lâcher un dossier le remonte à la
@@ -494,9 +494,9 @@
     if (droppable) attrs += ' data-droppable="true" data-drop-id="' + (isFolder ? parseInt(value, 10) : 0) + '"';
     if (isFolder) attrs += ' data-folder-id="' + escHtml(value) + '"';
 
-    return '<div class="skmt-media-folder-item' + (isActive ? " is-active" : "") + '"' + indent + attrs + ">" +
-      '<span class="skmt-media-folder__icon"' + iconStyle + ">" + folderIcon(value) + "</span>" +
-      '<span class="skmt-media-folder__name">' + escHtml(o.name) + "</span>" +
+    return '<div class="lumia-media-folder-item' + (isActive ? " is-active" : "") + '"' + indent + attrs + ">" +
+      '<span class="lumia-media-folder__icon"' + iconStyle + ">" + folderIcon(value) + "</span>" +
+      '<span class="lumia-media-folder__name">' + escHtml(o.name) + "</span>" +
       count + menu +
       "</div>";
   };
@@ -504,15 +504,15 @@
   FolderPanel.prototype.bindTree = function () {
     var self = this;
 
-    this.el.querySelectorAll(".skmt-media-folder-item").forEach(function (el) {
+    this.el.querySelectorAll(".lumia-media-folder-item").forEach(function (el) {
       el.addEventListener("click", function (e) {
-        if (e.target.closest(".skmt-media-folder__menu-btn")) return;
+        if (e.target.closest(".lumia-media-folder__menu-btn")) return;
         var raw = el.dataset.value;
         self.select(raw === ALL || raw === UNASSIGNED ? raw : parseInt(raw, 10));
       });
     });
 
-    this.el.querySelectorAll(".skmt-media-folder__menu-btn").forEach(function (btn) {
+    this.el.querySelectorAll(".lumia-media-folder__menu-btn").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         openDropdown(btn, parseInt(btn.dataset.folderId, 10), self);
@@ -533,7 +533,7 @@
 
     mode = mode || "replace";
 
-    ajax("skmt_media_move_items", { ids: ids, folder_id: folderId, mode: mode }).then(function (data) {
+    ajax("lumia_media_move_items", { ids: ids, folder_id: folderId, mode: mode }).then(function (data) {
       var n = (data && data.moved) || ids.length;
       commit(data);
 
@@ -552,17 +552,17 @@
   };
 
   FolderPanel.prototype.moveFolder = function (folderId, parentId) {
-    ajax("skmt_media_move_folder", { id: folderId, parent_id: parentId }).then(function (data) {
+    ajax("lumia_media_move_folder", { id: folderId, parent_id: parentId }).then(function (data) {
       commit(data);
       toast(t("folderMoved", "Dossier déplacé."), "success");
     });
   };
 
   FolderPanel.prototype.destroyFolderDrag = function () {
-    var tree = this.el.querySelector(".skmt-media-sidebar__tree");
-    if (tree && tree._skmtSortable) {
-      try { tree._skmtSortable.destroy(); } catch (e) { /* déjà détachée */ }
-      tree._skmtSortable = null;
+    var tree = this.el.querySelector(".lumia-media-sidebar__tree");
+    if (tree && tree._lumiaSortable) {
+      try { tree._lumiaSortable.destroy(); } catch (e) { /* déjà détachée */ }
+      tree._lumiaSortable = null;
     }
   };
 
@@ -581,7 +581,7 @@
     // façon). Le dépôt de MÉDIAS dans un dossier reste ouvert, lui.
     if (!CAN_MANAGE) return;
 
-    var tree = this.el.querySelector(".skmt-media-sidebar__tree");
+    var tree = this.el.querySelector(".lumia-media-sidebar__tree");
     if (!tree) return;
 
     // renderTree() vient de remplacer le contenu : on repart d'une instance
@@ -589,22 +589,22 @@
     this.destroyFolderDrag();
 
     var self = this;
-    tree._skmtSortable = new Sortable(tree, {
+    tree._lumiaSortable = new Sortable(tree, {
       sort: false,
-      draggable: ".skmt-media-folder-item[data-folder-id]",
+      draggable: ".lumia-media-folder-item[data-folder-id]",
       forceFallback: true,
       fallbackOnBody: true,
       fallbackTolerance: 4,
-      fallbackClass: "skmt-media-folder-drag",
+      fallbackClass: "lumia-media-folder-drag",
 
       onStart: function (evt) {
-        document.body.classList.add("skmt-media-dragging");
+        document.body.classList.add("lumia-media-dragging");
         dragState.folder = parseInt(evt.item.dataset.folderId, 10) || 0;
         startTracking();
       },
 
       onEnd: function () {
-        document.body.classList.remove("skmt-media-dragging");
+        document.body.classList.remove("lumia-media-dragging");
 
         var zone = stopTracking();
         var folderId = dragState.folder;
@@ -652,7 +652,7 @@
       }
     } catch (e) {
       if (window.console && console.warn) {
-        console.warn("[SKMT] cible d'upload non synchronisée :", e);
+        console.warn("[LUMIA] cible d'upload non synchronisée :", e);
       }
     }
   }
@@ -712,7 +712,7 @@
     // Relu à chaque mouvement : la touche peut être enfoncée en cours de geste.
     // Ctrl (Cmd sur Mac) = ajouter au dossier sans retirer des autres.
     dragState.additive = !!(e.ctrlKey || e.metaKey);
-    document.body.classList.toggle("skmt-media-additive", dragState.additive && !dragState.folder);
+    document.body.classList.toggle("lumia-media-additive", dragState.additive && !dragState.folder);
 
     var zone = zoneAt(dragState.point);
     if (!isValidTarget(zone)) zone = null;
@@ -732,7 +732,7 @@
     document.removeEventListener("pointermove", trackPointer, true);
     document.removeEventListener("mousemove", trackPointer, true);
     if (dragState.hovered) dragState.hovered.classList.remove("is-drop-target");
-    document.body.classList.remove("skmt-media-additive");
+    document.body.classList.remove("lumia-media-additive");
 
     var zone = dragState.hovered;
     dragState.hovered = null;
@@ -743,7 +743,7 @@
   function makeGridDraggable(browserEl) {
     if (typeof Sortable === "undefined") return;
     var grid = browserEl.querySelector("ul.attachments");
-    if (!grid || grid._skmtSortable) return;
+    if (!grid || grid._lumiaSortable) return;
 
     // La grille est recréée à chaque requête : sans destruction explicite,
     // l'instance de l'ancienne grille reste enregistrée dans SortableJS.
@@ -752,17 +752,17 @@
       dragState.grid = null;
     }
 
-    dragState.grid = grid._skmtSortable = new Sortable(grid, {
+    dragState.grid = grid._lumiaSortable = new Sortable(grid, {
       sort: false,
       animation: 0,
       draggable: "li.attachment",
       forceFallback: true,
       fallbackOnBody: true,
       fallbackTolerance: 4,
-      fallbackClass: "skmt-media-drag-fallback",
+      fallbackClass: "lumia-media-drag-fallback",
 
       onStart: function (evt) {
-        document.body.classList.add("skmt-media-dragging");
+        document.body.classList.add("lumia-media-dragging");
         var el = evt.item;
         var id = parseInt(el.dataset.id, 10);
         var selected = browserEl.querySelectorAll("li.attachment.selected");
@@ -780,7 +780,7 @@
       },
 
       onEnd: function () {
-        document.body.classList.remove("skmt-media-dragging");
+        document.body.classList.remove("lumia-media-dragging");
 
         var zone = stopTracking();
         var ids = dragState.ids.slice();
@@ -804,9 +804,9 @@
     if (typeof Sortable === "undefined") return;
 
     var body = document.getElementById("the-list");
-    if (!body || body._skmtSortable) return;
+    if (!body || body._lumiaSortable) return;
 
-    body._skmtSortable = new Sortable(body, {
+    body._lumiaSortable = new Sortable(body, {
       sort: false,
       animation: 0,
       draggable: "tr",
@@ -815,10 +815,10 @@
       forceFallback: true,
       fallbackOnBody: true,
       fallbackTolerance: 4,
-      fallbackClass: "skmt-media-row-drag",
+      fallbackClass: "lumia-media-row-drag",
 
       onStart: function (evt) {
-        document.body.classList.add("skmt-media-dragging");
+        document.body.classList.add("lumia-media-dragging");
 
         var id = rowId(evt.item);
         var checked = body.querySelectorAll('input[name="media[]"]:checked');
@@ -837,7 +837,7 @@
       },
 
       onEnd: function () {
-        document.body.classList.remove("skmt-media-dragging");
+        document.body.classList.remove("lumia-media-dragging");
 
         var zone = stopTracking();
         var ids = dragState.ids.slice();
@@ -862,8 +862,8 @@
   function applyItemDrop(zone, ids, additive) {
     if (!zone || !ids.length) return;
 
-    var sidebarEl = zone.closest(".skmt-media-sidebar");
-    var panel = sidebarEl && sidebarEl._skmtPanel;
+    var sidebarEl = zone.closest(".lumia-media-sidebar");
+    var panel = sidebarEl && sidebarEl._lumiaPanel;
     if (!panel) return;
 
     var dropId = parseInt(zone.dataset.dropId, 10);
@@ -894,15 +894,15 @@
    * permet pas de l'en retirer d'un seul quand il en a plusieurs. Ce bloc
    * ajoute donc la vue inverse : depuis la fiche du média, ses dossiers.
    *
-   * Les identifiants viennent du modèle Backbone lui-même (clé skmtFolders,
+   * Les identifiants viennent du modèle Backbone lui-même (clé lumiaFolders,
    * injectée par wp_prepare_attachment_for_js côté PHP) : aucune requête
    * supplémentaire à l'ouverture de la fiche.
    * ================================================================ */
 
-  var FIELD_CLASS = "skmt-media-attachment-folders";
+  var FIELD_CLASS = "lumia-media-attachment-folders";
 
   function attachmentFolderIds(model) {
-    var raw = model && model.get ? model.get("skmtFolders") : null;
+    var raw = model && model.get ? model.get("lumiaFolders") : null;
     return Array.isArray(raw) ? raw.map(Number).filter(Boolean) : [];
   }
 
@@ -938,9 +938,9 @@
     var current = attachmentFolderIds(view.model);
 
     if (!store.folders.length) {
-      host.innerHTML = '<span class="skmt-media-attachment-folders__label">' +
+      host.innerHTML = '<span class="lumia-media-attachment-folders__label">' +
         escHtml(t("folders", "Dossiers")) + "</span>" +
-        '<div class="skmt-media-loading">' + escHtml(t("loading", "Chargement…")) + "</div>";
+        '<div class="lumia-media-loading">' + escHtml(t("loading", "Chargement…")) + "</div>";
 
       // Fiche ouverte avant que l'arborescence soit chargée : on re-rend une
       // fois arrivée, mais seulement si la vue est encore à l'écran.
@@ -957,19 +957,19 @@
         .forEach(function (f) {
           var id = parseInt(f.id, 10);
           var checked = current.indexOf(id) !== -1 ? " checked" : "";
-          rows += '<label class="skmt-media-attachment-folders__item" style="--skmt-depth:' + depth + '">' +
+          rows += '<label class="lumia-media-attachment-folders__item" style="--lumia-depth:' + depth + '">' +
             '<input type="checkbox" value="' + id + '"' + checked + ">" +
-            '<span class="skmt-media-folder__icon"' + (f.color ? ' style="color:' + escHtml(f.color) + '"' : "") + ">" + ICON_FOLDER + "</span>" +
-            '<span class="skmt-media-attachment-folders__name">' + escHtml(f.name) + "</span>" +
+            '<span class="lumia-media-folder__icon"' + (f.color ? ' style="color:' + escHtml(f.color) + '"' : "") + ">" + ICON_FOLDER + "</span>" +
+            '<span class="lumia-media-attachment-folders__name">' + escHtml(f.name) + "</span>" +
             "</label>";
           walk(id, depth + 1);
         });
     })(0, 0);
 
-    host.innerHTML = '<span class="skmt-media-attachment-folders__label">' +
+    host.innerHTML = '<span class="lumia-media-attachment-folders__label">' +
       escHtml(t("folders", "Dossiers")) + "</span>" +
-      '<div class="skmt-media-attachment-folders__list">' +
-      (rows || '<span class="skmt-media-attachment-folders__empty">' + escHtml(t("noFolder", "Aucun dossier")) + "</span>") +
+      '<div class="lumia-media-attachment-folders__list">' +
+      (rows || '<span class="lumia-media-attachment-folders__empty">' + escHtml(t("noFolder", "Aucun dossier")) + "</span>") +
       "</div>";
 
     host.querySelectorAll('input[type="checkbox"]').forEach(function (box) {
@@ -985,7 +985,7 @@
 
     box.disabled = true;
 
-    ajax("skmt_media_move_items", {
+    ajax("lumia_media_move_items", {
       ids: [id],
       folder_id: folderId,
       mode: checked ? "add" : "remove",
@@ -995,7 +995,7 @@
         if (checked) next.push(folderId);
 
         // set() suffit : la fiche se re-rend, et la grille lit le même modèle.
-        model.set("skmtFolders", next);
+        model.set("lumiaFolders", next);
 
         commit(data);
         toast(t("folderUpdated", "Dossiers mis à jour."), "success");
@@ -1023,10 +1023,10 @@
 
     function patch(owner, key) {
       var Base = owner[key];
-      if (!Base || Base.prototype._skmtFolders) return;
+      if (!Base || Base.prototype._lumiaFolders) return;
 
       owner[key] = Base.extend({
-        _skmtFolders: true,
+        _lumiaFolders: true,
         render: function () {
           Base.prototype.render.apply(this, arguments);
           renderFolderField(this);
@@ -1066,7 +1066,7 @@
   }
 
   function syncGridHeight() {
-    var browser = document.querySelector(".media-frame.mode-grid .attachments-browser.skmt-has-folders");
+    var browser = document.querySelector(".media-frame.mode-grid .attachments-browser.lumia-has-folders");
     if (!browser) return;
 
     var footer = document.getElementById("wpfooter");
@@ -1081,7 +1081,7 @@
     // qu'il occupe (padding-bas de #wpbody-content, marges, pied lui-même)
     // devient une vraie constante. Aucun scintillement : le navigateur ne
     // repeint qu'une fois, à la fin de la fonction.
-    browser.style.setProperty("--skmt-media-h", window.innerHeight * 2 + "px");
+    browser.style.setProperty("--lumia-media-h", window.innerHeight * 2 + "px");
 
     // Coordonnées DOCUMENT (rect + scrollY) : justes même page défilée.
     var rect = browser.getBoundingClientRect();
@@ -1094,7 +1094,7 @@
       : 24;
 
     var height = Math.max(MIN_HEIGHT, Math.round(window.innerHeight - docTop - below));
-    browser.style.setProperty("--skmt-media-h", height + "px");
+    browser.style.setProperty("--lumia-media-h", height + "px");
   }
 
   var heightTimer = null;
@@ -1113,7 +1113,7 @@
     var Browser = wp.media.view.AttachmentsBrowser;
 
     var SidebarView = wp.media.View.extend({
-      className: "skmt-media-sidebar",
+      className: "lumia-media-sidebar",
 
       initialize: function () {
         this.panel = new FolderPanel(collectionTarget(this.collection), this.el);
@@ -1149,7 +1149,7 @@
         ensureToastContainer();
         ensureModals();
 
-        this.skmtSidebar = new SidebarView({
+        this.lumiaSidebar = new SidebarView({
           controller: this.controller,
           collection: this.collection,
         });
@@ -1157,8 +1157,8 @@
         // Enregistrée auprès du gestionnaire de vues de WordPress : elle survit
         // aux re-render du navigateur de médias. Son placement est purement CSS
         // (position absolue), l'ordre dans le DOM n'a donc pas d'importance.
-        this.views.add(this.skmtSidebar);
-        this.$el.addClass("skmt-has-folders");
+        this.views.add(this.lumiaSidebar);
+        this.$el.addClass("lumia-has-folders");
       },
 
       createAttachments: function () {
@@ -1188,12 +1188,12 @@
     var wrap = document.querySelector("body.upload-php .wrap");
     var form = wrap && wrap.querySelector("#posts-filter");
     if (!wrap || !form) return;
-    if (wrap.querySelector(".skmt-media-sidebar")) return;
+    if (wrap.querySelector(".lumia-media-sidebar")) return;
 
     ensureToastContainer();
     ensureModals();
 
-    wrap.classList.add("skmt-media-list-layout");
+    wrap.classList.add("lumia-media-list-layout");
 
     // Le panneau doit être `position: sticky` pour suivre le défilement de la
     // page sans s'étirer sur toute la hauteur du tableau. Sticky n'agit que
@@ -1202,7 +1202,7 @@
     // à la grille, ce DOM n'appartient à aucun gestionnaire de vues, et son id
     // (utilisé par les actions groupées) est préservé.
     var row = document.createElement("div");
-    row.className = "skmt-media-list-row";
+    row.className = "lumia-media-list-row";
     wrap.insertBefore(row, form);
 
     var panel = new FolderPanel(urlTarget());

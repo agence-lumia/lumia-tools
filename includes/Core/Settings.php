@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -11,7 +11,7 @@ class Settings {
 	/**
 	 * Clé d'option WordPress.
 	 */
-	private string $option_key = 'skmt_settings';
+	private string $option_key = 'lumia_settings';
 
 	/**
 	 * Cache des settings.

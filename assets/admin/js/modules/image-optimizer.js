@@ -1,5 +1,5 @@
 /**
- * Studio Kyne Mini Tools - Image Optimizer admin JS
+ * Lümia Tools - Image Optimizer admin JS
  * Script dédié au module Image Optimizer.
  */
 (function () {
@@ -14,7 +14,7 @@
   // Grise le sélecteur de rôles quand l'upload SVG est désactivé.
   function initSvgRolesToggle() {
     const master = document.querySelector("[data-svg-master]");
-    const roles = document.getElementById("skmt-svg-roles");
+    const roles = document.getElementById("lumia-svg-roles");
     if (!master || !roles) return;
 
     const sync = function () {
@@ -25,18 +25,18 @@
   }
 
   function initBulkOptimization() {
-    const startBtn = document.getElementById("skmt-bulk-start");
-    if (!startBtn || typeof skmtAdmin === "undefined") return;
+    const startBtn = document.getElementById("lumia-bulk-start");
+    if (!startBtn || typeof lumiaAdmin === "undefined") return;
 
-    const scanBtn = document.getElementById("skmt-bulk-scan");
-    const introEl = document.getElementById("skmt-bulk-scan-intro");
-    const resultEl = document.getElementById("skmt-bulk-result");
-    const potentialTile = document.getElementById("skmt-bulk-potential-tile");
-    const progressEl = document.querySelector(".skmt-bulk-status__progress");
-    const messageEl = document.querySelector(".skmt-bulk-status__message");
-    const barEl = document.querySelector(".skmt-progress__bar");
-    const remainingEl = document.getElementById("skmt-bulk-remaining");
-    const potentialEl = document.getElementById("skmt-bulk-potential");
+    const scanBtn = document.getElementById("lumia-bulk-scan");
+    const introEl = document.getElementById("lumia-bulk-scan-intro");
+    const resultEl = document.getElementById("lumia-bulk-result");
+    const potentialTile = document.getElementById("lumia-bulk-potential-tile");
+    const progressEl = document.querySelector(".lumia-bulk-status__progress");
+    const messageEl = document.querySelector(".lumia-bulk-status__message");
+    const barEl = document.querySelector(".lumia-progress__bar");
+    const remainingEl = document.getElementById("lumia-bulk-remaining");
+    const potentialEl = document.getElementById("lumia-bulk-potential");
 
     var POLL_MIN = 2000;
     var POLL_MAX = 5000;
@@ -54,13 +54,13 @@
       scanBtn.addEventListener("click", function () {
         scanBtn.disabled = true;
         var originalLabel = scanBtn.textContent;
-        scanBtn.textContent = skmtAdmin.i18n.bulkScanning || "Analyse…";
+        scanBtn.textContent = lumiaAdmin.i18n.bulkScanning || "Analyse…";
 
         const formData = new FormData();
-        formData.append("action", "skmt_image_optimizer_bulk_scan");
-        formData.append("nonce", skmtAdmin.nonce);
+        formData.append("action", "lumia_image_optimizer_bulk_scan");
+        formData.append("nonce", lumiaAdmin.nonce);
 
-        fetch(skmtAdmin.ajaxUrl, {
+        fetch(lumiaAdmin.ajaxUrl, {
           method: "POST",
           credentials: "same-origin",
           body: formData,
@@ -73,8 +73,8 @@
             scanBtn.textContent = originalLabel;
 
             if (!data.success) {
-              if (typeof window.skmtShowToast === "function") {
-                window.skmtShowToast(data.data || "Erreur", "error");
+              if (typeof window.lumiaShowToast === "function") {
+                window.lumiaShowToast(data.data || "Erreur", "error");
               }
               return;
             }
@@ -101,8 +101,8 @@
           .catch(function (err) {
             scanBtn.disabled = false;
             scanBtn.textContent = originalLabel;
-            if (typeof window.skmtShowToast === "function") {
-              window.skmtShowToast(err.message || "Erreur réseau", "error");
+            if (typeof window.lumiaShowToast === "function") {
+              window.lumiaShowToast(err.message || "Erreur réseau", "error");
             }
           });
       });
@@ -115,7 +115,7 @@
 
       startBtn.disabled = true;
       startBtn.textContent =
-        skmtAdmin.i18n.bulkRunning || "Optimisation en cours…";
+        lumiaAdmin.i18n.bulkRunning || "Optimisation en cours…";
 
       if (progressEl) {
         progressEl.style.display = "flex";
@@ -127,7 +127,7 @@
     // Resync : si un bulk tourne déjà côté serveur (lancé avant un
     // rechargement/une fermeture de page), on reprend l'affichage et le
     // polling au lieu de laisser la page paraître inactive.
-    var initialState = skmtAdmin.bulkState;
+    var initialState = lumiaAdmin.bulkState;
     if (initialState && initialState.running) {
       isRunning = true;
       pollInterval = POLL_MIN;
@@ -136,7 +136,7 @@
 
       startBtn.disabled = true;
       startBtn.textContent =
-        skmtAdmin.i18n.bulkRunning || "Optimisation en cours…";
+        lumiaAdmin.i18n.bulkRunning || "Optimisation en cours…";
 
       if (progressEl) {
         progressEl.style.display = "flex";
@@ -153,10 +153,10 @@
 
     function startBulk() {
       const formData = new FormData();
-      formData.append("action", "skmt_image_optimizer_bulk");
-      formData.append("nonce", skmtAdmin.nonce);
+      formData.append("action", "lumia_image_optimizer_bulk");
+      formData.append("nonce", lumiaAdmin.nonce);
 
-      fetch(skmtAdmin.ajaxUrl, {
+      fetch(lumiaAdmin.ajaxUrl, {
         method: "POST",
         credentials: "same-origin",
         body: formData,
@@ -187,10 +187,10 @@
 
     function pollStatus() {
       const formData = new FormData();
-      formData.append("action", "skmt_image_optimizer_bulk_status");
-      formData.append("nonce", skmtAdmin.nonce);
+      formData.append("action", "lumia_image_optimizer_bulk_status");
+      formData.append("nonce", lumiaAdmin.nonce);
 
-      fetch(skmtAdmin.ajaxUrl, {
+      fetch(lumiaAdmin.ajaxUrl, {
         method: "POST",
         credentials: "same-origin",
         body: formData,
@@ -230,10 +230,10 @@
 
       if (messageEl) {
         messageEl.textContent =
-          (skmtAdmin.i18n.bulkProcessed || "Traité : ") +
+          (lumiaAdmin.i18n.bulkProcessed || "Traité : ") +
           result.processed +
           " — " +
-          (skmtAdmin.i18n.bulkRemaining || "Restant : ") +
+          (lumiaAdmin.i18n.bulkRemaining || "Restant : ") +
           result.remaining;
       }
 
@@ -247,10 +247,10 @@
     function finishBulk() {
       isRunning = false;
       startBtn.disabled = false;
-      startBtn.textContent = skmtAdmin.i18n.bulkDone || "Optimisation terminée";
+      startBtn.textContent = lumiaAdmin.i18n.bulkDone || "Optimisation terminée";
 
       var completeMsg =
-        skmtAdmin.i18n.bulkComplete || "Toutes les images ont été optimisées.";
+        lumiaAdmin.i18n.bulkComplete || "Toutes les images ont été optimisées.";
 
       if (messageEl) {
         messageEl.textContent = completeMsg;
@@ -260,19 +260,19 @@
         barEl.style.width = "100%";
       }
 
-      if (typeof window.skmtShowToast === "function") {
-        window.skmtShowToast(completeMsg, "success");
+      if (typeof window.lumiaShowToast === "function") {
+        window.lumiaShowToast(completeMsg, "success");
       }
     }
 
     function showError(msg) {
       isRunning = false;
       startBtn.disabled = false;
-      startBtn.textContent = skmtAdmin.i18n.bulkRetry || "Réessayer";
+      startBtn.textContent = lumiaAdmin.i18n.bulkRetry || "Réessayer";
 
       if (messageEl) {
         messageEl.textContent = msg;
-        messageEl.style.color = "var(--skmt-danger)";
+        messageEl.style.color = "var(--lumia-danger)";
       }
     }
   }
@@ -283,19 +283,19 @@
    * tel quel au lieu de recalculer tailles et boutons en JS.
    * ================================================================ */
 
-  var MODAL_ID = "skmt-io-modal";
+  var MODAL_ID = "lumia-io-modal";
   var FORMAT_LABELS = { webp: "WebP", avif: "AVIF" };
 
   function initMediaActions() {
     document.addEventListener("click", function (event) {
-      var button = event.target.closest("[data-skmt-io-action]");
-      if (!button || typeof skmtAdmin === "undefined") return;
+      var button = event.target.closest("[data-lumia-io-action]");
+      if (!button || typeof lumiaAdmin === "undefined") return;
 
-      var panel = button.closest(".skmt-media-optimizer");
+      var panel = button.closest(".lumia-media-optimizer");
       if (!panel) return;
 
-      var action = button.getAttribute("data-skmt-io-action");
-      var i18n = skmtAdmin.i18n || {};
+      var action = button.getAttribute("data-lumia-io-action");
+      var i18n = lumiaAdmin.i18n || {};
       var run = function (extra) {
         runAction(panel, button, action, extra);
       };
@@ -332,22 +332,22 @@
 
   function runAction(panel, button, action, extra) {
     var attachmentId = panel.getAttribute("data-attachment");
-    var buttons = panel.querySelectorAll("[data-skmt-io-action]");
+    var buttons = panel.querySelectorAll("[data-lumia-io-action]");
     buttons.forEach(function (b) {
       b.disabled = true;
     });
     var label = button.textContent;
-    button.textContent = skmtAdmin.i18n.mediaRunning || "…";
+    button.textContent = lumiaAdmin.i18n.mediaRunning || "…";
 
     var formData = new FormData();
-    formData.append("action", "skmt_image_optimizer_media_" + action);
-    formData.append("nonce", skmtAdmin.nonce);
+    formData.append("action", "lumia_image_optimizer_media_" + action);
+    formData.append("nonce", lumiaAdmin.nonce);
     formData.append("attachment_id", attachmentId);
     Object.keys(extra || {}).forEach(function (key) {
       formData.append(key, extra[key]);
     });
 
-    fetch(skmtAdmin.ajaxUrl, {
+    fetch(lumiaAdmin.ajaxUrl, {
       method: "POST",
       credentials: "same-origin",
       body: formData,
@@ -357,7 +357,7 @@
       })
       .then(function (data) {
         if (!data.success) {
-          throw new Error(data.data || skmtAdmin.i18n.mediaError);
+          throw new Error(data.data || lumiaAdmin.i18n.mediaError);
         }
 
         panel.outerHTML = data.data.html;
@@ -374,40 +374,40 @@
           b.disabled = false;
         });
         button.textContent = label;
-        toast(err.message || skmtAdmin.i18n.mediaError, "error");
+        toast(err.message || lumiaAdmin.i18n.mediaError, "error");
       });
   }
 
   // Modale nommée du design system, créée une fois dans <body> : les écrans
-  // de médias n'ont pas le singleton #skmt-modal-overlay des pages du plugin.
+  // de médias n'ont pas le singleton #lumia-modal-overlay des pages du plugin.
   function confirmAction(options) {
     var modal = document.getElementById(MODAL_ID);
     if (!modal) {
       modal = document.createElement("div");
       modal.id = MODAL_ID;
-      modal.className = "skmt-modal-overlay";
+      modal.className = "lumia-modal-overlay";
       modal.setAttribute("role", "dialog");
       modal.setAttribute("aria-modal", "true");
       modal.setAttribute("aria-labelledby", MODAL_ID + "-title");
       modal.innerHTML =
-        '<div class="skmt-modal">' +
-        '<div class="skmt-modal__header"><h3 id="' + MODAL_ID + '-title" class="skmt-modal__title"></h3></div>' +
-        '<div class="skmt-modal__body">' +
-        '<p class="skmt-io-modal__message"></p>' +
-        '<div class="skmt-form__group skmt-io-modal__format">' +
-        '<label class="skmt-form__label" for="' + MODAL_ID + '-format"></label>' +
-        '<select class="skmt-select" id="' + MODAL_ID + '-format"></select>' +
+        '<div class="lumia-modal">' +
+        '<div class="lumia-modal__header"><h3 id="' + MODAL_ID + '-title" class="lumia-modal__title"></h3></div>' +
+        '<div class="lumia-modal__body">' +
+        '<p class="lumia-io-modal__message"></p>' +
+        '<div class="lumia-form__group lumia-io-modal__format">' +
+        '<label class="lumia-form__label" for="' + MODAL_ID + '-format"></label>' +
+        '<select class="lumia-select" id="' + MODAL_ID + '-format"></select>' +
         "</div></div>" +
-        '<div class="skmt-modal__footer">' +
-        '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--secondary skmt-modal-close"></button>' +
-        '<button type="button" class="skmt-btn skmt-btn--sm skmt-io-modal__confirm"></button>' +
+        '<div class="lumia-modal__footer">' +
+        '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal-close"></button>' +
+        '<button type="button" class="lumia-btn lumia-btn--sm lumia-io-modal__confirm"></button>' +
         "</div></div>";
       document.body.appendChild(modal);
 
-      modal.querySelector(".skmt-modal-close").textContent = skmtAdmin.i18n.cancel;
-      modal.querySelector(".skmt-form__label").textContent = skmtAdmin.i18n.format;
-      modal.querySelector(".skmt-io-modal__confirm").addEventListener("click", function () {
-        window.skmtModalClose(MODAL_ID);
+      modal.querySelector(".lumia-modal-close").textContent = lumiaAdmin.i18n.cancel;
+      modal.querySelector(".lumia-form__label").textContent = lumiaAdmin.i18n.format;
+      modal.querySelector(".lumia-io-modal__confirm").addEventListener("click", function () {
+        window.lumiaModalClose(MODAL_ID);
         if (typeof modal.onConfirm === "function") modal.onConfirm();
       });
     }
@@ -421,37 +421,37 @@
       option.textContent = FORMAT_LABELS[format] || format;
       select.appendChild(option);
     });
-    modal.querySelector(".skmt-io-modal__format").style.display = formats.length ? "" : "none";
+    modal.querySelector(".lumia-io-modal__format").style.display = formats.length ? "" : "none";
 
-    modal.querySelector(".skmt-modal__title").textContent = options.title;
-    modal.querySelector(".skmt-io-modal__message").textContent = options.message;
+    modal.querySelector(".lumia-modal__title").textContent = options.title;
+    modal.querySelector(".lumia-io-modal__message").textContent = options.message;
 
-    var confirmBtn = modal.querySelector(".skmt-io-modal__confirm");
+    var confirmBtn = modal.querySelector(".lumia-io-modal__confirm");
     confirmBtn.textContent = options.confirm;
     confirmBtn.className =
-      "skmt-btn skmt-btn--sm skmt-io-modal__confirm " +
-      (options.danger ? "skmt-btn--danger" : "skmt-btn--primary");
+      "lumia-btn lumia-btn--sm lumia-io-modal__confirm " +
+      (options.danger ? "lumia-btn--danger" : "lumia-btn--primary");
 
     modal.onConfirm = function () {
       options.onConfirm(formats.length ? { format: select.value } : {});
     };
 
-    window.skmtModalOpen(MODAL_ID);
+    window.lumiaModalOpen(MODAL_ID);
     confirmBtn.focus();
   }
 
   // Le conteneur de toasts n'existe que sur les pages du plugin.
   function toast(message, type) {
-    if (typeof window.skmtShowToast !== "function") return;
-    if (!document.getElementById("skmt-toast-container")) {
+    if (typeof window.lumiaShowToast !== "function") return;
+    if (!document.getElementById("lumia-toast-container")) {
       var container = document.createElement("div");
-      container.id = "skmt-toast-container";
-      container.className = "skmt-toast-container";
+      container.id = "lumia-toast-container";
+      container.className = "lumia-toast-container";
       container.setAttribute("role", "region");
       container.setAttribute("aria-live", "polite");
       document.body.appendChild(container);
     }
-    window.skmtShowToast(message, type || "success");
+    window.lumiaShowToast(message, type || "success");
   }
 
   function formatBytes(bytes) {

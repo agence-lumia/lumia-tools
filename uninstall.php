@@ -12,17 +12,17 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 // Chargement de l'autoloader pour accéder aux classes des modules.
 require_once plugin_dir_path( __FILE__ ) . 'includes/Core/Autoloader.php';
-\StudioKyne\MiniTools\Core\Autoloader::register();
+\Lumia\Tools\Core\Autoloader::register();
 
-$module_classes = \StudioKyne\MiniTools\Core\Activator::MODULE_CLASSES;
+$module_classes = \Lumia\Tools\Core\Activator::MODULE_CLASSES;
 
 // Suppression de l'option globale.
-delete_option( 'skmt_settings' );
-delete_site_option( 'skmt_settings' );
+delete_option( 'lumia_settings' );
+delete_site_option( 'lumia_settings' );
 
 // Métadonnées écrites par le cœur du plugin (centre de notifications).
 // Aucun module ne les déclare : elles ne sont rattachées à aucun d'entre eux.
-delete_metadata( 'user', 0, 'skmt_notices', '', true );
+delete_metadata( 'user', 0, 'lumia_notices', '', true );
 
 // Suppression des options et meta propres à chaque module.
 foreach ( $module_classes as $id => $class ) {

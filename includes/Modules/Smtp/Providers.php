@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -27,7 +27,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant et clé SMTP : Brevo › SMTP & API › onglet SMTP. La clé SMTP n\'est pas la clé API.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiant et clé SMTP : Brevo › SMTP & API › onglet SMTP. La clé SMTP n\'est pas la clé API.', 'lumia-tools' ),
 			],
 			'mailgun'    => [
 				'label'      => 'Mailgun (US)',
@@ -35,7 +35,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiants SMTP du domaine d\'envoi : Mailgun › Sending › Domain settings › SMTP credentials.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiants SMTP du domaine d\'envoi : Mailgun › Sending › Domain settings › SMTP credentials.', 'lumia-tools' ),
 			],
 			'mailgun_eu' => [
 				'label'      => 'Mailgun (UE)',
@@ -43,7 +43,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Pour un domaine créé dans la région UE de Mailgun. Identifiants SMTP : Sending › Domain settings › SMTP credentials.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Pour un domaine créé dans la région UE de Mailgun. Identifiants SMTP : Sending › Domain settings › SMTP credentials.', 'lumia-tools' ),
 			],
 			'sendgrid'   => [
 				'label'      => 'SendGrid',
@@ -51,7 +51,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => 'apikey',
-				'hint'       => __( 'Identifiant : « apikey », littéralement. Mot de passe : une clé API avec le droit Mail Send.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiant : « apikey », littéralement. Mot de passe : une clé API avec le droit Mail Send.', 'lumia-tools' ),
 			],
 			'postmark'   => [
 				'label'      => 'Postmark',
@@ -59,7 +59,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant et mot de passe : le même Server API Token (Server › API Tokens).', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiant et mot de passe : le même Server API Token (Server › API Tokens).', 'lumia-tools' ),
 			],
 			'ses'        => [
 				'label'      => 'Amazon SES',
@@ -67,7 +67,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Remplacez eu-west-3 par la région de votre compte SES. Identifiants SMTP propres à SES (SMTP settings › Create SMTP credentials), différents des clés d\'accès IAM.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Remplacez eu-west-3 par la région de votre compte SES. Identifiants SMTP propres à SES (SMTP settings › Create SMTP credentials), différents des clés d\'accès IAM.', 'lumia-tools' ),
 			],
 			'mailjet'    => [
 				'label'      => 'Mailjet',
@@ -75,7 +75,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant : clé API ; mot de passe : clé secrète (Account settings › API keys).', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiant : clé API ; mot de passe : clé secrète (Account settings › API keys).', 'lumia-tools' ),
 			],
 			'ovh'        => [
 				'label'      => 'OVHcloud (e-mail pro / MX Plan)',
@@ -83,7 +83,7 @@ class Providers {
 				'port'       => 465,
 				'encryption' => 'ssl',
 				'username'   => '',
-				'hint'       => __( 'Identifiant : l\'adresse e-mail complète ; mot de passe : celui de la boîte.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiant : l\'adresse e-mail complète ; mot de passe : celui de la boîte.', 'lumia-tools' ),
 			],
 			'gmail'      => [
 				'label'      => 'Gmail / Google Workspace',
@@ -91,7 +91,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant : l\'adresse Gmail ; mot de passe : un mot de passe d\'application (validation en deux étapes requise), pas celui du compte. Limite d\'environ 500 envois par jour.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Identifiant : l\'adresse Gmail ; mot de passe : un mot de passe d\'application (validation en deux étapes requise), pas celui du compte. Limite d\'environ 500 envois par jour.', 'lumia-tools' ),
 			],
 			'office365'  => [
 				'label'      => 'Microsoft 365 / Outlook',
@@ -99,7 +99,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'L\'authentification SMTP doit être autorisée pour la boîte dans le centre d\'administration Microsoft 365 ; elle y est souvent désactivée par défaut.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'L\'authentification SMTP doit être autorisée pour la boîte dans le centre d\'administration Microsoft 365 ; elle y est souvent désactivée par défaut.', 'lumia-tools' ),
 			],
 		];
 	}

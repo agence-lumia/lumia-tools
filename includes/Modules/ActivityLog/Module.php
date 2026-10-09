@@ -1,10 +1,10 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ActivityLog;
+namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
-use StudioKyne\MiniTools\Admin\Admin;
+use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Admin\Admin;
 
 /**
  * Module Journal d'activité — qui a modifié quoi, et quand.
@@ -12,7 +12,7 @@ use StudioKyne\MiniTools\Admin\Admin;
 class Module extends AbstractModule {
 
 	/** Hook du cron de purge quotidienne. */
-	const CRON_HOOK = 'skmt_activity_log_purge';
+	const CRON_HOOK = 'lumia_activity_log_purge';
 
 	/** Lignes par page dans la liste. */
 	const PER_PAGE = 50;
@@ -39,8 +39,8 @@ class Module extends AbstractModule {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
 		}
 
-		add_action( 'wp_ajax_skmt_activity_log_list', [ $this, 'ajax_list' ] );
-		add_action( 'admin_post_skmt_activity_log_export', [ $this, 'handle_export' ] );
+		add_action( 'wp_ajax_lumia_activity_log_list', [ $this, 'ajax_list' ] );
+		add_action( 'admin_post_lumia_activity_log_export', [ $this, 'handle_export' ] );
 	}
 
 	/* ================================================================
@@ -112,7 +112,7 @@ class Module extends AbstractModule {
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'skmt_module_activity_log', Store::SCHEMA_OPTION ],
+			'options' => [ 'lumia_module_activity_log', Store::SCHEMA_OPTION ],
 			'tables'  => [ Store::TABLE ],
 			'cron'    => [ self::CRON_HOOK ],
 		];
@@ -148,11 +148,11 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/activity-log.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/activity-log.css' ];
 	}
 
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/activity-log.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/activity-log.js' ];
 	}
 
 	/**
@@ -160,22 +160,22 @@ class Module extends AbstractModule {
 	 */
 	public function get_admin_js_data(): array {
 		return [
-			'alExportNonce' => wp_create_nonce( 'skmt_activity_log_export' ),
+			'alExportNonce' => wp_create_nonce( 'lumia_activity_log_export' ),
 			'alExportUrl'   => admin_url( 'admin-post.php' ),
 			'i18n'          => [
-				'alLoading' => __( 'Chargement…', 'studio-kyne-mini-tools' ),
-				'alEmpty'   => __( 'Aucun événement pour ces critères.', 'studio-kyne-mini-tools' ),
-				'alError'   => __( 'Impossible de charger le journal.', 'studio-kyne-mini-tools' ),
+				'alLoading' => __( 'Chargement…', 'lumia-tools' ),
+				'alEmpty'   => __( 'Aucun événement pour ces critères.', 'lumia-tools' ),
+				'alError'   => __( 'Impossible de charger le journal.', 'lumia-tools' ),
 				/* translators: %s: nombre d'événements. */
-				'alTotal'   => __( '%s événement(s)', 'studio-kyne-mini-tools' ),
+				'alTotal'   => __( '%s événement(s)', 'lumia-tools' ),
 				/* translators: 1: page courante, 2: nombre de pages. */
-				'alPage'    => __( 'Page %1$s sur %2$s', 'studio-kyne-mini-tools' ),
-				'alDate'    => __( 'Date', 'studio-kyne-mini-tools' ),
-				'alUser'    => __( 'Utilisateur', 'studio-kyne-mini-tools' ),
-				'alRole'    => __( 'Rôle', 'studio-kyne-mini-tools' ),
-				'alIp'      => __( 'Adresse IP', 'studio-kyne-mini-tools' ),
-				'alEvent'   => __( 'Événement', 'studio-kyne-mini-tools' ),
-				'alObject'  => __( 'Objet', 'studio-kyne-mini-tools' ),
+				'alPage'    => __( 'Page %1$s sur %2$s', 'lumia-tools' ),
+				'alDate'    => __( 'Date', 'lumia-tools' ),
+				'alUser'    => __( 'Utilisateur', 'lumia-tools' ),
+				'alRole'    => __( 'Rôle', 'lumia-tools' ),
+				'alIp'      => __( 'Adresse IP', 'lumia-tools' ),
+				'alEvent'   => __( 'Événement', 'lumia-tools' ),
+				'alObject'  => __( 'Objet', 'lumia-tools' ),
 			],
 		];
 	}
@@ -185,10 +185,10 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function ajax_list(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ], 403 );
 		}
 
 		$filters = $this->read_filters( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié en tête ; read_filters() assainit chaque champ.
@@ -217,10 +217,10 @@ class Module extends AbstractModule {
 	 * Exporte les lignes correspondant aux filtres de la liste.
 	 */
 	public function handle_export(): void {
-		check_admin_referer( 'skmt_activity_log_export', 'skmt_nonce' );
+		check_admin_referer( 'lumia_activity_log_export', 'lumia_nonce' );
 
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ), '', [ 'response' => 403 ] );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ), '', [ 'response' => 403 ] );
 		}
 
 		$filters = $this->read_filters( $_POST );
@@ -243,15 +243,15 @@ class Module extends AbstractModule {
 		fputcsv(
 			$out,
 			[
-				__( 'Date', 'studio-kyne-mini-tools' ),
-				__( 'Utilisateur', 'studio-kyne-mini-tools' ),
-				__( 'Rôle', 'studio-kyne-mini-tools' ),
-				__( 'Adresse IP', 'studio-kyne-mini-tools' ),
-				__( 'Famille', 'studio-kyne-mini-tools' ),
-				__( 'Événement', 'studio-kyne-mini-tools' ),
-				__( 'Objet', 'studio-kyne-mini-tools' ),
-				__( 'ID de l\'objet', 'studio-kyne-mini-tools' ),
-				__( 'Détails', 'studio-kyne-mini-tools' ),
+				__( 'Date', 'lumia-tools' ),
+				__( 'Utilisateur', 'lumia-tools' ),
+				__( 'Rôle', 'lumia-tools' ),
+				__( 'Adresse IP', 'lumia-tools' ),
+				__( 'Famille', 'lumia-tools' ),
+				__( 'Événement', 'lumia-tools' ),
+				__( 'Objet', 'lumia-tools' ),
+				__( 'ID de l\'objet', 'lumia-tools' ),
+				__( 'Détails', 'lumia-tools' ),
 			],
 			';',
 			'"',
@@ -362,7 +362,7 @@ class Module extends AbstractModule {
 		if ( '' === $login ) {
 			// Échec de connexion : personne n'est connecté, l'identifiant
 			// tenté est l'objet de l'événement.
-			$user = 'login_failed' === $event ? __( 'Anonyme', 'studio-kyne-mini-tools' ) : __( 'Système', 'studio-kyne-mini-tools' );
+			$user = 'login_failed' === $event ? __( 'Anonyme', 'lumia-tools' ) : __( 'Système', 'lumia-tools' );
 		} else {
 			$user = $login;
 		}
@@ -393,11 +393,11 @@ class Module extends AbstractModule {
 	private function object_label( array $row ): string {
 		$label = (string) $row['object_label'];
 
-		if ( 'skmt' === $row['object_type'] ) {
+		if ( 'lumia' === $row['object_type'] ) {
 			if ( 'global' === $label ) {
-				return __( 'Réglages généraux', 'studio-kyne-mini-tools' );
+				return __( 'Réglages généraux', 'lumia-tools' );
 			}
-			$module = \StudioKyne\MiniTools\Core\Plugin::instance()->modules->get( $label );
+			$module = \Lumia\Tools\Core\Plugin::instance()->modules->get( $label );
 			return is_array( $module ) && ! empty( $module['name'] ) ? (string) $module['name'] : $label;
 		}
 
@@ -442,44 +442,44 @@ class Module extends AbstractModule {
 	 */
 	private function detail_lines( array $details ): array {
 		$labels = [
-			'title'        => __( 'Titre', 'studio-kyne-mini-tools' ),
-			'status'       => __( 'Statut', 'studio-kyne-mini-tools' ),
-			'slug'         => __( 'Identifiant (slug)', 'studio-kyne-mini-tools' ),
-			'parent'       => __( 'Parent', 'studio-kyne-mini-tools' ),
-			'date'         => __( 'Date de publication', 'studio-kyne-mini-tools' ),
-			'order'        => __( 'Ordre', 'studio-kyne-mini-tools' ),
-			'comments'     => __( 'Commentaires', 'studio-kyne-mini-tools' ),
-			'author'       => __( 'Auteur', 'studio-kyne-mini-tools' ),
-			'content'      => __( 'Contenu', 'studio-kyne-mini-tools' ),
-			'excerpt'      => __( 'Extrait', 'studio-kyne-mini-tools' ),
-			'password'     => __( 'Mot de passe', 'studio-kyne-mini-tools' ),
-			'builder'      => __( 'Constructeur de page', 'studio-kyne-mini-tools' ),
-			'alt'          => __( 'Texte alternatif', 'studio-kyne-mini-tools' ),
-			'email'        => __( 'E-mail', 'studio-kyne-mini-tools' ),
-			'display_name' => __( 'Nom affiché', 'studio-kyne-mini-tools' ),
-			'url'          => __( 'Site web', 'studio-kyne-mini-tools' ),
-			'roles'        => __( 'Rôles', 'studio-kyne-mini-tools' ),
-			'reassign'     => __( 'Contenus attribués à', 'studio-kyne-mini-tools' ),
-			'file'         => __( 'Fichier', 'studio-kyne-mini-tools' ),
-			'stylesheet'   => __( 'Dossier', 'studio-kyne-mini-tools' ),
-			'version'      => __( 'Version', 'studio-kyne-mini-tools' ),
-			'network'      => __( 'Tout le réseau', 'studio-kyne-mini-tools' ),
-			'mime'         => __( 'Type de fichier', 'studio-kyne-mini-tools' ),
-			'label'        => __( 'Réglage', 'studio-kyne-mini-tools' ),
-			'from'         => __( 'Avant', 'studio-kyne-mini-tools' ),
-			'to'           => __( 'Après', 'studio-kyne-mini-tools' ),
-			'paths'        => __( 'Champs modifiés', 'studio-kyne-mini-tools' ),
-			'modules'      => __( 'Modules', 'studio-kyne-mini-tools' ),
-			'via'          => __( 'Origine', 'studio-kyne-mini-tools' ),
+			'title'        => __( 'Titre', 'lumia-tools' ),
+			'status'       => __( 'Statut', 'lumia-tools' ),
+			'slug'         => __( 'Identifiant (slug)', 'lumia-tools' ),
+			'parent'       => __( 'Parent', 'lumia-tools' ),
+			'date'         => __( 'Date de publication', 'lumia-tools' ),
+			'order'        => __( 'Ordre', 'lumia-tools' ),
+			'comments'     => __( 'Commentaires', 'lumia-tools' ),
+			'author'       => __( 'Auteur', 'lumia-tools' ),
+			'content'      => __( 'Contenu', 'lumia-tools' ),
+			'excerpt'      => __( 'Extrait', 'lumia-tools' ),
+			'password'     => __( 'Mot de passe', 'lumia-tools' ),
+			'builder'      => __( 'Constructeur de page', 'lumia-tools' ),
+			'alt'          => __( 'Texte alternatif', 'lumia-tools' ),
+			'email'        => __( 'E-mail', 'lumia-tools' ),
+			'display_name' => __( 'Nom affiché', 'lumia-tools' ),
+			'url'          => __( 'Site web', 'lumia-tools' ),
+			'roles'        => __( 'Rôles', 'lumia-tools' ),
+			'reassign'     => __( 'Contenus attribués à', 'lumia-tools' ),
+			'file'         => __( 'Fichier', 'lumia-tools' ),
+			'stylesheet'   => __( 'Dossier', 'lumia-tools' ),
+			'version'      => __( 'Version', 'lumia-tools' ),
+			'network'      => __( 'Tout le réseau', 'lumia-tools' ),
+			'mime'         => __( 'Type de fichier', 'lumia-tools' ),
+			'label'        => __( 'Réglage', 'lumia-tools' ),
+			'from'         => __( 'Avant', 'lumia-tools' ),
+			'to'           => __( 'Après', 'lumia-tools' ),
+			'paths'        => __( 'Champs modifiés', 'lumia-tools' ),
+			'modules'      => __( 'Modules', 'lumia-tools' ),
+			'via'          => __( 'Origine', 'lumia-tools' ),
 		];
 
 		$channels = [
-			'web'    => __( 'Interface web', 'studio-kyne-mini-tools' ),
-			'ajax'   => __( 'Interface web (AJAX)', 'studio-kyne-mini-tools' ),
-			'rest'   => __( 'API REST / éditeur de blocs', 'studio-kyne-mini-tools' ),
-			'cron'   => __( 'Tâche planifiée', 'studio-kyne-mini-tools' ),
-			'cli'    => __( 'WP-CLI', 'studio-kyne-mini-tools' ),
-			'xmlrpc' => __( 'XML-RPC', 'studio-kyne-mini-tools' ),
+			'web'    => __( 'Interface web', 'lumia-tools' ),
+			'ajax'   => __( 'Interface web (AJAX)', 'lumia-tools' ),
+			'rest'   => __( 'API REST / éditeur de blocs', 'lumia-tools' ),
+			'cron'   => __( 'Tâche planifiée', 'lumia-tools' ),
+			'cli'    => __( 'WP-CLI', 'lumia-tools' ),
+			'xmlrpc' => __( 'XML-RPC', 'lumia-tools' ),
 		];
 
 		$lines = [];
@@ -499,9 +499,9 @@ class Module extends AbstractModule {
 
 			if ( 'capped' === $key ) {
 				$lines[] = [
-					__( 'Limite atteinte', 'studio-kyne-mini-tools' ),
+					__( 'Limite atteinte', 'lumia-tools' ),
 					/* translators: %d: nombre d'échecs journalisés par heure. */
-					sprintf( __( 'Les échecs suivants de cette IP ne sont plus journalisés pendant une heure (%d par heure au plus).', 'studio-kyne-mini-tools' ), (int) $value ),
+					sprintf( __( 'Les échecs suivants de cette IP ne sont plus journalisés pendant une heure (%d par heure au plus).', 'lumia-tools' ), (int) $value ),
 				];
 				continue;
 			}
@@ -515,10 +515,10 @@ class Module extends AbstractModule {
 				foreach ( $value as $module => $active ) {
 					$parts[] = $this->object_label(
 						[
-							'object_type'  => 'skmt',
+							'object_type'  => 'lumia',
 							'object_label' => (string) $module,
 						]
-					) . ' : ' . ( $active ? __( 'activé', 'studio-kyne-mini-tools' ) : __( 'désactivé', 'studio-kyne-mini-tools' ) );
+					) . ' : ' . ( $active ? __( 'activé', 'lumia-tools' ) : __( 'désactivé', 'lumia-tools' ) );
 				}
 				$value = implode( ', ', $parts );
 			}
@@ -549,7 +549,7 @@ class Module extends AbstractModule {
 		}
 
 		if ( true === $change ) {
-			return __( 'modifié', 'studio-kyne-mini-tools' );
+			return __( 'modifié', 'lumia-tools' );
 		}
 
 		return $this->scalar_text( $change );
@@ -564,7 +564,7 @@ class Module extends AbstractModule {
 		}
 
 		if ( is_bool( $value ) ) {
-			return $value ? __( 'oui', 'studio-kyne-mini-tools' ) : __( 'non', 'studio-kyne-mini-tools' );
+			return $value ? __( 'oui', 'lumia-tools' ) : __( 'non', 'lumia-tools' );
 		}
 
 		$value = (string) $value;

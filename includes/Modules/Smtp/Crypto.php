@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -82,12 +82,12 @@ class Crypto {
 	}
 
 	/**
-	 * Clé dérivée des clés du site. `SKMT_ENCRYPTION_KEY` permet d'en fixer une
+	 * Clé dérivée des clés du site. `LUMIA_ENCRYPTION_KEY` permet d'en fixer une
 	 * qui survit à une régénération des sels de `wp-config.php`.
 	 */
 	private static function key(): string {
-		if ( defined( 'SKMT_ENCRYPTION_KEY' ) && '' !== (string) SKMT_ENCRYPTION_KEY ) {
-			$material = (string) SKMT_ENCRYPTION_KEY;
+		if ( defined( 'LUMIA_ENCRYPTION_KEY' ) && '' !== (string) LUMIA_ENCRYPTION_KEY ) {
+			$material = (string) LUMIA_ENCRYPTION_KEY;
 		} else {
 			$material = ( defined( 'LOGGED_IN_KEY' ) ? (string) LOGGED_IN_KEY : '' ) . ( defined( 'LOGGED_IN_SALT' ) ? (string) LOGGED_IN_SALT : '' );
 		}
@@ -98,6 +98,6 @@ class Crypto {
 			$material = wp_salt( 'logged_in' );
 		}
 
-		return hash( 'sha256', 'skmt-smtp|' . $material, true );
+		return hash( 'sha256', 'lumia-smtp|' . $material, true );
 	}
 }

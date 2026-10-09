@@ -1,5 +1,5 @@
 /**
- * Studio Kyne Mini Tools - Security admin JS
+ * Lümia Tools - Security admin JS
  * Visibilité conditionnelle des sous-options + conversion dynamique secondes → minutes.
  */
 (function () {

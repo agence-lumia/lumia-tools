@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Studio Kyne Mini Tools">
-	<description>Standards WordPress (WPCS) et compatibilité PHP 7.4+ pour l'extension.</description>
+<ruleset name="Lümia Tools">
+	<description>Standards WordPress (WPCS) et compatibilité PHP 8.0+ pour l'extension.</description>
 
 	<!-- Fichiers analysés -->
 	<file>.</file>
@@ -59,7 +59,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="studio-kyne-mini-tools"/>
+				<element value="lumia-tools"/>
 			</property>
 		</properties>
 	</rule>
@@ -68,17 +68,17 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="skmt"/>
-				<element value="SKMT"/>
-				<element value="StudioKyne"/>
+				<element value="lumia"/>
+				<element value="LUMIA"/>
+				<element value="Lumia"/>
 			</property>
 		</properties>
 	</rule>
 
 	<!-- Compatibilité PHP : version minimale déclarée dans l'en-tête -->
-	<config name="testVersion" value="7.4-"/>
+	<config name="testVersion" value="8.0-"/>
 	<rule ref="PHPCompatibilityWP"/>
 
 	<!-- Version WordPress minimale (fonctions dépréciées) -->
-	<config name="minimum_wp_version" value="6.0"/>
+	<config name="minimum_wp_version" value="6.9"/>
 </ruleset>

@@ -1,6 +1,6 @@
 /**
- * Studio Kyne Mini Tools - Notifications
- * Toast SKMT + Centre de notifications WP
+ * Lümia Tools - Notifications
+ * Toast LUMIA + Centre de notifications WP
  * Chargé sur tout l'admin WordPress.
  */
 (function () {
@@ -38,34 +38,34 @@
    * ================================================================ */
 
   function initToasts() {
-    var data = window.skmtToastData;
+    var data = window.lumiaToastData;
     if (!data || !data.message) return;
     showToast(data.message, data.type || "success");
   }
 
   function showToast(message, type) {
-    var container = document.getElementById("skmt-toast-container");
+    var container = document.getElementById("lumia-toast-container");
     if (!container) return;
 
     type = type || "success";
 
     var toast = document.createElement("div");
-    toast.className = "skmt-toast skmt-toast--" + type;
+    toast.className = "lumia-toast lumia-toast--" + type;
     toast.setAttribute("role", "alert");
     toast.setAttribute("aria-live", "assertive");
 
     toast.innerHTML =
-      '<div class="skmt-toast__inner">' +
-      '<span class="skmt-toast__dot"></span>' +
-      '<p class="skmt-toast__message">' + escapeHtml(message) + "</p>" +
-      '<button class="skmt-toast__close" type="button" aria-label="Fermer">' + CLOSE_SVG + "</button>" +
+      '<div class="lumia-toast__inner">' +
+      '<span class="lumia-toast__dot"></span>' +
+      '<p class="lumia-toast__message">' + escapeHtml(message) + "</p>" +
+      '<button class="lumia-toast__close" type="button" aria-label="Fermer">' + CLOSE_SVG + "</button>" +
       "</div>" +
-      '<div class="skmt-toast__progress-bar"><span class="skmt-toast__progress-fill"></span></div>';
+      '<div class="lumia-toast__progress-bar"><span class="lumia-toast__progress-fill"></span></div>';
 
     container.appendChild(toast);
 
-    var closeBtn = toast.querySelector(".skmt-toast__close");
-    var fill = toast.querySelector(".skmt-toast__progress-fill");
+    var closeBtn = toast.querySelector(".lumia-toast__close");
+    var fill = toast.querySelector(".lumia-toast__progress-fill");
 
     var dismissed = false;
     var paused = false;
@@ -137,24 +137,24 @@
    * ================================================================ */
 
   function initNotificationCenter() {
-    var drawer = document.getElementById("skmt-notif-drawer");
-    var overlay = document.getElementById("skmt-notif-overlay");
+    var drawer = document.getElementById("lumia-notif-drawer");
+    var overlay = document.getElementById("lumia-notif-overlay");
     var trigger = document.querySelector(
-      "#wp-admin-bar-skmt-notif-center > a",
+      "#wp-admin-bar-lumia-notif-center > a",
     );
-    var closeBtn = document.getElementById("skmt-notif-close");
-    var body = document.getElementById("skmt-notif-body");
+    var closeBtn = document.getElementById("lumia-notif-close");
+    var body = document.getElementById("lumia-notif-body");
 
     if (!drawer) return;
 
-    // Notices SKMT persistantes en premier, puis notices WP éphémères
-    var skmtNotices = (window.skmtPersistentNotices || []).map(function (n) {
-      return { id: n.id, type: n.type || "info", message: n.message, source: "skmt" };
+    // Notices LUMIA persistantes en premier, puis notices WP éphémères
+    var lumiaNotices = (window.lumiaPersistentNotices || []).map(function (n) {
+      return { id: n.id, type: n.type || "info", message: n.message, source: "lumia" };
     });
-    var wpNotices = parseWpNotices(window.skmtWpNoticesHtml || "").map(function (n) {
+    var wpNotices = parseWpNotices(window.lumiaWpNoticesHtml || "").map(function (n) {
       return { type: n.type, html: n.html, source: "wp" };
     });
-    var allNotices = skmtNotices.concat(wpNotices);
+    var allNotices = lumiaNotices.concat(wpNotices);
 
     notifCount = allNotices.length;
     updateBadge(notifCount);
@@ -194,7 +194,7 @@
   var BADGE_MAX = 9;
 
   function updateBadge(count) {
-    var badge = document.getElementById("skmt-notif-badge");
+    var badge = document.getElementById("lumia-notif-badge");
     if (!badge) return;
     if (count > 0) {
       badge.setAttribute("data-count", count);
@@ -231,7 +231,7 @@
     if (!body) return;
     if (notices.length === 0) {
       body.innerHTML =
-        '<div class="skmt-notif-drawer__empty">' +
+        '<div class="lumia-notif-drawer__empty">' +
         BELL_EMPTY_SVG +
         "<span>Aucune notification</span>" +
         "</div>";
@@ -240,13 +240,13 @@
 
     var html = "";
     notices.forEach(function (n) {
-      var sourceLabel = n.source === "skmt" ? "SKMT" : "WP";
-      var sourceClass = "skmt-notif-item--" + n.source;
-      var content = n.source === "skmt" ? n.message : n.html;
+      var sourceLabel = n.source === "lumia" ? "LUMIA" : "WP";
+      var sourceClass = "lumia-notif-item--" + n.source;
+      var content = n.source === "lumia" ? n.message : n.html;
       var idAttr = n.id ? ' data-notice-id="' + n.id + '"' : "";
 
       html +=
-        '<div class="skmt-notif-item skmt-notif-item--' +
+        '<div class="lumia-notif-item lumia-notif-item--' +
         sanitizeClass(n.type) +
         " " +
         sourceClass +
@@ -255,34 +255,34 @@
         '"' +
         idAttr +
         ">" +
-        '<span class="skmt-notif-item__icon">' +
+        '<span class="lumia-notif-item__icon">' +
         (ICONS[n.type] || ICONS.info) +
         "</span>" +
-        '<div class="skmt-notif-item__content">' +
-        '<span class="skmt-notif-item__source">' +
+        '<div class="lumia-notif-item__content">' +
+        '<span class="lumia-notif-item__source">' +
         sourceLabel +
         "</span>" +
-        '<div class="skmt-notif-item__body">' +
+        '<div class="lumia-notif-item__body">' +
         content +
         "</div>" +
         "</div>" +
-        '<button class="skmt-notif-item__dismiss" type="button" aria-label="Fermer">' +
+        '<button class="lumia-notif-item__dismiss" type="button" aria-label="Fermer">' +
         CLOSE_SVG +
         "</button>" +
         "</div>";
     });
     body.innerHTML = html;
 
-    body.querySelectorAll(".skmt-notif-item").forEach(function (item) {
-      var btn = item.querySelector(".skmt-notif-item__dismiss");
+    body.querySelectorAll(".lumia-notif-item").forEach(function (item) {
+      var btn = item.querySelector(".lumia-notif-item__dismiss");
       if (!btn) return;
       btn.addEventListener("click", function () {
         var source = item.getAttribute("data-source");
         var noticeId = item.getAttribute("data-notice-id");
-        if (source === "skmt" && noticeId) {
-          var notifData = window.skmtNotifData || window.skmtAdmin || {};
+        if (source === "lumia" && noticeId) {
+          var notifData = window.lumiaNotifData || window.lumiaAdmin || {};
           var formData = new FormData();
-          formData.append("action", "skmt_dismiss_notice");
+          formData.append("action", "lumia_dismiss_notice");
           formData.append("nonce", notifData.nonce || "");
           formData.append("notice_id", noticeId);
           fetch(notifData.ajaxUrl || "", {
@@ -307,9 +307,9 @@
     if (item.parentNode) item.parentNode.removeChild(item);
     notifCount = Math.max(0, notifCount - 1);
     updateBadge(notifCount);
-    if (body && body.querySelectorAll(".skmt-notif-item").length === 0) {
+    if (body && body.querySelectorAll(".lumia-notif-item").length === 0) {
       body.innerHTML =
-        '<div class="skmt-notif-drawer__empty">' +
+        '<div class="lumia-notif-drawer__empty">' +
         BELL_EMPTY_SVG +
         "<span>Aucune notification</span>" +
         "</div>";
@@ -339,6 +339,6 @@
     initNotificationCenter();
   });
 
-  // API publique pour les modules SKMT
-  window.skmtShowToast = showToast;
+  // API publique pour les modules LUMIA
+  window.lumiaShowToast = showToast;
 })();

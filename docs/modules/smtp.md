@@ -7,7 +7,7 @@
 - `Crypto` : chiffrement du mot de passe au repos.
 - `Logger` : capture de chaque appel à `wp_mail()` et écriture dans la table.
 - `Providers` : préréglages SMTP des fournisseurs courants (Brevo, Mailgun US/UE, SendGrid, Postmark, SES, Mailjet, OVHcloud, Gmail, Microsoft 365).
-- `Store` : la table `{prefix}skmt_mail_log`, sur le modèle du journal d'activité (voir [activity-log.md](activity-log.md#stockage) : `dbDelta`, `maybe_install()` à chaque chargement, recréation après suppression à la main, purge par lots).
+- `Store` : la table `{prefix}lumia_mail_log`, sur le modèle du journal d'activité (voir [activity-log.md](activity-log.md#stockage) : `dbDelta`, `maybe_install()` à chaque chargement, recréation après suppression à la main, purge par lots).
 
 ## Envoi : `phpmailer_init`, pas de `wp_mail()` remplacé
 
@@ -33,7 +33,7 @@ Architecture de WP Mail SMTP, pas celle de FluentSMTP : `BrevoMailer` étend PHP
 - **`WP_PHPMailer`** (WordPress 6.8+) ne fait que traduire les messages d'erreur de PHPMailer dans une propriété statique partagée. `BrevoMailer` étend donc `PHPMailer` et appelle `WP_PHPMailer::setLanguage()` s'il existe, ce qui garde la compatibilité avec WordPress 6.0.
 - `preSend()` est conservé : il valide les adresses et lit les pièces jointes, avec les messages d'erreur traduits d'un envoi ordinaire (corps vide compris). Le MIME qu'il assemble n'est pas utilisé. **Mais il modifie le message** : dès qu'un `AltBody` existe (posé par une extension de modèles de mail dans `phpmailer_init`), il passe `ContentType` sur `multipart/alternative`. Le type HTML est donc lu **avant** `preSend()`. Sinon le HTML partait en `textContent`, et le destinataire voyait les balises.
 - **Correspondances** : une seule adresse de réponse (la première), les en-têtes personnalisés passent dans `headers`, les images intégrées (`cid:`) partent comme pièces jointes ordinaires, faute d'équivalent. Le Return-Path ne s'applique pas : Brevo gère l'enveloppe lui-même.
-- **Clé API** : même traitement que le mot de passe (voir ci-dessous) : option `skmt_smtp_brevo_key` chiffrée, hors export, champ vide = inchangée, constante `SKMT_BREVO_API_KEY` prioritaire. Seuls lettres, chiffres, `-` et `_` sont conservés (format `xkeysib-…`).
+- **Clé API** : même traitement que le mot de passe (voir ci-dessous) : option `lumia_smtp_brevo_key` chiffrée, hors export, champ vide = inchangée, constante `LUMIA_BREVO_API_KEY` prioritaire. Seuls lettres, chiffres, `-` et `_` sont conservés (format `xkeysib-…`).
 - **Mail de test** : en cas d'échec, la requête, le code HTTP et le corps de la réponse remplacent la transcription SMTP. La clé ne part que dans l'en-tête `api-key` : elle n'apparaît pas.
 - Pas encore faits : Mailgun (MIME brut), Postmark, SendGrid, SES (signature v4). Google et Microsoft (OAuth2) sont écartés.
 
@@ -44,12 +44,12 @@ Architecture de WP Mail SMTP, pas celle de FluentSMTP : `BrevoMailer` étend PHP
 
 ## Mot de passe
 
-- **Option à part** (`skmt_smtp_password`, non autochargée), jamais dans `skmt_module_smtp`. L'export de configuration écrit les options de module telles quelles dans le JSON (voir [core.md](../core.md#import-de-réglages)), et le journal d'activité liste les champs qu'elles changent. L'import ne transporte donc pas de mot de passe : il ne se déchiffrerait de toute façon pas sur un autre site.
+- **Option à part** (`lumia_smtp_password`, non autochargée), jamais dans `lumia_module_smtp`. L'export de configuration écrit les options de module telles quelles dans le JSON (voir [core.md](../core.md#import-de-réglages)), et le journal d'activité liste les champs qu'elles changent. L'import ne transporte donc pas de mot de passe : il ne se déchiffrerait de toute façon pas sur un autre site.
 - **Champ vide = inchangé** : le formulaire ne réaffiche jamais le mot de passe.
-- **AES-256-GCM**, clé dérivée de `LOGGED_IN_KEY` + `LOGGED_IN_SALT` (`SKMT_ENCRYPTION_KEY` la remplace si elle est définie), format `v1:` + base64(IV‖tag‖texte). FluentSMTP utilise AES-256-CTR, sans authentification, et détecte une mauvaise clé grâce à un sel concaténé au clair. GCM obtient le même résultat proprement. Le but : qu'une fuite de la base **seule** (dump, sauvegarde, onglet Base de données) ne livre pas le mot de passe. Contre qui lit `wp-config.php`, rien ne protège.
+- **AES-256-GCM**, clé dérivée de `LOGGED_IN_KEY` + `LOGGED_IN_SALT` (`LUMIA_ENCRYPTION_KEY` la remplace si elle est définie), format `v1:` + base64(IV‖tag‖texte). FluentSMTP utilise AES-256-CTR, sans authentification, et détecte une mauvaise clé grâce à un sel concaténé au clair. GCM obtient le même résultat proprement. Le but : qu'une fuite de la base **seule** (dump, sauvegarde, onglet Base de données) ne livre pas le mot de passe. Contre qui lit `wp-config.php`, rien ne protège.
 - **Clés régénérées** (migration, rotation des sels) : `Crypto::decrypt()` renvoie `null`, et l'écran demande de ressaisir le mot de passe au lieu d'échouer en silence à l'envoi.
 - **Sans OpenSSL**, le mot de passe n'est pas enregistré du tout (on ne le stocke jamais en clair à l'insu de l'utilisateur), et l'écran le signale.
-- `SKMT_SMTP_USER` / `SKMT_SMTP_PASSWORD` dans `wp-config.php` l'emportent sur la base, et les champs passent en lecture seule.
+- `LUMIA_SMTP_USER` / `LUMIA_SMTP_PASSWORD` dans `wp-config.php` l'emportent sur la base, et les champs passent en lecture seule.
 - Assainissement : pas de `sanitize_text_field()`, qui retire `<…>` et `%xx`, deux séquences légitimes dans un mot de passe. On retire seulement les caractères de contrôle.
 
 ## Journal
@@ -63,7 +63,7 @@ Trois hooks, parce qu'aucun ne voit tout :
 Un `pre_wp_mail` qui court-circuite l'envoi ne déclenche aucun des deux hooks d'issue : rien n'est journalisé, et rien n'est parti.
 
 - **Corps limité à 512 Kio** (`mb_strcut`, qui ne coupe pas un caractère UTF-8). Au-delà, la ligne est marquée `truncated` et le renvoi est refusé : renvoyer un message amputé serait pire que ne rien renvoyer.
-- La **liste** ne lit ni le corps ni les en-têtes (`Store::LIST_COLUMNS`). Le détail les charge à l'ouverture (`skmt_smtp_log_detail`).
+- La **liste** ne lit ni le corps ni les en-têtes (`Store::LIST_COLUMNS`). Le détail les charge à l'ouverture (`lumia_smtp_log_detail`).
 - **Aperçu HTML** dans un `<iframe sandbox="" srcdoc>` : pas de script, pas de formulaire, pas d'accès à la page d'administration. Le corps d'un mail peut venir de n'importe qui.
 - **Renvoi** : on rejoue `wp_mail()` avec la demande d'origine. Les pièces jointes disparues depuis (fichiers temporaires des formulaires) sont retirées et signalées. La nouvelle ligne porte `resent_of`.
 - **Renvoi, expéditeur et type de contenu** : les arguments de `wp_mail()` ne suffisent pas. WooCommerce et d'autres posent l'expéditeur et le HTML par des filtres (`wp_mail_from`, `wp_mail_content_type`) actifs seulement le temps de leur envoi. Au renvoi, ces filtres n'existent plus, et une commande repartait de l'expéditeur par défaut, en texte brut avec les balises visibles. Le renvoi réapplique donc l'expéditeur et le type **journalisés**, par des filtres temporaires à la priorité 9000, sous celle de l'expéditeur forcé (9999) qui garde le dernier mot.
@@ -78,6 +78,6 @@ Un `pre_wp_mail` qui court-circuite l'envoi ne déclenche aucun des deux hooks d
 
 ## Interface
 
-Trois sous-onglets du composant `skmt-tabs` (voir [design-system.md](../design-system.md#onglets)) : **Réglages** (serveur, expéditeur), **Test**, **Journal** (liste et conservation). Tous les panneaux restent dans le formulaire : « Enregistrer » poste tous les champs, quel que soit l'onglet ouvert. Le journal ne se charge qu'à la première ouverture de son onglet (événement `skmt:tab`).
+Trois sous-onglets du composant `lumia-tabs` (voir [design-system.md](../design-system.md#onglets)) : **Réglages** (serveur, expéditeur), **Test**, **Journal** (liste et conservation). Tous les panneaux restent dans le formulaire : « Enregistrer » poste tous les champs, quel que soit l'onglet ouvert. Le journal ne se charge qu'à la première ouverture de son onglet (événement `lumia:tab`).
 
-Même structure que le journal d'activité : les filtres et le champ de test n'ont **pas d'attribut `name`**, et Entrée y est interceptée, sinon elle soumet le formulaire de réglages. Le champ de test est en `type="text"` (`inputmode="email"`) et non `email` : le navigateur valide un champ email même sans `name`, et une adresse incomplète bloquait « Enregistrer ». L'avertissement « modifications non sauvegardées » d'`admin.js` ne compte que les champs nommés (voir [design-system.md](../design-system.md#formulaires)). Deux pièges CSS : `.skmt-input--sm` plafonne à 140 px (`.skmt-sm__wide` le lève pour l'hôte et les adresses), et l'attribut `hidden` perd face au `display:flex` de `.skmt-form__row` / `.skmt-option`, que `smtp.css` rétablit.
+Même structure que le journal d'activité : les filtres et le champ de test n'ont **pas d'attribut `name`**, et Entrée y est interceptée, sinon elle soumet le formulaire de réglages. Le champ de test est en `type="text"` (`inputmode="email"`) et non `email` : le navigateur valide un champ email même sans `name`, et une adresse incomplète bloquait « Enregistrer ». L'avertissement « modifications non sauvegardées » d'`admin.js` ne compte que les champs nommés (voir [design-system.md](../design-system.md#formulaires)). Deux pièges CSS : `.lumia-input--sm` plafonne à 140 px (`.lumia-sm__wide` le lève pour l'hôte et les adresses), et l'attribut `hidden` perd face au `display:flex` de `.lumia-form__row` / `.lumia-option`, que `smtp.css` rétablit.

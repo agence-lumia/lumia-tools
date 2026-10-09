@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ActivityLog;
+namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,13 +17,13 @@ defined( 'ABSPATH' ) || exit;
 class Store {
 
 	/** Nom de table, sans préfixe. */
-	const TABLE = 'skmt_activity_log';
+	const TABLE = 'lumia_activity_log';
 
 	/** Version du schéma ; toute modification de CREATE TABLE l'incrémente. */
 	const SCHEMA_VERSION = '1';
 
 	/** Option mémorisant la version de schéma installée. */
-	const SCHEMA_OPTION = 'skmt_activity_log_schema';
+	const SCHEMA_OPTION = 'lumia_activity_log_schema';
 
 	/**
 	 * Lignes supprimées par requête lors d'une purge : un DELETE de cent mille

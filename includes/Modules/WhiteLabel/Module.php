@@ -1,9 +1,9 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\WhiteLabel;
+namespace Lumia\Tools\Modules\WhiteLabel;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
  * Module Marque Blanche — nettoyage de la barre d'administration WordPress
@@ -14,7 +14,7 @@ class Module extends AbstractModule {
 	/**
 	 * Clé de user meta stockant l'ID de pièce jointe de l'avatar local.
 	 */
-	private const AVATAR_META = 'skmt_local_avatar';
+	private const AVATAR_META = 'lumia_local_avatar';
 
 	/**
 	 * @var array<string, mixed>
@@ -314,28 +314,28 @@ class Module extends AbstractModule {
 	public function render_avatar_field( \WP_User $user ): void {
 		$attachment_id = (int) get_user_meta( $user->ID, self::AVATAR_META, true );
 		?>
-		<tr class="skmt-local-avatar-wrap">
-			<th><label for="skmt-local-avatar-choose"><?php esc_html_e( 'Avatar', 'studio-kyne-mini-tools' ); ?></label></th>
+		<tr class="lumia-local-avatar-wrap">
+			<th><label for="lumia-local-avatar-choose"><?php esc_html_e( 'Avatar', 'lumia-tools' ); ?></label></th>
 			<td>
-				<?php wp_nonce_field( 'skmt_local_avatar', 'skmt_local_avatar_nonce' ); ?>
-				<div class="skmt-local-avatar" style="display:flex;align-items:center;gap:16px">
-					<span class="skmt-local-avatar__preview" style="display:inline-flex;border-radius:50%;overflow:hidden;line-height:0">
+				<?php wp_nonce_field( 'lumia_local_avatar', 'lumia_local_avatar_nonce' ); ?>
+				<div class="lumia-local-avatar" style="display:flex;align-items:center;gap:16px">
+					<span class="lumia-local-avatar__preview" style="display:inline-flex;border-radius:50%;overflow:hidden;line-height:0">
 						<?php echo get_avatar( $user->ID, 96 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</span>
 					<span>
-						<input type="hidden" id="skmt-local-avatar-input" name="skmt_local_avatar" value="<?php echo esc_attr( (string) $attachment_id ); ?>">
-						<button type="button" class="button" id="skmt-local-avatar-choose"><?php esc_html_e( 'Choisir une image', 'studio-kyne-mini-tools' ); ?></button>
-						<button type="button" class="button-link delete" id="skmt-local-avatar-remove" style="<?php echo $attachment_id ? '' : 'display:none'; ?>;margin-left:8px"><?php esc_html_e( 'Retirer', 'studio-kyne-mini-tools' ); ?></button>
-						<p class="description"><?php esc_html_e( 'Prioritaire sur Gravatar. Laissez vide pour utiliser Gravatar (comportement WordPress par défaut).', 'studio-kyne-mini-tools' ); ?></p>
+						<input type="hidden" id="lumia-local-avatar-input" name="lumia_local_avatar" value="<?php echo esc_attr( (string) $attachment_id ); ?>">
+						<button type="button" class="button" id="lumia-local-avatar-choose"><?php esc_html_e( 'Choisir une image', 'lumia-tools' ); ?></button>
+						<button type="button" class="button-link delete" id="lumia-local-avatar-remove" style="<?php echo $attachment_id ? '' : 'display:none'; ?>;margin-left:8px"><?php esc_html_e( 'Retirer', 'lumia-tools' ); ?></button>
+						<p class="description"><?php esc_html_e( 'Prioritaire sur Gravatar. Laissez vide pour utiliser Gravatar (comportement WordPress par défaut).', 'lumia-tools' ); ?></p>
 					</span>
 				</div>
 				<script>
 				( function () {
 					function init() {
-						var choose  = document.getElementById( 'skmt-local-avatar-choose' );
-						var remove  = document.getElementById( 'skmt-local-avatar-remove' );
-						var input   = document.getElementById( 'skmt-local-avatar-input' );
-						var preview = document.querySelector( '.skmt-local-avatar__preview img' );
+						var choose  = document.getElementById( 'lumia-local-avatar-choose' );
+						var remove  = document.getElementById( 'lumia-local-avatar-remove' );
+						var input   = document.getElementById( 'lumia-local-avatar-input' );
+						var preview = document.querySelector( '.lumia-local-avatar__preview img' );
 						if ( ! choose || ! input ) { return; }
 						var frame;
 						choose.addEventListener( 'click', function ( e ) {
@@ -344,8 +344,8 @@ class Module extends AbstractModule {
 							if ( ! window.wp || ! window.wp.media ) { return; }
 							if ( frame ) { frame.open(); return; }
 							frame = window.wp.media( {
-								title: <?php echo wp_json_encode( __( 'Choisir un avatar', 'studio-kyne-mini-tools' ) ); ?>,
-								button: { text: <?php echo wp_json_encode( __( 'Utiliser cette image', 'studio-kyne-mini-tools' ) ); ?> },
+								title: <?php echo wp_json_encode( __( 'Choisir un avatar', 'lumia-tools' ) ); ?>,
+								button: { text: <?php echo wp_json_encode( __( 'Utiliser cette image', 'lumia-tools' ) ); ?> },
 								library: { type: 'image' },
 								multiple: false
 							} );
@@ -397,12 +397,12 @@ class Module extends AbstractModule {
 		if ( ! current_user_can( 'edit_user', $user_id ) ) {
 			return;
 		}
-		if ( ! isset( $_POST['skmt_local_avatar_nonce'] ) ||
-			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_local_avatar_nonce'] ) ), 'skmt_local_avatar' ) ) {
+		if ( ! isset( $_POST['lumia_local_avatar_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_local_avatar_nonce'] ) ), 'lumia_local_avatar' ) ) {
 			return;
 		}
 
-		$attachment_id = isset( $_POST['skmt_local_avatar'] ) ? absint( wp_unslash( $_POST['skmt_local_avatar'] ) ) : 0;
+		$attachment_id = isset( $_POST['lumia_local_avatar'] ) ? absint( wp_unslash( $_POST['lumia_local_avatar'] ) ) : 0;
 		if ( $attachment_id > 0 ) {
 			update_user_meta( $user_id, self::AVATAR_META, $attachment_id );
 		} else {
@@ -502,7 +502,7 @@ class Module extends AbstractModule {
 
 	public static function get_uninstall_keys(): array {
 		return [
-			'options'   => [ 'skmt_module_white_label' ],
+			'options'   => [ 'lumia_module_white_label' ],
 			'meta'      => [],
 			// L'avatar local est stocké sur l'UTILISATEUR, pas sur un post :
 			// déclaré en 'meta', il n'était jamais supprimé.
@@ -515,7 +515,7 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/white-label.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/white-label.css' ];
 	}
 
 	public function get_admin_js(): array {

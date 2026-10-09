@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Security;
+namespace Lumia\Tools\Modules\Security;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class RateLimiter {
 
-	private const TRANSIENT_PREFIX = '_skmt_rl_';
+	private const TRANSIENT_PREFIX = '_lumia_rl_';
 	private const DEFAULT_ATTEMPTS = 5;
 	private const DEFAULT_WINDOW   = 900;   // 15 min
 	private const DEFAULT_LOCKOUT  = 1800;  // 30 min
@@ -118,7 +118,7 @@ class RateLimiter {
 				'too_many_attempts',
 				sprintf(
 					/* translators: %d: minutes restantes avant déblocage. */
-					__( '<b>Accès bloqué :</b> Trop de tentatives de connexion. Réessayez dans %d minute(s).', 'studio-kyne-mini-tools' ),
+					__( '<b>Accès bloqué :</b> Trop de tentatives de connexion. Réessayez dans %d minute(s).', 'lumia-tools' ),
 					$remaining_minutes
 				)
 			);

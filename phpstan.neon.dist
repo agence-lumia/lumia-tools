@@ -5,7 +5,7 @@
 parameters:
     level: 8
     paths:
-        - studio-kyne-mini-tools.php
+        - lumia-tools.php
         - uninstall.php
         - includes
     excludePaths:

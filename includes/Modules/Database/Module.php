@@ -1,10 +1,10 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Database;
+namespace Lumia\Tools\Modules\Database;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
-use StudioKyne\MiniTools\Admin\Admin;
+use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Admin\Admin;
 
 /**
  * Module Base de données — exploration, édition et export des tables WordPress.
@@ -56,19 +56,19 @@ class Module extends AbstractModule {
 	];
 
 	public function init(): void {
-		add_action( 'wp_ajax_skmt_db_get_tables', [ $this, 'ajax_get_tables' ] );
-		add_action( 'wp_ajax_skmt_db_get_rows', [ $this, 'ajax_get_rows' ] );
-		add_action( 'wp_ajax_skmt_db_get_structure', [ $this, 'ajax_get_structure' ] );
-		add_action( 'wp_ajax_skmt_db_update_row', [ $this, 'ajax_update_row' ] );
-		add_action( 'wp_ajax_skmt_db_delete_row', [ $this, 'ajax_delete_row' ] );
-		add_action( 'wp_ajax_skmt_db_insert_row', [ $this, 'ajax_insert_row' ] );
-		add_action( 'wp_ajax_skmt_db_truncate', [ $this, 'ajax_truncate_table' ] );
-		add_action( 'wp_ajax_skmt_db_drop_table', [ $this, 'ajax_drop_table' ] );
-		add_action( 'wp_ajax_skmt_db_export_sql', [ $this, 'ajax_export_sql' ] );
-		add_action( 'wp_ajax_skmt_db_run_query', [ $this, 'ajax_run_query' ] );
-		add_action( 'wp_ajax_skmt_db_cleanup_scan', [ $this, 'ajax_cleanup_scan' ] );
-		add_action( 'wp_ajax_skmt_db_cleanup_run', [ $this, 'ajax_cleanup_run' ] );
-		add_action( 'wp_ajax_skmt_db_cleanup_optimize', [ $this, 'ajax_cleanup_optimize' ] );
+		add_action( 'wp_ajax_lumia_db_get_tables', [ $this, 'ajax_get_tables' ] );
+		add_action( 'wp_ajax_lumia_db_get_rows', [ $this, 'ajax_get_rows' ] );
+		add_action( 'wp_ajax_lumia_db_get_structure', [ $this, 'ajax_get_structure' ] );
+		add_action( 'wp_ajax_lumia_db_update_row', [ $this, 'ajax_update_row' ] );
+		add_action( 'wp_ajax_lumia_db_delete_row', [ $this, 'ajax_delete_row' ] );
+		add_action( 'wp_ajax_lumia_db_insert_row', [ $this, 'ajax_insert_row' ] );
+		add_action( 'wp_ajax_lumia_db_truncate', [ $this, 'ajax_truncate_table' ] );
+		add_action( 'wp_ajax_lumia_db_drop_table', [ $this, 'ajax_drop_table' ] );
+		add_action( 'wp_ajax_lumia_db_export_sql', [ $this, 'ajax_export_sql' ] );
+		add_action( 'wp_ajax_lumia_db_run_query', [ $this, 'ajax_run_query' ] );
+		add_action( 'wp_ajax_lumia_db_cleanup_scan', [ $this, 'ajax_cleanup_scan' ] );
+		add_action( 'wp_ajax_lumia_db_cleanup_run', [ $this, 'ajax_cleanup_run' ] );
+		add_action( 'wp_ajax_lumia_db_cleanup_optimize', [ $this, 'ajax_cleanup_optimize' ] );
 	}
 
 	/**
@@ -93,11 +93,11 @@ class Module extends AbstractModule {
 		]; }
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/database.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/database.css' ];
 	}
 
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/database.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/database.js' ];
 	}
 
 	/**
@@ -106,73 +106,73 @@ class Module extends AbstractModule {
 	public function get_admin_js_data(): array {
 		return [
 			'i18n' => [
-				'confirmDelete'     => __( 'Supprimer cette ligne ?', 'studio-kyne-mini-tools' ),
-				'confirmTruncate'   => __( 'Vider la table ? Cette action est irréversible.', 'studio-kyne-mini-tools' ),
-				'queryWarning'      => __( 'Attention : les requêtes de modification (UPDATE, DELETE, DROP…) s\'exécutent directement sur la base de données. Aucun undo possible.', 'studio-kyne-mini-tools' ),
-				'confirmWrite'      => __( 'Cette requête modifie la base de données et est irréversible. Confirmer l\'exécution ?', 'studio-kyne-mini-tools' ),
+				'confirmDelete'     => __( 'Supprimer cette ligne ?', 'lumia-tools' ),
+				'confirmTruncate'   => __( 'Vider la table ? Cette action est irréversible.', 'lumia-tools' ),
+				'queryWarning'      => __( 'Attention : les requêtes de modification (UPDATE, DELETE, DROP…) s\'exécutent directement sur la base de données. Aucun undo possible.', 'lumia-tools' ),
+				'confirmWrite'      => __( 'Cette requête modifie la base de données et est irréversible. Confirmer l\'exécution ?', 'lumia-tools' ),
 				// Actions génériques
-				'confirm'           => __( 'Confirmer', 'studio-kyne-mini-tools' ),
-				'cancel'            => __( 'Annuler', 'studio-kyne-mini-tools' ),
-				'delete'            => __( 'Supprimer', 'studio-kyne-mini-tools' ),
-				'execute'           => __( 'Exécuter', 'studio-kyne-mini-tools' ),
+				'confirm'           => __( 'Confirmer', 'lumia-tools' ),
+				'cancel'            => __( 'Annuler', 'lumia-tools' ),
+				'delete'            => __( 'Supprimer', 'lumia-tools' ),
+				'execute'           => __( 'Exécuter', 'lumia-tools' ),
 				// États / feedback
-				'loading'           => __( 'Chargement…', 'studio-kyne-mini-tools' ),
-				'executing'         => __( 'Exécution…', 'studio-kyne-mini-tools' ),
-				'inserting'         => __( 'Insertion…', 'studio-kyne-mini-tools' ),
-				'rowAdded'          => __( 'Ligne ajoutée', 'studio-kyne-mini-tools' ),
-				'rowUpdated'        => __( 'Ligne mise à jour', 'studio-kyne-mini-tools' ),
-				'rowDeleted'        => __( 'Ligne supprimée', 'studio-kyne-mini-tools' ),
-				'tableTruncated'    => __( 'Table vidée', 'studio-kyne-mini-tools' ),
-				'tableDropped'      => __( 'Table supprimée', 'studio-kyne-mini-tools' ),
-				'error'             => __( 'Erreur', 'studio-kyne-mini-tools' ),
-				'networkError'      => __( 'Erreur réseau', 'studio-kyne-mini-tools' ),
+				'loading'           => __( 'Chargement…', 'lumia-tools' ),
+				'executing'         => __( 'Exécution…', 'lumia-tools' ),
+				'inserting'         => __( 'Insertion…', 'lumia-tools' ),
+				'rowAdded'          => __( 'Ligne ajoutée', 'lumia-tools' ),
+				'rowUpdated'        => __( 'Ligne mise à jour', 'lumia-tools' ),
+				'rowDeleted'        => __( 'Ligne supprimée', 'lumia-tools' ),
+				'tableTruncated'    => __( 'Table vidée', 'lumia-tools' ),
+				'tableDropped'      => __( 'Table supprimée', 'lumia-tools' ),
+				'error'             => __( 'Erreur', 'lumia-tools' ),
+				'networkError'      => __( 'Erreur réseau', 'lumia-tools' ),
 				// Libellés de tableau / recherche
-				'noTables'          => __( 'Aucune table trouvée.', 'studio-kyne-mini-tools' ),
-				'noRows'            => __( 'Aucune ligne.', 'studio-kyne-mini-tools' ),
-				'noColumn'          => __( 'Aucune colonne.', 'studio-kyne-mini-tools' ),
-				'noHistory'         => __( 'Aucun historique.', 'studio-kyne-mini-tools' ),
-				'clearHistory'      => __( 'Vider l\'historique', 'studio-kyne-mini-tools' ),
-				'searchInTable'     => __( 'Rechercher dans la table…', 'studio-kyne-mini-tools' ),
-				'rowsLabel'         => __( 'lignes', 'studio-kyne-mini-tools' ),
-				'perPageLabel'      => __( 'Lignes / page', 'studio-kyne-mini-tools' ),
-				'setNull'           => __( 'Définir NULL', 'studio-kyne-mini-tools' ),
+				'noTables'          => __( 'Aucune table trouvée.', 'lumia-tools' ),
+				'noRows'            => __( 'Aucune ligne.', 'lumia-tools' ),
+				'noColumn'          => __( 'Aucune colonne.', 'lumia-tools' ),
+				'noHistory'         => __( 'Aucun historique.', 'lumia-tools' ),
+				'clearHistory'      => __( 'Vider l\'historique', 'lumia-tools' ),
+				'searchInTable'     => __( 'Rechercher dans la table…', 'lumia-tools' ),
+				'rowsLabel'         => __( 'lignes', 'lumia-tools' ),
+				'perPageLabel'      => __( 'Lignes / page', 'lumia-tools' ),
+				'setNull'           => __( 'Définir NULL', 'lumia-tools' ),
 				// Nettoyage
-				'cleanupTitle'      => __( 'Nettoyage', 'studio-kyne-mini-tools' ),
-				'cleanupIntro'      => __( 'Chaque élément est d\'abord compté ; rien n\'est supprimé sans votre confirmation. Faites une sauvegarde de la base avant un gros nettoyage.', 'studio-kyne-mini-tools' ),
-				'cleanupItems'      => __( 'Données superflues', 'studio-kyne-mini-tools' ),
-				'cleanupClean'      => __( 'Nettoyer', 'studio-kyne-mini-tools' ),
-				'cleanupAll'        => __( 'Tout nettoyer', 'studio-kyne-mini-tools' ),
-				'cleanupRescan'     => __( 'Recompter', 'studio-kyne-mini-tools' ),
-				'cleanupRunning'    => __( 'Nettoyage…', 'studio-kyne-mini-tools' ),
+				'cleanupTitle'      => __( 'Nettoyage', 'lumia-tools' ),
+				'cleanupIntro'      => __( 'Chaque élément est d\'abord compté ; rien n\'est supprimé sans votre confirmation. Faites une sauvegarde de la base avant un gros nettoyage.', 'lumia-tools' ),
+				'cleanupItems'      => __( 'Données superflues', 'lumia-tools' ),
+				'cleanupClean'      => __( 'Nettoyer', 'lumia-tools' ),
+				'cleanupAll'        => __( 'Tout nettoyer', 'lumia-tools' ),
+				'cleanupRescan'     => __( 'Recompter', 'lumia-tools' ),
+				'cleanupRunning'    => __( 'Nettoyage…', 'lumia-tools' ),
 				/* translators: 1: nombre d'éléments, 2: libellé de l'élément. */
-				'cleanupConfirm'    => __( 'Supprimer définitivement %1$s élément(s) : %2$s ?', 'studio-kyne-mini-tools' ),
+				'cleanupConfirm'    => __( 'Supprimer définitivement %1$s élément(s) : %2$s ?', 'lumia-tools' ),
 				/* translators: %s: nombre total d'éléments. */
-				'cleanupConfirmAll' => __( 'Supprimer définitivement %s élément(s), toutes catégories confondues ?', 'studio-kyne-mini-tools' ),
+				'cleanupConfirmAll' => __( 'Supprimer définitivement %s élément(s), toutes catégories confondues ?', 'lumia-tools' ),
 				/* translators: 1: nombre d'éléments supprimés, 2: libellé de l'élément. */
-				'cleanupDone'       => __( '%1$s élément(s) supprimé(s) : %2$s', 'studio-kyne-mini-tools' ),
+				'cleanupDone'       => __( '%1$s élément(s) supprimé(s) : %2$s', 'lumia-tools' ),
 				/* translators: %s: nombre total d'éléments supprimés. */
-				'cleanupDoneTotal'  => __( '%s élément(s) supprimé(s)', 'studio-kyne-mini-tools' ),
+				'cleanupDoneTotal'  => __( '%s élément(s) supprimé(s)', 'lumia-tools' ),
 				/* translators: %s: nombre d'éléments restants. */
-				'cleanupLeft'       => __( '%s élément(s) n\'ont pas pu être supprimés.', 'studio-kyne-mini-tools' ),
-				'optimizeTitle'     => __( 'Optimisation des tables', 'studio-kyne-mini-tools' ),
+				'cleanupLeft'       => __( '%s élément(s) n\'ont pas pu être supprimés.', 'lumia-tools' ),
+				'optimizeTitle'     => __( 'Optimisation des tables', 'lumia-tools' ),
 				/* translators: 1: nombre de tables, 2: taille récupérable. */
-				'optimizeSummary'   => __( '%1$s table(s) fragmentée(s), %2$s récupérables.', 'studio-kyne-mini-tools' ),
-				'optimizeNone'      => __( 'Aucune table fragmentée.', 'studio-kyne-mini-tools' ),
-				'optimizeBtn'       => __( 'Optimiser', 'studio-kyne-mini-tools' ),
-				'optimizeConfirm'   => __( 'OPTIMIZE TABLE reconstruit chaque table et peut la verrouiller quelques secondes. Lancer l\'optimisation ?', 'studio-kyne-mini-tools' ),
+				'optimizeSummary'   => __( '%1$s table(s) fragmentée(s), %2$s récupérables.', 'lumia-tools' ),
+				'optimizeNone'      => __( 'Aucune table fragmentée.', 'lumia-tools' ),
+				'optimizeBtn'       => __( 'Optimiser', 'lumia-tools' ),
+				'optimizeConfirm'   => __( 'OPTIMIZE TABLE reconstruit chaque table et peut la verrouiller quelques secondes. Lancer l\'optimisation ?', 'lumia-tools' ),
 				/* translators: %s: nombre de tables optimisées. */
-				'optimizeDone'      => __( '%s table(s) optimisée(s)', 'studio-kyne-mini-tools' ),
-				'foreignTitle'      => __( 'Tables d\'extensions', 'studio-kyne-mini-tools' ),
-				'foreignIntro'      => __( 'Tables hors cœur WordPress. L\'extension propriétaire est devinée d\'après le nom de la table : vérifiez avant de supprimer. Aucune table n\'est supprimée automatiquement.', 'studio-kyne-mini-tools' ),
-				'foreignNone'       => __( 'Aucune table d\'extension.', 'studio-kyne-mini-tools' ),
-				'foreignUnknown'    => __( 'Aucune extension correspondante', 'studio-kyne-mini-tools' ),
+				'optimizeDone'      => __( '%s table(s) optimisée(s)', 'lumia-tools' ),
+				'foreignTitle'      => __( 'Tables d\'extensions', 'lumia-tools' ),
+				'foreignIntro'      => __( 'Tables hors cœur WordPress. L\'extension propriétaire est devinée d\'après le nom de la table : vérifiez avant de supprimer. Aucune table n\'est supprimée automatiquement.', 'lumia-tools' ),
+				'foreignNone'       => __( 'Aucune table d\'extension.', 'lumia-tools' ),
+				'foreignUnknown'    => __( 'Aucune extension correspondante', 'lumia-tools' ),
 				/* translators: %s: nom(s) d'extension. */
-				'foreignInactive'   => __( 'Extension inactive : %s', 'studio-kyne-mini-tools' ),
+				'foreignInactive'   => __( 'Extension inactive : %s', 'lumia-tools' ),
 				/* translators: %s: nom(s) d'extension. */
-				'foreignActive'     => __( 'Extension active : %s', 'studio-kyne-mini-tools' ),
-				'open'              => __( 'Ouvrir', 'studio-kyne-mini-tools' ),
+				'foreignActive'     => __( 'Extension active : %s', 'lumia-tools' ),
+				'open'              => __( 'Ouvrir', 'lumia-tools' ),
 				/* translators: %d: nombre maximal de lignes affichées. */
-				'queryTruncated'    => __( 'Résultat tronqué à %d lignes. Ajoutez une clause LIMIT pour cibler votre requête.', 'studio-kyne-mini-tools' ),
+				'queryTruncated'    => __( 'Résultat tronqué à %d lignes. Ajoutez une clause LIMIT pour cibler votre requête.', 'lumia-tools' ),
 			],
 		];
 	}
@@ -191,9 +191,9 @@ class Module extends AbstractModule {
 	}
 
 	private function guard(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 		// Empêche $wpdb->print_error() d'ÉCHO du HTML d'erreur avant notre JSON
 		// (sinon la réponse est corrompue → « Erreur réseau » côté JS au lieu du message SQL).
@@ -325,16 +325,16 @@ class Module extends AbstractModule {
 			return $fallback;
 		}
 		if ( stripos( $raw, 'Duplicate entry' ) !== false ) {
-			return __( 'Cette valeur existe déjà (contrainte d\'unicité).', 'studio-kyne-mini-tools' ) . ' — ' . $raw;
+			return __( 'Cette valeur existe déjà (contrainte d\'unicité).', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		if ( stripos( $raw, 'foreign key' ) !== false ) {
-			return __( 'Contrainte de clé étrangère non respectée.', 'studio-kyne-mini-tools' ) . ' — ' . $raw;
+			return __( 'Contrainte de clé étrangère non respectée.', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		if ( stripos( $raw, 'cannot be null' ) !== false || stripos( $raw, "doesn't have a default" ) !== false ) {
-			return __( 'Un champ obligatoire est manquant.', 'studio-kyne-mini-tools' ) . ' — ' . $raw;
+			return __( 'Un champ obligatoire est manquant.', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		if ( stripos( $raw, 'Incorrect' ) !== false && stripos( $raw, 'value' ) !== false ) {
-			return __( 'Valeur de type incorrect pour une colonne.', 'studio-kyne-mini-tools' ) . ' — ' . $raw;
+			return __( 'Valeur de type incorrect pour une colonne.', 'lumia-tools' ) . ' — ' . $raw;
 		}
 		return $raw;
 	}
@@ -353,7 +353,7 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
 		}
 
 		// Colonnes — $table validé via information_schema, backticks sûrs.
@@ -411,7 +411,7 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
@@ -441,19 +441,19 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table || ! $primary_col || ! $col ) {
-			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'lumia-tools' ) ] );
 		}
 
 		// Whitelist colonne + clé primaire contre les colonnes réelles de la table.
 		$columns = $this->get_columns_map( $table );
 		if ( ! isset( $columns[ $col ], $columns[ $primary_col ] ) ) {
-			wp_send_json_error( [ 'message' => __( 'Colonne inconnue.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Colonne inconnue.', 'lumia-tools' ) ] );
 		}
 
 		// NULL explicite → valeur null (interdit si la colonne n'accepte pas NULL).
 		if ( $set_null ) {
 			if ( 'YES' !== ( $columns[ $col ]['Null'] ?? 'NO' ) ) {
-				wp_send_json_error( [ 'message' => __( 'Cette colonne n\'accepte pas la valeur NULL.', 'studio-kyne-mini-tools' ) ] );
+				wp_send_json_error( [ 'message' => __( 'Cette colonne n\'accepte pas la valeur NULL.', 'lumia-tools' ) ] );
 			}
 			$data    = [ $col => null ];
 			$formats = null; // laisse $wpdb produire NULL.
@@ -481,12 +481,12 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table || ! $primary_col ) {
-			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'lumia-tools' ) ] );
 		}
 
 		$columns = $this->get_columns_map( $table );
 		if ( ! isset( $columns[ $primary_col ] ) ) {
-			wp_send_json_error( [ 'message' => __( 'Colonne inconnue.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Colonne inconnue.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -502,7 +502,7 @@ class Module extends AbstractModule {
 
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
 		}
 
 		global $wpdb;
@@ -525,7 +525,7 @@ class Module extends AbstractModule {
 			if ( in_array( $field, $nulls, true ) ) {
 				if ( 'YES' !== ( $col['Null'] ?? 'NO' ) ) {
 					/* translators: %s: nom de la colonne. */
-					wp_send_json_error( [ 'message' => sprintf( __( 'La colonne « %s » n\'accepte pas NULL.', 'studio-kyne-mini-tools' ), $field ) ] );
+					wp_send_json_error( [ 'message' => sprintf( __( 'La colonne « %s » n\'accepte pas NULL.', 'lumia-tools' ), $field ) ] );
 				}
 				$data[ $field ] = null;
 				$formats[]      = $this->column_format( $col );
@@ -543,13 +543,13 @@ class Module extends AbstractModule {
 		}
 
 		if ( empty( $data ) ) {
-			wp_send_json_error( [ 'message' => __( 'Aucune valeur à insérer.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Aucune valeur à insérer.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$result = $wpdb->insert( $table, $data, $formats );
 		if ( false === $result ) {
-			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Insertion échouée.', 'studio-kyne-mini-tools' ) ) ] );
+			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Insertion échouée.', 'lumia-tools' ) ) ] );
 		}
 		wp_send_json_success( [ 'insert_id' => $wpdb->insert_id ] );
 	}
@@ -560,7 +560,7 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
@@ -577,7 +577,7 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
@@ -624,7 +624,7 @@ class Module extends AbstractModule {
 
 		$item = isset( $_POST['item'] ) ? sanitize_key( wp_unslash( $_POST['item'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- vérifié par guard().
 		if ( ! array_key_exists( $item, Cleanup::items() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Élément inconnu.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Élément inconnu.', 'lumia-tools' ) ] );
 		}
 
 		$cleanup = new Cleanup();
@@ -647,7 +647,7 @@ class Module extends AbstractModule {
 		$table   = isset( $_POST['table'] ) ? sanitize_text_field( wp_unslash( $_POST['table'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- vérifié par guard().
 		$cleanup = new Cleanup();
 		if ( ! $cleanup->is_site_table( $table ) ) {
-			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Table introuvable.', 'lumia-tools' ) ] );
 		}
 		if ( ! $cleanup->optimize( $table ) ) {
 			global $wpdb;
@@ -774,14 +774,14 @@ class Module extends AbstractModule {
 		global $wpdb;
 		$sql = isset( $_POST['sql'] ) ? trim( (string) wp_unslash( $_POST['sql'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce vérifié par guard() en tête de handler ; SQL saisi par l'administrateur, filtré par find_forbidden_keyword() et confirmé côté client pour toute écriture.
 		if ( '' === $sql ) {
-			wp_send_json_error( [ 'message' => __( 'Requête vide.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Requête vide.', 'lumia-tools' ) ] );
 		}
 
 		// Garde-fou 1 : opérations interdites (gestion des bases/utilisateurs, arrêt serveur…).
 		$forbidden = $this->find_forbidden_keyword( $sql );
 		if ( null !== $forbidden ) {
 			/* translators: %s: mot-clé SQL interdit. */
-			wp_send_json_error( [ 'message' => sprintf( __( 'Opération interdite dans cet éditeur : %s.', 'studio-kyne-mini-tools' ), $forbidden ) ] );
+			wp_send_json_error( [ 'message' => sprintf( __( 'Opération interdite dans cet éditeur : %s.', 'lumia-tools' ), $forbidden ) ] );
 		}
 
 		// Détecter si c'est une requête de lecture. Le test porte sur la forme
@@ -793,7 +793,7 @@ class Module extends AbstractModule {
 		if ( ! $is_select && empty( $_POST['confirm'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce vérifié par guard() en tête de handler.
 			wp_send_json_error(
 				[
-					'message'       => __( 'Cette requête modifie la base. Confirmation requise.', 'studio-kyne-mini-tools' ),
+					'message'       => __( 'Cette requête modifie la base. Confirmation requise.', 'lumia-tools' ),
 					'needs_confirm' => true,
 				]
 			);
@@ -840,7 +840,7 @@ class Module extends AbstractModule {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$result = $wpdb->query( $sql );
 		if ( false === $result ) {
-			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Requête échouée.', 'studio-kyne-mini-tools' ) ) ] );
+			wp_send_json_error( [ 'message' => $this->friendly_db_error( $wpdb->last_error, __( 'Requête échouée.', 'lumia-tools' ) ) ] );
 		}
 		wp_send_json_success(
 			[
@@ -852,15 +852,15 @@ class Module extends AbstractModule {
 	}
 
 	public function ajax_export_sql(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( static::get_required_capability() ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		global $wpdb;
 		$table = $this->read_table();
 		if ( null === $table ) {
-			wp_die( esc_html__( 'Table invalide.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Table invalide.', 'lumia-tools' ) );
 		}
 
 		$filename = $table . '_' . gmdate( 'Y-m-d_His' ) . '.sql';
@@ -890,7 +890,7 @@ class Module extends AbstractModule {
 		// en HTML : un échappement HTML corromprait le dump. La table sort de
 		// read_table() (liste blanche SHOW TABLES), les valeurs de esc_sql().
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo "-- Studio Kyne Mini Tools - Export SQL\n";
+		echo "-- Lümia Tools - Export SQL\n";
 		echo '-- Table: ' . $table . "\n";
 		echo '-- Date: ' . gmdate( 'Y-m-d H:i:s' ) . " UTC\n\n";
 		echo "SET NAMES utf8mb4;\n";

@@ -1,5 +1,5 @@
 /*
- * Studio Kyne Mini Tools - Design tokens
+ * Lümia Tools - Design tokens
  *
  * UNIQUEMENT des custom properties sur :root. Aucun selecteur, aucune regle
  * qui peigne quoi que ce soit. C'est le seul fichier CSS du plugin qu'on peut
@@ -8,63 +8,63 @@
 
 :root {
   /* Neutrals */
-  --skmt-white: oklch(1 0 0);
-  --skmt-black: oklch(0 0 0);
-  --skmt-n50: oklch(0.985 0 0);
-  --skmt-n100: oklch(0.97 0 0);
-  --skmt-n200: oklch(0.922 0 0);
-  --skmt-n300: oklch(0.87 0 0);
-  --skmt-n400: oklch(0.708 0 0);
-  --skmt-n500: oklch(0.556 0 0);
-  --skmt-n600: oklch(0.439 0 0);
-  --skmt-n700: oklch(0.371 0 0);
-  --skmt-n800: oklch(0.269 0 0);
-  --skmt-n900: oklch(0.205 0 0);
-  --skmt-n950: oklch(0.145 0 0);
+  --lumia-white: oklch(1 0 0);
+  --lumia-black: oklch(0 0 0);
+  --lumia-n50: oklch(0.985 0 0);
+  --lumia-n100: oklch(0.97 0 0);
+  --lumia-n200: oklch(0.922 0 0);
+  --lumia-n300: oklch(0.87 0 0);
+  --lumia-n400: oklch(0.708 0 0);
+  --lumia-n500: oklch(0.556 0 0);
+  --lumia-n600: oklch(0.439 0 0);
+  --lumia-n700: oklch(0.371 0 0);
+  --lumia-n800: oklch(0.269 0 0);
+  --lumia-n900: oklch(0.205 0 0);
+  --lumia-n950: oklch(0.145 0 0);
 
   /* Accent */
-  --skmt-accent: oklch(0.585 0.233 277.117);
-  /* --skmt-accent: var(--skmt-n900); */
-  --skmt-accent-hover: oklch(0.511 0.262 276.966);
-  --skmt-accent-light: oklch(0.962 0.018 272.314);
+  --lumia-accent: oklch(0.585 0.233 277.117);
+  /* --lumia-accent: var(--lumia-n900); */
+  --lumia-accent-hover: oklch(0.511 0.262 276.966);
+  --lumia-accent-light: oklch(0.962 0.018 272.314);
 
   /* Semantic */
-  --skmt-success: oklch(0.696 0.17 162.48);
-  --skmt-success-bg: oklch(0.979 0.021 166.113);
-  --skmt-danger: oklch(0.637 0.237 25.331);
-  --skmt-danger-bg: oklch(0.971 0.013 17.38);
-  --skmt-warning: oklch(0.769 0.188 70.08);
-  --skmt-warning-bg: oklch(0.987 0.022 95.277);
+  --lumia-success: oklch(0.696 0.17 162.48);
+  --lumia-success-bg: oklch(0.979 0.021 166.113);
+  --lumia-danger: oklch(0.637 0.237 25.331);
+  --lumia-danger-bg: oklch(0.971 0.013 17.38);
+  --lumia-warning: oklch(0.769 0.188 70.08);
+  --lumia-warning-bg: oklch(0.987 0.022 95.277);
 
   /* Surfaces */
-  --skmt-surface: var(--skmt-white);
-  --skmt-surface-raised: var(--skmt-white);
-  --skmt-surface-overlay: var(--skmt-white);
-  --skmt-bg: var(--skmt-n100);
+  --lumia-surface: var(--lumia-white);
+  --lumia-surface-raised: var(--lumia-white);
+  --lumia-surface-overlay: var(--lumia-white);
+  --lumia-bg: var(--lumia-n100);
 
   /* Borders */
-  --skmt-border: var(--skmt-n200);
-  --skmt-border-strong: var(--skmt-n300);
+  --lumia-border: var(--lumia-n200);
+  --lumia-border-strong: var(--lumia-n300);
 
   /* Text */
-  --skmt-text: var(--skmt-n900);
-  --skmt-text-secondary: var(--skmt-n500);
-  --skmt-text-muted: var(--skmt-n500);
+  --lumia-text: var(--lumia-n900);
+  --lumia-text-secondary: var(--lumia-n500);
+  --lumia-text-muted: var(--lumia-n500);
 
   /* Shadows */
-  --skmt-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
-  --skmt-shadow: 0 1px 3px oklch(0 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.04);
-  --skmt-shadow-md:
+  --lumia-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
+  --lumia-shadow: 0 1px 3px oklch(0 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.04);
+  --lumia-shadow-md:
     0 4px 6px oklch(0 0 0 / 0.04), 0 2px 4px oklch(0 0 0 / 0.03);
 
   /* Radius */
-  --skmt-radius: 12px;
-  --skmt-radius-sm: 8px;
-  --skmt-radius-xs: 4px;
+  --lumia-radius: 12px;
+  --lumia-radius-sm: 8px;
+  --lumia-radius-xs: 4px;
 
   /* Transitions */
-  --skmt-transition: all 0.15s ease;
+  --lumia-transition: all 0.15s ease;
 
   /* Layout */
-  --skmt-sidebar-width: 260px;
+  --lumia-sidebar-width: 260px;
 }

@@ -2,7 +2,7 @@
  * Layout
  */
 
-.skmt-admin-container {
+.lumia-admin-container {
   display: flex;
   height: calc(100vh - 32px);
   gap: 16px;
@@ -10,25 +10,25 @@
   overflow: hidden;
 }
 
-.skmt-admin-main {
+.lumia-admin-main {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding: 0 0 16px;
 }
 
-.skmt-page {
-  background: var(--skmt-surface);
-  border-radius: var(--skmt-radius);
-  border: 1px solid var(--skmt-border);
-  box-shadow: var(--skmt-shadow-sm);
+.lumia-page {
+  background: var(--lumia-surface);
+  border-radius: var(--lumia-radius);
+  border: 1px solid var(--lumia-border);
+  box-shadow: var(--lumia-shadow-sm);
   overflow: hidden;
 }
 
-.skmt-page__header {
+.lumia-page__header {
   padding: 28px 28px;
-  background: var(--skmt-n50);
-  border-bottom: 1px solid var(--skmt-border);
+  background: var(--lumia-n50);
+  border-bottom: 1px solid var(--lumia-border);
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -38,25 +38,25 @@
   z-index: 10;
 }
 
-.skmt-page__header-content {
+.lumia-page__header-content {
   flex: 1;
   min-width: 0;
 }
 
-.skmt-page__title {
+.lumia-page__title {
   font-size: 20px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   line-height: 1.3;
 }
 
-.skmt-page__subtitle {
+.lumia-page__subtitle {
   font-size: 14px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   margin-top: 2px;
 }
 
-.skmt-page__header-actions {
+.lumia-page__header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -64,36 +64,36 @@
   margin-left: auto;
 }
 
-.skmt-page__body {
+.lumia-page__body {
   padding: 20px 28px;
 }
 
-.skmt-page__footer {
+.lumia-page__footer {
   padding: 16px 28px;
-  border-top: 1px solid var(--skmt-border);
-  background: var(--skmt-n50);
+  border-top: 1px solid var(--lumia-border);
+  background: var(--lumia-n50);
 }
 
 /*
  * Vues « pleine hauteur » : l'entête reste fixe et seul le corps scrolle.
  * Déclencheurs :
- *   - .skmt-module-form  → modules formulaire (Image, Sécurité, Connexion, Marque Blanche)
- *   - .skmt-page__scroll → pages admin (Réglages, Modules)
- *   - .skmt-files        → module Fichiers
- * Même pattern :has() que Base de données (.skmt-db) et Créateur de menu (.skmt-mc-editor).
+ *   - .lumia-module-form  → modules formulaire (Image, Sécurité, Connexion, Marque Blanche)
+ *   - .lumia-page__scroll → pages admin (Réglages, Modules)
+ *   - .lumia-files        → module Fichiers
+ * Même pattern :has() que Base de données (.lumia-db) et Créateur de menu (.lumia-mc-editor).
  */
-.skmt-admin-main:has(.skmt-module-form),
-.skmt-admin-main:has(.skmt-page__scroll),
-.skmt-admin-main:has(.skmt-files) {
+.lumia-admin-main:has(.lumia-module-form),
+.lumia-admin-main:has(.lumia-page__scroll),
+.lumia-admin-main:has(.lumia-files) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   padding-bottom: 0;
 }
 
-.skmt-admin-main:has(.skmt-module-form) .skmt-page,
-.skmt-admin-main:has(.skmt-page__scroll) .skmt-page,
-.skmt-admin-main:has(.skmt-files) .skmt-page {
+.lumia-admin-main:has(.lumia-module-form) .lumia-page,
+.lumia-admin-main:has(.lumia-page__scroll) .lumia-page,
+.lumia-admin-main:has(.lumia-files) .lumia-page {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -101,14 +101,14 @@
   overflow: hidden;
 }
 
-.skmt-admin-main:has(.skmt-module-form) .skmt-page__header,
-.skmt-admin-main:has(.skmt-page__scroll) .skmt-page__header,
-.skmt-admin-main:has(.skmt-files) .skmt-page__header {
+.lumia-admin-main:has(.lumia-module-form) .lumia-page__header,
+.lumia-admin-main:has(.lumia-page__scroll) .lumia-page__header,
+.lumia-admin-main:has(.lumia-files) .lumia-page__header {
   position: static;
   flex-shrink: 0;
 }
 
-.skmt-module-form {
+.lumia-module-form {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -116,90 +116,90 @@
   overflow: hidden;
 }
 
-.skmt-module-form__scroll,
-.skmt-page__scroll {
+.lumia-module-form__scroll,
+.lumia-page__scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
-.skmt-section {
+.lumia-section {
   margin-bottom: 0;
 }
 
-.skmt-section:last-child {
+.lumia-section:last-child {
   margin-bottom: 0;
 }
 
-.skmt-section__header {
+.lumia-section__header {
   padding: 20px 28px 0;
 }
 
-.skmt-section__title {
+.lumia-section__title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   margin-bottom: 2px;
 }
 
-.skmt-section__desc {
+.lumia-section__desc {
   font-size: 14px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-section__content {
+.lumia-section__content {
   padding: 16px 28px 20px;
 }
 
-.skmt-divider {
+.lumia-divider {
   height: 1px;
-  background: var(--skmt-border);
+  background: var(--lumia-border);
   margin: 0 28px;
 }
 
-.skmt-section + .skmt-divider {
+.lumia-section + .lumia-divider {
   margin-top: 0;
 }
 
-/* Divider à l'intérieur d'un skmt-section__content (annule le margin horizontal) */
-.skmt-divider--inner {
+/* Divider à l'intérieur d'un lumia-section__content (annule le margin horizontal) */
+.lumia-divider--inner {
   margin: 8px 0;
 }
 
 @media screen and (max-width: 782px) {
-  .skmt-admin-container {
+  .lumia-admin-container {
     height: auto;
     min-height: calc(100vh - 32px);
     overflow: visible;
     flex-direction: column;
   }
 
-  .skmt-admin-main {
+  .lumia-admin-main {
     overflow-y: visible;
     margin-left: 0;
   }
 
-  .skmt-page__header {
+  .lumia-page__header {
     padding: 20px 20px 16px;
   }
 
-  .skmt-page__body {
+  .lumia-page__body {
     padding: 20px;
   }
 
-  .skmt-section__header {
+  .lumia-section__header {
     padding: 16px 20px 0;
   }
 
-  .skmt-section__content {
+  .lumia-section__content {
     padding: 12px 20px 16px;
   }
 
-  .skmt-page__footer {
+  .lumia-page__footer {
     padding: 16px 20px;
   }
 
-  .skmt-divider {
+  .lumia-divider {
     margin: 0 20px;
   }
 }

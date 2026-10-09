@@ -1,14 +1,14 @@
 /*
- * Studio Kyne Mini Tools - Reset
+ * Lümia Tools - Reset
  *
- * Toutes les regles sont scopees sous .skmt-admin-wrap : ce fichier ne doit
+ * Toutes les regles sont scopees sous .lumia-admin-wrap : ce fichier ne doit
  * JAMAIS peindre en dehors des pages du plugin. Les tokens vivent dans
  * tokens.css, les overrides du chrome WordPress dans layout.css.
  */
 
 
 
-.skmt-admin-wrap {
+.lumia-admin-wrap {
   margin: 0 0 0 -20px;
   padding: 0;
   font-family:
@@ -16,61 +16,61 @@
     Cantarell, "Helvetica Neue", sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--skmt-text);
-  background: var(--skmt-bg);
+  color: var(--lumia-text);
+  background: var(--lumia-bg);
   height: calc(100vh - 32px);
   overflow: hidden;
 }
 
-.skmt-admin-wrap *,
-.skmt-admin-wrap *::before,
-.skmt-admin-wrap *::after {
+.lumia-admin-wrap *,
+.lumia-admin-wrap *::before,
+.lumia-admin-wrap *::after {
   box-sizing: border-box;
 }
 
-.skmt-admin-wrap ul,
-.skmt-admin-wrap ol {
+.lumia-admin-wrap ul,
+.lumia-admin-wrap ol {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.skmt-admin-wrap h1,
-.skmt-admin-wrap h2,
-.skmt-admin-wrap h3,
-.skmt-admin-wrap h4,
-.skmt-admin-wrap h5,
-.skmt-admin-wrap h6 {
+.lumia-admin-wrap h1,
+.lumia-admin-wrap h2,
+.lumia-admin-wrap h3,
+.lumia-admin-wrap h4,
+.lumia-admin-wrap h5,
+.lumia-admin-wrap h6 {
   margin: 0;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-admin-wrap p {
+.lumia-admin-wrap p {
   margin: 0;
 }
 
-.skmt-admin-wrap a {
+.lumia-admin-wrap a {
   text-decoration: none;
 }
 
-.skmt-admin-wrap a:hover,
-.skmt-admin-wrap a:focus {
-  border-radius: var(--skmt-radius-sm);
+.lumia-admin-wrap a:hover,
+.lumia-admin-wrap a:focus {
+  border-radius: var(--lumia-radius-sm);
   box-shadow: none;
   outline: none;
 }
 
-.skmt-admin-wrap img {
+.lumia-admin-wrap img {
   max-width: 100%;
   height: auto;
   border: 0;
 }
 
-.skmt-admin-wrap input,
-.skmt-admin-wrap select,
-.skmt-admin-wrap textarea,
-.skmt-admin-wrap button {
+.lumia-admin-wrap input,
+.lumia-admin-wrap select,
+.lumia-admin-wrap textarea,
+.lumia-admin-wrap button {
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;

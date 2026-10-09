@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ImageOptimizer;
+namespace Lumia\Tools\Modules\ImageOptimizer;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class BulkProcessor {
 
-	private const CRON_HOOK = 'skmt_image_optimizer_cron';
+	private const CRON_HOOK = 'lumia_image_optimizer_cron';
 
 	/**
 	 * Clé WordPress pour persister l'état du bulk.
@@ -65,10 +65,10 @@ class BulkProcessor {
 	 * Lance ou reprend l'optimisation en masse.
 	 */
 	public function ajax_start( int $batch_size ): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_send_json_error( __( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		$state = $this->get_state();
@@ -111,10 +111,10 @@ class BulkProcessor {
 	 * sans rien lancer. Alimente l'UI « Scanner la médiathèque ».
 	 */
 	public function ajax_scan(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_send_json_error( __( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		$preview = $this->get_preview();
@@ -132,10 +132,10 @@ class BulkProcessor {
 	 * Retourne l'état courant du bulk (polling JS).
 	 */
 	public function ajax_status( int $batch_size ): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_send_json_error( __( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		$state = $this->get_state();
@@ -195,7 +195,7 @@ class BulkProcessor {
 				( $this->process_fn )( $attachment_id );
 			} catch ( \Throwable $e ) {
 				// Un attachment en erreur ne bloque pas les suivants, mais on le signale.
-				error_log( sprintf( '[SKMT Image Optimizer] traitement en lot : attachment %d en erreur : %s', $attachment_id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- journal d'erreur volontaire, sans interface pour l'afficher.
+				error_log( sprintf( '[LUMIA Image Optimizer] traitement en lot : attachment %d en erreur : %s', $attachment_id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- journal d'erreur volontaire, sans interface pour l'afficher.
 			}
 			++$processed_now;
 		}
@@ -277,7 +277,7 @@ class BulkProcessor {
 	 * ================================================================ */
 
 	/**
-	 * Compte les images sans le meta _skmt_optimized (accurate count).
+	 * Compte les images sans le meta _lumia_optimized (accurate count).
 	 */
 	public function count_unoptimized(): int {
 		$query = new \WP_Query(
@@ -330,7 +330,7 @@ class BulkProcessor {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- repérer les images non optimisées n'a pas d'alternative sans index dédié.
 			'meta_query'     => [
 				[
-					'key'     => '_skmt_optimized',
+					'key'     => '_lumia_optimized',
 					'compare' => 'NOT EXISTS',
 				],
 			],

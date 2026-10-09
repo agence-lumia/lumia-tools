@@ -1,11 +1,11 @@
 {
-    "name": "studiokyne/studio-kyne-mini-tools",
+    "name": "agence-lumia/lumia-tools",
     "description": "Suite d'outils modulaires pour WordPress. Composer sert uniquement à l'outillage de développement : aucune dépendance d'exécution, le dossier vendor/ n'est jamais distribué.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
-    "homepage": "https://github.com/studiokyne/studio-kyne-mini-tools",
+    "homepage": "https://github.com/agence-lumia/lumia-tools",
     "require": {
-        "php": ">=7.4"
+        "php": ">=8.0"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",

@@ -6,7 +6,7 @@
  * CONTENEUR PRINCIPAL
  * ================================================================ */
 
-.skmt-files {
+.lumia-files {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -15,7 +15,7 @@
 }
 
 /* Masquer le bouton "Enregistrer" du header (pas de form dans ce module) */
-.skmt-page__header-actions [form="skmt-module-form"] {
+.lumia-page__header-actions [form="lumia-module-form"] {
   display: none !important;
 }
 
@@ -23,18 +23,18 @@
  * TOOLBAR
  * ================================================================ */
 
-.skmt-files__toolbar {
+.lumia-files__toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  border-bottom: 1px solid var(--skmt-border);
-  background: var(--skmt-n50);
+  border-bottom: 1px solid var(--lumia-border);
+  background: var(--lumia-n50);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
 
-.skmt-files__breadcrumb {
+.lumia-files__breadcrumb {
   display: flex;
   align-items: center;
   gap: 0;
@@ -43,57 +43,57 @@
   overflow: hidden;
 }
 
-.skmt-files__bc-item {
+.lumia-files__bc-item {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 4px 6px;
   border: none;
   background: none;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   font-size: 13px;
   cursor: pointer;
-  border-radius: var(--skmt-radius-xs);
+  border-radius: var(--lumia-radius-xs);
   white-space: nowrap;
   transition:
     background 0.1s,
     color 0.1s;
 }
 
-.skmt-files__bc-item:hover {
-  background: var(--skmt-n100);
-  color: var(--skmt-text);
+.lumia-files__bc-item:hover {
+  background: var(--lumia-n100);
+  color: var(--lumia-text);
 }
 
-.skmt-files__bc-home svg {
+.lumia-files__bc-home svg {
   width: 15px;
   height: 15px;
   flex-shrink: 0;
 }
 
-.skmt-files__bc-sep {
-  color: var(--skmt-n300);
+.lumia-files__bc-sep {
+  color: var(--lumia-n300);
   font-size: 12px;
   padding: 0 1px;
   user-select: none;
 }
 
-.skmt-files__toolbar-right {
+.lumia-files__toolbar-right {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
 
-.skmt-files__upload-label {
+.lumia-files__upload-label {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.skmt-files__upload-label svg,
-#skmt-files-mkdir-btn svg {
+.lumia-files__upload-label svg,
+#lumia-files-mkdir-btn svg {
   width: 14px;
   height: 14px;
 }
@@ -102,30 +102,30 @@
  * BARRE DE SÉLECTION
  * ================================================================ */
 
-.skmt-files__selection-bar {
+.lumia-files__selection-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 8px 20px;
-  background: var(--skmt-accent-light);
-  border-bottom: 1px solid var(--skmt-border);
+  background: var(--lumia-accent-light);
+  border-bottom: 1px solid var(--lumia-border);
   flex-shrink: 0;
 }
 
-.skmt-files__selection-count {
+.lumia-files__selection-count {
   font-size: 13px;
   font-weight: 500;
-  color: var(--skmt-accent);
+  color: var(--lumia-accent);
 }
 
-.skmt-files__selection-actions {
+.lumia-files__selection-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.skmt-files__selection-actions svg {
+.lumia-files__selection-actions svg {
   width: 14px;
   height: 14px;
 }
@@ -134,29 +134,29 @@
  * TABLE
  * ================================================================ */
 
-.skmt-files__table-wrap {
+.lumia-files__table-wrap {
   overflow: auto;
   flex: 1;
   min-height: 0;
 }
 
-.skmt-files__table {
+.lumia-files__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.skmt-files__table thead tr {
-  border-bottom: 1px solid var(--skmt-border);
-  background: var(--skmt-n50);
+.lumia-files__table thead tr {
+  border-bottom: 1px solid var(--lumia-border);
+  background: var(--lumia-n50);
 }
 
-.skmt-files__table th {
+.lumia-files__table th {
   padding: 8px 10px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -164,76 +164,76 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--skmt-n50);
-  box-shadow: inset 0 -1px 0 var(--skmt-border);
+  background: var(--lumia-n50);
+  box-shadow: inset 0 -1px 0 var(--lumia-border);
 }
 
-.skmt-files__table tbody tr {
-  border-bottom: 1px solid var(--skmt-n100);
+.lumia-files__table tbody tr {
+  border-bottom: 1px solid var(--lumia-n100);
   transition: background 0.1s;
 }
 
-.skmt-files__table tbody tr:last-child {
+.lumia-files__table tbody tr:last-child {
   border-bottom: none;
 }
 
-.skmt-files__table tbody tr:hover {
-  background: var(--skmt-n50);
+.lumia-files__table tbody tr:hover {
+  background: var(--lumia-n50);
 }
 
-.skmt-files__table tbody tr.skmt-files__row--selected {
-  background: var(--skmt-accent-light);
+.lumia-files__table tbody tr.lumia-files__row--selected {
+  background: var(--lumia-accent-light);
 }
 
-.skmt-files__table td {
+.lumia-files__table td {
   padding: 7px 10px;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   vertical-align: middle;
 }
 
 /* Colonnes */
-.skmt-files__col-check {
+.lumia-files__col-check {
   width: 36px;
   padding-left: 16px !important;
   padding-right: 4px !important;
 }
 
-.skmt-files__col-name {
+.lumia-files__col-name {
   min-width: 200px;
 }
 
-.skmt-files__col-size {
+.lumia-files__col-size {
   width: 80px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   white-space: nowrap;
 }
 
-.skmt-files__col-modified {
+.lumia-files__col-modified {
   width: 140px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   white-space: nowrap;
 }
 
-.skmt-files__col-perms {
+.lumia-files__col-perms {
   width: 70px;
 }
 
-.skmt-files__col-owner {
+.lumia-files__col-owner {
   width: 130px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-files__col-actions {
+.lumia-files__col-actions {
   width: 200px;
   text-align: right;
   padding-right: 16px !important;
 }
 
 /* Ligne vide / chargement */
-.skmt-files__row-empty td {
+.lumia-files__row-empty td {
   padding: 32px 20px;
   text-align: center;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   font-size: 13px;
 }
 
@@ -241,7 +241,7 @@
  * NOM DU FICHIER
  * ================================================================ */
 
-.skmt-files__name-btn {
+.lumia-files__name-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -249,18 +249,18 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   font-size: 13px;
   text-align: left;
   max-width: 340px;
 }
 
-.skmt-files__name-btn:hover .skmt-files__name-text {
-  color: var(--skmt-accent);
+.lumia-files__name-btn:hover .lumia-files__name-text {
+  color: var(--lumia-accent);
   text-decoration: underline;
 }
 
-.skmt-files__name-text {
+.lumia-files__name-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -270,70 +270,70 @@
  * ICÔNES FICHIERS
  * ================================================================ */
 
-.skmt-files__icon {
+.lumia-files__icon {
   display: inline-flex;
   flex-shrink: 0;
 }
 
-.skmt-files__icon svg {
+.lumia-files__icon svg {
   width: 16px;
   height: 16px;
 }
 
-.skmt-files__icon--folder svg {
+.lumia-files__icon--folder svg {
   color: #f59e0b;
 }
-.skmt-files__icon--image svg {
+.lumia-files__icon--image svg {
   color: #10b981;
 }
-.skmt-files__icon--archive svg {
+.lumia-files__icon--archive svg {
   color: #f97316;
 }
-.skmt-files__icon--text svg {
-  color: var(--skmt-n400);
+.lumia-files__icon--text svg {
+  color: var(--lumia-n400);
 }
 
 /* Couleurs par langage (brand colors) */
-.skmt-files__icon--lang-php svg {
+.lumia-files__icon--lang-php svg {
   color: #8892bf;
 }
-.skmt-files__icon--lang-js svg {
+.lumia-files__icon--lang-js svg {
   color: #f0db4f;
 }
-.skmt-files__icon--lang-ts svg {
+.lumia-files__icon--lang-ts svg {
   color: #3178c6;
 }
-.skmt-files__icon--lang-css svg {
+.lumia-files__icon--lang-css svg {
   color: #264de4;
 }
-.skmt-files__icon--lang-html svg {
+.lumia-files__icon--lang-html svg {
   color: #e34f26;
 }
-.skmt-files__icon--lang-json svg {
+.lumia-files__icon--lang-json svg {
   color: #cbcb41;
 }
-.skmt-files__icon--lang-xml svg {
+.lumia-files__icon--lang-xml svg {
   color: #e77a10;
 }
-.skmt-files__icon--lang-svg svg {
+.lumia-files__icon--lang-svg svg {
   color: #ffb13b;
 }
-.skmt-files__icon--lang-md svg {
+.lumia-files__icon--lang-md svg {
   color: #519aba;
 }
-.skmt-files__icon--lang-sql svg {
+.lumia-files__icon--lang-sql svg {
   color: #00758f;
 }
-.skmt-files__icon--lang-sh svg {
+.lumia-files__icon--lang-sh svg {
   color: #4eaa25;
 }
-.skmt-files__icon--lang-yaml svg {
+.lumia-files__icon--lang-yaml svg {
   color: #cc1018;
 }
-.skmt-files__icon--lang-py svg {
+.lumia-files__icon--lang-py svg {
   color: #3572a5;
 }
-.skmt-files__icon--lang-rb svg {
+.lumia-files__icon--lang-rb svg {
   color: #cc342d;
 }
 
@@ -341,14 +341,14 @@
  * PERMISSIONS
  * ================================================================ */
 
-.skmt-files__perms {
+.lumia-files__perms {
   display: inline-block;
   font-family: "SFMono-Regular", "Consolas", monospace;
   font-size: 11px;
   padding: 2px 6px;
-  background: var(--skmt-n100);
-  border-radius: var(--skmt-radius-xs);
-  color: var(--skmt-text-secondary);
+  background: var(--lumia-n100);
+  border-radius: var(--lumia-radius-xs);
+  color: var(--lumia-text-secondary);
   letter-spacing: 0.04em;
 }
 
@@ -356,7 +356,7 @@
  * ACTIONS PAR LIGNE
  * ================================================================ */
 
-.skmt-files__actions {
+.lumia-files__actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -365,12 +365,12 @@
   transition: opacity 0.15s;
 }
 
-.skmt-files__table tbody tr:hover .skmt-files__actions,
-.skmt-files__table tbody tr.skmt-files__row--selected .skmt-files__actions {
+.lumia-files__table tbody tr:hover .lumia-files__actions,
+.lumia-files__table tbody tr.lumia-files__row--selected .lumia-files__actions {
   opacity: 1;
 }
 
-.skmt-files__action-btn {
+.lumia-files__action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -378,40 +378,40 @@
   height: 28px;
   border: none;
   background: none;
-  border-radius: var(--skmt-radius-xs);
-  color: var(--skmt-text-secondary);
+  border-radius: var(--lumia-radius-xs);
+  color: var(--lumia-text-secondary);
   cursor: pointer;
   transition:
     background 0.1s,
     color 0.1s;
 }
 
-.skmt-files__action-btn svg {
+.lumia-files__action-btn svg {
   width: 14px;
   height: 14px;
   pointer-events: none;
 }
 
-.skmt-files__action-btn:hover {
-  background: var(--skmt-n100);
-  color: var(--skmt-text);
+.lumia-files__action-btn:hover {
+  background: var(--lumia-n100);
+  color: var(--lumia-text);
 }
 
-.skmt-files__action-btn--danger:hover {
-  background: var(--skmt-danger-bg);
-  color: var(--skmt-danger);
+.lumia-files__action-btn--danger:hover {
+  background: var(--lumia-danger-bg);
+  color: var(--lumia-danger);
 }
 
 /* ================================================================
  * OVERLAY DRAG & DROP
  * ================================================================ */
 
-.skmt-files__drop-overlay {
+.lumia-files__drop-overlay {
   position: absolute;
   inset: 0;
   background: oklch(0.962 0.018 272.314 / 0.9);
-  border: 2px dashed var(--skmt-accent);
-  border-radius: var(--skmt-radius-sm);
+  border: 2px dashed var(--lumia-accent);
+  border-radius: var(--lumia-radius-sm);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -421,23 +421,23 @@
   pointer-events: none;
 }
 
-.skmt-files__drop-overlay svg {
+.lumia-files__drop-overlay svg {
   width: 48px;
   height: 48px;
-  color: var(--skmt-accent);
+  color: var(--lumia-accent);
 }
 
-.skmt-files__drop-overlay p {
+.lumia-files__drop-overlay p {
   font-size: 16px;
   font-weight: 500;
-  color: var(--skmt-accent);
+  color: var(--lumia-accent);
 }
 
 /* ================================================================
  * ÉDITEUR DE CODE
  * ================================================================ */
 
-.skmt-files-editor {
+.lumia-files-editor {
   position: fixed;
   inset: 32px 0 0 0; /* compense la barre d'admin WP */
   z-index: 99999;
@@ -448,35 +448,35 @@
   justify-content: flex-end;
 }
 
-.skmt-files-editor__panel {
+.lumia-files-editor__panel {
   cursor: default; /* annule le curseur pointer sur le panel lui-même */
 }
 
-.skmt-files-editor__panel {
+.lumia-files-editor__panel {
   position: relative;
   display: flex;
   flex-direction: column;
   width: min(900px, 100%);
   height: 100%;
-  background: var(--skmt-surface);
+  background: var(--lumia-surface);
   box-shadow: -4px 0 32px oklch(0 0 0 / 0.12);
 }
 
-.skmt-files-editor__header {
+.lumia-files-editor__header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-  border-bottom: 1px solid var(--skmt-border);
-  background: var(--skmt-n50);
+  border-bottom: 1px solid var(--lumia-border);
+  background: var(--lumia-n50);
   flex-shrink: 0;
 }
 
-.skmt-files-editor__filename {
+.lumia-files-editor__filename {
   flex: 1;
   font-size: 13px;
   font-weight: 500;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   font-family: "SFMono-Regular", "Consolas", monospace;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -484,22 +484,22 @@
   min-width: 0;
 }
 
-.skmt-files-editor__header-actions {
+.lumia-files-editor__header-actions {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
 
-.skmt-files-editor__header-sep {
+.lumia-files-editor__header-sep {
   width: 1px;
   height: 20px;
-  background: var(--skmt-border);
+  background: var(--lumia-border);
   flex-shrink: 0;
   margin: 0 2px;
 }
 
-.skmt-files-editor__body {
+.lumia-files-editor__body {
   flex: 1;
   min-height: 0; /* crucial : permet au flex child de shrink en-dessous de son contenu */
   overflow: hidden;
@@ -508,7 +508,7 @@
 }
 
 /* ---- Éditeur en texte brut (thème sombre) ---- */
-#skmt-editor-textarea {
+#lumia-editor-textarea {
   flex: 1;
   width: 100%;
   height: 100%;
@@ -525,7 +525,7 @@
 }
 
 /* ---- Spinner animation ---- */
-@keyframes skmt-spin {
+@keyframes lumia-spin {
   from {
     transform: rotate(0deg);
   }
@@ -534,8 +534,8 @@
   }
 }
 
-.skmt-spin {
-  animation: skmt-spin 0.75s linear infinite;
+.lumia-spin {
+  animation: lumia-spin 0.75s linear infinite;
   transform-origin: center;
 }
 
@@ -546,7 +546,7 @@
  * seul le thème par défaut, clair, est fourni. On repeint donc les jetons aux
  * couleurs de l'éditeur existant plutôt que d'embarquer un thème de plus.
  * ================================================================ */
-.skmt-files-editor .CodeMirror {
+.lumia-files-editor .CodeMirror {
   flex: 1;
   min-height: 0;
   height: 100%;
@@ -558,62 +558,62 @@
   background: #1e1e2e;
   tab-size: 2;
 }
-.skmt-files-editor .CodeMirror-gutters {
+.lumia-files-editor .CodeMirror-gutters {
   background: #181825;
   border-right: 1px solid #313244;
 }
-.skmt-files-editor .CodeMirror-linenumber {
+.lumia-files-editor .CodeMirror-linenumber {
   color: #585b70;
 }
-.skmt-files-editor .CodeMirror-cursor {
+.lumia-files-editor .CodeMirror-cursor {
   border-left: 1px solid #f5e0dc;
 }
-.skmt-files-editor .CodeMirror-selected {
+.lumia-files-editor .CodeMirror-selected {
   background: #45475a;
 }
-.skmt-files-editor .CodeMirror-focused .CodeMirror-selected,
-.skmt-files-editor .CodeMirror-line::selection,
-.skmt-files-editor .CodeMirror-line > span::selection {
+.lumia-files-editor .CodeMirror-focused .CodeMirror-selected,
+.lumia-files-editor .CodeMirror-line::selection,
+.lumia-files-editor .CodeMirror-line > span::selection {
   background: #585b70;
 }
-.skmt-files-editor .CodeMirror-activeline-background,
-.skmt-files-editor .CodeMirror-activeline-gutter {
+.lumia-files-editor .CodeMirror-activeline-background,
+.lumia-files-editor .CodeMirror-activeline-gutter {
   background: #262637;
 }
-.skmt-files-editor .CodeMirror-scrollbar-filler,
-.skmt-files-editor .CodeMirror-gutter-filler {
+.lumia-files-editor .CodeMirror-scrollbar-filler,
+.lumia-files-editor .CodeMirror-gutter-filler {
   background: #1e1e2e;
 }
-.skmt-files-editor .CodeMirror-matchingbracket {
+.lumia-files-editor .CodeMirror-matchingbracket {
   color: #a6e3a1 !important;
   border-bottom: 1px solid #a6e3a1;
 }
-.skmt-files-editor .CodeMirror-nonmatchingbracket {
+.lumia-files-editor .CodeMirror-nonmatchingbracket {
   color: #f38ba8 !important;
 }
 
 /* Jetons */
-.skmt-files-editor .cm-comment    { color: #6c7086; font-style: italic; }
-.skmt-files-editor .cm-keyword    { color: #cba6f7; }
-.skmt-files-editor .cm-atom,
-.skmt-files-editor .cm-number      { color: #fab387; }
-.skmt-files-editor .cm-def         { color: #89b4fa; }
-.skmt-files-editor .cm-variable    { color: #cdd6f4; }
-.skmt-files-editor .cm-variable-2  { color: #f2cdcd; }
-.skmt-files-editor .cm-variable-3, 
-.skmt-files-editor .cm-type        { color: #f9e2af; }
-.skmt-files-editor .cm-property    { color: #89b4fa; }
-.skmt-files-editor .cm-operator    { color: #89dceb; }
-.skmt-files-editor .cm-string,
-.skmt-files-editor .cm-string-2    { color: #a6e3a1; }
-.skmt-files-editor .cm-meta        { color: #94e2d5; }
-.skmt-files-editor .cm-tag         { color: #f38ba8; }
-.skmt-files-editor .cm-attribute   { color: #f9e2af; }
-.skmt-files-editor .cm-qualifier,
-.skmt-files-editor .cm-builtin     { color: #f9e2af; }
-.skmt-files-editor .cm-bracket     { color: #9399b2; }
-.skmt-files-editor .cm-link        { color: #89b4fa; text-decoration: underline; }
-.skmt-files-editor .cm-error       { color: #f38ba8; }
+.lumia-files-editor .cm-comment    { color: #6c7086; font-style: italic; }
+.lumia-files-editor .cm-keyword    { color: #cba6f7; }
+.lumia-files-editor .cm-atom,
+.lumia-files-editor .cm-number      { color: #fab387; }
+.lumia-files-editor .cm-def         { color: #89b4fa; }
+.lumia-files-editor .cm-variable    { color: #cdd6f4; }
+.lumia-files-editor .cm-variable-2  { color: #f2cdcd; }
+.lumia-files-editor .cm-variable-3, 
+.lumia-files-editor .cm-type        { color: #f9e2af; }
+.lumia-files-editor .cm-property    { color: #89b4fa; }
+.lumia-files-editor .cm-operator    { color: #89dceb; }
+.lumia-files-editor .cm-string,
+.lumia-files-editor .cm-string-2    { color: #a6e3a1; }
+.lumia-files-editor .cm-meta        { color: #94e2d5; }
+.lumia-files-editor .cm-tag         { color: #f38ba8; }
+.lumia-files-editor .cm-attribute   { color: #f9e2af; }
+.lumia-files-editor .cm-qualifier,
+.lumia-files-editor .cm-builtin     { color: #f9e2af; }
+.lumia-files-editor .cm-bracket     { color: #9399b2; }
+.lumia-files-editor .cm-link        { color: #89b4fa; text-decoration: underline; }
+.lumia-files-editor .cm-error       { color: #f38ba8; }
 
 /* Autocomplétion et infobulles de lint : rendues dans <body>, donc hors du
    panneau — elles doivent passer au-dessus de son overlay (z-index 99999). */
@@ -627,12 +627,12 @@ ul.CodeMirror-hints {
   color: #cdd6f4;
   background: #313244;
   border: 1px solid #45475a;
-  border-radius: var(--skmt-radius-xs, 4px);
+  border-radius: var(--lumia-radius-xs, 4px);
   box-shadow: 0 8px 24px oklch(0 0 0 / 0.35);
 }
 ul.CodeMirror-hints li.CodeMirror-hint {
   padding: 3px 8px;
-  border-radius: var(--skmt-radius-xs, 4px);
+  border-radius: var(--lumia-radius-xs, 4px);
   color: #cdd6f4;
 }
 ul.CodeMirror-hints li.CodeMirror-hint-active {

@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,11 +14,11 @@ defined( 'ABSPATH' ) || exit;
  */
 class Mailer {
 
-	/** Option du mot de passe chiffré, hors de `skmt_module_smtp` : voir Module::save_settings(). */
-	const PASSWORD_OPTION = 'skmt_smtp_password';
+	/** Option du mot de passe chiffré, hors de `lumia_module_smtp` : voir Module::save_settings(). */
+	const PASSWORD_OPTION = 'lumia_smtp_password';
 
 	/** Option de la clé API Brevo chiffrée, même traitement que le mot de passe. */
-	const BREVO_KEY_OPTION = 'skmt_smtp_brevo_key';
+	const BREVO_KEY_OPTION = 'lumia_smtp_brevo_key';
 
 	/**
 	 * Transport « API Brevo ». Défini ici et pas dans BrevoMailer : toucher une
@@ -142,8 +142,8 @@ class Mailer {
 			return;
 		}
 
-		$phpmailer->Mailer       = BrevoMailer::MAILER;
-		$phpmailer->skmt_api_key = (string) self::brevo_key();
+		$phpmailer->Mailer        = BrevoMailer::MAILER;
+		$phpmailer->lumia_api_key = (string) self::brevo_key();
 	}
 
 	/**
@@ -252,38 +252,38 @@ class Mailer {
 	 * @param array<string, mixed> $settings
 	 */
 	public static function username( array $settings ): string {
-		if ( defined( 'SKMT_SMTP_USER' ) ) {
-			return (string) SKMT_SMTP_USER;
+		if ( defined( 'LUMIA_SMTP_USER' ) ) {
+			return (string) LUMIA_SMTP_USER;
 		}
 
 		return (string) ( $settings['username'] ?? '' );
 	}
 
 	/**
-	 * Mot de passe en clair, depuis `SKMT_SMTP_PASSWORD` ou l'option chiffrée.
+	 * Mot de passe en clair, depuis `LUMIA_SMTP_PASSWORD` ou l'option chiffrée.
 	 *
 	 * @return string|null null si l'option ne se déchiffre plus (clés du site changées).
 	 */
 	public static function password(): ?string {
-		if ( defined( 'SKMT_SMTP_PASSWORD' ) ) {
-			return (string) SKMT_SMTP_PASSWORD;
+		if ( defined( 'LUMIA_SMTP_PASSWORD' ) ) {
+			return (string) LUMIA_SMTP_PASSWORD;
 		}
 
 		return Crypto::decrypt( (string) get_option( self::PASSWORD_OPTION, '' ) );
 	}
 
 	public static function has_brevo_key(): bool {
-		return defined( 'SKMT_BREVO_API_KEY' ) || '' !== (string) get_option( self::BREVO_KEY_OPTION, '' );
+		return defined( 'LUMIA_BREVO_API_KEY' ) || '' !== (string) get_option( self::BREVO_KEY_OPTION, '' );
 	}
 
 	/**
-	 * Clé API Brevo en clair, depuis `SKMT_BREVO_API_KEY` ou l'option chiffrée.
+	 * Clé API Brevo en clair, depuis `LUMIA_BREVO_API_KEY` ou l'option chiffrée.
 	 *
 	 * @return string|null null si l'option ne se déchiffre plus.
 	 */
 	public static function brevo_key(): ?string {
-		if ( defined( 'SKMT_BREVO_API_KEY' ) ) {
-			return (string) SKMT_BREVO_API_KEY;
+		if ( defined( 'LUMIA_BREVO_API_KEY' ) ) {
+			return (string) LUMIA_BREVO_API_KEY;
 		}
 
 		return Crypto::decrypt( (string) get_option( self::BREVO_KEY_OPTION, '' ) );

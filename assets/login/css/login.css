@@ -1,5 +1,5 @@
 /*
- * Studio Kyne Mini Tools — Page de connexion personnalisée
+ * Lümia Tools — Page de connexion personnalisée
  * Injecté uniquement quand le module Connexion est actif.
  */
 
@@ -9,60 +9,60 @@
 
 :root {
   /* Neutrals (identiques à reset.css) */
-  --skmt-white: oklch(1 0 0);
-  --skmt-n50: oklch(0.985 0 0);
-  --skmt-n100: oklch(0.97 0 0);
-  --skmt-n200: oklch(0.922 0 0);
-  --skmt-n300: oklch(0.87 0 0);
-  --skmt-n400: oklch(0.708 0 0);
-  --skmt-n500: oklch(0.556 0 0);
-  --skmt-n600: oklch(0.439 0 0);
-  --skmt-n700: oklch(0.371 0 0);
-  --skmt-n900: oklch(0.205 0 0);
+  --lumia-white: oklch(1 0 0);
+  --lumia-n50: oklch(0.985 0 0);
+  --lumia-n100: oklch(0.97 0 0);
+  --lumia-n200: oklch(0.922 0 0);
+  --lumia-n300: oklch(0.87 0 0);
+  --lumia-n400: oklch(0.708 0 0);
+  --lumia-n500: oklch(0.556 0 0);
+  --lumia-n600: oklch(0.439 0 0);
+  --lumia-n700: oklch(0.371 0 0);
+  --lumia-n900: oklch(0.205 0 0);
 
-  /* Accent (identique à reset.css — PHP override via --skmt-l-btn-bg) */
-  --skmt-accent: var(--skmt-l-btn-bg);
-  --skmt-accent-hover: oklch(0.511 0.262 276.966);
+  /* Accent (identique à reset.css — PHP override via --lumia-l-btn-bg) */
+  --lumia-accent: var(--lumia-l-btn-bg);
+  --lumia-accent-hover: oklch(0.511 0.262 276.966);
 
   /* Semantic */
-  --skmt-danger: oklch(0.637 0.237 25.331);
-  --skmt-danger-bg: oklch(0.971 0.013 17.38);
+  --lumia-danger: oklch(0.637 0.237 25.331);
+  --lumia-danger-bg: oklch(0.971 0.013 17.38);
 
   /* Radius / transition (identiques à reset.css) */
-  --skmt-radius: 12px;
-  --skmt-radius-sm: 8px;
-  --skmt-radius-xs: 4px;
-  --skmt-transition: all 0.15s ease;
+  --lumia-radius: 12px;
+  --lumia-radius-sm: 8px;
+  --lumia-radius-xs: 4px;
+  --lumia-transition: all 0.15s ease;
 
   /* Login-specific — override possible via PHP (login_head) */
-  --skmt-l-bg: oklch(0.97 0 0);
-  --skmt-l-panel-bg: oklch(0.87 0 0);
-  --skmt-l-panel-img: none;
-  --skmt-l-btn-bg: oklch(0.585 0.233 277.117);
-  --skmt-l-btn-color: oklch(1 0 0);
-  --skmt-l-link: oklch(0.585 0.233 277.117);
-  --skmt-l-logo-width: 150px;
-  --skmt-l-logo-url: none;
-  --skmt-l-logo-display: none;
+  --lumia-l-bg: oklch(0.97 0 0);
+  --lumia-l-panel-bg: oklch(0.87 0 0);
+  --lumia-l-panel-img: none;
+  --lumia-l-btn-bg: oklch(0.585 0.233 277.117);
+  --lumia-l-btn-color: oklch(1 0 0);
+  --lumia-l-link: oklch(0.585 0.233 277.117);
+  --lumia-l-logo-width: 150px;
+  --lumia-l-logo-url: none;
+  --lumia-l-logo-display: none;
 }
 
 /* ================================================================
  * BODY
  * ================================================================ */
 
-body.login.skmt-login-split {
+body.login.lumia-login-split {
   display: flex !important;
   min-height: 100vh;
   padding: 0 !important;
   margin: 0 !important;
-  background: var(--skmt-l-bg);
+  background: var(--lumia-l-bg);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu,
     Cantarell, "Helvetica Neue", sans-serif;
 }
 
-body.login.skmt-login-split::before,
-body.login.skmt-login-split::after {
+body.login.lumia-login-split::before,
+body.login.lumia-login-split::after {
   display: none !important;
 }
 
@@ -70,7 +70,7 @@ body.login.skmt-login-split::after {
  * PANNEAU GAUCHE — formulaire (exactement 50%)
  * ================================================================ */
 
-body.login.skmt-login-split #login {
+body.login.lumia-login-split #login {
   flex: 0 0 50% !important;
   width: 50% !important;
   max-width: none !important;
@@ -82,14 +82,14 @@ body.login.skmt-login-split #login {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--skmt-l-bg);
+  background: var(--lumia-l-bg);
   box-sizing: border-box !important;
   position: relative;
   z-index: 1;
 }
 
 /* Contraindre la largeur des éléments internes */
-body.login.skmt-login-split #login > * {
+body.login.lumia-login-split #login > * {
   width: 100%;
   max-width: 360px;
   box-sizing: border-box;
@@ -99,11 +99,11 @@ body.login.skmt-login-split #login > * {
  * LOGO
  * ================================================================ */
 
-body.login.skmt-login-split #login h1 {
+body.login.lumia-login-split #login h1 {
   margin-bottom: 32px !important;
 }
 
-body.login.skmt-login-split #login h1 a {
+body.login.lumia-login-split #login h1 a {
   background-size: contain !important;
   background-position: left center !important;
   background-repeat: no-repeat !important;
@@ -111,9 +111,9 @@ body.login.skmt-login-split #login h1 a {
   margin: 0 !important;
 }
 
-body.login.skmt-login-split.skmt-has-logo #login h1 a {
-  background-image: var(--skmt-l-logo-url) !important;
-  width: var(--skmt-l-logo-width) !important;
+body.login.lumia-login-split.lumia-has-logo #login h1 a {
+  background-image: var(--lumia-l-logo-url) !important;
+  width: var(--lumia-l-logo-width) !important;
   height: 48px !important;
 }
 
@@ -121,9 +121,9 @@ body.login.skmt-login-split.skmt-has-logo #login h1 a {
  * FORMULAIRE — reset
  * ================================================================ */
 
-body.login.skmt-login-split #loginform,
-body.login.skmt-login-split #lostpasswordform,
-body.login.skmt-login-split #registerform {
+body.login.lumia-login-split #loginform,
+body.login.lumia-login-split #lostpasswordform,
+body.login.lumia-login-split #registerform {
   padding: 0 !important;
   margin: 0 !important;
   background: none !important;
@@ -133,7 +133,7 @@ body.login.skmt-login-split #registerform {
 }
 
 /* Espacement entre les groupes de champs */
-body.login.skmt-login-split #loginform > p {
+body.login.lumia-login-split #loginform > p {
   margin-bottom: 16px !important;
   padding: 0 !important;
 }
@@ -142,10 +142,10 @@ body.login.skmt-login-split #loginform > p {
  * LABELS
  * ================================================================ */
 
-body.login.skmt-login-split label {
+body.login.lumia-login-split label {
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: var(--skmt-n600) !important;
+  color: var(--lumia-n600) !important;
   text-transform: none !important;
   letter-spacing: 0 !important;
   margin-bottom: 6px !important;
@@ -156,33 +156,33 @@ body.login.skmt-login-split label {
  * INPUTS
  * ================================================================ */
 
-body.login.skmt-login-split input[type="text"],
-body.login.skmt-login-split input[type="password"],
-body.login.skmt-login-split input[type="email"] {
-  border: 1px solid var(--skmt-n200) !important;
-  border-radius: var(--skmt-radius-sm) !important;
+body.login.lumia-login-split input[type="text"],
+body.login.lumia-login-split input[type="password"],
+body.login.lumia-login-split input[type="email"] {
+  border: 1px solid var(--lumia-n200) !important;
+  border-radius: var(--lumia-radius-sm) !important;
   padding: 10px 14px !important;
   font-size: 14px !important;
   font-family: inherit !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  background: var(--skmt-white) !important;
+  background: var(--lumia-white) !important;
   box-shadow: none !important;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease !important;
   height: auto !important;
   min-height: 42px !important;
-  color: var(--skmt-n900) !important;
+  color: var(--lumia-n900) !important;
   outline: none !important;
   line-height: 1.5 !important;
 }
 
-body.login.skmt-login-split input[type="text"]:focus,
-body.login.skmt-login-split input[type="password"]:focus,
-body.login.skmt-login-split input[type="email"]:focus {
-  border-color: var(--skmt-accent) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--skmt-accent) 15%, transparent) !important;
+body.login.lumia-login-split input[type="text"]:focus,
+body.login.lumia-login-split input[type="password"]:focus,
+body.login.lumia-login-split input[type="email"]:focus {
+  border-color: var(--lumia-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lumia-accent) 15%, transparent) !important;
   outline: none !important;
 }
 
@@ -190,23 +190,23 @@ body.login.skmt-login-split input[type="email"]:focus {
  * PASSWORD REVEAL — icônes Lucide via CSS (sibling selector)
  * ================================================================ */
 
-body.login.skmt-login-split .wp-pwd {
+body.login.lumia-login-split .wp-pwd {
   position: relative !important;
 }
 
-body.login.skmt-login-split .wp-pwd input[type="password"],
-body.login.skmt-login-split .wp-pwd input[type="text"] {
+body.login.lumia-login-split .wp-pwd input[type="password"],
+body.login.lumia-login-split .wp-pwd input[type="text"] {
   padding-right: 44px !important;
 }
 
 /* Cacher le dashicon WP */
-body.login.skmt-login-split .wp-hide-pw .dashicons,
-body.login.skmt-login-split .wp-hide-pw .wp-hide-pw-icon {
+body.login.lumia-login-split .wp-hide-pw .dashicons,
+body.login.lumia-login-split .wp-hide-pw .wp-hide-pw-icon {
   display: none !important;
 }
 
 /* Bouton — reset + dimensions explicites pour alignement fiable */
-body.login.skmt-login-split .wp-hide-pw {
+body.login.lumia-login-split .wp-hide-pw {
   position: absolute !important;
   right: 10px !important;
   top: 50% !important;
@@ -224,16 +224,16 @@ body.login.skmt-login-split .wp-hide-pw {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border-radius: var(--skmt-radius-xs) !important;
+  border-radius: var(--lumia-radius-xs) !important;
   transition: background 0.15s ease !important;
 }
 
-body.login.skmt-login-split .wp-hide-pw:hover {
-  background: var(--skmt-n100) !important;
+body.login.lumia-login-split .wp-hide-pw:hover {
+  background: var(--lumia-n100) !important;
 }
 
 /* Lucide eye (état par défaut — mot de passe masqué) */
-body.login.skmt-login-split .wp-hide-pw::after {
+body.login.lumia-login-split .wp-hide-pw::after {
   content: "" !important;
   display: block !important;
   width: 16px !important;
@@ -246,7 +246,7 @@ body.login.skmt-login-split .wp-hide-pw::after {
 }
 
 /* Lucide eye-off (mot de passe visible — WP change l'input en type="text") */
-body.login.skmt-login-split .wp-pwd input[type="text"] ~ .wp-hide-pw::after {
+body.login.lumia-login-split .wp-pwd input[type="text"] ~ .wp-hide-pw::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49'/%3E%3Cpath d='M14.084 14.158a3 3 0 0 1-4.242-4.242'/%3E%3Cpath d='M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143'/%3E%3Cpath d='m2 2 20 20'/%3E%3C/svg%3E") !important;
 }
 
@@ -256,14 +256,14 @@ body.login.skmt-login-split .wp-pwd input[type="text"] ~ .wp-hide-pw::after {
 
 /* Supprimer le margin-bottom de l'input DANS le wrapper wp-pwd
    (c'est ce margin qui fait que .wp-pwd est plus haut que l'input) */
-body.login.skmt-login-split .wp-pwd input[type="password"],
-body.login.skmt-login-split .wp-pwd input[type="text"] {
+body.login.lumia-login-split .wp-pwd input[type="password"],
+body.login.lumia-login-split .wp-pwd input[type="text"] {
   padding-right: 44px !important;
   margin-bottom: 0 !important; /* ← ajouter cette ligne */
 }
 
 /* Reporter l'espacement sur le wrapper wp-pwd lui-même */
-body.login.skmt-login-split .wp-pwd {
+body.login.lumia-login-split .wp-pwd {
   position: relative !important;
   margin-bottom: 16px !important; /* ← ajouter cette ligne */
 }
@@ -272,10 +272,10 @@ body.login.skmt-login-split .wp-pwd {
  * TITRE "Se connecter" — entre logo et formulaire
  * ================================================================ */
 
-body.login.skmt-login-split .skmt-login-title {
+body.login.lumia-login-split .lumia-login-title {
   font-size: 22px !important;
   font-weight: 600 !important;
-  color: var(--skmt-n900) !important;
+  color: var(--lumia-n900) !important;
   margin: 0 0 28px 0 !important;
   padding: 0 !important;
   letter-spacing: -0.02em !important;
@@ -289,11 +289,11 @@ body.login.skmt-login-split .skmt-login-title {
  * PASSWORD HEADER — label "Mot de passe" + lien space-between
  * ================================================================ */
 
-body.login.skmt-login-split .user-pass-wrap > label {
+body.login.lumia-login-split .user-pass-wrap > label {
   display: none !important;
 }
 
-body.login.skmt-login-split .skmt-pass-header {
+body.login.lumia-login-split .lumia-pass-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -301,40 +301,40 @@ body.login.skmt-login-split .skmt-pass-header {
   width: 100% !important;
 }
 
-body.login.skmt-login-split .skmt-pass-header label {
+body.login.lumia-login-split .lumia-pass-header label {
   margin-bottom: 0 !important;
 }
 
-body.login.skmt-login-split .skmt-pass-header a {
+body.login.lumia-login-split .lumia-pass-header a {
   font-size: 12px !important;
-  color: var(--skmt-l-link) !important;
+  color: var(--lumia-l-link) !important;
   text-decoration: none !important;
   font-weight: 400 !important;
 }
 
-body.login.skmt-login-split .skmt-pass-header a:hover {
+body.login.lumia-login-split .lumia-pass-header a:hover {
   text-decoration: underline !important;
   opacity: 0.75 !important;
 }
 
-body.login.skmt-login-split #nav.skmt-nav-hidden {
+body.login.lumia-login-split #nav.lumia-nav-hidden {
   display: none !important;
 }
 
-body.login.skmt-login-split input[type="checkbox"] {
+body.login.lumia-login-split input[type="checkbox"] {
   width: 15px !important;
   height: 15px !important;
-  accent-color: var(--skmt-accent) !important;
+  accent-color: var(--lumia-accent) !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
   margin: 0 !important;
 }
 
 /* ================================================================
- * BOUTON — utilise --skmt-accent comme reset.css
+ * BOUTON — utilise --lumia-accent comme reset.css
  * ================================================================ */
 
-body.login.skmt-login-split #loginform .submit {
+body.login.lumia-login-split #loginform .submit {
   float: none !important;
   width: 100% !important;
   margin-top: 16px !important;
@@ -342,15 +342,15 @@ body.login.skmt-login-split #loginform .submit {
   padding: 0 !important;
 }
 
-body.login.skmt-login-split #wp-submit,
-body.login.skmt-login-split input[type="submit"] {
+body.login.lumia-login-split #wp-submit,
+body.login.lumia-login-split input[type="submit"] {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: var(--skmt-accent) !important;
-  color: var(--skmt-l-btn-color) !important;
+  background: var(--lumia-accent) !important;
+  color: var(--lumia-l-btn-color) !important;
   border: none !important;
-  border-radius: var(--skmt-radius-sm) !important;
+  border-radius: var(--lumia-radius-sm) !important;
   padding: 10px 24px !important;
   font-size: 14px !important;
   font-weight: 500 !important;
@@ -368,8 +368,8 @@ body.login.skmt-login-split input[type="submit"] {
   margin-bottom: 24px !important;
 }
 
-body.login.skmt-login-split #wp-submit:hover,
-body.login.skmt-login-split input[type="submit"]:hover {
+body.login.lumia-login-split #wp-submit:hover,
+body.login.lumia-login-split input[type="submit"]:hover {
   opacity: 0.85 !important;
 }
 
@@ -377,7 +377,7 @@ body.login.skmt-login-split input[type="submit"]:hover {
  * SE SOUVENIR DE MOI — aligné à gauche, sous le bouton
  * ================================================================ */
 
-body.login.skmt-login-split .forgetmenot {
+body.login.lumia-login-split .forgetmenot {
   float: none !important;
   display: flex !important;
   align-items: center !important;
@@ -389,17 +389,17 @@ body.login.skmt-login-split .forgetmenot {
   width: 100% !important;
 }
 
-body.login.skmt-login-split .forgetmenot label {
+body.login.lumia-login-split .forgetmenot label {
   font-size: 13px !important;
   font-weight: 400 !important;
-  color: var(--skmt-n500) !important;
+  color: var(--lumia-n500) !important;
   margin-bottom: 0 !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
 }
 
-body.login.skmt-login-split .forgetmenot input[type="checkbox"] {
+body.login.lumia-login-split .forgetmenot input[type="checkbox"] {
   margin: 0 7px 0 0 !important;
   flex-shrink: 0 !important;
 }
@@ -408,53 +408,53 @@ body.login.skmt-login-split .forgetmenot input[type="checkbox"] {
  * LIENS
  * ================================================================ */
 
-body.login.skmt-login-split #backtoblog {
+body.login.lumia-login-split #backtoblog {
   clear: both !important;
   margin-top: 24px !important;
   margin-bottom: 0 !important;
   font-size: 13px !important;
-  color: var(--skmt-n500) !important;
+  color: var(--lumia-n500) !important;
   padding: 0 !important;
 }
 
-body.login.skmt-login-split #backtoblog a {
-  color: var(--skmt-l-link) !important;
+body.login.lumia-login-split #backtoblog a {
+  color: var(--lumia-l-link) !important;
   text-decoration: none !important;
 }
 
-body.login.skmt-login-split #backtoblog a:hover {
+body.login.lumia-login-split #backtoblog a:hover {
   opacity: 0.75 !important;
   text-decoration: underline !important;
 }
 
-body.login.skmt-login-split #loginform a {
-  color: var(--skmt-l-link) !important;
+body.login.lumia-login-split #loginform a {
+  color: var(--lumia-l-link) !important;
   text-decoration: none !important;
 }
 
 /* Lien "Politique de confidentialité" (affiché par WP quand une page est
    definie dans Reglages > Confidentialite) — aligne sur #backtoblog. */
-body.login.skmt-login-split .privacy-policy-page-link {
+body.login.lumia-login-split .privacy-policy-page-link {
   clear: both !important;
   margin: 24px 0 0 0 !important;
   padding: 0 !important;
   text-align: left !important;
   font-size: 13px !important;
-  color: var(--skmt-n500) !important;
+  color: var(--lumia-n500) !important;
 }
 
 /* Les deux liens de pied de formulaire cohabitent : resserrer le second. */
-body.login.skmt-login-split #backtoblog + .privacy-policy-page-link {
+body.login.lumia-login-split #backtoblog + .privacy-policy-page-link {
   margin-top: 8px !important;
 }
 
-body.login.skmt-login-split .privacy-policy-page-link a {
-  color: var(--skmt-l-link) !important;
+body.login.lumia-login-split .privacy-policy-page-link a {
+  color: var(--lumia-l-link) !important;
   text-decoration: none !important;
   font-size: 13px !important;
 }
 
-body.login.skmt-login-split .privacy-policy-page-link a:hover {
+body.login.lumia-login-split .privacy-policy-page-link a:hover {
   opacity: 0.75 !important;
   text-decoration: underline !important;
 }
@@ -463,11 +463,11 @@ body.login.skmt-login-split .privacy-policy-page-link a:hover {
  * SÉLECTEUR DE LANGUE — ultra compact, bottom-left absolu
  * ================================================================ */
 
-body.login.skmt-login-split {
+body.login.lumia-login-split {
   position: relative !important;
 }
 
-body.login.skmt-login-split .language-switcher {
+body.login.lumia-login-split .language-switcher {
   position: absolute !important;
   bottom: 28px !important;
   left: 28px !important;
@@ -477,7 +477,7 @@ body.login.skmt-login-split .language-switcher {
   z-index: 2 !important;
 }
 
-body.login.skmt-login-split #language-switcher {
+body.login.lumia-login-split #language-switcher {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
@@ -489,7 +489,7 @@ body.login.skmt-login-split #language-switcher {
   box-shadow: none !important;
 }
 
-body.login.skmt-login-split #language-switcher label {
+body.login.lumia-login-split #language-switcher label {
   display: flex !important;
   align-items: center !important;
   margin: 0 !important;
@@ -498,12 +498,12 @@ body.login.skmt-login-split #language-switcher label {
   cursor: default !important;
 }
 
-body.login.skmt-login-split #language-switcher label .dashicons,
-body.login.skmt-login-split #language-switcher label .screen-reader-text {
+body.login.lumia-login-split #language-switcher label .dashicons,
+body.login.lumia-login-split #language-switcher label .screen-reader-text {
   display: none !important;
 }
 
-body.login.skmt-login-split #language-switcher label::before {
+body.login.lumia-login-split #language-switcher label::before {
   content: "" !important;
   display: inline-block !important;
   width: 14px !important;
@@ -515,14 +515,14 @@ body.login.skmt-login-split #language-switcher label::before {
   flex-shrink: 0 !important;
 }
 
-body.login.skmt-login-split #language-switcher select {
+body.login.lumia-login-split #language-switcher select {
   border: none !important;
   border-radius: 0 !important;
   padding: 0 !important;
   font-size: 12px !important;
   font-family: inherit !important;
   background: transparent !important;
-  color: var(--skmt-n500) !important;
+  color: var(--lumia-n500) !important;
   cursor: pointer !important;
   box-shadow: none !important;
   outline: none !important;
@@ -533,7 +533,7 @@ body.login.skmt-login-split #language-switcher select {
   -webkit-appearance: none !important;
 }
 
-body.login.skmt-login-split #language-switcher input[type="submit"] {
+body.login.lumia-login-split #language-switcher input[type="submit"] {
   background-color: transparent !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c0c0c0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
@@ -561,8 +561,8 @@ body.login.skmt-login-split #language-switcher input[type="submit"] {
   margin: 0 !important;
 }
 
-body.login.skmt-login-split #language-switcher input[type="submit"]:hover {
-  background-color: var(--skmt-n100) !important;
+body.login.lumia-login-split #language-switcher input[type="submit"]:hover {
+  background-color: var(--lumia-n100) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b5fc7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") !important;
   opacity: 1 !important;
 }
@@ -571,23 +571,23 @@ body.login.skmt-login-split #language-switcher input[type="submit"]:hover {
  * MESSAGES
  * ================================================================ */
 
-body.login.skmt-login-split #login_error {
-  border-left: 3px solid var(--skmt-danger) !important;
-  background: var(--skmt-danger-bg) !important;
-  color: var(--skmt-danger) !important;
-  border-radius: var(--skmt-radius-sm) !important;
+body.login.lumia-login-split #login_error {
+  border-left: 3px solid var(--lumia-danger) !important;
+  background: var(--lumia-danger-bg) !important;
+  color: var(--lumia-danger) !important;
+  border-radius: var(--lumia-radius-sm) !important;
   padding: 12px 14px !important;
   margin-bottom: 20px !important;
   font-size: 13px !important;
   box-shadow: none !important;
 }
 
-body.login.skmt-login-split .message,
-body.login.skmt-login-split .success {
-  border-left: 3px solid var(--skmt-accent) !important;
-  background: color-mix(in srgb, var(--skmt-accent) 8%, white) !important;
-  color: var(--skmt-n900) !important;
-  border-radius: var(--skmt-radius-sm) !important;
+body.login.lumia-login-split .message,
+body.login.lumia-login-split .success {
+  border-left: 3px solid var(--lumia-accent) !important;
+  background: color-mix(in srgb, var(--lumia-accent) 8%, white) !important;
+  color: var(--lumia-n900) !important;
+  border-radius: var(--lumia-radius-sm) !important;
   padding: 12px 14px !important;
   margin-bottom: 20px !important;
   font-size: 13px !important;
@@ -598,13 +598,13 @@ body.login.skmt-login-split .success {
  * PANNEAU DROIT
  * ================================================================ */
 
-.skmt-login-panel {
+.lumia-login-panel {
   flex: 1;
   margin: 24px 24px 24px 0;
   border-radius: 32px !important;
   overflow: hidden;
-  background-color: var(--skmt-l-panel-bg);
-  background-image: var(--skmt-l-panel-img);
+  background-color: var(--lumia-l-panel-bg);
+  background-image: var(--lumia-l-panel-img);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -615,11 +615,11 @@ body.login.skmt-login-split .success {
  * ================================================================ */
 
 @media screen and (max-width: 900px) {
-  body.login.skmt-login-split {
+  body.login.lumia-login-split {
     display: block !important;
   }
 
-  body.login.skmt-login-split #login {
+  body.login.lumia-login-split #login {
     flex: none !important;
     width: 100% !important;
     max-width: 420px !important;
@@ -629,7 +629,7 @@ body.login.skmt-login-split .success {
     height: 100%;
   }
 
-  .skmt-login-panel {
+  .lumia-login-panel {
     display: none !important;
   }
 }

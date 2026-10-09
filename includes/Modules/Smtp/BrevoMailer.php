@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -28,14 +28,14 @@ class BrevoMailer extends PHPMailer {
 	/**
 	 * Clé API en clair, posée par Mailer::configure_brevo() avant chaque envoi.
 	 */
-	public string $skmt_api_key = '';
+	public string $lumia_api_key = '';
 
 	/**
 	 * Dernière réponse de l'API, pour le mail de test (jamais la clé).
 	 *
 	 * @var array{code: int, body: string}|null
 	 */
-	public ?array $skmt_last_response = null;
+	public ?array $lumia_last_response = null;
 
 	/**
 	 * @param bool|null $exceptions
@@ -62,7 +62,7 @@ class BrevoMailer extends PHPMailer {
 			return parent::send();
 		}
 
-		$this->skmt_last_response = null;
+		$this->lumia_last_response = null;
 
 		// Lu avant preSend(), qui passe le type sur multipart/alternative dès
 		// qu'un AltBody existe : le HTML partirait sinon comme texte brut.
@@ -90,14 +90,14 @@ class BrevoMailer extends PHPMailer {
 	 * @throws PHPMailerException
 	 */
 	private function send_via_api( bool $is_html ): bool {
-		if ( '' === $this->skmt_api_key ) {
-			throw new PHPMailerException( __( 'Clé API Brevo absente ou illisible : saisissez-la à nouveau dans les réglages SMTP.', 'studio-kyne-mini-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- texte brut (WP_Error, journal), pas du HTML.
+		if ( '' === $this->lumia_api_key ) {
+			throw new PHPMailerException( __( 'Clé API Brevo absente ou illisible : saisissez-la à nouveau dans les réglages SMTP.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- texte brut (WP_Error, journal), pas du HTML.
 		}
 
 		$body = wp_json_encode( $this->payload( $is_html ) );
 
 		if ( false === $body ) {
-			throw new PHPMailerException( __( 'Message impossible à encoder pour l\'API Brevo (encodage des caractères invalide).', 'studio-kyne-mini-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
+			throw new PHPMailerException( __( 'Message impossible à encoder pour l\'API Brevo (encodage des caractères invalide).', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
 		}
 
 		$response = wp_remote_post(
@@ -105,7 +105,7 @@ class BrevoMailer extends PHPMailer {
 			[
 				'timeout' => Mailer::TIMEOUT,
 				'headers' => [
-					'api-key'      => $this->skmt_api_key,
+					'api-key'      => $this->lumia_api_key,
 					'accept'       => 'application/json',
 					'content-type' => 'application/json',
 				],
@@ -115,13 +115,13 @@ class BrevoMailer extends PHPMailer {
 
 		if ( is_wp_error( $response ) ) {
 			/* translators: %s: message d'erreur réseau. */
-			throw new PHPMailerException( sprintf( __( 'API Brevo injoignable : %s', 'studio-kyne-mini-tools' ), $response->get_error_message() ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
+			throw new PHPMailerException( sprintf( __( 'API Brevo injoignable : %s', 'lumia-tools' ), $response->get_error_message() ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$raw  = (string) wp_remote_retrieve_body( $response );
 
-		$this->skmt_last_response = [
+		$this->lumia_last_response = [
 			'code' => $code,
 			'body' => $raw,
 		];
@@ -139,7 +139,7 @@ class BrevoMailer extends PHPMailer {
 		$message = is_array( $data ) && ! empty( $data['message'] ) ? (string) $data['message'] : wp_remote_retrieve_response_message( $response );
 
 		/* translators: 1: code HTTP, 2: message de l'API. */
-		throw new PHPMailerException( sprintf( __( 'L\'API Brevo a refusé le mail (HTTP %1$d) : %2$s', 'studio-kyne-mini-tools' ), $code, $message ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
+		throw new PHPMailerException( sprintf( __( 'L\'API Brevo a refusé le mail (HTTP %1$d) : %2$s', 'lumia-tools' ), $code, $message ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
 	}
 
 	/**
@@ -216,7 +216,7 @@ class BrevoMailer extends PHPMailer {
 				$content = is_readable( (string) $attachment[0] ) ? file_get_contents( (string) $attachment[0] ) : false; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- fichier local joint par wp_mail().
 				if ( false === $content ) {
 					/* translators: %s: nom du fichier. */
-					throw new PHPMailerException( sprintf( __( 'Pièce jointe illisible : %s', 'studio-kyne-mini-tools' ), (string) $attachment[2] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
+					throw new PHPMailerException( sprintf( __( 'Pièce jointe illisible : %s', 'lumia-tools' ), (string) $attachment[2] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- idem.
 				}
 			}
 

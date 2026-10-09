@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Security;
+namespace Lumia\Tools\Modules\Security;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -34,7 +34,7 @@ class HardeningService {
 	 *
 	 * L'ancienne version se branchait sur `template_redirect` à la priorité par
 	 * défaut, donc APRÈS `redirect_canonical` : WordPress répondait
-	 * `301 Location: /author/studiokyne/` avant que le blocage n'ait la parole,
+	 * `301 Location: /author/lumia/` avant que le blocage n'ait la parole,
 	 * et l'identifiant était divulgué par l'en-tête `Location` lui-même. Seule
 	 * la page d'archive finale était protégée.
 	 *
@@ -120,7 +120,7 @@ class HardeningService {
 		if ( ! current_user_can( 'list_users' ) && preg_match( '#^/wp/v2/users(/|$)#', $route ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'Accès interdit.', 'studio-kyne-mini-tools' ),
+				__( 'Accès interdit.', 'lumia-tools' ),
 				[ 'status' => 403 ]
 			);
 		}
@@ -209,7 +209,7 @@ class HardeningService {
 			return $errors;
 		}
 
-		$generic = __( 'Identifiant ou mot de passe incorrect.', 'studio-kyne-mini-tools' );
+		$generic = __( 'Identifiant ou mot de passe incorrect.', 'lumia-tools' );
 
 		foreach ( self::LOGIN_ORACLE_CODES as $code ) {
 			if ( ! in_array( $code, $errors->get_error_codes(), true ) ) {
@@ -218,7 +218,7 @@ class HardeningService {
 
 			$data = $errors->get_error_data( $code );
 			$errors->remove( $code );
-			$errors->add( $code, '<strong>' . esc_html__( 'Erreur :', 'studio-kyne-mini-tools' ) . '</strong> ' . esc_html( $generic ), $data );
+			$errors->add( $code, '<strong>' . esc_html__( 'Erreur :', 'lumia-tools' ) . '</strong> ' . esc_html( $generic ), $data );
 		}
 
 		return $errors;

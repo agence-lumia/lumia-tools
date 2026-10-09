@@ -1,10 +1,10 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ImageOptimizer;
+namespace Lumia\Tools\Modules\ImageOptimizer;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
-use StudioKyne\MiniTools\Admin\Admin;
+use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Admin\Admin;
 
 /**
  * Module Image Optimizer — orchestrateur.
@@ -21,7 +21,7 @@ class Module extends AbstractModule {
 	private const BULK_STATE_SUFFIX = '_bulk_state';
 
 	/** Dossier (sous uploads) des originaux intacts, suffixé d'un jeton : voir get_backup_dir(). */
-	private const BACKUP_DIR          = 'skmt-originals';
+	private const BACKUP_DIR          = 'lumia-originals';
 	private const BACKUP_TOKEN_SUFFIX = '_backup_token';
 
 	/**
@@ -29,19 +29,19 @@ class Module extends AbstractModule {
 	 * chemins relatifs au dossier uploads. Absents des métadonnées WordPress,
 	 * ils ne partiraient pas avec le média sans cette liste.
 	 */
-	private const FALLBACK_META = '_skmt_fallback_files';
+	private const FALLBACK_META = '_lumia_fallback_files';
 
 	/** Métas qui décrivent l'optimisation d'un média (effacées à la restauration). */
 	private const OPTIMIZATION_META = [
-		'_skmt_optimized',
-		'_skmt_original_bytes',
-		'_skmt_optimized_bytes',
-		'_skmt_bytes_saved',
-		'_skmt_main_original_bytes',
-		'_skmt_main_optimized_bytes',
-		'_skmt_main_bytes_saved',
-		'_skmt_optimized_format',
-		'_skmt_optimized_mime',
+		'_lumia_optimized',
+		'_lumia_original_bytes',
+		'_lumia_optimized_bytes',
+		'_lumia_bytes_saved',
+		'_lumia_main_original_bytes',
+		'_lumia_main_optimized_bytes',
+		'_lumia_main_bytes_saved',
+		'_lumia_optimized_format',
+		'_lumia_optimized_mime',
 	];
 
 	/* ================================================================
@@ -115,12 +115,12 @@ class Module extends AbstractModule {
 		add_action( 'delete_attachment', [ $this, 'delete_kept_files' ] );
 
 		// Bulk AJAX
-		add_action( 'wp_ajax_skmt_image_optimizer_bulk_scan', [ $this, 'ajax_bulk_scan' ] );
-		add_action( 'wp_ajax_skmt_image_optimizer_bulk', [ $this, 'ajax_bulk_start' ] );
-		add_action( 'wp_ajax_skmt_image_optimizer_bulk_status', [ $this, 'ajax_bulk_status' ] );
+		add_action( 'wp_ajax_lumia_image_optimizer_bulk_scan', [ $this, 'ajax_bulk_scan' ] );
+		add_action( 'wp_ajax_lumia_image_optimizer_bulk', [ $this, 'ajax_bulk_start' ] );
+		add_action( 'wp_ajax_lumia_image_optimizer_bulk_status', [ $this, 'ajax_bulk_status' ] );
 
 		// Cron
-		add_action( 'skmt_image_optimizer_cron', [ $this, 'run_cron_batch' ] );
+		add_action( 'lumia_image_optimizer_cron', [ $this, 'run_cron_batch' ] );
 	}
 
 	/* ================================================================
@@ -191,13 +191,13 @@ class Module extends AbstractModule {
 
 	public function get_admin_css(): array {
 		return [
-			SKMT_ASSETS_URL . 'admin/css/modules/image-optimizer.css',
+			LUMIA_ASSETS_URL . 'admin/css/modules/image-optimizer.css',
 		];
 	}
 
 	public function get_admin_js(): array {
 		return [
-			SKMT_ASSETS_URL . 'admin/js/modules/image-optimizer.js',
+			LUMIA_ASSETS_URL . 'admin/js/modules/image-optimizer.js',
 		];
 	}
 
@@ -208,32 +208,32 @@ class Module extends AbstractModule {
 		return [
 			'bulkState' => $this->bulk->get_state(),
 			'i18n'      => [
-				'bulkScanning'  => __( 'Analyse…', 'studio-kyne-mini-tools' ),
-				'bulkRunning'   => __( 'Optimisation en cours…', 'studio-kyne-mini-tools' ),
-				'bulkProcessed' => __( 'Traité :', 'studio-kyne-mini-tools' ),
-				'bulkRemaining' => __( 'Restant :', 'studio-kyne-mini-tools' ),
-				'bulkDone'      => __( 'Optimisation terminée', 'studio-kyne-mini-tools' ),
-				'bulkComplete'  => __( 'Toutes les images ont été optimisées.', 'studio-kyne-mini-tools' ),
-				'bulkRetry'     => __( 'Réessayer', 'studio-kyne-mini-tools' ),
-				'mediaRunning'  => __( 'Traitement…', 'studio-kyne-mini-tools' ),
-				'mediaError'    => __( 'Erreur', 'studio-kyne-mini-tools' ),
-				'cancel'        => __( 'Annuler', 'studio-kyne-mini-tools' ),
-				'format'        => __( 'Format cible', 'studio-kyne-mini-tools' ),
+				'bulkScanning'  => __( 'Analyse…', 'lumia-tools' ),
+				'bulkRunning'   => __( 'Optimisation en cours…', 'lumia-tools' ),
+				'bulkProcessed' => __( 'Traité :', 'lumia-tools' ),
+				'bulkRemaining' => __( 'Restant :', 'lumia-tools' ),
+				'bulkDone'      => __( 'Optimisation terminée', 'lumia-tools' ),
+				'bulkComplete'  => __( 'Toutes les images ont été optimisées.', 'lumia-tools' ),
+				'bulkRetry'     => __( 'Réessayer', 'lumia-tools' ),
+				'mediaRunning'  => __( 'Traitement…', 'lumia-tools' ),
+				'mediaError'    => __( 'Erreur', 'lumia-tools' ),
+				'cancel'        => __( 'Annuler', 'lumia-tools' ),
+				'format'        => __( 'Format cible', 'lumia-tools' ),
 				'reoptimize'    => [
-					'title'    => __( "Ré-optimiser l'image ?", 'studio-kyne-mini-tools' ),
-					'backup'   => __( "L'image est retraitée depuis l'original conservé, avec les réglages actuels.", 'studio-kyne-mini-tools' ),
-					'nobackup' => __( "Aucun original n'a été conservé : l'image est recompressée depuis sa version actuelle, et la qualité baisse un peu à chaque passage.", 'studio-kyne-mini-tools' ),
-					'confirm'  => __( 'Ré-optimiser', 'studio-kyne-mini-tools' ),
+					'title'    => __( "Ré-optimiser l'image ?", 'lumia-tools' ),
+					'backup'   => __( "L'image est retraitée depuis l'original conservé, avec les réglages actuels.", 'lumia-tools' ),
+					'nobackup' => __( "Aucun original n'a été conservé : l'image est recompressée depuis sa version actuelle, et la qualité baisse un peu à chaque passage.", 'lumia-tools' ),
+					'confirm'  => __( 'Ré-optimiser', 'lumia-tools' ),
 				],
 				'convert'       => [
-					'title'   => __( "Convertir l'image", 'studio-kyne-mini-tools' ),
-					'message' => __( "Le fichier et ses miniatures changent d'extension ; les URL déjà insérées dans le site sont réécrites.", 'studio-kyne-mini-tools' ),
-					'confirm' => __( 'Convertir', 'studio-kyne-mini-tools' ),
+					'title'   => __( "Convertir l'image", 'lumia-tools' ),
+					'message' => __( "Le fichier et ses miniatures changent d'extension ; les URL déjà insérées dans le site sont réécrites.", 'lumia-tools' ),
+					'confirm' => __( 'Convertir', 'lumia-tools' ),
 				],
 				'restore'       => [
-					'title'   => __( "Restaurer l'original ?", 'studio-kyne-mini-tools' ),
-					'message' => __( "Les versions optimisées sont supprimées, les miniatures régénérées depuis l'original et les URL du site réécrites vers lui.", 'studio-kyne-mini-tools' ),
-					'confirm' => __( 'Restaurer', 'studio-kyne-mini-tools' ),
+					'title'   => __( "Restaurer l'original ?", 'lumia-tools' ),
+					'message' => __( "Les versions optimisées sont supprimées, les miniatures régénérées depuis l'original et les URL du site réécrites vers lui.", 'lumia-tools' ),
+					'confirm' => __( 'Restaurer', 'lumia-tools' ),
 				],
 			],
 		];
@@ -250,7 +250,7 @@ class Module extends AbstractModule {
 		}
 		Admin::add_persistent_notice(
 			'image_optimizer_bulk_done',
-			__( 'Optimisation en masse des images terminée.', 'studio-kyne-mini-tools' ),
+			__( 'Optimisation en masse des images terminée.', 'lumia-tools' ),
 			'success',
 			$user_id
 		);
@@ -262,9 +262,9 @@ class Module extends AbstractModule {
 
 	public function on_deactivate(): void {
 		// Supprimer les crons en attente.
-		$timestamp = wp_next_scheduled( 'skmt_image_optimizer_cron' );
+		$timestamp = wp_next_scheduled( 'lumia_image_optimizer_cron' );
 		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'skmt_image_optimizer_cron' );
+			wp_unschedule_event( $timestamp, 'lumia_image_optimizer_cron' );
 		}
 	}
 
@@ -275,14 +275,14 @@ class Module extends AbstractModule {
 	public static function get_uninstall_keys(): array {
 		return [
 			'options' => [
-				'skmt_module_image_optimizer',
-				'skmt_module_image_optimizer' . self::STATS_SUFFIX,
-				'skmt_module_image_optimizer' . self::BULK_STATE_SUFFIX,
-				'skmt_module_image_optimizer' . self::BACKUP_TOKEN_SUFFIX,
+				'lumia_module_image_optimizer',
+				'lumia_module_image_optimizer' . self::STATS_SUFFIX,
+				'lumia_module_image_optimizer' . self::BULK_STATE_SUFFIX,
+				'lumia_module_image_optimizer' . self::BACKUP_TOKEN_SUFFIX,
 			],
-			// Les fichiers de skmt-originals/ restent sur le disque : ce sont
+			// Les fichiers de lumia-originals/ restent sur le disque : ce sont
 			// des photos du client, pas des données du plugin.
-			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_skmt_backup_file', self::FALLBACK_META ] ),
+			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META ] ),
 		];
 	}
 
@@ -532,7 +532,7 @@ class Module extends AbstractModule {
 	 * Chemin absolu de l'original conservé, '' s'il n'y en a pas.
 	 */
 	public function get_backup_path( int $attachment_id ): string {
-		$rel = (string) get_post_meta( $attachment_id, '_skmt_backup_file', true );
+		$rel = (string) get_post_meta( $attachment_id, '_lumia_backup_file', true );
 
 		// Le chemin finit dans copy() et wp_delete_file() : pas de « .. ».
 		if ( '' === $rel || 0 !== validate_file( $rel ) ) {
@@ -545,7 +545,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Dossier des originaux : uploads/skmt-originals-{jeton}.
+	 * Dossier des originaux : uploads/lumia-originals-{jeton}.
 	 *
 	 * Les originaux gardent leurs EXIF (GPS compris), et uploads/ est servi
 	 * tel quel : un nom fixe rendrait chaque copie devinable depuis l'URL
@@ -564,7 +564,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Copie le fichier principal intact dans skmt-originals/, une seule fois.
+	 * Copie le fichier principal intact dans lumia-originals/, une seule fois.
 	 *
 	 * @param string $rel Chemin relatif au dossier uploads (metadata['file']).
 	 */
@@ -586,7 +586,7 @@ class Module extends AbstractModule {
 			file_put_contents( $dir . '/.htaccess', "Require all denied\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- idem.
 		}
 
-		update_post_meta( $attachment_id, '_skmt_backup_file', $rel );
+		update_post_meta( $attachment_id, '_lumia_backup_file', $rel );
 	}
 
 	/**
@@ -688,7 +688,7 @@ class Module extends AbstractModule {
 		if ( '' !== $format ) {
 			$cap = $this->processor->get_capabilities();
 			if ( ! in_array( $format, [ 'webp', 'avif' ], true ) || empty( $cap[ $format ] ) ) {
-				return new \WP_Error( 'skmt_format', __( 'Ce format n\'est pas disponible sur ce serveur.', 'studio-kyne-mini-tools' ) );
+				return new \WP_Error( 'lumia_format', __( 'Ce format n\'est pas disponible sur ce serveur.', 'lumia-tools' ) );
 			}
 		}
 
@@ -750,12 +750,12 @@ class Module extends AbstractModule {
 		$file         = (string) get_attached_file( $attachment_id );
 
 		if ( ! is_array( $old_metadata ) || '' === $file || ! file_exists( $file ) ) {
-			return new \WP_Error( 'skmt_missing', __( 'Fichier introuvable.', 'studio-kyne-mini-tools' ) );
+			return new \WP_Error( 'lumia_missing', __( 'Fichier introuvable.', 'lumia-tools' ) );
 		}
 
 		$metadata = $this->generate_metadata( $attachment_id, $file, $old_metadata );
 		if ( null === $metadata ) {
-			return new \WP_Error( 'skmt_regenerate', __( 'La génération des miniatures a échoué.', 'studio-kyne-mini-tools' ) );
+			return new \WP_Error( 'lumia_regenerate', __( 'La génération des miniatures a échoué.', 'lumia-tools' ) );
 		}
 
 		if ( $this->is_already_optimized( $attachment_id ) ) {
@@ -797,14 +797,14 @@ class Module extends AbstractModule {
 		$old_metadata = wp_get_attachment_metadata( $attachment_id );
 
 		if ( '' === $backup || ! is_array( $old_metadata ) || empty( $old_metadata['file'] ) ) {
-			return new \WP_Error( 'skmt_no_backup', __( 'Aucun original conservé pour ce média.', 'studio-kyne-mini-tools' ) );
+			return new \WP_Error( 'lumia_no_backup', __( 'Aucun original conservé pour ce média.', 'lumia-tools' ) );
 		}
 
-		$target  = trailingslashit( wp_upload_dir()['basedir'] ) . get_post_meta( $attachment_id, '_skmt_backup_file', true );
+		$target  = trailingslashit( wp_upload_dir()['basedir'] ) . get_post_meta( $attachment_id, '_lumia_backup_file', true );
 		$current = (string) get_attached_file( $attachment_id );
 
 		if ( ! copy( $backup, $target ) ) {
-			return new \WP_Error( 'skmt_restore', __( 'Impossible de recopier l\'original.', 'studio-kyne-mini-tools' ) );
+			return new \WP_Error( 'lumia_restore', __( 'Impossible de recopier l\'original.', 'lumia-tools' ) );
 		}
 
 		if ( wp_normalize_path( $current ) !== wp_normalize_path( $target ) ) {
@@ -813,7 +813,7 @@ class Module extends AbstractModule {
 
 		$metadata = $this->generate_metadata( $attachment_id, $target, $old_metadata );
 		if ( null === $metadata ) {
-			return new \WP_Error( 'skmt_regenerate', __( 'La génération des miniatures a échoué.', 'studio-kyne-mini-tools' ) );
+			return new \WP_Error( 'lumia_regenerate', __( 'La génération des miniatures a échoué.', 'lumia-tools' ) );
 		}
 
 		$this->replace_metadata( $attachment_id, $old_metadata, $metadata );
@@ -829,7 +829,7 @@ class Module extends AbstractModule {
 
 		if ( ! $keep_backup ) {
 			wp_delete_file( $backup );
-			delete_post_meta( $attachment_id, '_skmt_backup_file' );
+			delete_post_meta( $attachment_id, '_lumia_backup_file' );
 		}
 
 		return null;
@@ -959,12 +959,12 @@ class Module extends AbstractModule {
 			$after += (int) ( $size_data['filesize'] ?? 0 );
 		}
 
-		$original  = (int) get_post_meta( $attachment_id, '_skmt_original_bytes', true );
-		$old_saved = (int) get_post_meta( $attachment_id, '_skmt_bytes_saved', true );
+		$original  = (int) get_post_meta( $attachment_id, '_lumia_original_bytes', true );
+		$old_saved = (int) get_post_meta( $attachment_id, '_lumia_bytes_saved', true );
 		$new_saved = max( $original - $after, 0 );
 
-		update_post_meta( $attachment_id, '_skmt_optimized_bytes', $after );
-		update_post_meta( $attachment_id, '_skmt_bytes_saved', $new_saved );
+		update_post_meta( $attachment_id, '_lumia_optimized_bytes', $after );
+		update_post_meta( $attachment_id, '_lumia_bytes_saved', $new_saved );
 
 		$stats                = $this->get_raw_stats();
 		$stats['bytes_saved'] = max( $stats['bytes_saved'] - $old_saved + $new_saved, 0 );
@@ -982,8 +982,8 @@ class Module extends AbstractModule {
 
 		$stats                   = $this->get_raw_stats();
 		$stats['optimized']      = max( $stats['optimized'] - 1, 0 );
-		$stats['bytes_saved']    = max( $stats['bytes_saved'] - (int) get_post_meta( $attachment_id, '_skmt_bytes_saved', true ), 0 );
-		$stats['original_bytes'] = max( $stats['original_bytes'] - (int) get_post_meta( $attachment_id, '_skmt_original_bytes', true ), 0 );
+		$stats['bytes_saved']    = max( $stats['bytes_saved'] - (int) get_post_meta( $attachment_id, '_lumia_bytes_saved', true ), 0 );
+		$stats['original_bytes'] = max( $stats['original_bytes'] - (int) get_post_meta( $attachment_id, '_lumia_original_bytes', true ), 0 );
 		update_option( $this->get_stats_key(), $stats, false );
 	}
 
@@ -1072,7 +1072,7 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function is_already_optimized( int $attachment_id ): bool {
-		return (bool) get_post_meta( $attachment_id, '_skmt_optimized', true );
+		return (bool) get_post_meta( $attachment_id, '_lumia_optimized', true );
 	}
 
 	private function mark_attachment_optimized(
@@ -1088,15 +1088,15 @@ class Module extends AbstractModule {
 		$main_bytes_saved = max( $main_original - $main_optimized, 0 );
 		$format           = strtolower( pathinfo( $final_file, PATHINFO_EXTENSION ) );
 
-		update_post_meta( $attachment_id, '_skmt_optimized', time() );
-		update_post_meta( $attachment_id, '_skmt_original_bytes', $original_bytes );
-		update_post_meta( $attachment_id, '_skmt_optimized_bytes', $optimized_bytes );
-		update_post_meta( $attachment_id, '_skmt_bytes_saved', $bytes_saved );
-		update_post_meta( $attachment_id, '_skmt_main_original_bytes', $main_original );
-		update_post_meta( $attachment_id, '_skmt_main_optimized_bytes', $main_optimized );
-		update_post_meta( $attachment_id, '_skmt_main_bytes_saved', $main_bytes_saved );
-		update_post_meta( $attachment_id, '_skmt_optimized_format', $format );
-		update_post_meta( $attachment_id, '_skmt_optimized_mime', $final_mime );
+		update_post_meta( $attachment_id, '_lumia_optimized', time() );
+		update_post_meta( $attachment_id, '_lumia_original_bytes', $original_bytes );
+		update_post_meta( $attachment_id, '_lumia_optimized_bytes', $optimized_bytes );
+		update_post_meta( $attachment_id, '_lumia_bytes_saved', $bytes_saved );
+		update_post_meta( $attachment_id, '_lumia_main_original_bytes', $main_original );
+		update_post_meta( $attachment_id, '_lumia_main_optimized_bytes', $main_optimized );
+		update_post_meta( $attachment_id, '_lumia_main_bytes_saved', $main_bytes_saved );
+		update_post_meta( $attachment_id, '_lumia_optimized_format', $format );
+		update_post_meta( $attachment_id, '_lumia_optimized_mime', $final_mime );
 	}
 
 	/* ================================================================

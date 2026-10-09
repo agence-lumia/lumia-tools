@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,10 +1,10 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Files;
+namespace Lumia\Tools\Modules\Files;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
-use StudioKyne\MiniTools\Admin\Admin;
+use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Admin\Admin;
 
 /**
  * Module Fichiers — gestionnaire de fichiers WordPress.
@@ -20,17 +20,17 @@ class Module extends AbstractModule {
 	public function init(): void {
 		$this->fm = new FileManager( ABSPATH );
 
-		add_action( 'wp_ajax_skmt_files_list', [ $this, 'ajax_list' ] );
-		add_action( 'wp_ajax_skmt_files_delete', [ $this, 'ajax_delete' ] );
-		add_action( 'wp_ajax_skmt_files_rename', [ $this, 'ajax_rename' ] );
-		add_action( 'wp_ajax_skmt_files_move', [ $this, 'ajax_move' ] );
-		add_action( 'wp_ajax_skmt_files_mkdir', [ $this, 'ajax_mkdir' ] );
-		add_action( 'wp_ajax_skmt_files_zip', [ $this, 'ajax_zip' ] );
-		add_action( 'wp_ajax_skmt_files_extract', [ $this, 'ajax_extract' ] );
-		add_action( 'wp_ajax_skmt_files_get_content', [ $this, 'ajax_get_content' ] );
-		add_action( 'wp_ajax_skmt_files_save_content', [ $this, 'ajax_save_content' ] );
-		add_action( 'wp_ajax_skmt_files_upload', [ $this, 'ajax_upload' ] );
-		add_action( 'admin_post_skmt_files_download', [ $this, 'handle_download' ] );
+		add_action( 'wp_ajax_lumia_files_list', [ $this, 'ajax_list' ] );
+		add_action( 'wp_ajax_lumia_files_delete', [ $this, 'ajax_delete' ] );
+		add_action( 'wp_ajax_lumia_files_rename', [ $this, 'ajax_rename' ] );
+		add_action( 'wp_ajax_lumia_files_move', [ $this, 'ajax_move' ] );
+		add_action( 'wp_ajax_lumia_files_mkdir', [ $this, 'ajax_mkdir' ] );
+		add_action( 'wp_ajax_lumia_files_zip', [ $this, 'ajax_zip' ] );
+		add_action( 'wp_ajax_lumia_files_extract', [ $this, 'ajax_extract' ] );
+		add_action( 'wp_ajax_lumia_files_get_content', [ $this, 'ajax_get_content' ] );
+		add_action( 'wp_ajax_lumia_files_save_content', [ $this, 'ajax_save_content' ] );
+		add_action( 'wp_ajax_lumia_files_upload', [ $this, 'ajax_upload' ] );
+		add_action( 'admin_post_lumia_files_download', [ $this, 'handle_download' ] );
 
 		// L'éditeur de code s'appuie sur CodeMirror, livré avec WordPress. Le
 		// core ne le charge pas de lui-même : il faut appeler wp_enqueue_code_editor()
@@ -93,7 +93,7 @@ class Module extends AbstractModule {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : '';
 
-		return 'studio-kyne-mini-tools' === $page && 'module_files' === $tab;
+		return 'lumia-tools' === $page && 'module_files' === $tab;
 	}
 
 	/**
@@ -115,7 +115,7 @@ class Module extends AbstractModule {
 		$this->code_editor_settings = [];
 
 		foreach ( self::EDITABLE_EXTENSIONS as $ext ) {
-			$settings = wp_enqueue_code_editor( [ 'file' => 'skmt.' . $ext ] );
+			$settings = wp_enqueue_code_editor( [ 'file' => 'lumia.' . $ext ] );
 
 			// false = l'utilisateur a désactivé la coloration syntaxique dans son
 			// profil. On respecte ce choix : l'éditeur restera en texte brut.
@@ -142,8 +142,8 @@ class Module extends AbstractModule {
 
 	private function check_nonce(): void {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'skmt_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permission refusée.', 'studio-kyne-mini-tools' ) ], 403 );
+		if ( ! wp_verify_nonce( $nonce, 'lumia_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
+			wp_send_json_error( [ 'message' => __( 'Permission refusée.', 'lumia-tools' ) ], 403 );
 		}
 	}
 
@@ -174,13 +174,13 @@ class Module extends AbstractModule {
 	 * @param bool $edition true si l'appel écrit un CONTENU (édition/upload).
 	 */
 	private function check_file_mods( bool $edition = false ): void {
-		$bloque = ! wp_is_file_mod_allowed( 'skmt_files' )
+		$bloque = ! wp_is_file_mod_allowed( 'lumia_files' )
 			|| ( $edition && defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT );
 
 		if ( $bloque ) {
 			wp_send_json_error(
 				[
-					'message' => __( 'La modification de fichiers est désactivée sur ce site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS ou filtre file_mod_allowed).', 'studio-kyne-mini-tools' ),
+					'message' => __( 'La modification de fichiers est désactivée sur ce site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS ou filtre file_mod_allowed).', 'lumia-tools' ),
 				],
 				403
 			);
@@ -245,7 +245,7 @@ class Module extends AbstractModule {
 			wp_send_json_error( [ 'message' => implode( ', ', $errors ) ] );
 		}
 
-		wp_send_json_success( [ 'message' => __( 'Supprimé avec succès.', 'studio-kyne-mini-tools' ) ] );
+		wp_send_json_success( [ 'message' => __( 'Supprimé avec succès.', 'lumia-tools' ) ] );
 	}
 
 	public function ajax_rename(): void {
@@ -256,7 +256,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->rename( $path, $new_name );
-			wp_send_json_success( [ 'message' => __( 'Renommé avec succès.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Renommé avec succès.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -270,7 +270,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->move( $src, $dst );
-			wp_send_json_success( [ 'message' => __( 'Déplacé avec succès.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Déplacé avec succès.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -285,7 +285,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->create_folder( $rel );
-			wp_send_json_success( [ 'message' => __( 'Dossier créé.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Dossier créé.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -305,7 +305,7 @@ class Module extends AbstractModule {
 			$download_url = $this->build_download_url( $rel );
 			wp_send_json_success(
 				[
-					'message'      => __( 'Archive créée.', 'studio-kyne-mini-tools' ),
+					'message'      => __( 'Archive créée.', 'lumia-tools' ),
 					'path'         => $rel,
 					'download_url' => $download_url,
 				]
@@ -322,7 +322,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->extract_zip( $path );
-			wp_send_json_success( [ 'message' => __( 'Archive extraite.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Archive extraite.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -353,7 +353,7 @@ class Module extends AbstractModule {
 
 		try {
 			$this->fm->save_content( $path, $content );
-			wp_send_json_success( [ 'message' => __( 'Fichier enregistré.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_success( [ 'message' => __( 'Fichier enregistré.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 		}
@@ -361,8 +361,8 @@ class Module extends AbstractModule {
 
 	public function ajax_upload(): void {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'skmt_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permission refusée.', 'studio-kyne-mini-tools' ) ], 403 );
+		if ( ! wp_verify_nonce( $nonce, 'lumia_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
+			wp_send_json_error( [ 'message' => __( 'Permission refusée.', 'lumia-tools' ) ], 403 );
 		}
 		$this->check_file_mods( true );
 
@@ -370,7 +370,7 @@ class Module extends AbstractModule {
 		$files = $_FILES['files'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 
 		if ( ! $files ) {
-			wp_send_json_error( [ 'message' => __( 'Aucun fichier reçu.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Aucun fichier reçu.', 'lumia-tools' ) ] );
 		}
 
 		$uploaded = [];
@@ -407,7 +407,7 @@ class Module extends AbstractModule {
 			[
 				'message' => sprintf(
 					/* translators: %d: number of files */
-					_n( '%d fichier uploadé.', '%d fichiers uploadés.', count( $uploaded ), 'studio-kyne-mini-tools' ),
+					_n( '%d fichier uploadé.', '%d fichiers uploadés.', count( $uploaded ), 'lumia-tools' ),
 					count( $uploaded )
 				),
 				'paths'   => $uploaded,
@@ -421,8 +421,8 @@ class Module extends AbstractModule {
 
 	public function handle_download(): void {
 		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'skmt_files_download' ) || ! current_user_can( static::get_required_capability() ) ) {
-			wp_die( esc_html__( 'Permission refusée.', 'studio-kyne-mini-tools' ) );
+		if ( ! wp_verify_nonce( $nonce, 'lumia_files_download' ) || ! current_user_can( static::get_required_capability() ) ) {
+			wp_die( esc_html__( 'Permission refusée.', 'lumia-tools' ) );
 		}
 
 		$path = isset( $_GET['path'] ) ? sanitize_text_field( wp_unslash( $_GET['path'] ) ) : '';
@@ -430,7 +430,7 @@ class Module extends AbstractModule {
 		try {
 			$abs = $this->fm->resolve( $path );
 		} catch ( \Exception $e ) {
-			wp_die( esc_html__( 'Fichier introuvable.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Fichier introuvable.', 'lumia-tools' ) );
 		}
 
 		if ( is_dir( $abs ) ) {
@@ -439,7 +439,7 @@ class Module extends AbstractModule {
 		}
 
 		if ( ! is_file( $abs ) ) {
-			wp_die( esc_html__( 'Fichier introuvable.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Fichier introuvable.', 'lumia-tools' ) );
 		}
 
 		$mime = (string) mime_content_type( $abs );
@@ -460,20 +460,20 @@ class Module extends AbstractModule {
 	 */
 	private function stream_dir_as_zip( string $abs ): void {
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			wp_die( esc_html__( 'ZipArchive non disponible sur ce serveur.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'ZipArchive non disponible sur ce serveur.', 'lumia-tools' ) );
 		}
 
 		// Fichier temporaire hors racine WP
-		$tmp = tempnam( sys_get_temp_dir(), 'skmt_zip_' );
+		$tmp = tempnam( sys_get_temp_dir(), 'lumia_zip_' );
 		if ( false === $tmp ) {
-			wp_die( esc_html__( 'Impossible de créer le fichier temporaire.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Impossible de créer le fichier temporaire.', 'lumia-tools' ) );
 		}
 
 		// tempnam crée un fichier vide — ZipArchive::CREATE l'écrase
 		$zip = new \ZipArchive();
 		if ( $zip->open( $tmp, \ZipArchive::OVERWRITE ) !== true ) {
 			wp_delete_file( $tmp );
-			wp_die( esc_html__( 'Impossible de créer l\'archive.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Impossible de créer l\'archive.', 'lumia-tools' ) );
 		}
 
 		$this->add_dir_to_zip( $zip, $abs, basename( $abs ) );
@@ -507,11 +507,11 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/files.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/files.css' ];
 	}
 
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/files.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/files.js' ];
 	}
 
 	/**
@@ -520,13 +520,13 @@ class Module extends AbstractModule {
 	public function get_admin_js_data(): array {
 		return [
 			'i18n'       => [
-				'confirmDelete' => __( 'Supprimer ce(s) élément(s) ? Cette action est irréversible.', 'studio-kyne-mini-tools' ),
-				'emptyFolder'   => __( 'Ce dossier est vide.', 'studio-kyne-mini-tools' ),
-				'loading'       => __( 'Chargement...', 'studio-kyne-mini-tools' ),
-				'uploading'     => __( 'Upload en cours...', 'studio-kyne-mini-tools' ),
-				'newFolderName' => __( 'Nom du nouveau dossier :', 'studio-kyne-mini-tools' ),
-				'downloadUrl'   => admin_url( 'admin-post.php?action=skmt_files_download' ),
-				'downloadNonce' => wp_create_nonce( 'skmt_files_download' ),
+				'confirmDelete' => __( 'Supprimer ce(s) élément(s) ? Cette action est irréversible.', 'lumia-tools' ),
+				'emptyFolder'   => __( 'Ce dossier est vide.', 'lumia-tools' ),
+				'loading'       => __( 'Chargement...', 'lumia-tools' ),
+				'uploading'     => __( 'Upload en cours...', 'lumia-tools' ),
+				'newFolderName' => __( 'Nom du nouveau dossier :', 'lumia-tools' ),
+				'downloadUrl'   => admin_url( 'admin-post.php?action=lumia_files_download' ),
+				'downloadNonce' => wp_create_nonce( 'lumia_files_download' ),
 			],
 			// Vide si la coloration syntaxique est désactivée dans le profil de
 			// l'utilisateur : files.js retombe alors sur le textarea nu.
@@ -561,7 +561,7 @@ class Module extends AbstractModule {
 
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'skmt_module_files' ],
+			'options' => [ 'lumia_module_files' ],
 			'meta'    => [],
 		];
 	}
@@ -572,8 +572,8 @@ class Module extends AbstractModule {
 
 	private function build_download_url( string $rel ): string {
 		return wp_nonce_url(
-			admin_url( 'admin-post.php?action=skmt_files_download&path=' . rawurlencode( $rel ) ),
-			'skmt_files_download'
+			admin_url( 'admin-post.php?action=lumia_files_download&path=' . rawurlencode( $rel ) ),
+			'lumia_files_download'
 		);
 	}
 }

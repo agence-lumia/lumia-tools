@@ -2,7 +2,7 @@
  * Journal d'activité
  * ================================================================ */
 
-.skmt-al__filters {
+.lumia-al__filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -10,17 +10,17 @@
   margin-bottom: 12px;
 }
 
-.skmt-al__search {
+.lumia-al__search {
   flex: 1 1 220px;
   min-width: 180px;
 }
 
-.skmt-al__filters .skmt-select,
-.skmt-al__filters input[type="date"] {
+.lumia-al__filters .lumia-select,
+.lumia-al__filters input[type="date"] {
   width: auto;
 }
 
-.skmt-al__filter-actions {
+.lumia-al__filter-actions {
   display: flex;
   gap: 8px;
   margin-left: auto;
@@ -28,90 +28,90 @@
 
 /* ---- Tableau ---- */
 
-.skmt-al__table-wrap {
+.lumia-al__table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
-  background: var(--skmt-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-surface);
 }
 
-.skmt-al__table {
+.lumia-al__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.skmt-al__table th {
+.lumia-al__table th {
   padding: 8px 12px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--skmt-text-muted);
-  background: var(--skmt-n50);
-  border-bottom: 1px solid var(--skmt-border);
+  color: var(--lumia-text-muted);
+  background: var(--lumia-n50);
+  border-bottom: 1px solid var(--lumia-border);
   white-space: nowrap;
 }
 
-.skmt-al__table td {
+.lumia-al__table td {
   padding: 8px 12px;
   vertical-align: top;
-  color: var(--skmt-text);
-  border-bottom: 1px solid var(--skmt-border);
+  color: var(--lumia-text);
+  border-bottom: 1px solid var(--lumia-border);
 }
 
-.skmt-al__table tbody tr:last-child td {
+.lumia-al__table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.skmt-al__row {
+.lumia-al__row {
   cursor: pointer;
-  transition: background var(--skmt-transition);
+  transition: background var(--lumia-transition);
 }
 
-.skmt-al__row:hover,
-.skmt-al__row:focus-visible {
-  background: var(--skmt-n50);
+.lumia-al__row:hover,
+.lumia-al__row:focus-visible {
+  background: var(--lumia-n50);
 }
 
-.skmt-al__row:focus-visible {
-  outline: 2px solid var(--skmt-accent);
+.lumia-al__row:focus-visible {
+  outline: 2px solid var(--lumia-accent);
   outline-offset: -2px;
 }
 
-.skmt-al__date,
-.skmt-al__ip {
+.lumia-al__date,
+.lumia-al__ip {
   white-space: nowrap;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-al__ip {
+.lumia-al__ip {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
 }
 
-.skmt-al__user > span {
+.lumia-al__user > span {
   display: block;
 }
 
-.skmt-al__muted {
+.lumia-al__muted {
   font-size: 12px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
 }
 
-.skmt-al__event {
+.lumia-al__event {
   white-space: nowrap;
 }
 
-.skmt-al__badge {
+.lumia-al__badge {
   margin-right: 8px;
   padding: 1px 8px;
   font-size: 11px;
 }
 
 /* Un titre d'article peut être très long : on le coupe au lieu d'élargir la table. */
-.skmt-al__object span {
+.lumia-al__object span {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -120,25 +120,25 @@
   overflow-wrap: anywhere;
 }
 
-.skmt-al__state {
+.lumia-al__state {
   padding: 32px 12px !important;
   text-align: center;
-  color: var(--skmt-text-muted) !important;
+  color: var(--lumia-text-muted) !important;
 }
 
 /* ---- Pied : total et pagination ---- */
 
-.skmt-al__footer {
+.lumia-al__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-top: 12px;
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-al__pager {
+.lumia-al__pager {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -146,7 +146,7 @@
 
 /* ---- Modale de détail ---- */
 
-.skmt-al__detail {
+.lumia-al__detail {
   display: grid;
   grid-template-columns: minmax(120px, max-content) 1fr;
   gap: 8px 16px;
@@ -154,66 +154,66 @@
   font-size: 13px;
 }
 
-.skmt-al__detail dt {
-  color: var(--skmt-text-muted);
+.lumia-al__detail dt {
+  color: var(--lumia-text-muted);
 }
 
-.skmt-al__detail dd {
+.lumia-al__detail dd {
   margin: 0;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   overflow-wrap: anywhere;
 }
 
 /* ---- Familles et rôles suivis ---- */
 
-.skmt-al__checks-title {
+.lumia-al__checks-title {
   display: flex;
   align-items: center;
   gap: 4px;
   margin: 4px 0 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-al__checks {
+.lumia-al__checks {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 8px;
   margin-bottom: 20px;
 }
 
-.skmt-al__checks:last-child {
+.lumia-al__checks:last-child {
   margin-bottom: 0;
 }
 
-.skmt-al__check {
+.lumia-al__check {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-surface);
   cursor: pointer;
-  transition: border-color var(--skmt-transition);
+  transition: border-color var(--lumia-transition);
 }
 
-.skmt-al__check:hover {
-  border-color: var(--skmt-accent);
+.lumia-al__check:hover {
+  border-color: var(--lumia-accent);
 }
 
-.skmt-al__check .skmt-toggle {
+.lumia-al__check .lumia-toggle {
   flex-shrink: 0;
 }
 
-.skmt-al__check-name {
+.lumia-al__check-name {
   font-size: 13px;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
 @media (max-width: 782px) {
-  .skmt-al__filter-actions {
+  .lumia-al__filter-actions {
     margin-left: 0;
   }
 }

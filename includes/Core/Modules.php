@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -41,83 +41,83 @@ class Modules {
 	public function register_default_modules( bool $only_active = false ): void {
 		$defaults = [
 			'image_optimizer' => [
-				'name'        => __( 'Image Optimizer', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Optimisation des images', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Image Optimizer', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Optimiser les images', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\ImageOptimizer\\Module',
+				'name'        => __( 'Image Optimizer', 'lumia-tools' ),
+				'description' => __( 'Optimisation des images', 'lumia-tools' ),
+				'menu_label'  => __( 'Image Optimizer', 'lumia-tools' ),
+				'menu_desc'   => __( 'Optimiser les images', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\ImageOptimizer\\Module',
 				'icon'        => 'image',
 			],
 			'security'        => [
-				'name'        => __( 'Sécurité', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Authentification, hardening et logging de sécurité', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Sécurité', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Gérer la sécurité', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\Security\\Module',
+				'name'        => __( 'Sécurité', 'lumia-tools' ),
+				'description' => __( 'Authentification, hardening et logging de sécurité', 'lumia-tools' ),
+				'menu_label'  => __( 'Sécurité', 'lumia-tools' ),
+				'menu_desc'   => __( 'Gérer la sécurité', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Security\\Module',
 				'icon'        => 'shield',
 			],
 			'login'           => [
-				'name'        => __( 'Connexion', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Personnalisez le design et le branding de la page de connexion WordPress.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Connexion', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Personnaliser la page de connexion', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\Login\\Module',
+				'name'        => __( 'Connexion', 'lumia-tools' ),
+				'description' => __( 'Personnalisez le design et le branding de la page de connexion WordPress.', 'lumia-tools' ),
+				'menu_label'  => __( 'Connexion', 'lumia-tools' ),
+				'menu_desc'   => __( 'Personnaliser la page de connexion', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Login\\Module',
 				'icon'        => 'log-in',
 			],
 			'files'           => [
-				'name'        => __( 'Fichiers', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Explorateur et gestionnaire de fichiers WordPress.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Fichiers', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Gérer les fichiers', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\Files\\Module',
+				'name'        => __( 'Fichiers', 'lumia-tools' ),
+				'description' => __( 'Explorateur et gestionnaire de fichiers WordPress.', 'lumia-tools' ),
+				'menu_label'  => __( 'Fichiers', 'lumia-tools' ),
+				'menu_desc'   => __( 'Gérer les fichiers', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Files\\Module',
 				'icon'        => 'folder',
 			],
 			'white_label'     => [
-				'name'        => __( 'Marque Blanche', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Personnalisez l\'interface d\'administration WordPress pour vos clients.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Marque Blanche', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Personnaliser l\'admin WP', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\WhiteLabel\\Module',
+				'name'        => __( 'Marque Blanche', 'lumia-tools' ),
+				'description' => __( 'Personnalisez l\'interface d\'administration WordPress pour vos clients.', 'lumia-tools' ),
+				'menu_label'  => __( 'Marque Blanche', 'lumia-tools' ),
+				'menu_desc'   => __( 'Personnaliser l\'admin WP', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\WhiteLabel\\Module',
 				'icon'        => 'palette',
 			],
 			'menu_creator'    => [
-				'name'        => __( 'Créateur de menu', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Personnalisez la navigation WordPress pour vos rôles et utilisateurs.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Créateur de menu', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Personnaliser les menus', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\MenuCreator\\Module',
+				'name'        => __( 'Créateur de menu', 'lumia-tools' ),
+				'description' => __( 'Personnalisez la navigation WordPress pour vos rôles et utilisateurs.', 'lumia-tools' ),
+				'menu_label'  => __( 'Créateur de menu', 'lumia-tools' ),
+				'menu_desc'   => __( 'Personnaliser les menus', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\MenuCreator\\Module',
 				'icon'        => 'menu',
 			],
 			'database'        => [
-				'name'        => __( 'Base de données', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Explorez, éditez et exportez vos tables WordPress.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Base de données', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Gérer la base de données', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\Database\\Module',
+				'name'        => __( 'Base de données', 'lumia-tools' ),
+				'description' => __( 'Explorez, éditez et exportez vos tables WordPress.', 'lumia-tools' ),
+				'menu_label'  => __( 'Base de données', 'lumia-tools' ),
+				'menu_desc'   => __( 'Gérer la base de données', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Database\\Module',
 				'icon'        => 'database',
 			],
 			'media'           => [
-				'name'        => __( 'Médias', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Organisez vos médias en dossiers virtuels.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Médias', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Organiser les médias', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\Media\\Module',
+				'name'        => __( 'Médias', 'lumia-tools' ),
+				'description' => __( 'Organisez vos médias en dossiers virtuels.', 'lumia-tools' ),
+				'menu_label'  => __( 'Médias', 'lumia-tools' ),
+				'menu_desc'   => __( 'Organiser les médias', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Media\\Module',
 				'icon'        => 'folder-tree',
 			],
 			'activity_log'    => [
-				'name'        => __( 'Journal d\'activité', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Qui a modifié quoi, et quand : connexions, contenus, extensions, utilisateurs et réglages.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'Journal d\'activité', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Consulter l\'historique', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\ActivityLog\\Module',
+				'name'        => __( 'Journal d\'activité', 'lumia-tools' ),
+				'description' => __( 'Qui a modifié quoi, et quand : connexions, contenus, extensions, utilisateurs et réglages.', 'lumia-tools' ),
+				'menu_label'  => __( 'Journal d\'activité', 'lumia-tools' ),
+				'menu_desc'   => __( 'Consulter l\'historique', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\ActivityLog\\Module',
 				'icon'        => 'history',
 			],
 			'smtp'            => [
-				'name'        => __( 'SMTP', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Envoi des mails par un serveur SMTP authentifié ou l\'API Brevo, mail de test et journal des mails.', 'studio-kyne-mini-tools' ),
-				'menu_label'  => __( 'SMTP', 'studio-kyne-mini-tools' ),
-				'menu_desc'   => __( 'Configurer l\'envoi des mails', 'studio-kyne-mini-tools' ),
-				'class'       => 'StudioKyne\\MiniTools\\Modules\\Smtp\\Module',
+				'name'        => __( 'SMTP', 'lumia-tools' ),
+				'description' => __( 'Envoi des mails par un serveur SMTP authentifié ou l\'API Brevo, mail de test et journal des mails.', 'lumia-tools' ),
+				'menu_label'  => __( 'SMTP', 'lumia-tools' ),
+				'menu_desc'   => __( 'Configurer l\'envoi des mails', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Smtp\\Module',
 				'icon'        => 'mail',
 			],
 		];
@@ -126,7 +126,7 @@ class Modules {
 		 * Permet d'ajouter/surcharger des modules depuis d'autres plugins/thèmes.
 		 * Format : [ 'module_id' => [ 'name' => ..., 'class' => ..., ... ] ]
 		 */
-		$definitions = apply_filters( 'skmt_module_definitions', $defaults );
+		$definitions = apply_filters( 'lumia_module_definitions', $defaults );
 
 		if ( ! is_array( $definitions ) ) {
 			$definitions = $defaults;
@@ -153,7 +153,7 @@ class Modules {
 		/**
 		 * Hook impératif pour enregistrer des modules via $modules->register(...).
 		 */
-		do_action( 'skmt_register_modules', $this, $only_active );
+		do_action( 'lumia_register_modules', $this, $only_active );
 	}
 
 	/**

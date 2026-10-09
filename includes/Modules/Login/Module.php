@@ -1,9 +1,9 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Login;
+namespace Lumia\Tools\Modules\Login;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
  * Module Connexion — personnalisation de la page de connexion WordPress.
@@ -54,10 +54,10 @@ class Module extends AbstractModule {
 	 */
 	public function enqueue_login_assets(): void {
 		wp_enqueue_style(
-			'skmt-login-css',
-			SKMT_ASSETS_URL . 'login/css/login.css',
+			'lumia-login-css',
+			LUMIA_ASSETS_URL . 'login/css/login.css',
 			[],
-			SKMT_VERSION
+			LUMIA_VERSION
 		);
 	}
 
@@ -94,27 +94,27 @@ class Module extends AbstractModule {
 			}
 		}
 
-		echo '<style id="skmt-login-vars">';
+		echo '<style id="lumia-login-vars">';
 		echo ':root{';
-		echo '--skmt-l-bg:' . esc_html( $bg_color ) . ';';
-		echo '--skmt-l-panel-bg:' . esc_html( $panel_bg ) . ';';
-		echo '--skmt-l-btn-bg:' . esc_html( $btn_bg ) . ';';
-		echo '--skmt-l-btn-color:' . esc_html( $btn_color ) . ';';
-		echo '--skmt-l-link:' . esc_html( $link_color ) . ';';
-		echo '--skmt-l-logo-width:' . $logo_width . 'px;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '--lumia-l-bg:' . esc_html( $bg_color ) . ';';
+		echo '--lumia-l-panel-bg:' . esc_html( $panel_bg ) . ';';
+		echo '--lumia-l-btn-bg:' . esc_html( $btn_bg ) . ';';
+		echo '--lumia-l-btn-color:' . esc_html( $btn_color ) . ';';
+		echo '--lumia-l-link:' . esc_html( $link_color ) . ';';
+		echo '--lumia-l-logo-width:' . $logo_width . 'px;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		if ( $panel_img_url ) {
-			echo '--skmt-l-panel-img:url(' . $panel_img_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '--lumia-l-panel-img:url(' . $panel_img_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		} else {
-			echo '--skmt-l-panel-img:none;';
+			echo '--lumia-l-panel-img:none;';
 		}
 
 		if ( $logo_url ) {
-			echo '--skmt-l-logo-url:url(' . $logo_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo '--skmt-l-logo-display:block;';
+			echo '--lumia-l-logo-url:url(' . $logo_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '--lumia-l-logo-display:block;';
 		} else {
-			echo '--skmt-l-logo-url:none;';
-			echo '--skmt-l-logo-display:none;';
+			echo '--lumia-l-logo-url:none;';
+			echo '--lumia-l-logo-display:none;';
 		}
 
 		echo '}';
@@ -166,10 +166,10 @@ class Module extends AbstractModule {
 	 * @return string[]
 	 */
 	public function add_body_class( array $classes ): array {
-		$classes[] = 'skmt-login-split';
+		$classes[] = 'lumia-login-split';
 		$logo_id   = absint( $this->settings['branding']['logo_id'] ?? 0 );
 		if ( $logo_id > 0 ) {
-			$classes[] = 'skmt-has-logo';
+			$classes[] = 'lumia-has-logo';
 		}
 		return $classes;
 	}
@@ -178,7 +178,7 @@ class Module extends AbstractModule {
 	 * Injecte le panneau image/couleur côté droit après le formulaire.
 	 */
 	public function render_side_panel(): void {
-		echo '<div class="skmt-login-panel" aria-hidden="true"></div>';
+		echo '<div class="lumia-login-panel" aria-hidden="true"></div>';
 	}
 
 	/**
@@ -202,19 +202,19 @@ class Module extends AbstractModule {
 
 			if (h1) {
 				var title = document.createElement('p');
-				title.className = 'skmt-login-title';
-				title.textContent = '<?php echo esc_js( __( 'Se connecter', 'studio-kyne-mini-tools' ) ); ?>';
+				title.className = 'lumia-login-title';
+				title.textContent = '<?php echo esc_js( __( 'Se connecter', 'lumia-tools' ) ); ?>';
 				h1.insertAdjacentElement('afterend', title);
 			}
 
 			if (userPassWrap && passwordLabel) {
 				var passHeader = document.createElement('div');
-				passHeader.className = 'skmt-pass-header';
+				passHeader.className = 'lumia-pass-header';
 				passHeader.appendChild(passwordLabel.cloneNode(true));
 				var navIsHidden = nav && window.getComputedStyle(nav).display === 'none';
 				if (navLink && !navIsHidden) {
 					passHeader.appendChild(navLink.cloneNode(true));
-					if (nav) nav.classList.add('skmt-nav-hidden');
+					if (nav) nav.classList.add('lumia-nav-hidden');
 				}
 				userPassWrap.parentElement.insertBefore(passHeader, userPassWrap);
 				passwordLabel.style.display = 'none';
@@ -232,7 +232,7 @@ class Module extends AbstractModule {
 	 * Charge wp_enqueue_media() uniquement sur la page de réglages du module.
 	 */
 	public function maybe_enqueue_media( string $hook ): void {
-		if ( strpos( $hook, 'studio-kyne-mini-tools' ) === false ) {
+		if ( strpos( $hook, 'lumia-tools' ) === false ) {
 			return;
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -322,7 +322,7 @@ class Module extends AbstractModule {
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'skmt_module_login' ],
+			'options' => [ 'lumia_module_login' ],
 			'meta'    => [],
 		];
 	}
@@ -331,14 +331,14 @@ class Module extends AbstractModule {
 	 * Assets CSS pour la page de réglages admin.
 	 */
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/login.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/login.css' ];
 	}
 
 	/**
 	 * Assets JS pour la page de réglages admin.
 	 */
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/login.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/login.js' ];
 	}
 
 	/* ================================================================

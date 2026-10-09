@@ -17,13 +17,13 @@
   var DEFAULT_PORTS = { tls: 587, ssl: 465, none: 25 };
 
   document.addEventListener('DOMContentLoaded', function () {
-    var wrap = document.getElementById('skmt-sm');
+    var wrap = document.getElementById('lumia-sm');
     if (!wrap) return;
 
     state.nonce = wrap.dataset.nonce;
 
     ['search', 'status', 'from', 'to', 'reset', 'clear', 'rows', 'total', 'page', 'prev', 'next'].forEach(function (id) {
-      el[id] = document.getElementById('skmt-sm-' + id);
+      el[id] = document.getElementById('lumia-sm-' + id);
     });
 
     initSettings();
@@ -31,7 +31,7 @@
 
     // Entrée dans un filtre soumettrait le formulaire de réglages qui englobe
     // la liste (même piège que le journal d'activité).
-    wrap.querySelector('.skmt-sm__filters').addEventListener('keydown', function (e) {
+    wrap.querySelector('.lumia-sm__filters').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); reload(); }
     });
     el.search.addEventListener('input', function () {
@@ -64,18 +64,18 @@
       if (tr) { e.preventDefault(); openDetail(state.rows[+tr.dataset.index]); }
     });
 
-    document.getElementById('skmt-sm-detail-resend').addEventListener('click', resend);
+    document.getElementById('lumia-sm-detail-resend').addEventListener('click', resend);
 
     // Le journal ne se charge qu'à l'ouverture de son onglet. admin.js a
     // déjà restauré l'onglet mémorisé : on regarde s'il est déjà ouvert.
-    if (!wrap.closest('[data-skmt-tab-panel]').hidden) load(1);
-    document.addEventListener('skmt:tab', function (e) {
+    if (!wrap.closest('[data-lumia-tab-panel]').hidden) load(1);
+    document.addEventListener('lumia:tab', function (e) {
       if (e.detail.group === 'smtp' && e.detail.name === 'log' && !state.loaded) load(1);
     });
   });
 
   function t(key, fallback) {
-    return (window.skmtAdmin && skmtAdmin.i18n && skmtAdmin.i18n[key]) || fallback;
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || fallback;
   }
 
   function format(str) {
@@ -87,7 +87,7 @@
   }
 
   function toast(message, type) {
-    if (typeof window.skmtShowToast === 'function') window.skmtShowToast(message, type);
+    if (typeof window.lumiaShowToast === 'function') window.lumiaShowToast(message, type);
   }
 
   function post(action, data) {
@@ -96,7 +96,7 @@
     fd.append('nonce', state.nonce);
     Object.keys(data || {}).forEach(function (k) { fd.append(k, data[k]); });
 
-    return fetch(skmtAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
+    return fetch(lumiaAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
       .then(function (r) { return r.json(); });
   }
 
@@ -105,19 +105,19 @@
    * ================================================================ */
 
   function initSettings() {
-    var encryption = document.getElementById('skmt_sm_encryption');
-    var port = document.getElementById('skmt_sm_port');
-    var autoTls = document.getElementById('skmt-sm-autotls-row');
-    var auth = document.getElementById('skmt_sm_auth');
-    var credentials = document.getElementById('skmt-sm-credentials');
-    var provider = document.getElementById('skmt_sm_provider');
-    var hint = document.getElementById('skmt-sm-provider-hint');
-    var host = document.getElementById('skmt_sm_host');
-    var username = document.getElementById('skmt_sm_username');
-    var presets = skmtAdmin.smProviders || {};
-    var transport = document.getElementById('skmt_sm_transport');
-    var smtpFields = document.getElementById('skmt-sm-smtp-fields');
-    var apiFields = document.getElementById('skmt-sm-api-fields');
+    var encryption = document.getElementById('lumia_sm_encryption');
+    var port = document.getElementById('lumia_sm_port');
+    var autoTls = document.getElementById('lumia-sm-autotls-row');
+    var auth = document.getElementById('lumia_sm_auth');
+    var credentials = document.getElementById('lumia-sm-credentials');
+    var provider = document.getElementById('lumia_sm_provider');
+    var hint = document.getElementById('lumia-sm-provider-hint');
+    var host = document.getElementById('lumia_sm_host');
+    var username = document.getElementById('lumia_sm_username');
+    var presets = lumiaAdmin.smProviders || {};
+    var transport = document.getElementById('lumia_sm_transport');
+    var smtpFields = document.getElementById('lumia-sm-smtp-fields');
+    var apiFields = document.getElementById('lumia-sm-api-fields');
 
     // Les champs de l'autre transport sont masqués, pas vidés : ils partent
     // quand même à l'enregistrement, et revenir en arrière ne perd rien.
@@ -163,8 +163,8 @@
    * ================================================================ */
 
   function initTest() {
-    var to = document.getElementById('skmt-sm-test-to');
-    var button = document.getElementById('skmt-sm-test-send');
+    var to = document.getElementById('lumia-sm-test-to');
+    var button = document.getElementById('lumia-sm-test-send');
 
     to.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); button.click(); }
@@ -175,7 +175,7 @@
       button.disabled = true;
       button.textContent = t('smTesting', 'Envoi en cours…');
 
-      post('skmt_smtp_test', { to: to.value.trim() })
+      post('lumia_smtp_test', { to: to.value.trim() })
         .then(function (res) {
           showTestResult(!!res.success, (res.data && res.data.message) || '', (res.data && res.data.transcript) || []);
           if (state.loaded) load(1);
@@ -191,11 +191,11 @@
   }
 
   function showTestResult(success, message, transcript) {
-    var box = document.getElementById('skmt-sm-test-result');
-    var msg = document.getElementById('skmt-sm-test-message');
-    var pre = document.getElementById('skmt-sm-test-transcript');
+    var box = document.getElementById('lumia-sm-test-result');
+    var msg = document.getElementById('lumia-sm-test-message');
+    var pre = document.getElementById('lumia-sm-test-transcript');
 
-    msg.className = 'skmt-notice ' + (success ? 'skmt-notice--success' : 'skmt-notice--error');
+    msg.className = 'lumia-notice ' + (success ? 'lumia-notice--success' : 'lumia-notice--error');
     msg.textContent = message;
     pre.textContent = transcript.join('\n');
     pre.hidden = !transcript.length;
@@ -225,7 +225,7 @@
 
     setState(t('smLoading', 'Chargement…'));
 
-    post('skmt_smtp_log_list', data)
+    post('lumia_smtp_log_list', data)
       .then(function (res) {
         // Seule la dernière requête s'affiche : une frappe rapide en lance
         // plusieurs, qui peuvent répondre dans le désordre.
@@ -245,7 +245,7 @@
     var tr = document.createElement('tr');
     var td = document.createElement('td');
     td.colSpan = 4;
-    td.className = 'skmt-sm__state';
+    td.className = 'lumia-sm__state';
     td.textContent = message;
     tr.appendChild(td);
     el.rows.appendChild(tr);
@@ -269,22 +269,22 @@
     el.rows.innerHTML = '';
     data.rows.forEach(function (row, index) {
       var tr = document.createElement('tr');
-      tr.className = 'skmt-sm__row';
+      tr.className = 'lumia-sm__row';
       tr.dataset.index = index;
       tr.tabIndex = 0;
 
-      tr.appendChild(cell(row.date, 'skmt-sm__date'));
+      tr.appendChild(cell(row.date, 'lumia-sm__date'));
 
-      var status = cell('', 'skmt-sm__status');
+      var status = cell('', 'lumia-sm__status');
       status.appendChild(badge(row));
       tr.appendChild(status);
 
-      tr.appendChild(cell(row.to, 'skmt-sm__to'));
+      tr.appendChild(cell(row.to, 'lumia-sm__to'));
 
-      var subject = cell(row.subject || t('smNoSubject', '(sans objet)'), 'skmt-sm__subject');
+      var subject = cell(row.subject || t('smNoSubject', '(sans objet)'), 'lumia-sm__subject');
       if (row.status === 'failed' && row.error) {
         var error = document.createElement('span');
-        error.className = 'skmt-sm__error';
+        error.className = 'lumia-sm__error';
         error.textContent = row.error;
         subject.appendChild(error);
       }
@@ -297,7 +297,7 @@
   function badge(row) {
     var span = document.createElement('span');
     var sent = row.status === 'sent';
-    span.className = 'skmt-badge skmt-sm__badge ' + (sent ? 'skmt-badge--success' : 'skmt-badge--danger');
+    span.className = 'lumia-badge lumia-sm__badge ' + (sent ? 'lumia-badge--success' : 'lumia-badge--danger');
     span.textContent = sent ? t('smSent', 'Envoyé') : t('smFailed', 'Échec');
     return span;
   }
@@ -314,14 +314,14 @@
   }
 
   function confirmClear() {
-    window.skmtModal.open({
+    window.lumiaModal.open({
       title: t('smClearTitle', 'Vider le journal des mails ?'),
       message: t('smClearMessage', 'Tous les mails journalisés seront supprimés définitivement.'),
       confirmLabel: t('smClearConfirm', 'Vider le journal'),
       cancelLabel: t('smCancel', 'Annuler'),
       danger: true,
       onConfirm: function () {
-        post('skmt_smtp_log_clear')
+        post('lumia_smtp_log_clear')
           .then(function (res) {
             toast((res.data && res.data.message) || '', res.success ? 'success' : 'error');
             reload();
@@ -337,11 +337,11 @@
   function openDetail(row) {
     if (!row) return;
 
-    post('skmt_smtp_log_detail', { id: row.id })
+    post('lumia_smtp_log_detail', { id: row.id })
       .then(function (res) {
         if (!res.success) throw new Error((res.data && res.data.message) || '');
         fillDetail(res.data);
-        window.skmtModalOpen('skmt-sm-detail-modal');
+        window.lumiaModalOpen('lumia-sm-detail-modal');
       })
       .catch(function (err) {
         toast((err && err.message) || t('smError', 'Erreur'), 'error');
@@ -351,9 +351,9 @@
   function fillDetail(mail) {
     state.current = mail;
 
-    document.getElementById('skmt-sm-detail-title').textContent = mail.subject || t('smNoSubject', '(sans objet)');
+    document.getElementById('lumia-sm-detail-title').textContent = mail.subject || t('smNoSubject', '(sans objet)');
 
-    var meta = document.getElementById('skmt-sm-detail-meta');
+    var meta = document.getElementById('lumia-sm-detail-meta');
     meta.innerHTML = '';
 
     var attachments = mail.attachments.map(function (a) {
@@ -379,12 +379,12 @@
       meta.appendChild(dd);
     });
 
-    var error = document.getElementById('skmt-sm-detail-error');
+    var error = document.getElementById('lumia-sm-detail-error');
     error.textContent = mail.error;
     error.hidden = !mail.error;
 
-    var frame = document.getElementById('skmt-sm-detail-html');
-    var text = document.getElementById('skmt-sm-detail-text');
+    var frame = document.getElementById('lumia-sm-detail-html');
+    var text = document.getElementById('lumia-sm-detail-text');
     if (mail.is_html) {
       // srcdoc dans un iframe sandbox="" : le HTML du mail est rendu sans
       // script ni accès à la page d'administration.
@@ -398,27 +398,27 @@
       text.hidden = false;
     }
 
-    var headersWrap = document.getElementById('skmt-sm-detail-headers-wrap');
-    document.getElementById('skmt-sm-detail-headers').textContent = mail.headers.join('\n');
+    var headersWrap = document.getElementById('lumia-sm-detail-headers-wrap');
+    document.getElementById('lumia-sm-detail-headers').textContent = mail.headers.join('\n');
     headersWrap.hidden = !mail.headers.length;
     headersWrap.open = false;
 
-    document.getElementById('skmt-sm-detail-resend').hidden = !mail.can_resend;
+    document.getElementById('lumia-sm-detail-resend').hidden = !mail.can_resend;
   }
 
   function resend() {
     var mail = state.current;
-    var button = document.getElementById('skmt-sm-detail-resend');
+    var button = document.getElementById('lumia-sm-detail-resend');
     if (!mail) return;
 
     var label = button.textContent;
     button.disabled = true;
     button.textContent = t('smResending', 'Renvoi en cours…');
 
-    post('skmt_smtp_log_resend', { id: mail.id })
+    post('lumia_smtp_log_resend', { id: mail.id })
       .then(function (res) {
         toast((res.data && res.data.message) || '', res.success ? 'success' : 'error');
-        if (res.success) window.skmtModalClose('skmt-sm-detail-modal');
+        if (res.success) window.lumiaModalClose('lumia-sm-detail-modal');
         reload();
       })
       .catch(function () {

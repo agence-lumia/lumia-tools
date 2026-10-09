@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -12,17 +12,17 @@ class Updater {
 	/**
 	 * Utilisateur GitHub.
 	 */
-	private string $github_user = 'studiokyne';
+	private string $github_user = 'agence-lumia';
 
 	/**
 	 * Nom du dépôt GitHub.
 	 */
-	private string $github_repo = 'studio-kyne-mini-tools';
+	private string $github_repo = 'lumia-tools';
 
 	/**
 	 * Transient pour le cache des mises à jour.
 	 */
-	private string $transient_key = 'skmt_github_update';
+	private string $transient_key = 'lumia_github_update';
 
 	/**
 	 * Canal de mise a jour.
@@ -45,7 +45,7 @@ class Updater {
 	private int $failure_cache_duration = 900;
 
 	/** Sentinelle stockée dans le transient pour mémoriser un échec. */
-	private const FAILURE_MARKER = 'skmt_update_check_failed';
+	private const FAILURE_MARKER = 'lumia_update_check_failed';
 
 	/** Nombre maximal de notes de version conservées (canal dev). */
 	private const MAX_NOTES = 10;
@@ -54,7 +54,7 @@ class Updater {
 	 * Initialise l'updater.
 	 */
 	public function init(): void {
-		$settings = get_option( 'skmt_settings', [] );
+		$settings = get_option( 'lumia_settings', [] );
 
 		if ( ! empty( $settings['global']['update_channel'] ) ) {
 			$this->channel = sanitize_key( $settings['global']['update_channel'] );
@@ -80,7 +80,7 @@ class Updater {
 			return;
 		}
 
-		$our_plugin = plugin_basename( SKMT_PLUGIN_FILE );
+		$our_plugin = plugin_basename( LUMIA_PLUGIN_FILE );
 		$updated    = (array) ( $options['plugins'] ?? [] );
 
 		if ( ! in_array( $our_plugin, $updated, true ) ) {
@@ -110,23 +110,23 @@ class Updater {
 			return $transient;
 		}
 
-		$plugin_file = plugin_basename( SKMT_PLUGIN_FILE );
+		$plugin_file = plugin_basename( LUMIA_PLUGIN_FILE );
 
 		// Comparer les versions
-		$has_update = $this->compare_versions( SKMT_VERSION, $remote['version'] );
+		$has_update = $this->compare_versions( LUMIA_VERSION, $remote['version'] );
 
 		$item = (object) [
 			'slug'         => dirname( $plugin_file ),
 			'plugin'       => $plugin_file,
-			'new_version'  => $has_update ? $remote['version'] : SKMT_VERSION,
+			'new_version'  => $has_update ? $remote['version'] : LUMIA_VERSION,
 			'url'          => $remote['url'],
 			'package'      => $remote['download_url'],
 			'icons'        => [],
 			'banners'      => [],
 			// Pas de champ `tested` : le renseigner avec la version courante du
 			// site déclarait le plugin testé sur n'importe quelle version.
-			'requires'     => '6.0',
-			'requires_php' => '7.4',
+			'requires'     => '6.9',
+			'requires_php' => '8.0',
 		];
 
 		if ( $has_update ) {
@@ -169,7 +169,7 @@ class Updater {
 			return $result;
 		}
 
-		$plugin_file = plugin_basename( SKMT_PLUGIN_FILE );
+		$plugin_file = plugin_basename( LUMIA_PLUGIN_FILE );
 
 		if ( dirname( $plugin_file ) !== ( $args->slug ?? '' ) ) {
 			return $result;
@@ -182,18 +182,18 @@ class Updater {
 		}
 
 		return (object) [
-			'name'           => 'Studio Kyne Mini Tools',
+			'name'           => 'Lümia Tools',
 			'slug'           => dirname( $plugin_file ),
-			'author'         => '<a href="https://studiokyne.com">Studio Kyne</a>',
-			'author_profile' => 'https://studiokyne.com',
+			'author'         => '<a href="https://agence-lumia.com">Agence Lümia</a>',
+			'author_profile' => 'https://agence-lumia.com',
 			'homepage'       => $remote['url'],
 			'download_link'  => $remote['download_url'],
 			'version'        => $remote['version'],
-			'requires'       => '6.0',
-			'requires_php'   => '7.4',
+			'requires'       => '6.9',
+			'requires_php'   => '8.0',
 			'last_updated'   => $remote['published_at'],
 			'sections'       => [
-				'description' => __( 'Suite d\'outils modulaires pour optimiser et améliorer votre site WordPress.', 'studio-kyne-mini-tools' ),
+				'description' => __( 'Suite d\'outils modulaires pour optimiser et améliorer votre site WordPress.', 'lumia-tools' ),
 				'changelog'   => $this->render_changelog( $remote['notes'] ?? [] ),
 			],
 		];
@@ -210,13 +210,13 @@ class Updater {
 	 */
 	private function render_changelog( $notes ): string {
 		if ( ! is_array( $notes ) || [] === $notes ) {
-			return '<p>' . esc_html__( 'Aucune note de version disponible.', 'studio-kyne-mini-tools' ) . '</p>';
+			return '<p>' . esc_html__( 'Aucune note de version disponible.', 'lumia-tools' ) . '</p>';
 		}
 
 		$newer = array_filter(
 			$notes,
 			function ( $note ) {
-				return version_compare( SKMT_VERSION, $note['version'], '<' );
+				return version_compare( LUMIA_VERSION, $note['version'], '<' );
 			}
 		);
 
@@ -252,7 +252,7 @@ class Updater {
 		return [
 			'channel'    => $this->channel,
 			'remote'     => $remote,
-			'has_update' => null !== $remote && $this->compare_versions( SKMT_VERSION, $remote ),
+			'has_update' => null !== $remote && $this->compare_versions( LUMIA_VERSION, $remote ),
 		];
 	}
 
@@ -285,7 +285,7 @@ class Updater {
 					// Variante « html » : GitHub renvoie les notes déjà rendues
 					// (`body_html`), ce qui évite d'embarquer un parseur Markdown.
 					'Accept'     => 'application/vnd.github.html+json',
-					'User-Agent' => 'StudioKyneMiniTools',
+					'User-Agent' => 'LumiaTools',
 				],
 			]
 		);
@@ -427,8 +427,8 @@ class Updater {
 				continue;
 			}
 
-			// Chercher un fichier zip nommé studio-kyne-mini-tools-*.zip
-			if ( preg_match( '/^studio-kyne-mini-tools-.*\.zip$/', $asset['name'] ) ) {
+			// Chercher un fichier zip nommé lumia-tools-*.zip
+			if ( preg_match( '/^lumia-tools-.*\.zip$/', $asset['name'] ) ) {
 				return $asset['browser_download_url'] ?? '';
 			}
 		}

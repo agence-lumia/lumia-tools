@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,16 +18,16 @@ class Activator {
 	 * @var array<string, class-string>
 	 */
 	public const MODULE_CLASSES = [
-		'image_optimizer' => \StudioKyne\MiniTools\Modules\ImageOptimizer\Module::class,
-		'security'        => \StudioKyne\MiniTools\Modules\Security\Module::class,
-		'login'           => \StudioKyne\MiniTools\Modules\Login\Module::class,
-		'files'           => \StudioKyne\MiniTools\Modules\Files\Module::class,
-		'white_label'     => \StudioKyne\MiniTools\Modules\WhiteLabel\Module::class,
-		'menu_creator'    => \StudioKyne\MiniTools\Modules\MenuCreator\Module::class,
-		'database'        => \StudioKyne\MiniTools\Modules\Database\Module::class,
-		'media'           => \StudioKyne\MiniTools\Modules\Media\Module::class,
-		'activity_log'    => \StudioKyne\MiniTools\Modules\ActivityLog\Module::class,
-		'smtp'            => \StudioKyne\MiniTools\Modules\Smtp\Module::class,
+		'image_optimizer' => \Lumia\Tools\Modules\ImageOptimizer\Module::class,
+		'security'        => \Lumia\Tools\Modules\Security\Module::class,
+		'login'           => \Lumia\Tools\Modules\Login\Module::class,
+		'files'           => \Lumia\Tools\Modules\Files\Module::class,
+		'white_label'     => \Lumia\Tools\Modules\WhiteLabel\Module::class,
+		'menu_creator'    => \Lumia\Tools\Modules\MenuCreator\Module::class,
+		'database'        => \Lumia\Tools\Modules\Database\Module::class,
+		'media'           => \Lumia\Tools\Modules\Media\Module::class,
+		'activity_log'    => \Lumia\Tools\Modules\ActivityLog\Module::class,
+		'smtp'            => \Lumia\Tools\Modules\Smtp\Module::class,
 	];
 
 	/**
@@ -48,8 +48,8 @@ class Activator {
 		];
 
 		// Créer l'option globale uniquement si elle n'existe pas encore.
-		if ( false === get_option( 'skmt_settings' ) ) {
-			add_option( 'skmt_settings', $default_settings );
+		if ( false === get_option( 'lumia_settings' ) ) {
+			add_option( 'lumia_settings', $default_settings );
 		}
 
 		// Laisser chaque module initialiser ses propres options si nécessaire.
@@ -59,7 +59,7 @@ class Activator {
 			}
 
 			$defaults   = $class::get_defaults();
-			$option_key = 'skmt_module_' . $id;
+			$option_key = 'lumia_module_' . $id;
 
 			if ( ! empty( $defaults ) && false === get_option( $option_key ) ) {
 				add_option( $option_key, $defaults );

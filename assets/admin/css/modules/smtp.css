@@ -2,56 +2,56 @@
  * SMTP et journal des mails
  * ================================================================ */
 
-.skmt-form__row .skmt-sm__wide {
+.lumia-form__row .lumia-sm__wide {
   flex: 1 1 240px;
   max-width: 320px;
 }
 
-/* .skmt-input--sm plafonne à 140px : trop court pour un hôte ou une adresse. */
-.skmt-sm__wide .skmt-input {
+/* .lumia-input--sm plafonne à 140px : trop court pour un hôte ou une adresse. */
+.lumia-sm__wide .lumia-input {
   width: 100%;
   max-width: none;
 }
 
-.skmt-sm__api {
+.lumia-sm__api {
   max-width: 480px;
 }
 
-.skmt-form__row .skmt-sm__port {
+.lumia-form__row .lumia-sm__port {
   max-width: 110px;
 }
 
 /* L'attribut hidden (TLS automatique, identifiants) perd face au display:flex
    des composants : on le rétablit. */
-.skmt-form__row[hidden],
-.skmt-option[hidden] {
+.lumia-form__row[hidden],
+.lumia-option[hidden] {
   display: none;
 }
 
 /* ---- Mail de test ---- */
 
-.skmt-sm__test {
+.lumia-sm__test {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.skmt-sm__test .skmt-input {
+.lumia-sm__test .lumia-input {
   flex: 1 1 260px;
   max-width: 360px;
 }
 
-.skmt-sm__test-result {
+.lumia-sm__test-result {
   margin-top: 12px;
 }
 
-.skmt-sm__test-result .skmt-notice {
+.lumia-sm__test-result .lumia-notice {
   margin: 0;
 }
 
-.skmt-sm__transcript,
-.skmt-sm__headers pre,
-.skmt-sm__preview--text {
+.lumia-sm__transcript,
+.lumia-sm__headers pre,
+.lumia-sm__preview--text {
   margin: 8px 0 0;
   padding: 12px;
   max-height: 320px;
@@ -61,15 +61,15 @@
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  color: var(--skmt-text);
-  background: var(--skmt-n50);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  color: var(--lumia-text);
+  background: var(--lumia-n50);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
 }
 
 /* ---- Filtres ---- */
 
-.skmt-sm__filters {
+.lumia-sm__filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -77,17 +77,17 @@
   margin-bottom: 12px;
 }
 
-.skmt-sm__search {
+.lumia-sm__search {
   flex: 1 1 220px;
   min-width: 180px;
 }
 
-.skmt-sm__filters .skmt-select,
-.skmt-sm__filters input[type="date"] {
+.lumia-sm__filters .lumia-select,
+.lumia-sm__filters input[type="date"] {
   width: auto;
 }
 
-.skmt-sm__filter-actions {
+.lumia-sm__filter-actions {
   display: flex;
   gap: 8px;
   margin-left: auto;
@@ -95,75 +95,75 @@
 
 /* ---- Tableau ---- */
 
-.skmt-sm__table-wrap {
+.lumia-sm__table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
-  background: var(--skmt-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-surface);
 }
 
-.skmt-sm__table {
+.lumia-sm__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.skmt-sm__table th {
+.lumia-sm__table th {
   padding: 8px 12px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--skmt-text-muted);
-  background: var(--skmt-n50);
-  border-bottom: 1px solid var(--skmt-border);
+  color: var(--lumia-text-muted);
+  background: var(--lumia-n50);
+  border-bottom: 1px solid var(--lumia-border);
   white-space: nowrap;
 }
 
-.skmt-sm__table td {
+.lumia-sm__table td {
   padding: 8px 12px;
   vertical-align: top;
-  color: var(--skmt-text);
-  border-bottom: 1px solid var(--skmt-border);
+  color: var(--lumia-text);
+  border-bottom: 1px solid var(--lumia-border);
 }
 
-.skmt-sm__table tbody tr:last-child td {
+.lumia-sm__table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.skmt-sm__row {
+.lumia-sm__row {
   cursor: pointer;
-  transition: background var(--skmt-transition);
+  transition: background var(--lumia-transition);
 }
 
-.skmt-sm__row:hover,
-.skmt-sm__row:focus-visible {
-  background: var(--skmt-n50);
+.lumia-sm__row:hover,
+.lumia-sm__row:focus-visible {
+  background: var(--lumia-n50);
 }
 
-.skmt-sm__row:focus-visible {
-  outline: 2px solid var(--skmt-accent);
+.lumia-sm__row:focus-visible {
+  outline: 2px solid var(--lumia-accent);
   outline-offset: -2px;
 }
 
-.skmt-sm__date {
+.lumia-sm__date {
   white-space: nowrap;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-sm__status {
+.lumia-sm__status {
   white-space: nowrap;
 }
 
-.skmt-sm__badge {
+.lumia-sm__badge {
   padding: 1px 8px;
   font-size: 11px;
 }
 
 /* Une liste de destinataires ou un objet peut être très long : on coupe. */
-.skmt-sm__to span,
-.skmt-sm__subject > span {
+.lumia-sm__to span,
+.lumia-sm__subject > span {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -172,32 +172,32 @@
   overflow-wrap: anywhere;
 }
 
-.skmt-sm__subject .skmt-sm__error {
+.lumia-sm__subject .lumia-sm__error {
   -webkit-line-clamp: 1;
   margin-top: 2px;
   font-size: 12px;
-  color: var(--skmt-danger);
+  color: var(--lumia-danger);
 }
 
-.skmt-sm__state {
+.lumia-sm__state {
   padding: 32px 12px !important;
   text-align: center;
-  color: var(--skmt-text-muted) !important;
+  color: var(--lumia-text-muted) !important;
 }
 
 /* ---- Pied : total et pagination ---- */
 
-.skmt-sm__footer {
+.lumia-sm__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-top: 12px;
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-sm__pager {
+.lumia-sm__pager {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -205,7 +205,7 @@
 
 /* ---- Modale de détail ---- */
 
-.skmt-sm__detail {
+.lumia-sm__detail {
   display: grid;
   grid-template-columns: minmax(120px, max-content) 1fr;
   gap: 8px 16px;
@@ -213,47 +213,47 @@
   font-size: 13px;
 }
 
-.skmt-sm__detail dt {
-  color: var(--skmt-text-muted);
+.lumia-sm__detail dt {
+  color: var(--lumia-text-muted);
 }
 
-.skmt-sm__detail dd {
+.lumia-sm__detail dd {
   margin: 0;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   overflow-wrap: anywhere;
 }
 
-.skmt-sm__preview {
+.lumia-sm__preview {
   display: block;
   width: 100%;
   height: 420px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
   /* Le HTML d'un mail suppose un fond blanc, quel que soit le thème. */
   background: #fff;
 }
 
-.skmt-sm__preview--text {
+.lumia-sm__preview--text {
   height: auto;
 }
 
-.skmt-sm__preview[hidden],
-.skmt-sm__headers[hidden] {
+.lumia-sm__preview[hidden],
+.lumia-sm__headers[hidden] {
   display: none;
 }
 
-.skmt-sm__headers {
+.lumia-sm__headers {
   margin-top: 12px;
   font-size: 13px;
 }
 
-.skmt-sm__headers summary {
+.lumia-sm__headers summary {
   cursor: pointer;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
 @media (max-width: 782px) {
-  .skmt-sm__filter-actions {
+  .lumia-sm__filter-actions {
     margin-left: 0;
   }
 }

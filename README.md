@@ -1,4 +1,4 @@
-# Studio Kyne Mini Tools
+# Lümia Tools
 
 Plugin WordPress modulaire, léger et performant pour optimiser et améliorer votre site.
 
@@ -14,7 +14,7 @@ Plugin WordPress modulaire, léger et performant pour optimiser et améliorer vo
 1. Téléchargez le ZIP depuis les releases GitHub.
 2. Uploadez le ZIP dans Extensions > Ajouter > Téléverser.
 3. Activez le plugin.
-4. Ouvrez le menu SKMT dans l'admin.
+4. Ouvrez le menu LUMIA dans l'admin.
 
 ## Mise à jour
 
@@ -42,7 +42,7 @@ Dans Réglages > Mises à jour GitHub :
   Les en-têtes de proxy sont envoyés par le client : ne les activer que si le site est
   réellement derrière ce proxy, sinon le blocage se contourne en changeant d'en-tête.
 - URL de connexion personnalisée.
-  En cas d'oubli du slug, poser `define( 'SKMT_DISABLE_LOGIN_URL', true );` dans
+  En cas d'oubli du slug, poser `define( 'LUMIA_DISABLE_LOGIN_URL', true );` dans
   `wp-config.php` réactive `wp-login.php`.
 - Durcissement (anti-énumération des utilisateurs, endpoint REST users)
 
@@ -93,8 +93,8 @@ Dans Réglages > Mises à jour GitHub :
 ## Architecture
 
 ```
-studio-kyne-mini-tools/
-├── studio-kyne-mini-tools.php
+lumia-tools/
+├── lumia-tools.php
 ├── includes/
 │   ├── Core/
 │   ├── Admin/
@@ -112,22 +112,22 @@ studio-kyne-mini-tools/
 
 1. Créer un dossier dans includes/Modules/MonModule/
 2. Implémenter ModuleInterface
-3. Enregistrer le module via filtre `skmt_module_definitions`
+3. Enregistrer le module via filtre `lumia_module_definitions`
 
 ```php
 <?php
-namespace StudioKyne\MiniTools\Modules\MonModule;
+namespace Lumia\Tools\Modules\MonModule;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 class Module extends AbstractModule {
     public function init(): void {}
     public function get_settings(): array { return ['enabled' => true]; }
     public function save_settings( array $settings ): bool {
-        return update_option( 'skmt_module_mon_module', $settings );
+        return update_option( 'lumia_module_mon_module', $settings );
     }
     public function get_admin_css(): array {
-        return [ SKMT_ASSETS_URL . 'admin/css/modules/mon-module.css' ];
+        return [ LUMIA_ASSETS_URL . 'admin/css/modules/mon-module.css' ];
     }
 }
 ```
@@ -137,13 +137,13 @@ class Module extends AbstractModule {
 Le core expose un registre extensible pour éviter de modifier `Core/Modules.php` à chaque nouveau module.
 
 ```php
-add_filter( 'skmt_module_definitions', function( array $modules ) {
+add_filter( 'lumia_module_definitions', function( array $modules ) {
     $modules['mon_module'] = [
-        'name'        => __( 'Mon module', 'studio-kyne-mini-tools' ),
-        'description' => __( 'Description courte', 'studio-kyne-mini-tools' ),
-        'menu_label'  => __( 'Mon module', 'studio-kyne-mini-tools' ),
-        'menu_desc'   => __( 'Action principale', 'studio-kyne-mini-tools' ),
-        'class'       => 'StudioKyne\\MiniTools\\Modules\\MonModule\\Module',
+        'name'        => __( 'Mon module', 'lumia-tools' ),
+        'description' => __( 'Description courte', 'lumia-tools' ),
+        'menu_label'  => __( 'Mon module', 'lumia-tools' ),
+        'menu_desc'   => __( 'Action principale', 'lumia-tools' ),
+        'class'       => 'Lumia\\Tools\\Modules\\MonModule\\Module',
         'icon'        => 'package',
     ];
     return $modules;
@@ -179,7 +179,7 @@ Points de contrat utiles :
 
 - Stable : releases depuis la branche main
 - Dev : pre-releases auto depuis la branche dev
-- Le ZIP est attaché aux releases (studio-kyne-mini-tools.zip)
+- Le ZIP est attaché aux releases (lumia-tools.zip)
 
 ## Licence
 

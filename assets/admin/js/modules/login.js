@@ -16,12 +16,12 @@
    * ================================================================ */
 
   function initMediaPickers() {
-    document.querySelectorAll(".skmt-media-picker").forEach(function (picker) {
+    document.querySelectorAll(".lumia-media-picker").forEach(function (picker) {
       var hiddenInput = picker.querySelector('input[type="hidden"]');
-      var preview = picker.querySelector(".skmt-media-preview");
+      var preview = picker.querySelector(".lumia-media-preview");
       var previewImg = preview ? preview.querySelector("img") : null;
-      var selectBtn = picker.querySelector(".skmt-media-select");
-      var removeBtn = picker.querySelector(".skmt-media-remove");
+      var selectBtn = picker.querySelector(".lumia-media-select");
+      var removeBtn = picker.querySelector(".lumia-media-remove");
 
       if (!hiddenInput || !selectBtn) return;
 
@@ -96,10 +96,10 @@
    * ================================================================ */
 
   function initColorPickers() {
-    document.querySelectorAll(".skmt-color-field").forEach(function (field) {
+    document.querySelectorAll(".lumia-color-field").forEach(function (field) {
       var input = field.querySelector('input[type="color"]');
-      var label = field.querySelector(".skmt-color-field__value");
-      var resetBtn = field.querySelector(".skmt-color-reset");
+      var label = field.querySelector(".lumia-color-field__value");
+      var resetBtn = field.querySelector(".lumia-color-reset");
 
       if (!input || !label) return;
 
@@ -119,12 +119,12 @@
   }
 
   function initColorResets() {
-    document.querySelectorAll(".skmt-color-reset").forEach(function (btn) {
+    document.querySelectorAll(".lumia-color-reset").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var field = btn.closest(".skmt-color-field");
+        var field = btn.closest(".lumia-color-field");
         if (!field) return;
         var input = field.querySelector('input[type="color"]');
-        var label = field.querySelector(".skmt-color-field__value");
+        var label = field.querySelector(".lumia-color-field__value");
         var def = btn.dataset.default;
         if (input && def) {
           input.value = def;

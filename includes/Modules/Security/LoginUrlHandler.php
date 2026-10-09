@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Security;
+namespace Lumia\Tools\Modules\Security;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -126,7 +126,7 @@ class LoginUrlHandler {
 
 		if ( is_user_logged_in() && 'logout' !== $action ) {
 			$user        = wp_get_current_user();
-			$redirect_to = apply_filters( 'skmt_custom_login_redirect', admin_url(), $user );
+			$redirect_to = apply_filters( 'lumia_custom_login_redirect', admin_url(), $user );
 			wp_safe_redirect( $redirect_to );
 			die();
 		}

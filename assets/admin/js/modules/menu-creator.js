@@ -1,13 +1,13 @@
 /**
- * Studio Kyne Mini Tools — Module Créateur de menu
+ * Lümia Tools — Module Créateur de menu
  * Éditeur intégré 3 colonnes.
  */
 (function () {
   "use strict";
 
-  if (typeof skmtAdmin === "undefined") return;
+  if (typeof lumiaAdmin === "undefined") return;
 
-  var L = window.skmtLucide || {};
+  var L = window.lumiaLucide || {};
 
   /* ================================================================
    * ÉTAT
@@ -33,16 +33,16 @@
    * ================================================================ */
 
   document.addEventListener("DOMContentLoaded", function () {
-    if (!document.getElementById("skmt-mc-editor")) return;
+    if (!document.getElementById("lumia-mc-editor")) return;
 
     // Masquer le bouton Enregistrer du header module (remplacé par le footer du panel)
-    var headerSaveBtn = document.getElementById("skmt-module-save-btn");
+    var headerSaveBtn = document.getElementById("lumia-module-save-btn");
     if (headerSaveBtn) {
       headerSaveBtn.style.display = "none";
     }
 
     // Nouveau menu
-    var newBtn = document.getElementById("skmt-mc-new-btn");
+    var newBtn = document.getElementById("lumia-mc-new-btn");
     if (newBtn) {
       newBtn.addEventListener("click", function () { confirmDirty(startNewProfile); });
     }
@@ -51,7 +51,7 @@
     bindProfilesFooter();
 
     // Bouton retour dans le panel droit
-    var backBtn = document.getElementById("skmt-mc-back-btn");
+    var backBtn = document.getElementById("lumia-mc-back-btn");
     if (backBtn) {
       backBtn.addEventListener("click", function () { showProfilePanel(); });
     }
@@ -73,7 +73,7 @@
       if (iconPickerEl &&
           !iconPickerEl.classList.contains("is-hidden") &&
           !iconPickerEl.contains(e.target) &&
-          !e.target.closest(".skmt-wl-icon-btn")) {
+          !e.target.closest(".lumia-wl-icon-btn")) {
         hideIconPicker();
       }
     }, true);
@@ -110,9 +110,9 @@
     showPlaceholder();
 
     try {
-      var lastOpenId = sessionStorage.getItem("skmt_mc_open_profile");
+      var lastOpenId = sessionStorage.getItem("lumia_mc_open_profile");
       if (lastOpenId) {
-        sessionStorage.removeItem("skmt_mc_open_profile");
+        sessionStorage.removeItem("lumia_mc_open_profile");
         var profileToRestore = findProfileById(lastOpenId);
         if (profileToRestore) { loadProfile(profileToRestore); }
       }
@@ -129,7 +129,7 @@
 
   function setDirty(val) {
     ed.dirty = val;
-    var btn = document.getElementById("skmt-mc-save-panel-btn");
+    var btn = document.getElementById("lumia-mc-save-panel-btn");
     if (btn) btn.disabled = !val;
     if (val) pushHistory();
   }
@@ -254,7 +254,7 @@
 
   function confirmDirty(callback) {
     if (!ed.dirty) { callback(); return; }
-    window.skmtModal.open({
+    window.lumiaModal.open({
       title:        "Modifications non sauvegardées",
       message:      "Vos modifications seront perdues. Continuer ?",
       confirmLabel: "Continuer sans enregistrer",
@@ -269,7 +269,7 @@
    * ================================================================ */
 
   function blankProfile() {
-    var profiles = skmtAdmin.mcProfiles || [];
+    var profiles = lumiaAdmin.mcProfiles || [];
     var names    = profiles.map(function (p) { return p.name || ""; });
     var n = 1;
     while (names.indexOf("Menu " + n) !== -1) { n++; }
@@ -322,19 +322,19 @@
    * ================================================================ */
 
   function showPlaceholder() {
-    setDisplay("skmt-mc-placeholder",  "");
-    setDisplay("skmt-mc-stale-bar",    "none");
-    setDisplay("skmt-mc-tree-actions", "none");
-    setDisplay("skmt-wl-tree",         "none");
-    setDisplay("skmt-wl-settings-col", "none");
+    setDisplay("lumia-mc-placeholder",  "");
+    setDisplay("lumia-mc-stale-bar",    "none");
+    setDisplay("lumia-mc-tree-actions", "none");
+    setDisplay("lumia-wl-tree",         "none");
+    setDisplay("lumia-wl-settings-col", "none");
     setDirty(false);
   }
 
   function hidePlaceholder() {
-    setDisplay("skmt-mc-placeholder",  "none");
-    setDisplay("skmt-mc-tree-actions", "");
-    setDisplay("skmt-wl-tree",         "");
-    setDisplay("skmt-wl-settings-col", "");
+    setDisplay("lumia-mc-placeholder",  "none");
+    setDisplay("lumia-mc-tree-actions", "");
+    setDisplay("lumia-wl-tree",         "");
+    setDisplay("lumia-wl-settings-col", "");
   }
 
   /* ================================================================
@@ -342,10 +342,10 @@
    * ================================================================ */
 
   function renderProfilesSidebar() {
-    var container = document.getElementById("skmt-wl-ep-profiles-list");
+    var container = document.getElementById("lumia-wl-ep-profiles-list");
     if (!container) return;
 
-    var profiles  = skmtAdmin.mcProfiles || [];
+    var profiles  = lumiaAdmin.mcProfiles || [];
     var currentId = ed.profile ? ed.profile.id : null;
     var isDraft   = !!(ed.profile && ed.profile.id === "__new__");
 
@@ -357,7 +357,7 @@
     });
 
     if (!filtered.length && !isDraft) {
-      container.innerHTML = '<p class="skmt-wl-ep-profiles-empty">' +
+      container.innerHTML = '<p class="lumia-wl-ep-profiles-empty">' +
         esc(profiles.length === 0
           ? "Aucun menu. Utilisez « Nouveau menu » pour en créer un."
           : "Aucun résultat.") + "</p>";
@@ -368,30 +368,30 @@
 
     container.innerHTML = draftHtml + filtered.map(function (p) {
       var isActive  = p.status === "active";
-      var dotClass  = isActive ? "skmt-mc-dot--active" : "skmt-mc-dot--draft";
+      var dotClass  = isActive ? "lumia-mc-dot--active" : "lumia-mc-dot--draft";
       var isCurrent = p.id === currentId;
       return (
-        '<div class="skmt-wl-ep-profile-item' + (isCurrent ? " is-active" : "") +
+        '<div class="lumia-wl-ep-profile-item' + (isCurrent ? " is-active" : "") +
             '" data-id="' + esc(p.id) + '">' +
-          '<span class="skmt-mc-dot ' + dotClass + '" data-skmt-tip="' +
+          '<span class="lumia-mc-dot ' + dotClass + '" data-lumia-tip="' +
             (isActive ? "Menu actif" : "Brouillon — non appliqué") + '"></span>' +
-          '<span class="skmt-wl-ep-profile-item__name">' +
+          '<span class="lumia-wl-ep-profile-item__name">' +
             esc(p.name || "Menu sans nom") + "</span>" +
-          '<span class="skmt-mc-item-actions">' +
-            '<button type="button" class="skmt-mc-item-action" data-action="duplicate" ' +
-              'data-id="' + esc(p.id) + '" data-skmt-tip="Dupliquer ce menu">' +
+          '<span class="lumia-mc-item-actions">' +
+            '<button type="button" class="lumia-mc-item-action" data-action="duplicate" ' +
+              'data-id="' + esc(p.id) + '" data-lumia-tip="Dupliquer ce menu">' +
               (L.copy || "") + "</button>" +
-            '<button type="button" class="skmt-mc-item-action skmt-mc-item-action--danger" ' +
-              'data-action="delete" data-id="' + esc(p.id) + '" data-skmt-tip="Supprimer ce menu">' +
+            '<button type="button" class="lumia-mc-item-action lumia-mc-item-action--danger" ' +
+              'data-action="delete" data-id="' + esc(p.id) + '" data-lumia-tip="Supprimer ce menu">' +
               (L.trash || "×") + "</button>" +
           "</span>" +
         "</div>"
       );
     }).join("");
 
-    container.querySelectorAll(".skmt-wl-ep-profile-item").forEach(function (item) {
+    container.querySelectorAll(".lumia-wl-ep-profile-item").forEach(function (item) {
       item.addEventListener("click", function (e) {
-        if (e.target.closest(".skmt-mc-item-action")) return;
+        if (e.target.closest(".lumia-mc-item-action")) return;
         var profile = findProfileById(item.dataset.id);
         if (!profile) return;
         confirmDirty(function () { loadProfile(profile); });
@@ -407,31 +407,31 @@
 
   /**
    * Ligne représentant le menu en cours de création, pas encore enregistré
-   * côté serveur (donc absent de skmtAdmin.mcProfiles) : sans actions
+   * côté serveur (donc absent de lumiaAdmin.mcProfiles) : sans actions
    * dupliquer/supprimer, qui exigent un id réel.
    */
   function buildDraftRowHtml(p) {
     return (
-      '<div class="skmt-wl-ep-profile-item is-active" data-id="__new__">' +
-        '<span class="skmt-mc-dot skmt-mc-dot--draft" data-skmt-tip="Brouillon — non appliqué"></span>' +
-        '<span class="skmt-wl-ep-profile-item__name">' +
+      '<div class="lumia-wl-ep-profile-item is-active" data-id="__new__">' +
+        '<span class="lumia-mc-dot lumia-mc-dot--draft" data-lumia-tip="Brouillon — non appliqué"></span>' +
+        '<span class="lumia-wl-ep-profile-item__name">' +
           esc(p.name || "Menu sans nom") + "</span>" +
-        '<span class="skmt-badge skmt-badge--warning">Non enregistré</span>' +
+        '<span class="lumia-badge lumia-badge--warning">Non enregistré</span>' +
       "</div>"
     );
   }
 
   function bindProfilesSidebar() {
-    var searchEl = document.getElementById("skmt-wl-ep-search");
+    var searchEl = document.getElementById("lumia-wl-ep-search");
     if (searchEl) {
       searchEl.addEventListener("input", function () {
         sidebarState.search = searchEl.value;
         renderProfilesSidebar();
       });
     }
-    document.querySelectorAll(".skmt-wl-ep__profiles-tab").forEach(function (tab) {
+    document.querySelectorAll(".lumia-wl-ep__profiles-tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
-        document.querySelectorAll(".skmt-wl-ep__profiles-tab").forEach(function (t) {
+        document.querySelectorAll(".lumia-wl-ep__profiles-tab").forEach(function (t) {
           t.classList.remove("is-active");
         });
         tab.classList.add("is-active");
@@ -448,7 +448,7 @@
   function onSidebarDelete(profileId) {
     var p    = findProfileById(profileId);
     var name = p ? (p.name || "ce menu") : "ce menu";
-    window.skmtModal.open({
+    window.lumiaModal.open({
       title: "Supprimer le menu",
       message: 'Supprimer « ' + name + ' » ? Cette action est irréversible.',
       confirmLabel: "Supprimer", cancelLabel: "Annuler", danger: true,
@@ -457,9 +457,9 @@
         // après suppression il faut recharger la page pour que la barre
         // latérale WP revienne à son état natif (sinon résidus à l'écran).
         var wasActive = !!(p && p.status === "active");
-        ajaxPost("skmt_wl_delete_profile", { profile_id: profileId }, function (data) {
+        ajaxPost("lumia_wl_delete_profile", { profile_id: profileId }, function (data) {
           if (data && data.success) {
-            skmtAdmin.mcProfiles = (skmtAdmin.mcProfiles || []).filter(function (x) { return x.id !== profileId; });
+            lumiaAdmin.mcProfiles = (lumiaAdmin.mcProfiles || []).filter(function (x) { return x.id !== profileId; });
             if (ed.profile && ed.profile.id === profileId) { ed.profile = null; showPlaceholder(); }
             renderProfilesSidebar();
             toast("Menu supprimé.", "success");
@@ -471,10 +471,10 @@
   }
 
   function onSidebarDuplicate(profileId) {
-    ajaxPost("skmt_wl_duplicate_profile", { profile_id: profileId }, function (data) {
+    ajaxPost("lumia_wl_duplicate_profile", { profile_id: profileId }, function (data) {
       if (data && data.success) {
-        skmtAdmin.mcProfiles = skmtAdmin.mcProfiles || [];
-        skmtAdmin.mcProfiles.push(data.data.profile);
+        lumiaAdmin.mcProfiles = lumiaAdmin.mcProfiles || [];
+        lumiaAdmin.mcProfiles.push(data.data.profile);
         renderProfilesSidebar();
         toast("Menu dupliqué.", "success");
       } else { toast("Erreur lors de la duplication.", "error"); }
@@ -486,9 +486,9 @@
    * ================================================================ */
 
   function bindPanelFooter() {
-    var saveBtn  = document.getElementById("skmt-mc-save-panel-btn");
-    var resetBtn = document.getElementById("skmt-mc-reset-menu-btn");
-    var expBtn   = document.getElementById("skmt-mc-export-btn");
+    var saveBtn  = document.getElementById("lumia-mc-save-panel-btn");
+    var resetBtn = document.getElementById("lumia-mc-reset-menu-btn");
+    var expBtn   = document.getElementById("lumia-mc-export-btn");
 
     if (expBtn) expBtn.addEventListener("click", exportProfile);
 
@@ -501,7 +501,7 @@
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
         if (!ed.profile) return;
-        window.skmtModal.open({
+        window.lumiaModal.open({
           title:        "Réinitialiser le menu",
           message:      "Toutes les modifications non sauvegardées seront perdues et le menu sera rechargé depuis la dernière sauvegarde.",
           confirmLabel: "Réinitialiser",
@@ -526,7 +526,7 @@
    * ================================================================ */
 
   function mergeWpMenu() {
-    var wpMenu = skmtAdmin.wpMenu || [];
+    var wpMenu = lumiaAdmin.wpMenu || [];
     if (!ed.profile.items.length && wpMenu.length) {
       ed.profile.items = wpMenu.map(function (m) { return wpItemToEditorItem(m); }).filter(Boolean);
     } else {
@@ -592,7 +592,7 @@
   }
 
   function buildWpChildren(parentSlug) {
-    return ((skmtAdmin.wpSubmenu || {})[parentSlug] || []).map(function (s) {
+    return ((lumiaAdmin.wpSubmenu || {})[parentSlug] || []).map(function (s) {
       if (!s.slug) return null;
       return {
         type: "wp_item", slug: s.slug, label: null, icon: null,
@@ -612,10 +612,10 @@
     populateProfilePanel();
     showProfilePanel();
     renderTree();
-    ms.include = createMultiSelect("skmt-wl-include-select", buildInitialChips(
+    ms.include = createMultiSelect("lumia-wl-include-select", buildInitialChips(
       ed.profile.include_roles || [], ed.profile.include_users || []
     ));
-    ms.exclude = createMultiSelect("skmt-wl-exclude-select", buildInitialChips(
+    ms.exclude = createMultiSelect("lumia-wl-exclude-select", buildInitialChips(
       ed.profile.exclude_roles || [], ed.profile.exclude_users || []
     ));
     syncApplyAll();
@@ -629,30 +629,30 @@
   function showProfilePanel() {
     hideIconPicker();
     ed.selectedUid = null;
-    setDisplay("skmt-mc-back-btn", "none");
+    setDisplay("lumia-mc-back-btn", "none");
     // L'export porte sur le menu entier : il n'a rien à faire sur la vue d'un
     // élément, où le bouton laisserait croire qu'on exporte cet élément-là.
-    setDisplay("skmt-mc-export-btn", "");
-    var titleEl = document.getElementById("skmt-mc-panel-title");
+    setDisplay("lumia-mc-export-btn", "");
+    var titleEl = document.getElementById("lumia-mc-panel-title");
     if (titleEl) titleEl.textContent = "Paramètres du menu";
-    show("skmt-wl-profile-settings");
-    hide("skmt-wl-item-settings");
+    show("lumia-wl-profile-settings");
+    hide("lumia-wl-item-settings");
     renderTree();
   }
 
   function showItemPanel(item) {
     hideIconPicker();
     ed.selectedUid = item._uid;
-    setDisplay("skmt-mc-back-btn", "");
-    setDisplay("skmt-mc-export-btn", "none");
-    var titleEl = document.getElementById("skmt-mc-panel-title");
+    setDisplay("lumia-mc-back-btn", "");
+    setDisplay("lumia-mc-export-btn", "none");
+    var titleEl = document.getElementById("lumia-mc-panel-title");
     if (titleEl) {
       titleEl.textContent = item.label || item._wpLabel || prettifySlug(item.slug) || "Élément";
     }
-    hide("skmt-wl-profile-settings");
-    show("skmt-wl-item-settings");
+    hide("lumia-wl-profile-settings");
+    show("lumia-wl-item-settings");
     var isChild = isChildItem(item._uid);
-    var fields = document.getElementById("skmt-wl-item-fields");
+    var fields = document.getElementById("lumia-wl-item-fields");
     if (fields) { fields.innerHTML = buildItemFields(item, isChild); bindItemFields(item); }
     renderTree();
   }
@@ -673,7 +673,7 @@
    * ================================================================ */
 
   function renderTree() {
-    var tree = document.getElementById("skmt-wl-tree");
+    var tree = document.getElementById("lumia-wl-tree");
     if (!tree) return;
     var items = ed.profile.items;
     tree.innerHTML = items.map(function (item, i) {
@@ -704,7 +704,7 @@
   }
 
   function renderStaleBar() {
-    var bar = document.getElementById("skmt-mc-stale-bar");
+    var bar = document.getElementById("lumia-mc-stale-bar");
     if (!bar) return;
     var stale = staleItems();
     if (!stale.length) { bar.style.display = "none"; bar.innerHTML = ""; return; }
@@ -713,26 +713,26 @@
       return i.label || i._wpLabel || prettifySlug(i.slug);
     });
     bar.innerHTML =
-      '<span class="skmt-mc-stale-bar__icon">' + (L.warn || "!") + "</span>" +
-      '<span class="skmt-mc-stale-bar__text">' +
+      '<span class="lumia-mc-stale-bar__icon">' + (L.warn || "!") + "</span>" +
+      '<span class="lumia-mc-stale-bar__text">' +
         "<strong>" + stale.length +
         (stale.length > 1 ? " entrées obsolètes" : " entrée obsolète") + "</strong> — " +
         esc(names.slice(0, 4).join(", ")) +
         (names.length > 4 ? " et " + (names.length - 4) + " autre(s)" : "") +
         ". Ces slugs ne correspondent à aucun menu WordPress actuel." +
       "</span>" +
-      '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--secondary" ' +
-        'id="skmt-mc-stale-clean">Nettoyer</button>';
+      '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" ' +
+        'id="lumia-mc-stale-clean">Nettoyer</button>';
     bar.style.display = "";
 
-    var btn = document.getElementById("skmt-mc-stale-clean");
+    var btn = document.getElementById("lumia-mc-stale-clean");
     if (btn) btn.addEventListener("click", onCleanStale);
   }
 
   function onCleanStale() {
     var stale = staleItems();
     if (!stale.length) return;
-    window.skmtModal.open({
+    window.lumiaModal.open({
       title:        "Nettoyer les entrées obsolètes",
       message:      "Retirer " + stale.length + " entrée(s) de ce menu ? " +
                     "Si l'extension concernée est réactivée, l'entrée reviendra avec ses réglages par défaut.",
@@ -758,14 +758,14 @@
     /* --- SÉPARATEUR : juste une ligne, aucun texte --- */
     if (item.type === "separator") {
       return (
-        '<div class="skmt-wl-tree-item skmt-wl-tree-item--sep" data-uid="' + esc(uid) + '">' +
-          '<div class="skmt-wl-tree-item__row">' +
-            '<span class="skmt-wl-tree-item__handle">' + (L.grip || "") + "</span>" +
-            '<span class="skmt-wl-tree-item__toggle-ph"></span>' +
-            '<span class="skmt-wl-tree-sep-line"></span>' +
-            '<div class="skmt-wl-tree-item__btns">' +
+        '<div class="lumia-wl-tree-item lumia-wl-tree-item--sep" data-uid="' + esc(uid) + '">' +
+          '<div class="lumia-wl-tree-item__row">' +
+            '<span class="lumia-wl-tree-item__handle">' + (L.grip || "") + "</span>" +
+            '<span class="lumia-wl-tree-item__toggle-ph"></span>' +
+            '<span class="lumia-wl-tree-sep-line"></span>' +
+            '<div class="lumia-wl-tree-item__btns">' +
               mvBtn(uid, parentUid, idx, total) +
-              '<button type="button" class="skmt-wl-tree-item__del" ' +
+              '<button type="button" class="lumia-wl-tree-item__del" ' +
                 'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '">' +
                 (L.trash || "×") + "</button>" +
             "</div>" +
@@ -782,14 +782,14 @@
     var expanded = expandedUids.has(uid);
 
     var toggleHtml = hasChild
-      ? '<button type="button" class="skmt-wl-tree-item__toggle" data-uid="' + esc(uid) + '">' +
+      ? '<button type="button" class="lumia-wl-tree-item__toggle" data-uid="' + esc(uid) + '">' +
           (expanded ? (L.chevronD || "▾") : (L.chevronR || "▸")) + "</button>"
-      : '<span class="skmt-wl-tree-item__toggle-ph"></span>';
+      : '<span class="lumia-wl-tree-item__toggle-ph"></span>';
 
     var childrenHtml = "";
     if (hasChild) {
       var childList = item.children;
-      childrenHtml = '<div class="skmt-wl-tree-item__children"' +
+      childrenHtml = '<div class="lumia-wl-tree-item__children"' +
         (expanded ? "" : ' style="display:none"') + ">" +
         childList.map(function (c, ci) {
           return buildChildHtml(c, ci, childList.length, uid);
@@ -797,24 +797,24 @@
     }
 
     return (
-      '<div class="skmt-wl-tree-item' + (selected ? " is-selected" : "") +
+      '<div class="lumia-wl-tree-item' + (selected ? " is-selected" : "") +
           (item._stale ? " is-stale" : "") +
           '" data-uid="' + esc(uid) + '">' +
-        '<div class="skmt-wl-tree-item__row">' +
-          '<span class="skmt-wl-tree-item__handle">' + (L.grip || "") + "</span>" +
+        '<div class="lumia-wl-tree-item__row">' +
+          '<span class="lumia-wl-tree-item__handle">' + (L.grip || "") + "</span>" +
           toggleHtml +
           buildIconEl(item) +
-          '<span class="skmt-wl-tree-item__label' + (hidden ? " is-hidden" : "") + '">' +
+          '<span class="lumia-wl-tree-item__label' + (hidden ? " is-hidden" : "") + '">' +
             esc(label) + "</span>" +
           staleBadge(item) +
           lockBadge(item) +
-          '<div class="skmt-wl-tree-item__btns">' +
-            '<button type="button" class="skmt-wl-tree-item__vis" data-uid="' + esc(uid) + '" ' +
-              'data-skmt-tip="' + (hidden ? "Afficher dans le menu" : "Masquer du menu") + '">' +
+          '<div class="lumia-wl-tree-item__btns">' +
+            '<button type="button" class="lumia-wl-tree-item__vis" data-uid="' + esc(uid) + '" ' +
+              'data-lumia-tip="' + (hidden ? "Afficher dans le menu" : "Masquer du menu") + '">' +
               (hidden ? (L.eyeOff || "") : (L.eye || "")) + "</button>" +
             mvBtn(uid, parentUid, idx, total) +
             (item.type === "custom_link"
-              ? '<button type="button" class="skmt-wl-tree-item__del" ' +
+              ? '<button type="button" class="lumia-wl-tree-item__del" ' +
                   'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '">' +
                   (L.trash || "×") + "</button>"
               : "") +
@@ -831,20 +831,20 @@
     var hidden = c.visible === false;
     var selected = ed.selectedUid === uid;
     return (
-      '<div class="skmt-wl-tree-item skmt-wl-tree-item--child' +
+      '<div class="lumia-wl-tree-item lumia-wl-tree-item--child' +
           (selected ? " is-selected" : "") + (c._stale ? " is-stale" : "") +
           '" data-uid="' + esc(uid) + '">' +
-        '<div class="skmt-wl-tree-item__row">' +
-          '<span class="skmt-wl-tree-item__handle">' + (L.grip || "") + "</span>" +
-          '<span class="skmt-wl-tree-item__toggle-ph"></span>' +
-          '<span class="skmt-wl-tree-item__icon-ph"></span>' +
-          '<span class="skmt-wl-tree-item__label' + (hidden ? " is-hidden" : "") + '">' +
+        '<div class="lumia-wl-tree-item__row">' +
+          '<span class="lumia-wl-tree-item__handle">' + (L.grip || "") + "</span>" +
+          '<span class="lumia-wl-tree-item__toggle-ph"></span>' +
+          '<span class="lumia-wl-tree-item__icon-ph"></span>' +
+          '<span class="lumia-wl-tree-item__label' + (hidden ? " is-hidden" : "") + '">' +
             esc(label) + "</span>" +
           staleBadge(c) +
           lockBadge(c) +
-          '<div class="skmt-wl-tree-item__btns">' +
-            '<button type="button" class="skmt-wl-tree-item__vis" data-uid="' + esc(uid) + '" ' +
-              'data-skmt-tip="' + (hidden ? "Afficher dans le menu" : "Masquer du menu") + '">' +
+          '<div class="lumia-wl-tree-item__btns">' +
+            '<button type="button" class="lumia-wl-tree-item__vis" data-uid="' + esc(uid) + '" ' +
+              'data-lumia-tip="' + (hidden ? "Afficher dans le menu" : "Masquer du menu") + '">' +
               (hidden ? (L.eyeOff || "") : (L.eye || "")) + "</button>" +
             mvBtn(uid, parentUid, ci, total) +
           "</div>" +
@@ -857,11 +857,11 @@
     var up = idx === 0 ? ' style="opacity:.3;pointer-events:none"' : "";
     var dn = idx === total - 1 ? ' style="opacity:.3;pointer-events:none"' : "";
     return (
-      '<button type="button" class="skmt-wl-tree-item__mv" data-mv="up" ' +
-        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-skmt-tip="Monter"' + up + '>' +
+      '<button type="button" class="lumia-wl-tree-item__mv" data-mv="up" ' +
+        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-lumia-tip="Monter"' + up + '>' +
         (L.chevronU || "↑") + "</button>" +
-      '<button type="button" class="skmt-wl-tree-item__mv" data-mv="down" ' +
-        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-skmt-tip="Descendre"' + dn + '>' +
+      '<button type="button" class="lumia-wl-tree-item__mv" data-mv="down" ' +
+        'data-uid="' + esc(uid) + '" data-parent="' + esc(parentUid) + '" data-lumia-tip="Descendre"' + dn + '>' +
         (L.chevronD || "↓") + "</button>"
     );
   }
@@ -946,7 +946,7 @@
     // Les guillemets / parenthèses casseraient le url() inline : repli <img>.
     if (isSvgSrc(src) && !/["'()\\]/.test(src) && isMonochromeSvg(svgTextOf(src))) {
       var u = 'url("' + src + '")';
-      return '<span class="' + cls + ' skmt-wl-icon-mask" aria-hidden="true" ' +
+      return '<span class="' + cls + ' lumia-wl-icon-mask" aria-hidden="true" ' +
         'style="-webkit-mask-image:' + esc(u) + ';mask-image:' + esc(u) + '"></span>';
     }
     return '<img class="' + cls + '" src="' + esc(src) + '" aria-hidden="true" alt="">';
@@ -958,7 +958,7 @@
    */
   function lockBadge(item) {
     if (item.visible !== false || !item.block_access) return "";
-    return '<span class="skmt-wl-tree-item__lock" data-skmt-tip="Masqué et accès direct bloqué">' +
+    return '<span class="lumia-wl-tree-item__lock" data-lumia-tip="Masqué et accès direct bloqué">' +
       (L.lock || "") + "</span>";
   }
 
@@ -968,7 +968,7 @@
    * lettres. Équivalent JS de `Admin::render_help_tip()`.
    */
   function helpTip(text) {
-    return '<button type="button" class="skmt-tip-info" tabindex="0" data-skmt-tip="' +
+    return '<button type="button" class="lumia-tip-info" tabindex="0" data-lumia-tip="' +
       esc(text) + '" aria-label="' + esc(text) + '">' + (L.info || "") + "</button>";
   }
 
@@ -979,15 +979,15 @@
    */
   function staleBadge(item) {
     if (!item._stale) return "";
-    return '<span class="skmt-wl-tree-item__stale" ' +
-      'data-skmt-tip="Entrée absente du menu WordPress actuel — extension désactivée ou supprimée.">' +
+    return '<span class="lumia-wl-tree-item__stale" ' +
+      'data-lumia-tip="Entrée absente du menu WordPress actuel — extension désactivée ou supprimée.">' +
       (L.warn || "!") + "</span>";
   }
 
   function buildIconEl(item) {
     var icon = item.icon || item._wpIcon || "";
-    if (!icon) return '<span class="skmt-wl-tree-item__icon-ph"></span>';
-    return iconMarkup(icon, "skmt-wl-tree-item__icon");
+    if (!icon) return '<span class="lumia-wl-tree-item__icon-ph"></span>';
+    return iconMarkup(icon, "lumia-wl-tree-item__icon");
   }
 
   /* ================================================================
@@ -999,12 +999,12 @@
 
     /* --- CLIC SUR ROW → sélection --- */
     tree.querySelectorAll(
-      ".skmt-wl-tree-item:not(.skmt-wl-tree-item--sep) .skmt-wl-tree-item__row"
+      ".lumia-wl-tree-item:not(.lumia-wl-tree-item--sep) .lumia-wl-tree-item__row"
     ).forEach(function (row) {
       row.addEventListener("click", function (e) {
-        if (e.target.closest(".skmt-wl-tree-item__btns") ||
-            e.target.closest(".skmt-wl-tree-item__toggle") ||
-            e.target.closest(".skmt-wl-tree-item__handle")) return;
+        if (e.target.closest(".lumia-wl-tree-item__btns") ||
+            e.target.closest(".lumia-wl-tree-item__toggle") ||
+            e.target.closest(".lumia-wl-tree-item__handle")) return;
         var uid = row.parentElement.dataset.uid;
         if (!uid) return;
         var item = findByUid(uid);
@@ -1014,7 +1014,7 @@
     });
 
     /* --- TOGGLE COLLAPSE --- */
-    tree.querySelectorAll(".skmt-wl-tree-item__toggle").forEach(function (btn) {
+    tree.querySelectorAll(".lumia-wl-tree-item__toggle").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var uid = btn.dataset.uid;
@@ -1025,7 +1025,7 @@
     });
 
     /* --- VISIBILITÉ --- */
-    tree.querySelectorAll(".skmt-wl-tree-item__vis").forEach(function (btn) {
+    tree.querySelectorAll(".lumia-wl-tree-item__vis").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var item = findByUid(btn.dataset.uid);
@@ -1037,7 +1037,7 @@
     });
 
     /* --- MONTER / DESCENDRE --- */
-    tree.querySelectorAll(".skmt-wl-tree-item__mv").forEach(function (btn) {
+    tree.querySelectorAll(".lumia-wl-tree-item__mv").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var uid       = btn.dataset.uid;
@@ -1057,7 +1057,7 @@
     });
 
     /* --- SUPPRIMER (séparateurs et liens custom) --- */
-    tree.querySelectorAll(".skmt-wl-tree-item__del").forEach(function (btn) {
+    tree.querySelectorAll(".lumia-wl-tree-item__del").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var uid       = btn.dataset.uid;
@@ -1083,17 +1083,17 @@
     if (typeof Sortable === "undefined") return;
 
     var sortableOpts = {
-      handle:     ".skmt-wl-tree-item__handle",
+      handle:     ".lumia-wl-tree-item__handle",
       animation:  150,
       chosenClass: "is-dragging",
-      ghostClass:  "skmt-mc-sortable-ghost",
+      ghostClass:  "lumia-mc-sortable-ghost",
     };
 
-    // "tree" (#skmt-wl-tree) est un noeud persistant entre les rendus
+    // "tree" (#lumia-wl-tree) est un noeud persistant entre les rendus
     // (seul son innerHTML change) : n'instancier Sortable dessus qu'une fois,
     // sinon chaque renderTree() empilerait une nouvelle instance dessus.
-    if (!tree._skmtSortable) {
-      tree._skmtSortable = new Sortable(tree, Object.assign({}, sortableOpts, {
+    if (!tree._lumiaSortable) {
+      tree._lumiaSortable = new Sortable(tree, Object.assign({}, sortableOpts, {
         onEnd: function (evt) {
           if (evt.oldIndex === evt.newIndex) return;
           var moved = ed.profile.items.splice(evt.oldIndex, 1)[0];
@@ -1107,8 +1107,8 @@
     // Les conteneurs d'enfants, eux, sont recréés à chaque rendu (innerHTML
     // remplacé) : une nouvelle instance à chaque fois est donc correcte.
 
-    tree.querySelectorAll(".skmt-wl-tree-item__children").forEach(function (childrenEl) {
-      var parentEl  = childrenEl.closest(".skmt-wl-tree-item");
+    tree.querySelectorAll(".lumia-wl-tree-item__children").forEach(function (childrenEl) {
+      var parentEl  = childrenEl.closest(".lumia-wl-tree-item");
       var parentUid = parentEl ? parentEl.dataset.uid : "";
 
       new Sortable(childrenEl, Object.assign({}, sortableOpts, {
@@ -1130,8 +1130,8 @@
    * ================================================================ */
 
   function bindTreeActions() {
-    var sepBtn  = document.getElementById("skmt-wl-add-sep");
-    var linkBtn = document.getElementById("skmt-wl-add-link");
+    var sepBtn  = document.getElementById("lumia-wl-add-sep");
+    var linkBtn = document.getElementById("lumia-wl-add-link");
     if (sepBtn) {
       sepBtn.addEventListener("click", function () {
         if (!ed.profile) return;
@@ -1162,13 +1162,13 @@
    * ================================================================ */
 
   function populateProfilePanel() {
-    var nameEl = document.getElementById("skmt-wl-profile-name");
+    var nameEl = document.getElementById("lumia-wl-profile-name");
     if (nameEl) {
       nameEl.value = ed.profile.name || "";
       nameEl.oninput = function () { ed.profile.name = nameEl.value; setDirty(true); };
     }
 
-    var applyAll = document.getElementById("skmt-wl-apply-all");
+    var applyAll = document.getElementById("lumia-wl-apply-all");
     if (applyAll) {
       applyAll.checked = !!ed.profile.apply_to_all;
       applyAll.onchange = function () {
@@ -1178,15 +1178,15 @@
       };
     }
 
-    setSegment("skmt-wl-status-", ed.profile.status || "draft");
+    setSegment("lumia-wl-status-", ed.profile.status || "draft");
 
-    ["skmt-wl-status-draft", "skmt-wl-status-active"].forEach(function (id) {
+    ["lumia-wl-status-draft", "lumia-wl-status-active"].forEach(function (id) {
       var btn = document.getElementById(id);
       if (!btn) return;
       var fresh = btn.cloneNode(true);
       btn.parentNode.replaceChild(fresh, btn);
       fresh.addEventListener("click", function () {
-        setSegment("skmt-wl-status-", fresh.dataset.value);
+        setSegment("lumia-wl-status-", fresh.dataset.value);
         setDirty(true);
         updateStatusBadge();
       });
@@ -1194,9 +1194,9 @@
   }
 
   function syncApplyAll() {
-    var applyAll = document.getElementById("skmt-wl-apply-all");
+    var applyAll = document.getElementById("lumia-wl-apply-all");
     var checked  = !!(applyAll && applyAll.checked);
-    ["skmt-wl-targeting-rows", "skmt-wl-targeting-rows-ex"].forEach(function (id) {
+    ["lumia-wl-targeting-rows", "lumia-wl-targeting-rows-ex"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.style.display = checked ? "none" : "";
     });
@@ -1209,11 +1209,11 @@
   }
 
   function updateStatusBadge() {
-    var badge = document.getElementById("skmt-mc-status-badge");
+    var badge = document.getElementById("lumia-mc-status-badge");
     if (!badge) return;
-    var activeBtn = document.getElementById("skmt-wl-status-active");
+    var activeBtn = document.getElementById("lumia-wl-status-active");
     var isActive  = activeBtn && activeBtn.classList.contains("is-active");
-    badge.className  = "skmt-mc-status-badge " + (isActive ? "is-active" : "is-draft");
+    badge.className  = "lumia-mc-status-badge " + (isActive ? "is-active" : "is-draft");
     badge.textContent = isActive ? "Actif" : "Brouillon";
   }
 
@@ -1223,60 +1223,60 @@
 
   function buildItemFields(item, isChild) {
     if (item.type === "separator") {
-      return '<p class="skmt-wl-note" style="padding:16px">Séparateur — aucun paramètre.</p>';
+      return '<p class="lumia-wl-note" style="padding:16px">Séparateur — aucun paramètre.</p>';
     }
     var html = "";
     if (item.type === "custom_link") {
       html += settingsRow("URL",
-        '<input type="url" class="skmt-input" id="skmt-wl-item-url" value="' + esc(item.url || "") + '">', "");
+        '<input type="url" class="lumia-input" id="lumia-wl-item-url" value="' + esc(item.url || "") + '">', "");
       // Les items WP sont déjà filtrés par leurs propres capacités ; un lien
       // personnalisé, lui, n'est rattaché à rien — d'où cette restriction.
       html +=
-        '<div class="skmt-wl-settings-row skmt-wl-settings-row--col">' +
-          '<div class="skmt-wl-settings-row__label"><span>Réservé aux rôles</span>' +
-            '<p class="skmt-form__help">Laisser vide pour afficher ce lien à tous ceux qui voient ce menu.</p>' +
+        '<div class="lumia-wl-settings-row lumia-wl-settings-row--col">' +
+          '<div class="lumia-wl-settings-row__label"><span>Réservé aux rôles</span>' +
+            '<p class="lumia-form__help">Laisser vide pour afficher ce lien à tous ceux qui voient ce menu.</p>' +
           "</div>" +
-          '<div class="skmt-wl-multiselect" id="skmt-wl-item-roles-select"></div>' +
+          '<div class="lumia-wl-multiselect" id="lumia-wl-item-roles-select"></div>' +
         "</div>";
     }
     html += settingsRow("Label",
-      '<input type="text" class="skmt-input" id="skmt-wl-item-label" value="' + esc(item.label || "") + '" ' +
+      '<input type="text" class="lumia-input" id="lumia-wl-item-label" value="' + esc(item.label || "") + '" ' +
         'placeholder="' + esc(item._wpLabel || prettifySlug(item.slug)) + '">',
       "Laisser vide pour conserver le label d'origine.");
     html += (
-      '<div class="skmt-wl-settings-row skmt-wl-settings-row--inline">' +
-        '<div class="skmt-wl-settings-row__label"><span>Icône</span>' +
+      '<div class="lumia-wl-settings-row lumia-wl-settings-row--inline">' +
+        '<div class="lumia-wl-settings-row__label"><span>Icône</span>' +
           (isChild
-            ? '<p class="skmt-form__help">Appliquée uniquement lorsque cet élément devient un menu de premier niveau (rôles à capacités réduites, ex. « Profil » pour les auteurs).</p>'
+            ? '<p class="lumia-form__help">Appliquée uniquement lorsque cet élément devient un menu de premier niveau (rôles à capacités réduites, ex. « Profil » pour les auteurs).</p>'
             : "") +
         "</div>" +
         buildIconBtnHtml(item) +
       "</div>"
     );
     html += settingsRow("Visible",
-      '<label class="skmt-toggle">' +
-        '<input type="checkbox" id="skmt-wl-item-visible"' + (item.visible !== false ? " checked" : "") + '>' +
-        '<span class="skmt-toggle__slider"></span></label>', "", true);
+      '<label class="lumia-toggle">' +
+        '<input type="checkbox" id="lumia-wl-item-visible"' + (item.visible !== false ? " checked" : "") + '>' +
+        '<span class="lumia-toggle__slider"></span></label>', "", true);
     // Masquer ne fait que retirer l'entrée du menu : l'URL reste ouvrable.
     // L'option n'a donc de sens — et n'est affichée — que sur un item masqué.
     if (item.type === "wp_item") {
       html +=
-        '<div class="skmt-wl-settings-row skmt-wl-settings-row--inline" id="skmt-wl-block-row"' +
+        '<div class="lumia-wl-settings-row lumia-wl-settings-row--inline" id="lumia-wl-block-row"' +
           (item.visible === false ? "" : ' style="display:none"') + ">" +
-          '<div class="skmt-wl-settings-row__label">' +
+          '<div class="lumia-wl-settings-row__label">' +
             // La réserve importante (ce n'est pas un système de permissions)
             // passe sous un marqueur d'aide : elle doit rester lisible sans
             // allonger une ligne déjà dense.
             "<span>Bloquer l'accès direct" + helpTip("Ce n'est pas un système de " +
               "permissions : l'API REST, WP-CLI et les capacités WordPress ne sont pas " +
               "concernés.") + "</span>" +
-            '<p class="skmt-form__help">Masquer retire seulement le lien : la page reste ' +
+            '<p class="lumia-form__help">Masquer retire seulement le lien : la page reste ' +
               'accessible par son URL. Cochez pour la refuser aussi (redirection vers le ' +
               'tableau de bord).</p>' +
           "</div>" +
-          '<label class="skmt-toggle">' +
-            '<input type="checkbox" id="skmt-wl-item-block"' + (item.block_access ? " checked" : "") + ">" +
-            '<span class="skmt-toggle__slider"></span></label>' +
+          '<label class="lumia-toggle">' +
+            '<input type="checkbox" id="lumia-wl-item-block"' + (item.block_access ? " checked" : "") + ">" +
+            '<span class="lumia-toggle__slider"></span></label>' +
         "</div>";
     }
     // "Nouvel onglet" n'a de sens que pour un item de premier niveau : les
@@ -1284,14 +1284,14 @@
     // dans un onglet séparé (et l'attribut target n'y est pas appliqué).
     if (!isChild) {
       html += settingsRow("Ouvrir dans un nouvel onglet",
-        '<label class="skmt-toggle">' +
-          '<input type="checkbox" id="skmt-wl-item-target"' + (item.target_blank ? " checked" : "") + '>' +
-          '<span class="skmt-toggle__slider"></span></label>', "", true);
+        '<label class="lumia-toggle">' +
+          '<input type="checkbox" id="lumia-wl-item-target"' + (item.target_blank ? " checked" : "") + '>' +
+          '<span class="lumia-toggle__slider"></span></label>', "", true);
     }
     if (item.type === "wp_item") {
       html += (
-        '<div class="skmt-wl-settings-row skmt-wl-item-reset-row">' +
-          '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--danger" id="skmt-wl-item-reset">' +
+        '<div class="lumia-wl-settings-row lumia-wl-item-reset-row">' +
+          '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--danger" id="lumia-wl-item-reset">' +
             'Réinitialiser l\'élément</button>' +
         "</div>"
       );
@@ -1300,12 +1300,12 @@
   }
 
   function settingsRow(label, control, help, inline) {
-    var cls = "skmt-wl-settings-row" + (inline ? " skmt-wl-settings-row--inline" : "");
+    var cls = "lumia-wl-settings-row" + (inline ? " lumia-wl-settings-row--inline" : "");
     return (
       '<div class="' + cls + '">' +
-        '<div class="skmt-wl-settings-row__label">' +
+        '<div class="lumia-wl-settings-row__label">' +
           '<span>' + esc(label) + "</span>" +
-          (help ? '<p class="skmt-form__help">' + esc(help) + "</p>" : "") +
+          (help ? '<p class="lumia-form__help">' + esc(help) + "</p>" : "") +
         "</div>" + control +
       "</div>"
     );
@@ -1315,8 +1315,8 @@
     var icon  = item.icon;
     var thumb = buildIconThumbInner(icon, item._wpIcon);
     return (
-      '<button type="button" class="skmt-wl-icon-btn" id="skmt-wl-icon-open">' +
-        '<span class="skmt-wl-icon-btn-thumb">' + thumb + "</span>" +
+      '<button type="button" class="lumia-wl-icon-btn" id="lumia-wl-icon-open">' +
+        '<span class="lumia-wl-icon-btn-thumb">' + thumb + "</span>" +
         '<span>' + (icon ? "Modifier" : "Choisir une icône") + "</span>" +
       "</button>"
     );
@@ -1325,18 +1325,18 @@
   function buildIconThumbInner(icon, fallbackWpIcon) {
     var val = icon || fallbackWpIcon || "";
     if (!val) return "";
-    return iconMarkup(val, "skmt-wl-icon-btn-thumb__i");
+    return iconMarkup(val, "lumia-wl-icon-btn-thumb__i");
   }
 
   function bindItemFields(item) {
-    var urlEl = document.getElementById("skmt-wl-item-url");
+    var urlEl = document.getElementById("lumia-wl-item-url");
     if (urlEl) urlEl.addEventListener("input", function () { item.url = urlEl.value; setDirty(true); });
 
     ms.itemRoles = null;
-    if (document.getElementById("skmt-wl-item-roles-select")) {
-      var roleNames = skmtAdmin.wpRoles || {};
+    if (document.getElementById("lumia-wl-item-roles-select")) {
+      var roleNames = lumiaAdmin.wpRoles || {};
       ms.itemRoles = createMultiSelect(
-        "skmt-wl-item-roles-select",
+        "lumia-wl-item-roles-select",
         (item.roles || []).map(function (r) {
           return { id: "role:" + r, rawId: r, label: roleNames[r] || r, type: "role" };
         }),
@@ -1347,18 +1347,18 @@
       );
     }
 
-    var lblEl = document.getElementById("skmt-wl-item-label");
+    var lblEl = document.getElementById("lumia-wl-item-label");
     if (lblEl) lblEl.addEventListener("input", function () {
       item.label = lblEl.value || null;
       setDirty(true);
-      var titleEl = document.getElementById("skmt-mc-panel-title");
+      var titleEl = document.getElementById("lumia-mc-panel-title");
       if (titleEl) titleEl.textContent = item.label || item._wpLabel || prettifySlug(item.slug) || "Élément";
       renderTree();
     });
 
-    var visEl   = document.getElementById("skmt-wl-item-visible");
-    var blockEl = document.getElementById("skmt-wl-item-block");
-    var blockRow = document.getElementById("skmt-wl-block-row");
+    var visEl   = document.getElementById("lumia-wl-item-visible");
+    var blockEl = document.getElementById("lumia-wl-item-block");
+    var blockRow = document.getElementById("lumia-wl-block-row");
     if (visEl) visEl.addEventListener("change", function () {
       item.visible = visEl.checked;
       // Un item redevenu visible ne peut pas rester bloqué : le lien serait
@@ -1377,10 +1377,10 @@
       renderTree(); // fait apparaître / disparaître le cadenas dans l'arbre
     });
 
-    var tgtEl = document.getElementById("skmt-wl-item-target");
+    var tgtEl = document.getElementById("lumia-wl-item-target");
     if (tgtEl) tgtEl.addEventListener("change", function () { item.target_blank = tgtEl.checked; setDirty(true); });
 
-    var rstBtn = document.getElementById("skmt-wl-item-reset");
+    var rstBtn = document.getElementById("lumia-wl-item-reset");
     if (rstBtn) rstBtn.addEventListener("click", function () {
       item.label = null; item.icon = null; item.visible = true;
       item.block_access = false; item.target_blank = false;
@@ -1389,7 +1389,7 @@
       toast("Élément réinitialisé.", "success");
     });
 
-    var iconBtn = document.getElementById("skmt-wl-icon-open");
+    var iconBtn = document.getElementById("lumia-wl-icon-open");
     if (iconBtn) iconBtn.addEventListener("click", function (e) {
       e.stopPropagation();
       openIconPicker(iconBtn, item);
@@ -1431,39 +1431,39 @@
     payload.id = ed.profile.id === "__new__" ? "" : (ed.profile.id || "");
 
     downloadJson({
-      skmt:     "menu_profile",
+      lumia:     "menu_profile",
       version:  1,
       exported: new Date().toISOString(),
       profile:  payload,
-    }, "skmt-menu-" + slugifyName(payload.name, "menu") + ".json");
+    }, "lumia-menu-" + slugifyName(payload.name, "menu") + ".json");
     toast("Menu exporté.", "success");
   }
 
   /**
-   * Exporte tous les menus enregistrés. On part de skmtAdmin.mcProfiles (l'état
+   * Exporte tous les menus enregistrés. On part de lumiaAdmin.mcProfiles (l'état
    * en base), pas de l'éditeur : le menu ouvert peut avoir des modifications
    * non enregistrées, qu'il serait trompeur d'inclure dans un export « tout ».
    */
   function exportAllProfiles() {
-    var profiles = skmtAdmin.mcProfiles || [];
+    var profiles = lumiaAdmin.mcProfiles || [];
     if (!profiles.length) { toast("Aucun menu à exporter.", "error"); return; }
 
     if (ed.dirty) {
       toast("Modifications non enregistrées : elles ne sont pas dans l'export.", "warning");
     }
     downloadJson({
-      skmt:     "menu_profiles",
+      lumia:     "menu_profiles",
       version:  1,
       exported: new Date().toISOString(),
       profiles: profiles,
-    }, "skmt-menus.json");
+    }, "lumia-menus.json");
     toast(profiles.length + (profiles.length > 1 ? " menus exportés." : " menu exporté."), "success");
   }
 
   function bindProfilesFooter() {
-    var btn   = document.getElementById("skmt-mc-import-btn");
-    var input = document.getElementById("skmt-mc-import-file");
-    var all   = document.getElementById("skmt-mc-export-all-btn");
+    var btn   = document.getElementById("lumia-mc-import-btn");
+    var input = document.getElementById("lumia-mc-import-file");
+    var all   = document.getElementById("lumia-mc-export-all-btn");
 
     if (all) all.addEventListener("click", exportAllProfiles);
     if (!btn || !input) return;
@@ -1478,14 +1478,14 @@
         // Le fichier ne fait que transiter : c'est le serveur qui valide et
         // assainit (sanitize_profile), jamais ce parse côté client.
         input.value = "";
-        ajaxPost("skmt_wl_import_profile", { profile: String(reader.result || "") }, function (data) {
+        ajaxPost("lumia_wl_import_profile", { profile: String(reader.result || "") }, function (data) {
           if (!data || !data.success) {
             toast((data && data.data && data.data.message) || "Import impossible.", "error");
             return;
           }
           var imported = data.data.profiles || [data.data.profile];
           var ids = imported.map(function (p) { return p.id; });
-          skmtAdmin.mcProfiles = (skmtAdmin.mcProfiles || []).filter(function (p) {
+          lumiaAdmin.mcProfiles = (lumiaAdmin.mcProfiles || []).filter(function (p) {
             return ids.indexOf(p.id) === -1;
           }).concat(imported);
           renderProfilesSidebar();
@@ -1523,7 +1523,7 @@
 
   function createFloatingIconPicker() {
     iconPickerEl = document.createElement("div");
-    iconPickerEl.className = "skmt-wl-icon-float is-hidden";
+    iconPickerEl.className = "lumia-wl-icon-float is-hidden";
     document.body.appendChild(iconPickerEl);
   }
 
@@ -1558,45 +1558,45 @@
    * pour que « chart column » marche aussi) et ses alias FR/EN.
    */
   function iconSearchTerms(name) {
-    var aliases = (skmtAdmin && skmtAdmin.iconAliases) || {};
+    var aliases = (lumiaAdmin && lumiaAdmin.iconAliases) || {};
     return foldAccents(name + " " + name.replace(/-/g, " ") + " " + (aliases[name] || ""));
   }
 
   /**
    * Grille de la bibliothèque, groupée par catégorie.
    *
-   * Les catégories viennent de `skmtAdmin.iconCategories` (ordre d'affichage
+   * Les catégories viennent de `lumiaAdmin.iconCategories` (ordre d'affichage
    * fait côté PHP). Si la donnée manque — payload d'une version antérieure —
    * on retombe sur une grille à plat de toute la bibliothèque.
    */
   function buildIconGridHtml() {
-    var lib = (skmtAdmin && skmtAdmin.iconLibrary) || window.skmtWlIconLibrary || {};
+    var lib = (lumiaAdmin && lumiaAdmin.iconLibrary) || window.lumiaWlIconLibrary || {};
     var names = Object.keys(lib);
-    if (!names.length) return '<p class="skmt-wl-icon-lib-empty">Bibliothèque vide.</p>';
+    if (!names.length) return '<p class="lumia-wl-icon-lib-empty">Bibliothèque vide.</p>';
 
-    var cats = (skmtAdmin && skmtAdmin.iconCategories) || null;
+    var cats = (lumiaAdmin && lumiaAdmin.iconCategories) || null;
     if (!cats || !cats.length) cats = [{ id: "all", label: "Icônes", icons: names }];
 
     function cell(name) {
       if (!lib[name]) return "";
       var b64 = btoa(unescape(encodeURIComponent(lib[name])));
       return (
-        '<button type="button" class="skmt-wl-icon-grid-item" data-icon-name="' + esc(name) + '" ' +
+        '<button type="button" class="lumia-wl-icon-grid-item" data-icon-name="' + esc(name) + '" ' +
           'data-icon-terms="' + esc(iconSearchTerms(name)) + '" ' +
-          'data-icon-val="svg:' + esc(b64) + '" data-skmt-tip="' + esc(name) + '">' +
-          iconMarkup("svg:" + b64, "skmt-wl-icon-grid-item__i") +
+          'data-icon-val="svg:' + esc(b64) + '" data-lumia-tip="' + esc(name) + '">' +
+          iconMarkup("svg:" + b64, "lumia-wl-icon-grid-item__i") +
         "</button>"
       );
     }
 
     return cats.map(function (cat) {
       return (
-        '<div class="skmt-wl-icon-cat" data-cat="' + esc(cat.id) + '">' +
-          '<p class="skmt-wl-icon-cat__title">' + esc(cat.label) + "</p>" +
-          '<div class="skmt-wl-icon-grid">' + (cat.icons || []).map(cell).join("") + "</div>" +
+        '<div class="lumia-wl-icon-cat" data-cat="' + esc(cat.id) + '">' +
+          '<p class="lumia-wl-icon-cat__title">' + esc(cat.label) + "</p>" +
+          '<div class="lumia-wl-icon-grid">' + (cat.icons || []).map(cell).join("") + "</div>" +
         "</div>"
       );
-    }).join("") + '<p class="skmt-wl-icon-lib-empty" id="skmt-ip-no-result" style="display:none">Aucune icône.</p>';
+    }).join("") + '<p class="lumia-wl-icon-lib-empty" id="lumia-ip-no-result" style="display:none">Aucune icône.</p>';
   }
 
   function buildIconDropdownHtml(item) {
@@ -1610,45 +1610,45 @@
     // plutôt qu'un « Icône par défaut » qui n'annonce rien.
     var native = item._wpIcon || "";
     var resetLabel = native ? "Rétablir l'icône d'origine" : "Retirer l'icône";
-    var resetPreview = native ? iconMarkup(native, "skmt-wl-icon-reset__i") : "";
+    var resetPreview = native ? iconMarkup(native, "lumia-wl-icon-reset__i") : "";
 
     return (
-      '<div class="skmt-wl-icon-picker-tabs">' +
-        '<button type="button" class="skmt-wl-icon-tab is-active" data-tab="library">Bibliothèque</button>' +
-        '<button type="button" class="skmt-wl-icon-tab" data-tab="media">Médiathèque</button>' +
-        '<button type="button" class="skmt-wl-icon-tab" data-tab="code">Code SVG</button>' +
+      '<div class="lumia-wl-icon-picker-tabs">' +
+        '<button type="button" class="lumia-wl-icon-tab is-active" data-tab="library">Bibliothèque</button>' +
+        '<button type="button" class="lumia-wl-icon-tab" data-tab="media">Médiathèque</button>' +
+        '<button type="button" class="lumia-wl-icon-tab" data-tab="code">Code SVG</button>' +
       "</div>" +
 
-      '<div class="skmt-wl-icon-pane" data-pane="library">' +
-        '<div class="skmt-wl-icon-search-wrap">' +
-          '<input type="search" class="skmt-input skmt-wl-icon-search" id="skmt-ip-search" ' +
+      '<div class="lumia-wl-icon-pane" data-pane="library">' +
+        '<div class="lumia-wl-icon-search-wrap">' +
+          '<input type="search" class="lumia-input lumia-wl-icon-search" id="lumia-ip-search" ' +
             'placeholder="Rechercher une icône…" autocomplete="off">' +
         "</div>" +
-        '<div class="skmt-wl-icon-scroll" id="skmt-ip-lib">' + buildIconGridHtml() + "</div>" +
+        '<div class="lumia-wl-icon-scroll" id="lumia-ip-lib">' + buildIconGridHtml() + "</div>" +
       "</div>" +
 
-      '<div class="skmt-wl-icon-pane" data-pane="media" style="display:none"><div class="skmt-wl-icon-pane__body">' +
-        '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--secondary" id="skmt-ip-media-btn">' +
+      '<div class="lumia-wl-icon-pane" data-pane="media" style="display:none"><div class="lumia-wl-icon-pane__body">' +
+        '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-ip-media-btn">' +
           "Ouvrir la médiathèque</button>" +
-        '<div class="skmt-wl-icon-media-preview" id="skmt-ip-media-prev"' +
+        '<div class="lumia-wl-icon-media-preview" id="lumia-ip-media-prev"' +
           (imgSrc ? "" : ' style="display:none"') + ">" +
-          (imgSrc ? iconMarkup(imgSrc, "skmt-wl-icon-media-preview__i") : "") +
+          (imgSrc ? iconMarkup(imgSrc, "lumia-wl-icon-media-preview__i") : "") +
         "</div>" +
       "</div></div>" +
 
-      '<div class="skmt-wl-icon-pane" data-pane="code" style="display:none"><div class="skmt-wl-icon-pane__body">' +
-        '<textarea class="skmt-input skmt-wl-icon-code" id="skmt-ip-code" rows="5" ' +
+      '<div class="lumia-wl-icon-pane" data-pane="code" style="display:none"><div class="lumia-wl-icon-pane__body">' +
+        '<textarea class="lumia-input lumia-wl-icon-code" id="lumia-ip-code" rows="5" ' +
           'placeholder="&lt;svg …&gt;…&lt;/svg&gt;"></textarea>' +
-        '<p class="skmt-form__help">Collez le code d\'un SVG (Lucide, Heroicons…). Il est nettoyé ' +
+        '<p class="lumia-form__help">Collez le code d\'un SVG (Lucide, Heroicons…). Il est nettoyé ' +
           'côté serveur : scripts, liens externes et entités sont retirés. Un tracé en ' +
           '<code>currentColor</code> se colore automatiquement au thème du menu.</p>' +
-        '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--primary" id="skmt-ip-code-btn">' +
+        '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--primary" id="lumia-ip-code-btn">' +
           "Utiliser ce SVG</button>" +
       "</div></div>" +
 
-      '<div class="skmt-wl-icon-picker-footer">' +
-        '<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--secondary" id="skmt-ip-default-btn">' +
-          (resetPreview ? '<span class="skmt-wl-icon-reset-thumb">' + resetPreview + "</span>" : "") +
+      '<div class="lumia-wl-icon-picker-footer">' +
+        '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-ip-default-btn">' +
+          (resetPreview ? '<span class="lumia-wl-icon-reset-thumb">' + resetPreview + "</span>" : "") +
           esc(resetLabel) +
         "</button>" +
       "</div>"
@@ -1656,15 +1656,15 @@
   }
 
   function bindIconDropdown(el, item, triggerBtn) {
-    el.querySelectorAll(".skmt-wl-icon-tab").forEach(function (tab) {
+    el.querySelectorAll(".lumia-wl-icon-tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
-        el.querySelectorAll(".skmt-wl-icon-tab").forEach(function (t) { t.classList.remove("is-active"); });
+        el.querySelectorAll(".lumia-wl-icon-tab").forEach(function (t) { t.classList.remove("is-active"); });
         tab.classList.add("is-active");
-        el.querySelectorAll(".skmt-wl-icon-pane").forEach(function (p) { p.style.display = "none"; });
+        el.querySelectorAll(".lumia-wl-icon-pane").forEach(function (p) { p.style.display = "none"; });
         var pane = el.querySelector('[data-pane="' + tab.dataset.tab + '"]');
         if (pane) pane.style.display = "";
         if (tab.dataset.tab === "library") {
-          var s = el.querySelector("#skmt-ip-search");
+          var s = el.querySelector("#lumia-ip-search");
           if (s) s.focus();
         }
       });
@@ -1678,23 +1678,23 @@
       hideIconPicker();
     }
 
-    el.querySelectorAll(".skmt-wl-icon-grid-item").forEach(function (btn) {
+    el.querySelectorAll(".lumia-wl-icon-grid-item").forEach(function (btn) {
       btn.addEventListener("click", function () { applyIcon(btn.dataset.iconVal); });
     });
 
     // Recherche : on masque/affiche les cellules déjà rendues plutôt que de
     // reconstruire la grille — 150 icônes, chaque frappe recréerait autant
     // de nœuds et perdrait le focus.
-    var search = el.querySelector("#skmt-ip-search");
+    var search = el.querySelector("#lumia-ip-search");
     if (search) {
       search.addEventListener("input", function () {
         // Chaque mot saisi doit être trouvé : « carte bancaire » ne doit pas
         // ramener toutes les cartes, mais « bancaire carte » doit marcher.
         var words = foldAccents(search.value.trim()).split(/\s+/).filter(Boolean);
         var none = true;
-        el.querySelectorAll(".skmt-wl-icon-cat").forEach(function (cat) {
+        el.querySelectorAll(".lumia-wl-icon-cat").forEach(function (cat) {
           var shown = 0;
-          cat.querySelectorAll(".skmt-wl-icon-grid-item").forEach(function (b) {
+          cat.querySelectorAll(".lumia-wl-icon-grid-item").forEach(function (b) {
             var terms = b.dataset.iconTerms || b.dataset.iconName || "";
             var hit = !words.length || words.every(function (w) { return terms.indexOf(w) !== -1; });
             b.style.display = hit ? "" : "none";
@@ -1702,11 +1702,11 @@
           });
           cat.style.display = shown ? "" : "none";
           // Pendant une recherche, les en-têtes de catégorie n'apportent rien.
-          var title = cat.querySelector(".skmt-wl-icon-cat__title");
+          var title = cat.querySelector(".lumia-wl-icon-cat__title");
           if (title) title.style.display = words.length ? "none" : "";
           if (shown) none = false;
         });
-        var empty = el.querySelector("#skmt-ip-no-result");
+        var empty = el.querySelector("#lumia-ip-no-result");
         if (empty) empty.style.display = none ? "" : "none";
       });
       search.addEventListener("keydown", function (e) {
@@ -1714,15 +1714,15 @@
         if (e.key !== "Enter") return;
         e.preventDefault();
         var first = Array.prototype.find.call(
-          el.querySelectorAll(".skmt-wl-icon-grid-item"),
+          el.querySelectorAll(".lumia-wl-icon-grid-item"),
           function (b) { return b.style.display !== "none"; }
         );
         if (first) applyIcon(first.dataset.iconVal);
       });
     }
 
-    var codeBtn = el.querySelector("#skmt-ip-code-btn");
-    var codeEl  = el.querySelector("#skmt-ip-code");
+    var codeBtn = el.querySelector("#lumia-ip-code-btn");
+    var codeEl  = el.querySelector("#lumia-ip-code");
     if (codeBtn && codeEl) {
       codeBtn.addEventListener("click", function () {
         var raw = codeEl.value.trim();
@@ -1730,7 +1730,7 @@
         codeBtn.disabled = true;
         // L'assainissement est fait côté serveur : ce que l'éditeur stocke est
         // le SVG nettoyé qu'il renvoie, jamais la chaîne collée telle quelle.
-        ajaxPost("skmt_wl_sanitize_svg", { svg: raw }, function (data) {
+        ajaxPost("lumia_wl_sanitize_svg", { svg: raw }, function (data) {
           codeBtn.disabled = false;
           if (!data || !data.success) {
             toast((data && data.data && data.data.message) || "SVG refusé.", "error");
@@ -1741,17 +1741,17 @@
         });
       });
     }
-    var defBtn = el.querySelector("#skmt-ip-default-btn");
+    var defBtn = el.querySelector("#lumia-ip-default-btn");
     if (defBtn) defBtn.addEventListener("click", function () { applyIcon(null); });
-    var mediaBtn  = el.querySelector("#skmt-ip-media-btn");
-    var mediaPrev = el.querySelector("#skmt-ip-media-prev");
+    var mediaBtn  = el.querySelector("#lumia-ip-media-btn");
+    var mediaPrev = el.querySelector("#lumia-ip-media-prev");
     if (mediaBtn && typeof wp !== "undefined" && wp.media) {
       mediaBtn.addEventListener("click", function () {
         var frame = wp.media({ title: "Choisir une icône", multiple: false });
         frame.on("select", function () {
           var att = frame.state().get("selection").first().toJSON();
           if (mediaPrev) {
-            mediaPrev.innerHTML = iconMarkup(att.url, "skmt-wl-icon-media-preview__i");
+            mediaPrev.innerHTML = iconMarkup(att.url, "lumia-wl-icon-media-preview__i");
             mediaPrev.style.display = "";
           }
           applyIcon(att.url);
@@ -1763,7 +1763,7 @@
 
   function refreshIconBtn(btn, item) {
     if (!btn) return;
-    var thumb = btn.querySelector(".skmt-wl-icon-btn-thumb");
+    var thumb = btn.querySelector(".lumia-wl-icon-btn-thumb");
     var label = btn.querySelector("span:last-child");
     if (thumb) thumb.innerHTML = buildIconThumbInner(item.icon, item._wpIcon);
     if (label) label.textContent = item.icon ? "Modifier" : "Choisir une icône";
@@ -1775,10 +1775,10 @@
 
   function onSave() {
     if (!ed.profile) return;
-    var saveBtn = document.getElementById("skmt-mc-save-panel-btn");
+    var saveBtn = document.getElementById("lumia-mc-save-panel-btn");
     if (saveBtn) saveBtn.disabled = true;
 
-    ajaxPost("skmt_wl_save_profile", { profile: JSON.stringify(collectProfile()) }, function (data) {
+    ajaxPost("lumia_wl_save_profile", { profile: JSON.stringify(collectProfile()) }, function (data) {
       if (data && data.success) {
         var saved  = data.data.profile;
         var wasNew = ed.profile.id === "__new__";
@@ -1789,17 +1789,17 @@
         ed.profile = saved;
 
         if (wasNew) {
-          skmtAdmin.mcProfiles = skmtAdmin.mcProfiles || [];
-          skmtAdmin.mcProfiles.push(saved);
+          lumiaAdmin.mcProfiles = lumiaAdmin.mcProfiles || [];
+          lumiaAdmin.mcProfiles.push(saved);
         } else {
-          skmtAdmin.mcProfiles = (skmtAdmin.mcProfiles || []).map(function (p) {
+          lumiaAdmin.mcProfiles = (lumiaAdmin.mcProfiles || []).map(function (p) {
             return p.id === saved.id ? saved : p;
           });
         }
         renderProfilesSidebar();
         toast("Menu enregistré.", "success");
 
-        try { sessionStorage.setItem("skmt_mc_open_profile", saved.id); } catch (e) {}
+        try { sessionStorage.setItem("lumia_mc_open_profile", saved.id); } catch (e) {}
         setTimeout(function () { window.location.reload(); }, 800);
       } else {
         if (saveBtn) saveBtn.disabled = false;
@@ -1813,9 +1813,9 @@
    * ================================================================ */
 
   function collectProfile() {
-    var nameEl    = document.getElementById("skmt-wl-profile-name");
-    var statusAct = document.getElementById("skmt-wl-status-active");
-    var applyAll  = document.getElementById("skmt-wl-apply-all");
+    var nameEl    = document.getElementById("lumia-wl-profile-name");
+    var statusAct = document.getElementById("lumia-wl-status-active");
+    var applyAll  = document.getElementById("lumia-wl-apply-all");
     var incVals   = ms.include ? ms.include.getValue() : { roles: [], users: [] };
     var excVals   = ms.exclude ? ms.exclude.getValue() : { roles: [], users: [] };
     return {
@@ -1859,8 +1859,8 @@
    * ================================================================ */
 
   function buildInitialChips(roles, users) {
-    var wpRoles = skmtAdmin.wpRoles     || {};
-    var recent  = skmtAdmin.wpRecentUsers || [];
+    var wpRoles = lumiaAdmin.wpRoles     || {};
+    var recent  = lumiaAdmin.wpRecentUsers || [];
     var sel = [];
     roles.forEach(function (k) { sel.push({ id: "role:" + k, rawId: k, label: wpRoles[k] || k, type: "role" }); });
     users.forEach(function (uid) {
@@ -1886,13 +1886,13 @@
     // de l'ancienne version détruisait l'input focalisé, ce qui déclenchait un
     // blur → le dropdown se refermait aussitôt (« pas le temps de cliquer »).
     container.innerHTML =
-      '<div class="skmt-wl-ms-tags"></div>' +
-      '<div class="skmt-wl-ms-dropdown" style="display:none"></div>';
-    var tagsEl     = container.querySelector(".skmt-wl-ms-tags");
-    var dropdownEl = container.querySelector(".skmt-wl-ms-dropdown");
+      '<div class="lumia-wl-ms-tags"></div>' +
+      '<div class="lumia-wl-ms-dropdown" style="display:none"></div>';
+    var tagsEl     = container.querySelector(".lumia-wl-ms-tags");
+    var dropdownEl = container.querySelector(".lumia-wl-ms-dropdown");
     var input      = document.createElement("input");
     input.type        = "text";
-    input.className   = "skmt-wl-ms-input";
+    input.className   = "lumia-wl-ms-input";
     input.placeholder = "Rechercher…";
     tagsEl.appendChild(input);
 
@@ -1904,12 +1904,12 @@
     };
 
     function renderChips() {
-      Array.prototype.slice.call(tagsEl.querySelectorAll(".skmt-wl-chip")).forEach(function (c) { c.remove(); });
+      Array.prototype.slice.call(tagsEl.querySelectorAll(".lumia-wl-chip")).forEach(function (c) { c.remove(); });
       widget.selected.forEach(function (s) {
         var chip = document.createElement("span");
-        chip.className = "skmt-wl-chip";
+        chip.className = "lumia-wl-chip";
         chip.innerHTML = esc(s.label) +
-          '<button type="button" class="skmt-wl-chip__remove" data-id="' + esc(s.id) + '">' + (L.x || "×") + "</button>";
+          '<button type="button" class="lumia-wl-chip__remove" data-id="' + esc(s.id) + '">' + (L.x || "×") + "</button>";
         tagsEl.insertBefore(chip, input);
       });
     }
@@ -1925,7 +1925,7 @@
     // Délégation : chips et options sont recréés à chaque rendu, on écoute
     // donc au niveau du container (une seule fois, pas de fuite de listeners).
     container.addEventListener("mousedown", function (e) {
-      var rm = e.target.closest(".skmt-wl-chip__remove");
+      var rm = e.target.closest(".lumia-wl-chip__remove");
       if (rm) {
         e.preventDefault();
         widget.selected = widget.selected.filter(function (s) { return s.id !== rm.dataset.id; });
@@ -1935,7 +1935,7 @@
         input.focus();
         return;
       }
-      var opt = e.target.closest(".skmt-wl-ms-option");
+      var opt = e.target.closest(".lumia-wl-ms-option");
       if (opt) {
         e.preventDefault(); // conserve le focus de l'input
         if (!widget.selected.find(function (s) { return s.id === opt.dataset.id; })) {
@@ -1961,7 +1961,7 @@
       widget.timer = setTimeout(function () { widget.search(input.value); }, 300);
     });
     widget.search = function (q) {
-      var wpRoles = skmtAdmin.wpRoles || {};
+      var wpRoles = lumiaAdmin.wpRoles || {};
       var res = [];
       for (var k in wpRoles) {
         if (!Object.prototype.hasOwnProperty.call(wpRoles, k)) continue;
@@ -1974,7 +1974,7 @@
         widget.render();
         return;
       }
-      (skmtAdmin.wpRecentUsers || []).filter(function (u) {
+      (lumiaAdmin.wpRecentUsers || []).filter(function (u) {
         return !q || u.label.toLowerCase().indexOf(q.toLowerCase()) !== -1;
       }).forEach(function (u) {
         res.push({ id: "user:" + u.id, rawId: u.id, label: u.label, type: "user" });
@@ -1983,8 +1983,8 @@
       widget.render();
       if (q.length >= 2) {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", skmtAdmin.ajaxUrl + "?action=skmt_wl_search_users&nonce=" +
-          encodeURIComponent(skmtAdmin.nonce) + "&q=" + encodeURIComponent(q));
+        xhr.open("GET", lumiaAdmin.ajaxUrl + "?action=lumia_wl_search_users&nonce=" +
+          encodeURIComponent(lumiaAdmin.nonce) + "&q=" + encodeURIComponent(q));
         xhr.onload = function () {
           try {
             var d = JSON.parse(xhr.responseText);
@@ -2009,12 +2009,12 @@
   function msDropdownHtml(widget) {
     var selIds  = widget.selected.map(function (s) { return s.id; });
     var options = widget.results.filter(function (r) { return selIds.indexOf(r.id) === -1; });
-    if (!options.length) return '<div class="skmt-wl-ms-empty">Aucun résultat.</div>';
+    if (!options.length) return '<div class="lumia-wl-ms-empty">Aucun résultat.</div>';
     return options.map(function (r) {
       var badge = r.type === "role"
-        ? '<span class="skmt-badge skmt-badge--info">Rôle</span>'
-        : '<span class="skmt-badge skmt-badge--inactive">Utilisateur</span>';
-      return '<div class="skmt-wl-ms-option" data-id="' + esc(r.id) + '" data-label="' + esc(r.label) +
+        ? '<span class="lumia-badge lumia-badge--info">Rôle</span>'
+        : '<span class="lumia-badge lumia-badge--inactive">Utilisateur</span>';
+      return '<div class="lumia-wl-ms-option" data-id="' + esc(r.id) + '" data-label="' + esc(r.label) +
         '" data-type="' + esc(r.type) + '" data-raw="' + esc(String(r.rawId)) + '">' +
         esc(r.label) + " " + badge + "</div>";
     }).join("");
@@ -2025,14 +2025,14 @@
    * ================================================================ */
 
   function ajaxPost(action, data, cb) {
-    var body = "action=" + encodeURIComponent(action) + "&nonce=" + encodeURIComponent(skmtAdmin.nonce);
+    var body = "action=" + encodeURIComponent(action) + "&nonce=" + encodeURIComponent(lumiaAdmin.nonce);
     for (var k in data) {
       if (Object.prototype.hasOwnProperty.call(data, k)) {
         body += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
       }
     }
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", skmtAdmin.ajaxUrl);
+    xhr.open("POST", lumiaAdmin.ajaxUrl);
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     xhr.onload  = function () { try { cb(JSON.parse(xhr.responseText)); } catch (e) { cb(null); } };
     xhr.onerror = function () { cb(null); };
@@ -2040,11 +2040,11 @@
   }
 
   function toast(msg, type) {
-    if (typeof window.skmtShowToast === "function") window.skmtShowToast(msg, type || "success");
+    if (typeof window.lumiaShowToast === "function") window.lumiaShowToast(msg, type || "success");
   }
 
   function findProfileById(id) {
-    return (skmtAdmin.mcProfiles || []).find(function (p) { return p.id === id; }) || null;
+    return (lumiaAdmin.mcProfiles || []).find(function (p) { return p.id === id; }) || null;
   }
 
   function findByUid(uid) {
@@ -2060,11 +2060,11 @@
   }
 
   function findWpItem(slug) {
-    return (skmtAdmin.wpMenu || []).find(function (m) { return m.slug === slug; }) || null;
+    return (lumiaAdmin.wpMenu || []).find(function (m) { return m.slug === slug; }) || null;
   }
 
   function findWpSub(parentSlug, slug) {
-    return ((skmtAdmin.wpSubmenu || {})[parentSlug] || [])
+    return ((lumiaAdmin.wpSubmenu || {})[parentSlug] || [])
       .find(function (s) { return s.slug === slug; }) || null;
   }
 

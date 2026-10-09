@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ImageOptimizer;
+namespace Lumia\Tools\Modules\ImageOptimizer;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -157,7 +157,7 @@ class UrlRewriter {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- journal d'erreur volontaire, sans interface pour l'afficher.
 				error_log(
 					sprintf(
-						'[SKMT Image Optimizer] réécriture d\'URL échouée dans %s (%s=%s) : %s',
+						'[LUMIA Image Optimizer] réécriture d\'URL échouée dans %s (%s=%s) : %s',
 						$table,
 						$id_col,
 						(string) $row[ $id_col ],

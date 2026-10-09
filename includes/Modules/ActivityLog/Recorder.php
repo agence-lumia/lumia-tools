@@ -1,9 +1,9 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ActivityLog;
+namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Modules\Security\ClientIp;
+use Lumia\Tools\Modules\Security\ClientIp;
 
 /**
  * Branche le journal sur les hooks WordPress et écrit les événements.
@@ -25,7 +25,7 @@ class Recorder {
 	/** Longueur maximale d'une valeur avant/après conservée dans le détail. */
 	const VALUE_MAX = 200;
 
-	/** Nombre maximal de chemins listés pour un changement de réglages Mini Tools. */
+	/** Nombre maximal de chemins listés pour un changement de réglages Lümia Tools. */
 	const PATHS_MAX = 30;
 
 	/** @var string[] */
@@ -130,7 +130,7 @@ class Recorder {
 	 */
 	public function on_login_failed( $username ): void {
 		$ip  = $this->client_ip();
-		$key = '_skmt_al_fail_' . md5( $ip );
+		$key = '_lumia_al_fail_' . md5( $ip );
 
 		$count = (int) get_transient( $key );
 		if ( $count >= self::FAILED_LOGIN_CAP ) {
@@ -286,7 +286,7 @@ class Recorder {
 		 * @param string[] $keys
 		 */
 		$keys = (array) apply_filters(
-			'skmt_activity_log_content_meta_keys',
+			'lumia_activity_log_content_meta_keys',
 			[
 				'_bricks_page_content_2',
 				'_bricks_page_header_2',
@@ -599,8 +599,8 @@ class Recorder {
 	public function on_updated_option( $option, $old, $value ): void {
 		$option = (string) $option;
 
-		if ( $this->is_skmt_option( $option ) ) {
-			$this->record_skmt_option( $option, $old, $value );
+		if ( $this->is_lumia_option( $option ) ) {
+			$this->record_lumia_option( $option, $old, $value );
 			return;
 		}
 
@@ -632,8 +632,8 @@ class Recorder {
 	public function on_added_option( $option, $value ): void {
 		$option = (string) $option;
 
-		if ( $this->is_skmt_option( $option ) ) {
-			$this->record_skmt_option( $option, [], $value );
+		if ( $this->is_lumia_option( $option ) ) {
+			$this->record_lumia_option( $option, [], $value );
 		}
 	}
 
@@ -649,24 +649,24 @@ class Recorder {
 		 * @param array<string, string> $options Nom de l'option => libellé.
 		 */
 		return (array) apply_filters(
-			'skmt_activity_log_tracked_options',
+			'lumia_activity_log_tracked_options',
 			[
-				'blogname'               => __( 'Titre du site', 'studio-kyne-mini-tools' ),
-				'blogdescription'        => __( 'Slogan', 'studio-kyne-mini-tools' ),
-				'siteurl'                => __( 'Adresse web de WordPress', 'studio-kyne-mini-tools' ),
-				'home'                   => __( 'Adresse web du site', 'studio-kyne-mini-tools' ),
-				'admin_email'            => __( 'E-mail d\'administration', 'studio-kyne-mini-tools' ),
-				'users_can_register'     => __( 'Inscription ouverte', 'studio-kyne-mini-tools' ),
-				'default_role'           => __( 'Rôle par défaut', 'studio-kyne-mini-tools' ),
-				'blog_public'            => __( 'Visibilité pour les moteurs de recherche', 'studio-kyne-mini-tools' ),
-				'permalink_structure'    => __( 'Structure des permaliens', 'studio-kyne-mini-tools' ),
-				'WPLANG'                 => __( 'Langue du site', 'studio-kyne-mini-tools' ),
-				'timezone_string'        => __( 'Fuseau horaire', 'studio-kyne-mini-tools' ),
-				'show_on_front'          => __( 'La page d\'accueil affiche', 'studio-kyne-mini-tools' ),
-				'page_on_front'          => __( 'Page d\'accueil', 'studio-kyne-mini-tools' ),
-				'page_for_posts'         => __( 'Page des articles', 'studio-kyne-mini-tools' ),
-				'default_comment_status' => __( 'Commentaires autorisés', 'studio-kyne-mini-tools' ),
-				'comment_registration'   => __( 'Commentaires réservés aux inscrits', 'studio-kyne-mini-tools' ),
+				'blogname'               => __( 'Titre du site', 'lumia-tools' ),
+				'blogdescription'        => __( 'Slogan', 'lumia-tools' ),
+				'siteurl'                => __( 'Adresse web de WordPress', 'lumia-tools' ),
+				'home'                   => __( 'Adresse web du site', 'lumia-tools' ),
+				'admin_email'            => __( 'E-mail d\'administration', 'lumia-tools' ),
+				'users_can_register'     => __( 'Inscription ouverte', 'lumia-tools' ),
+				'default_role'           => __( 'Rôle par défaut', 'lumia-tools' ),
+				'blog_public'            => __( 'Visibilité pour les moteurs de recherche', 'lumia-tools' ),
+				'permalink_structure'    => __( 'Structure des permaliens', 'lumia-tools' ),
+				'WPLANG'                 => __( 'Langue du site', 'lumia-tools' ),
+				'timezone_string'        => __( 'Fuseau horaire', 'lumia-tools' ),
+				'show_on_front'          => __( 'La page d\'accueil affiche', 'lumia-tools' ),
+				'page_on_front'          => __( 'Page d\'accueil', 'lumia-tools' ),
+				'page_for_posts'         => __( 'Page des articles', 'lumia-tools' ),
+				'default_comment_status' => __( 'Commentaires autorisés', 'lumia-tools' ),
+				'comment_registration'   => __( 'Commentaires réservés aux inscrits', 'lumia-tools' ),
 			]
 		);
 	}
@@ -717,7 +717,7 @@ class Recorder {
 		 * @param array<string, mixed>|false $row Ligne à écrire ; false pour l'ignorer.
 		 */
 		$row = apply_filters(
-			'skmt_activity_log_record',
+			'lumia_activity_log_record',
 			[
 				'user_id'      => $actor ? $actor->ID : 0,
 				'user_login'   => $actor ? $actor->user_login : '',
@@ -741,14 +741,14 @@ class Recorder {
 	}
 
 	/**
-	 * Réglages Mini Tools : on liste les chemins modifiés, sans les valeurs —
+	 * Réglages Lümia Tools : on liste les chemins modifiés, sans les valeurs —
 	 * un module peut stocker un secret (mot de passe SMTP à venir). Seuls les
 	 * interrupteurs d'activation des modules, booléens, sont montrés.
 	 *
 	 * @param mixed $old
 	 * @param mixed $value
 	 */
-	private function record_skmt_option( string $option, $old, $value ): void {
+	private function record_lumia_option( string $option, $old, $value ): void {
 		// Une écriture sans utilisateur est technique (updater, cron), pas un
 		// choix de réglage.
 		if ( ! is_user_logged_in() ) {
@@ -764,7 +764,7 @@ class Recorder {
 
 		$details = [ 'paths' => array_slice( $paths, 0, self::PATHS_MAX ) ];
 
-		if ( 'skmt_settings' === $option ) {
+		if ( 'lumia_settings' === $option ) {
 			$before  = is_array( $old ) && isset( $old['modules'] ) ? (array) $old['modules'] : [];
 			$after   = is_array( $value ) && isset( $value['modules'] ) ? (array) $value['modules'] : [];
 			$toggled = [];
@@ -778,10 +778,10 @@ class Recorder {
 			}
 			$label = 'global';
 		} else {
-			$label = substr( $option, strlen( 'skmt_module_' ) );
+			$label = substr( $option, strlen( 'lumia_module_' ) );
 		}
 
-		$this->record( 'skmt_settings', 'skmt', 0, $label, $details );
+		$this->record( 'lumia_settings', 'lumia', 0, $label, $details );
 	}
 
 	/**
@@ -868,7 +868,7 @@ class Recorder {
 			 *
 			 * @param string[] $types
 			 */
-			$types = (array) apply_filters( 'skmt_activity_log_post_types', array_values( get_post_types( [ 'show_ui' => true ] ) ) );
+			$types = (array) apply_filters( 'lumia_activity_log_post_types', array_values( get_post_types( [ 'show_ui' => true ] ) ) );
 		}
 
 		return in_array( $post->post_type, $types, true );
@@ -978,8 +978,8 @@ class Recorder {
 		return $details;
 	}
 
-	private function is_skmt_option( string $option ): bool {
-		return 'skmt_settings' === $option || 0 === strpos( $option, 'skmt_module_' );
+	private function is_lumia_option( string $option ): bool {
+		return 'lumia_settings' === $option || 0 === strpos( $option, 'lumia_module_' );
 	}
 
 	/**
@@ -995,7 +995,7 @@ class Recorder {
 			return '';
 		}
 
-		$security = get_option( 'skmt_module_security', [] );
+		$security = get_option( 'lumia_module_security', [] );
 		$source   = is_array( $security ) ? ( $security['authentication']['ip_source'] ?? '' ) : '';
 		$ip       = ClientIp::resolve( ClientIp::sanitize_source( $source ) );
 

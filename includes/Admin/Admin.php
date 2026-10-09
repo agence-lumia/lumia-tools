@@ -1,11 +1,11 @@
 <?php
-namespace StudioKyne\MiniTools\Admin;
+namespace Lumia\Tools\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\Modules;
-use StudioKyne\MiniTools\Core\AbstractModule;
-use StudioKyne\MiniTools\Core\Settings;
+use Lumia\Tools\Core\Modules;
+use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Core\Settings;
 
 /**
  * Gère l'interface d'administration du plugin.
@@ -23,7 +23,7 @@ class Admin {
 	/**
 	 * Slug de la page admin.
 	 */
-	private string $slug = 'studio-kyne-mini-tools';
+	private string $slug = 'lumia-tools';
 
 	/**
 	 * Modules manager.
@@ -41,11 +41,11 @@ class Admin {
 	private string $captured_wp_notices = '';
 
 	/**
-	 * Données du toast SKMT à afficher (message + type).
+	 * Données du toast LUMIA à afficher (message + type).
 	 *
 	 * @var array<string, string>|null
 	 */
-	private ?array $skmt_toast = null;
+	private ?array $lumia_toast = null;
 
 	/**
 	 * Constructeur.
@@ -58,14 +58,14 @@ class Admin {
 		add_filter( 'parent_file', [ $this, 'filter_parent_file' ] );
 		add_filter( 'submenu_file', [ $this, 'filter_submenu_file' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
-		add_action( 'admin_post_skmt_save_settings', [ $this, 'handle_save_settings' ] );
-		add_action( 'admin_post_skmt_toggle_module', [ $this, 'handle_toggle_module' ] );
-		add_action( 'wp_ajax_skmt_ajax_toggle_module', [ $this, 'handle_ajax_toggle_module' ] );
-		add_action( 'admin_post_skmt_update_modules', [ $this, 'handle_update_modules' ] );
-		add_action( 'admin_post_skmt_check_updates', [ $this, 'handle_check_updates' ] );
-		add_action( 'admin_post_skmt_reset_settings', [ $this, 'handle_reset_settings' ] );
-		add_action( 'admin_post_skmt_export_settings', [ $this, 'handle_export_settings' ] );
-		add_action( 'admin_post_skmt_import_settings', [ $this, 'handle_import_settings' ] );
+		add_action( 'admin_post_lumia_save_settings', [ $this, 'handle_save_settings' ] );
+		add_action( 'admin_post_lumia_toggle_module', [ $this, 'handle_toggle_module' ] );
+		add_action( 'wp_ajax_lumia_ajax_toggle_module', [ $this, 'handle_ajax_toggle_module' ] );
+		add_action( 'admin_post_lumia_update_modules', [ $this, 'handle_update_modules' ] );
+		add_action( 'admin_post_lumia_check_updates', [ $this, 'handle_check_updates' ] );
+		add_action( 'admin_post_lumia_reset_settings', [ $this, 'handle_reset_settings' ] );
+		add_action( 'admin_post_lumia_export_settings', [ $this, 'handle_export_settings' ] );
+		add_action( 'admin_post_lumia_import_settings', [ $this, 'handle_import_settings' ] );
 		add_action( 'admin_head', [ $this, 'output_menu_separator_css' ] );
 		add_action( 'admin_footer', [ $this, 'render_modal' ] );
 		// Priorité maximale : les pages du plugin ont leur propre pied de page,
@@ -78,7 +78,7 @@ class Admin {
 		add_action( 'admin_bar_menu', [ $this, 'register_notification_center' ], 999 );
 		add_action( 'admin_footer', [ $this, 'render_notification_drawer' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_global_notification_assets' ] );
-		add_action( 'wp_ajax_skmt_dismiss_notice', [ $this, 'handle_dismiss_notice' ] );
+		add_action( 'wp_ajax_lumia_dismiss_notice', [ $this, 'handle_dismiss_notice' ] );
 	}
 
 	/* ================================================================
@@ -90,12 +90,12 @@ class Admin {
 	 */
 	public function add_menu_page(): void {
 		add_menu_page(
-			__( 'Studio Kyne Mini Tools', 'studio-kyne-mini-tools' ),
-			__( 'SKMT', 'studio-kyne-mini-tools' ),
+			__( 'Lümia Tools', 'lumia-tools' ),
+			__( 'LUMIA', 'lumia-tools' ),
 			'manage_options',
 			$this->slug,
 			[ $this, 'render_page' ],
-			plugins_url( 'assets/admin/images/menu-icon.svg', SKMT_PLUGIN_FILE ),
+			plugins_url( 'assets/admin/images/menu-icon.svg', LUMIA_PLUGIN_FILE ),
 			99
 		);
 
@@ -108,13 +108,13 @@ class Admin {
 	private function add_submenus(): void {
 		remove_submenu_page( $this->slug, $this->slug );
 
-		add_submenu_page( $this->slug, __( 'Vue d\'ensemble', 'studio-kyne-mini-tools' ), __( 'Vue d\'ensemble', 'studio-kyne-mini-tools' ), 'manage_options', $this->slug . '&tab=dashboard', [ $this, 'render_page' ] );
-		add_submenu_page( $this->slug, __( 'Modules', 'studio-kyne-mini-tools' ), __( 'Modules', 'studio-kyne-mini-tools' ), 'manage_options', $this->slug . '&tab=modules', [ $this, 'render_page' ] );
-		add_submenu_page( $this->slug, __( 'Réglages', 'studio-kyne-mini-tools' ), __( 'Réglages', 'studio-kyne-mini-tools' ), 'manage_options', $this->slug . '&tab=settings', [ $this, 'render_page' ] );
+		add_submenu_page( $this->slug, __( 'Vue d\'ensemble', 'lumia-tools' ), __( 'Vue d\'ensemble', 'lumia-tools' ), 'manage_options', $this->slug . '&tab=dashboard', [ $this, 'render_page' ] );
+		add_submenu_page( $this->slug, __( 'Modules', 'lumia-tools' ), __( 'Modules', 'lumia-tools' ), 'manage_options', $this->slug . '&tab=modules', [ $this, 'render_page' ] );
+		add_submenu_page( $this->slug, __( 'Réglages', 'lumia-tools' ), __( 'Réglages', 'lumia-tools' ), 'manage_options', $this->slug . '&tab=settings', [ $this, 'render_page' ] );
 
 		global $submenu;
 		if ( isset( $submenu[ $this->slug ] ) ) {
-			$submenu[ $this->slug ][] = [ '', 'manage_options', 'skmt-separator', '', 'skmt-menu-separator' ]; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- séparateur visuel : WordPress n'offre aucune API pour en insérer un dans un sous-menu.
+			$submenu[ $this->slug ][] = [ '', 'manage_options', 'lumia-separator', '', 'lumia-menu-separator' ]; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- séparateur visuel : WordPress n'offre aucune API pour en insérer un dans un sous-menu.
 		}
 
 		foreach ( $this->modules->get_all() as $module_id => $module ) {
@@ -151,7 +151,7 @@ class Admin {
 			return;
 		}
 
-		$top_label = __( 'SKMT', 'studio-kyne-mini-tools' );
+		$top_label = __( 'LUMIA', 'lumia-tools' );
 		$seen      = [];
 		$filtered  = [];
 
@@ -189,22 +189,22 @@ class Admin {
 
 		// tokens.css d'abord : il ne contient que des custom properties, tous les
 		// autres feuilles en dependent.
-		wp_enqueue_style( 'skmt-tokens-css', SKMT_ASSETS_URL . 'admin/css/tokens.css', [], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-reset-css', SKMT_ASSETS_URL . 'admin/css/reset.css', [ 'skmt-tokens-css' ], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-layout-css', SKMT_ASSETS_URL . 'admin/css/layout.css', [ 'skmt-reset-css' ], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-sidebar-css', SKMT_ASSETS_URL . 'admin/css/sidebar.css', [ 'skmt-layout-css' ], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-components-css', SKMT_ASSETS_URL . 'admin/css/components.css', [ 'skmt-tokens-css' ], SKMT_VERSION );
-		wp_enqueue_style( 'skmt-buttons-css', SKMT_ASSETS_URL . 'admin/css/buttons.css', [ 'skmt-components-css' ], SKMT_VERSION );
+		wp_enqueue_style( 'lumia-tokens-css', LUMIA_ASSETS_URL . 'admin/css/tokens.css', [], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-reset-css', LUMIA_ASSETS_URL . 'admin/css/reset.css', [ 'lumia-tokens-css' ], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-layout-css', LUMIA_ASSETS_URL . 'admin/css/layout.css', [ 'lumia-reset-css' ], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-sidebar-css', LUMIA_ASSETS_URL . 'admin/css/sidebar.css', [ 'lumia-layout-css' ], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-components-css', LUMIA_ASSETS_URL . 'admin/css/components.css', [ 'lumia-tokens-css' ], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-buttons-css', LUMIA_ASSETS_URL . 'admin/css/buttons.css', [ 'lumia-components-css' ], LUMIA_VERSION );
 
-		wp_enqueue_script( 'skmt-admin-js', SKMT_ASSETS_URL . 'admin/js/admin.js', [], SKMT_VERSION, true );
+		wp_enqueue_script( 'lumia-admin-js', LUMIA_ASSETS_URL . 'admin/js/admin.js', [], LUMIA_VERSION, true );
 
 		// Bibliothèques tierces partagées : enregistrées une seule fois sous un
 		// handle stable, chargées uniquement si un module les déclare en
 		// dépendance. Le module Médias utilise le même handle : WordPress
 		// dédoublonne donc quand les deux sont présents sur le même écran.
-		wp_register_script( 'skmt-sortable-js', SKMT_ASSETS_URL . 'admin/js/vendor/sortable.min.js', [], SKMT_VERSION, true );
+		wp_register_script( 'lumia-sortable-js', LUMIA_ASSETS_URL . 'admin/js/vendor/sortable.min.js', [], LUMIA_VERSION, true );
 
-		$this->localize_admin_script( 'skmt-admin-js' );
+		$this->localize_admin_script( 'lumia-admin-js' );
 
 		$this->enqueue_module_assets();
 	}
@@ -215,13 +215,13 @@ class Admin {
 	private function localize_admin_script( string $handle ): void {
 		wp_localize_script(
 			$handle,
-			'skmtAdmin',
+			'lumiaAdmin',
 			[
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'skmt_admin_nonce' ),
+				'nonce'   => wp_create_nonce( 'lumia_admin_nonce' ),
 				'i18n'    => [
-					'saveSuccess' => __( 'Réglages enregistrés avec succès.', 'studio-kyne-mini-tools' ),
-					'saveError'   => __( 'Une erreur est survenue.', 'studio-kyne-mini-tools' ),
+					'saveSuccess' => __( 'Réglages enregistrés avec succès.', 'lumia-tools' ),
+					'saveError'   => __( 'Une erreur est survenue.', 'lumia-tools' ),
 				],
 			]
 		);
@@ -231,8 +231,8 @@ class Admin {
 	 * Charge les assets du centre de notifications sur tout l'admin WP.
 	 */
 	public function enqueue_global_notification_assets(): void {
-		wp_enqueue_style( 'skmt-notifications-css', SKMT_ASSETS_URL . 'admin/css/notifications.css', [], SKMT_VERSION );
-		wp_enqueue_script( 'skmt-notifications-js', SKMT_ASSETS_URL . 'admin/js/notifications.js', [], SKMT_VERSION, true );
+		wp_enqueue_style( 'lumia-notifications-css', LUMIA_ASSETS_URL . 'admin/css/notifications.css', [], LUMIA_VERSION );
+		wp_enqueue_script( 'lumia-notifications-js', LUMIA_ASSETS_URL . 'admin/js/notifications.js', [], LUMIA_VERSION, true );
 	}
 
 	/**
@@ -258,35 +258,35 @@ class Admin {
 				continue;
 			}
 			wp_enqueue_style(
-				'skmt-module-' . $module_id . '-css-' . $index,
+				'lumia-module-' . $module_id . '-css-' . $index,
 				$style_url,
-				[ 'skmt-components-css', 'skmt-buttons-css', 'skmt-layout-css', 'skmt-sidebar-css' ],
-				SKMT_VERSION
+				[ 'lumia-components-css', 'lumia-buttons-css', 'lumia-layout-css', 'lumia-sidebar-css' ],
+				LUMIA_VERSION
 			);
 		}
 
-		// JS du module (avec skmt-admin-js comme dépendance pour que skmtAdmin soit défini)
+		// JS du module (avec lumia-admin-js comme dépendance pour que lumiaAdmin soit défini)
 		foreach ( $instance->get_admin_js() as $index => $script_url ) {
 			if ( empty( $script_url ) ) {
 				continue;
 			}
 
-			$handle = 'skmt-module-' . $module_id . '-js-' . $index;
-			$deps   = array_values( array_filter( array_merge( [ 'skmt-admin-js' ], $instance->get_admin_js_deps() ) ) );
-			wp_enqueue_script( $handle, $script_url, $deps, SKMT_VERSION, true );
+			$handle = 'lumia-module-' . $module_id . '-js-' . $index;
+			$deps   = array_values( array_filter( array_merge( [ 'lumia-admin-js' ], $instance->get_admin_js_deps() ) ) );
+			wp_enqueue_script( $handle, $script_url, $deps, LUMIA_VERSION, true );
 
-			// Injection des données JS spécifiques au module dans skmtAdmin
+			// Injection des données JS spécifiques au module dans lumiaAdmin
 			$js_data = $instance->get_admin_js_data();
 			if ( ! empty( $js_data ) ) {
-				$inline = 'window.skmtAdmin=window.skmtAdmin||{};';
+				$inline = 'window.lumiaAdmin=window.lumiaAdmin||{};';
 				if ( ! empty( $js_data['i18n'] ) ) {
-					$inline .= 'window.skmtAdmin.i18n=Object.assign(window.skmtAdmin.i18n||{},' . wp_json_encode( $js_data['i18n'] ) . ');';
+					$inline .= 'window.lumiaAdmin.i18n=Object.assign(window.lumiaAdmin.i18n||{},' . wp_json_encode( $js_data['i18n'] ) . ');';
 				}
 				foreach ( $js_data as $key => $value ) {
 					if ( 'i18n' === $key ) {
 						continue;
 					}
-					$inline .= 'window.skmtAdmin[' . wp_json_encode( $key ) . ']=' . wp_json_encode( $value ) . ';';
+					$inline .= 'window.lumiaAdmin[' . wp_json_encode( $key ) . ']=' . wp_json_encode( $value ) . ';';
 				}
 				wp_add_inline_script( $handle, $inline, 'before' );
 			}
@@ -302,7 +302,7 @@ class Admin {
 	 */
 	public function render_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Vous n\'avez pas les permissions nécessaires.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Vous n\'avez pas les permissions nécessaires.', 'lumia-tools' ) );
 		}
 
 		// Certains modules exigent davantage que `manage_options` (Fichiers,
@@ -311,12 +311,12 @@ class Admin {
 		// refus compte.
 		$requise = $this->tab_capability();
 		if ( 'manage_options' !== $requise && ! current_user_can( $requise ) ) {
-			wp_die( esc_html__( 'Vous n\'avez pas les permissions nécessaires.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Vous n\'avez pas les permissions nécessaires.', 'lumia-tools' ) );
 		}
 
 		$this->display_notices();
 
-		include SKMT_TEMPLATES_DIR . 'admin/layout.php';
+		include LUMIA_TEMPLATES_DIR . 'admin/layout.php';
 	}
 
 	/**
@@ -351,35 +351,35 @@ class Admin {
 	}
 
 	/**
-	 * Prépare le toast de feedback SKMT (via query string) pour injection JS.
+	 * Prépare le toast de feedback LUMIA (via query string) pour injection JS.
 	 * N'affiche plus rien directement — les données sont consommées par render_notification_drawer().
 	 */
 	private function display_notices(): void {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! isset( $_GET['skmt_notice'] ) ) {
+		if ( ! isset( $_GET['lumia_notice'] ) ) {
 			return;
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$notice = sanitize_key( $_GET['skmt_notice'] );
+		$notice = sanitize_key( $_GET['lumia_notice'] );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$type = isset( $_GET['skmt_notice_type'] ) ? sanitize_key( $_GET['skmt_notice_type'] ) : 'success';
+		$type = isset( $_GET['lumia_notice_type'] ) ? sanitize_key( $_GET['lumia_notice_type'] ) : 'success';
 
 		$messages = [
-			'settings_saved'       => __( 'Réglages enregistrés avec succès.', 'studio-kyne-mini-tools' ),
-			'module_activated'     => __( 'Module activé.', 'studio-kyne-mini-tools' ),
-			'module_deactivated'   => __( 'Module désactivé.', 'studio-kyne-mini-tools' ),
-			'modules_updated'      => __( 'Modules mis à jour.', 'studio-kyne-mini-tools' ),
-			'updates_checked'      => __( 'Vérification des mises à jour effectuée.', 'studio-kyne-mini-tools' ),
-			'settings_reset'       => __( 'Configuration réinitialisée aux valeurs par défaut.', 'studio-kyne-mini-tools' ),
-			'settings_imported'    => __( 'Configuration importée avec succès.', 'studio-kyne-mini-tools' ),
-			'import_error_file'    => __( 'Erreur lors du chargement du fichier.', 'studio-kyne-mini-tools' ),
-			'import_error_invalid' => __( 'Le fichier JSON est invalide ou incompatible.', 'studio-kyne-mini-tools' ),
-			'import_error_size'    => __( 'Le fichier dépasse la taille maximale autorisée (2 Mo).', 'studio-kyne-mini-tools' ),
+			'settings_saved'       => __( 'Réglages enregistrés avec succès.', 'lumia-tools' ),
+			'module_activated'     => __( 'Module activé.', 'lumia-tools' ),
+			'module_deactivated'   => __( 'Module désactivé.', 'lumia-tools' ),
+			'modules_updated'      => __( 'Modules mis à jour.', 'lumia-tools' ),
+			'updates_checked'      => __( 'Vérification des mises à jour effectuée.', 'lumia-tools' ),
+			'settings_reset'       => __( 'Configuration réinitialisée aux valeurs par défaut.', 'lumia-tools' ),
+			'settings_imported'    => __( 'Configuration importée avec succès.', 'lumia-tools' ),
+			'import_error_file'    => __( 'Erreur lors du chargement du fichier.', 'lumia-tools' ),
+			'import_error_invalid' => __( 'Le fichier JSON est invalide ou incompatible.', 'lumia-tools' ),
+			'import_error_size'    => __( 'Le fichier dépasse la taille maximale autorisée (2 Mo).', 'lumia-tools' ),
 		];
 
 		if ( isset( $messages[ $notice ] ) ) {
-			$this->skmt_toast = [
+			$this->lumia_toast = [
 				'message' => $messages[ $notice ],
 				'type'    => $type,
 			];
@@ -436,13 +436,13 @@ class Admin {
 		$previous = libxml_use_internal_errors( true );
 		$dom      = new \DOMDocument();
 		$loaded   = $dom->loadHTML(
-			'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="skmt-notices-root">' . $html . '</div></body></html>',
+			'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="lumia-notices-root">' . $html . '</div></body></html>',
 			LIBXML_HTML_NODEFDTD
 		);
 		libxml_clear_errors();
 		libxml_use_internal_errors( $previous );
 
-		$root = $loaded ? $dom->getElementById( 'skmt-notices-root' ) : null;
+		$root = $loaded ? $dom->getElementById( 'lumia-notices-root' ) : null;
 		if ( ! $root ) {
 			return $result;
 		}
@@ -480,19 +480,19 @@ class Admin {
 			return;
 		}
 
-		$bell = $this->render_icon( 'bell', 'sm', 'skmt-notif-bell-icon' );
+		$bell = $this->render_icon( 'bell', 'sm', 'lumia-notif-bell-icon' );
 
 		$wp_admin_bar->add_node(
 			[
-				'id'     => 'skmt-notif-center',
+				'id'     => 'lumia-notif-center',
 				'parent' => 'top-secondary',
-				'title'  => '<span class="skmt-notif-btn-wrap">' . $bell . '<span class="skmt-notif-badge" id="skmt-notif-badge" style="display:none"></span></span>',
-				'href'   => '#skmt-notif-drawer',
+				'title'  => '<span class="lumia-notif-btn-wrap">' . $bell . '<span class="lumia-notif-badge" id="lumia-notif-badge" style="display:none"></span></span>',
+				'href'   => '#lumia-notif-drawer',
 				// WP_Admin_Bar échappe lui-même meta.title : un esc_attr__ ici
 				// double-encoderait (« > » rendu « &gt; »).
 				'meta'   => [
-					'class' => 'skmt-notif-trigger',
-					'title' => __( 'Notifications', 'studio-kyne-mini-tools' ),
+					'class' => 'lumia-notif-trigger',
+					'title' => __( 'Notifications', 'lumia-tools' ),
 				],
 			]
 		);
@@ -511,17 +511,17 @@ class Admin {
 			return;
 		}
 
-		$icon = $this->render_icon( 'eye-off', 'sm', 'skmt-noindex-icon' );
+		$icon = $this->render_icon( 'eye-off', 'sm', 'lumia-noindex-icon' );
 
 		$wp_admin_bar->add_node(
 			[
-				'id'     => 'skmt-noindex',
+				'id'     => 'lumia-noindex',
 				'parent' => 'top-secondary',
-				'title'  => '<span class="skmt-noindex-wrap">' . $icon . '<span class="skmt-noindex-label">' . esc_html__( 'No-index', 'studio-kyne-mini-tools' ) . '</span></span>',
+				'title'  => '<span class="lumia-noindex-wrap">' . $icon . '<span class="lumia-noindex-label">' . esc_html__( 'No-index', 'lumia-tools' ) . '</span></span>',
 				'href'   => admin_url( 'options-reading.php' ),
 				'meta'   => [
-					'class' => 'skmt-noindex-indicator',
-					'title' => __( 'Les moteurs de recherche sont invités à ne pas indexer ce site (Réglages > Lecture).', 'studio-kyne-mini-tools' ),
+					'class' => 'lumia-noindex-indicator',
+					'title' => __( 'Les moteurs de recherche sont invités à ne pas indexer ce site (Réglages > Lecture).', 'lumia-tools' ),
 				],
 			]
 		);
@@ -535,20 +535,20 @@ class Admin {
 			return;
 		}
 		?>
-		<div id="skmt-modal-overlay" class="skmt-modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
-			<div class="skmt-modal">
-				<div class="skmt-modal__header">
-					<h2 class="skmt-modal__title"></h2>
+		<div id="lumia-modal-overlay" class="lumia-modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+			<div class="lumia-modal">
+				<div class="lumia-modal__header">
+					<h2 class="lumia-modal__title"></h2>
 				</div>
-				<div class="skmt-modal__body">
-					<p class="skmt-modal__message"></p>
+				<div class="lumia-modal__body">
+					<p class="lumia-modal__message"></p>
 				</div>
-				<div class="skmt-modal__footer">
-					<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--secondary skmt-modal__cancel">
-						<?php esc_html_e( 'Annuler', 'studio-kyne-mini-tools' ); ?>
+				<div class="lumia-modal__footer">
+					<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal__cancel">
+						<?php esc_html_e( 'Annuler', 'lumia-tools' ); ?>
 					</button>
-					<button type="button" class="skmt-btn skmt-btn--sm skmt-btn--primary skmt-modal__confirm">
-						<?php esc_html_e( 'Confirmer', 'studio-kyne-mini-tools' ); ?>
+					<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--primary lumia-modal__confirm">
+						<?php esc_html_e( 'Confirmer', 'lumia-tools' ); ?>
 					</button>
 				</div>
 			</div>
@@ -564,10 +564,10 @@ class Admin {
 
 		$close_icon   = $this->render_icon( 'x', 'sm' );
 		$notices_json = wp_json_encode( $this->captured_wp_notices );
-		$toast_json   = wp_json_encode( $this->skmt_toast );
+		$toast_json   = wp_json_encode( $this->lumia_toast );
 
 		$user_id         = get_current_user_id();
-		$raw_notices     = $user_id ? get_user_meta( $user_id, 'skmt_notices', true ) : [];
+		$raw_notices     = $user_id ? get_user_meta( $user_id, 'lumia_notices', true ) : [];
 		$raw_notices     = is_array( $raw_notices ) ? $raw_notices : [];
 		$persistent_list = [];
 		foreach ( $raw_notices as $notice_id => $notice ) {
@@ -581,26 +581,26 @@ class Admin {
 		$notif_data_json = wp_json_encode(
 			[
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'skmt_admin_nonce' ),
+				'nonce'   => wp_create_nonce( 'lumia_admin_nonce' ),
 			]
 		);
 		?>
-		<div id="skmt-notif-drawer" class="skmt-notif-drawer" role="dialog" aria-label="<?php esc_attr_e( 'Centre de notifications', 'studio-kyne-mini-tools' ); ?>" aria-hidden="true">
-			<div class="skmt-notif-drawer__header">
-				<h2 class="skmt-notif-drawer__title"><?php esc_html_e( 'Notifications', 'studio-kyne-mini-tools' ); ?></h2>
-				<button class="skmt-notif-drawer__close" id="skmt-notif-close" type="button" aria-label="<?php esc_attr_e( 'Fermer', 'studio-kyne-mini-tools' ); ?>">
+		<div id="lumia-notif-drawer" class="lumia-notif-drawer" role="dialog" aria-label="<?php esc_attr_e( 'Centre de notifications', 'lumia-tools' ); ?>" aria-hidden="true">
+			<div class="lumia-notif-drawer__header">
+				<h2 class="lumia-notif-drawer__title"><?php esc_html_e( 'Notifications', 'lumia-tools' ); ?></h2>
+				<button class="lumia-notif-drawer__close" id="lumia-notif-close" type="button" aria-label="<?php esc_attr_e( 'Fermer', 'lumia-tools' ); ?>">
 					<?php echo $close_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</button>
 			</div>
-			<div class="skmt-notif-drawer__body" id="skmt-notif-body"></div>
+			<div class="lumia-notif-drawer__body" id="lumia-notif-body"></div>
 		</div>
-		<div id="skmt-notif-overlay" class="skmt-notif-overlay" aria-hidden="true"></div>
-		<div id="skmt-toast-container" class="skmt-toast-container" role="region" aria-live="polite" aria-label="<?php esc_attr_e( 'Notifications', 'studio-kyne-mini-tools' ); ?>"></div>
+		<div id="lumia-notif-overlay" class="lumia-notif-overlay" aria-hidden="true"></div>
+		<div id="lumia-toast-container" class="lumia-toast-container" role="region" aria-live="polite" aria-label="<?php esc_attr_e( 'Notifications', 'lumia-tools' ); ?>"></div>
 		<script>
-		window.skmtWpNoticesHtml     = <?php echo $notices_json;    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
-		window.skmtToastData         = <?php echo $toast_json;      // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
-		window.skmtPersistentNotices = <?php echo $persistent_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
-		window.skmtNotifData         = <?php echo $notif_data_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
+		window.lumiaWpNoticesHtml     = <?php echo $notices_json;    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
+		window.lumiaToastData         = <?php echo $toast_json;      // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
+		window.lumiaPersistentNotices = <?php echo $persistent_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
+		window.lumiaNotifData         = <?php echo $notif_data_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>;
 		</script>
 		<?php
 	}
@@ -647,14 +647,14 @@ class Admin {
 		if ( ! $user_id ) {
 			return;
 		}
-		$notices        = get_user_meta( $user_id, 'skmt_notices', true );
+		$notices        = get_user_meta( $user_id, 'lumia_notices', true );
 		$notices        = is_array( $notices ) ? $notices : [];
 		$notices[ $id ] = [
 			'message'   => $message,
 			'type'      => $type,
 			'timestamp' => time(),
 		];
-		update_user_meta( $user_id, 'skmt_notices', $notices );
+		update_user_meta( $user_id, 'lumia_notices', $notices );
 	}
 
 	/**
@@ -665,25 +665,25 @@ class Admin {
 		if ( ! $user_id ) {
 			return;
 		}
-		$notices = get_user_meta( $user_id, 'skmt_notices', true );
+		$notices = get_user_meta( $user_id, 'lumia_notices', true );
 		if ( ! is_array( $notices ) ) {
 			return;
 		}
 		unset( $notices[ $id ] );
-		update_user_meta( $user_id, 'skmt_notices', $notices );
+		update_user_meta( $user_id, 'lumia_notices', $notices );
 	}
 
 	/**
-	 * Endpoint AJAX : dismiss d'une notice persistante SKMT.
+	 * Endpoint AJAX : dismiss d'une notice persistante LUMIA.
 	 */
 	public function handle_dismiss_notice(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 		$id = isset( $_POST['notice_id'] ) ? sanitize_key( $_POST['notice_id'] ) : '';
 		if ( empty( $id ) ) {
-			wp_send_json_error( [ 'message' => __( 'ID invalide.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'ID invalide.', 'lumia-tools' ) ] );
 		}
 		self::dismiss_persistent_notice( $id );
 		wp_send_json_success();
@@ -697,31 +697,31 @@ class Admin {
 	 * Sauvegarde des réglages globaux ou d'un module.
 	 */
 	public function handle_save_settings(): void {
-		if ( ! isset( $_POST['skmt_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_nonce'] ) ), 'skmt_save_settings' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_POST['lumia_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_nonce'] ) ), 'lumia_save_settings' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
-		$tab = isset( $_POST['skmt_tab'] ) ? sanitize_key( $_POST['skmt_tab'] ) : 'settings';
+		$tab = isset( $_POST['lumia_tab'] ) ? sanitize_key( $_POST['lumia_tab'] ) : 'settings';
 
 		// Réglages globaux
-		if ( 'settings' === $tab && isset( $_POST['skmt_global'] ) ) {
+		if ( 'settings' === $tab && isset( $_POST['lumia_global'] ) ) {
 			$global = [
-				'update_channel' => isset( $_POST['skmt_global']['update_channel'] ) ? sanitize_key( $_POST['skmt_global']['update_channel'] ) : 'stable',
+				'update_channel' => isset( $_POST['lumia_global']['update_channel'] ) ? sanitize_key( $_POST['lumia_global']['update_channel'] ) : 'stable',
 			];
 			$this->settings->set( 'global', $global );
 
-			// Case décochée = absente du POST. Pas stockée dans skmt_settings :
+			// Case décochée = absente du POST. Pas stockée dans lumia_settings :
 			// elle pilote l'option WordPress, donc n'entre ni dans l'export ni
 			// dans la réinitialisation. On n'écrit que si l'utilisateur a changé
 			// la case depuis le chargement de la page : sinon, enregistrer le
 			// seul canal annulerait un réglage fait entre-temps depuis la liste
 			// des extensions ou WP-CLI.
-			$auto_update         = ! empty( $_POST['skmt_global']['auto_update'] );
-			$auto_update_initial = ! empty( $_POST['skmt_global']['auto_update_initial'] );
+			$auto_update         = ! empty( $_POST['lumia_global']['auto_update'] );
+			$auto_update_initial = ! empty( $_POST['lumia_global']['auto_update_initial'] );
 
 			if ( $auto_update !== $auto_update_initial && wp_is_auto_update_enabled_for_type( 'plugin' ) && current_user_can( 'update_plugins' ) ) {
 				$this->set_auto_update( $auto_update );
@@ -738,21 +738,21 @@ class Admin {
 			// vérifié plus haut, il ne le remplace pas — la capacité déclarée
 			// par un module est toujours plus stricte, jamais une alternative.
 			if ( ! current_user_can( $this->module_capability( $module_id ) ) ) {
-				wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+				wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 			}
 
-			if ( $instance && isset( $_POST['skmt_module_settings'] ) && is_array( $_POST['skmt_module_settings'] ) ) {
-				$instance->save_settings( wp_unslash( $_POST['skmt_module_settings'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce et capacité vérifiés plus haut ; chaque module assainit ses réglages dans save_settings() (contrat AbstractModule).
+			if ( $instance && isset( $_POST['lumia_module_settings'] ) && is_array( $_POST['lumia_module_settings'] ) ) {
+				$instance->save_settings( wp_unslash( $_POST['lumia_module_settings'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce et capacité vérifiés plus haut ; chaque module assainit ses réglages dans save_settings() (contrat AbstractModule).
 			}
 		}
 
 		wp_safe_redirect(
 			add_query_arg(
 				[
-					'page'             => $this->slug,
-					'tab'              => $tab,
-					'skmt_notice'      => 'settings_saved',
-					'skmt_notice_type' => 'success',
+					'page'              => $this->slug,
+					'tab'               => $tab,
+					'lumia_notice'      => 'settings_saved',
+					'lumia_notice_type' => 'success',
 				],
 				admin_url( 'admin.php' )
 			)
@@ -765,16 +765,16 @@ class Admin {
 	 * Nonce lu depuis $_REQUEST pour supporter les deux méthodes HTTP.
 	 */
 	public function handle_toggle_module(): void {
-		if ( ! isset( $_REQUEST['skmt_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['skmt_nonce'] ) ), 'skmt_toggle_module' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_REQUEST['lumia_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['lumia_nonce'] ) ), 'lumia_toggle_module' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		$module_id = isset( $_REQUEST['module'] ) ? sanitize_key( $_REQUEST['module'] ) : '';
-		$action    = isset( $_REQUEST['skmt_action'] ) ? sanitize_key( $_REQUEST['skmt_action'] ) : '';
+		$action    = isset( $_REQUEST['lumia_action'] ) ? sanitize_key( $_REQUEST['lumia_action'] ) : '';
 
 		if ( empty( $module_id ) || ! in_array( $action, [ 'activate', 'deactivate' ], true ) ) {
 			wp_safe_redirect( admin_url( 'admin.php?page=' . $this->slug . '&tab=modules' ) );
@@ -792,10 +792,10 @@ class Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				[
-					'page'             => $this->slug,
-					'tab'              => 'modules',
-					'skmt_notice'      => $notice,
-					'skmt_notice_type' => 'success',
+					'page'              => $this->slug,
+					'tab'               => 'modules',
+					'lumia_notice'      => $notice,
+					'lumia_notice_type' => 'success',
 				],
 				admin_url( 'admin.php' )
 			)
@@ -807,28 +807,28 @@ class Admin {
 	 * Toggle AJAX d'un module (réponse JSON — pas de redirect).
 	 */
 	public function handle_ajax_toggle_module(): void {
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'skmt_admin_nonce' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Nonce invalide.', 'studio-kyne-mini-tools' ) ], 403 );
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'lumia_admin_nonce' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Nonce invalide.', 'lumia-tools' ) ], 403 );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ], 403 );
 		}
 
 		$module_id = isset( $_POST['module'] ) ? sanitize_key( $_POST['module'] ) : '';
-		$action    = isset( $_POST['skmt_action'] ) ? sanitize_key( $_POST['skmt_action'] ) : '';
+		$action    = isset( $_POST['lumia_action'] ) ? sanitize_key( $_POST['lumia_action'] ) : '';
 
 		if ( empty( $module_id ) || ! in_array( $action, [ 'activate', 'deactivate' ], true ) ) {
-			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'studio-kyne-mini-tools' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'Paramètres invalides.', 'lumia-tools' ) ], 400 );
 		}
 
 		if ( 'activate' === $action ) {
 			$this->modules->activate( $module_id );
-			$notice    = __( 'Module activé.', 'studio-kyne-mini-tools' );
+			$notice    = __( 'Module activé.', 'lumia-tools' );
 			$new_state = true;
 		} else {
 			$this->modules->deactivate( $module_id );
-			$notice    = __( 'Module désactivé.', 'studio-kyne-mini-tools' );
+			$notice    = __( 'Module désactivé.', 'lumia-tools' );
 			$new_state = false;
 		}
 
@@ -853,17 +853,17 @@ class Admin {
 	 * Activation/désactivation en masse des modules.
 	 */
 	public function handle_update_modules(): void {
-		if ( ! isset( $_POST['skmt_modules_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_modules_nonce'] ) ), 'skmt_update_modules' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_POST['lumia_modules_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_modules_nonce'] ) ), 'lumia_update_modules' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		$enabled_modules = [];
-		if ( isset( $_POST['skmt_modules'] ) && is_array( $_POST['skmt_modules'] ) ) {
-			$enabled_modules = array_map( 'sanitize_key', wp_unslash( $_POST['skmt_modules'] ) );
+		if ( isset( $_POST['lumia_modules'] ) && is_array( $_POST['lumia_modules'] ) ) {
+			$enabled_modules = array_map( 'sanitize_key', wp_unslash( $_POST['lumia_modules'] ) );
 		}
 
 		foreach ( $this->modules->get_all() as $module_id => $module ) {
@@ -877,10 +877,10 @@ class Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				[
-					'page'             => $this->slug,
-					'tab'              => 'modules',
-					'skmt_notice'      => 'modules_updated',
-					'skmt_notice_type' => 'success',
+					'page'              => $this->slug,
+					'tab'               => 'modules',
+					'lumia_notice'      => 'modules_updated',
+					'lumia_notice_type' => 'success',
 				],
 				admin_url( 'admin.php' )
 			)
@@ -897,7 +897,7 @@ class Admin {
 	 * @param bool $enabled État voulu.
 	 */
 	private function set_auto_update( bool $enabled ): void {
-		$plugin_file = plugin_basename( SKMT_PLUGIN_FILE );
+		$plugin_file = plugin_basename( LUMIA_PLUGIN_FILE );
 		$current     = (array) get_site_option( 'auto_update_plugins', [] );
 		$is_enabled  = in_array( $plugin_file, $current, true );
 
@@ -914,26 +914,26 @@ class Admin {
 	 * Vérification manuelle des mises à jour.
 	 */
 	public function handle_check_updates(): void {
-		if ( ! isset( $_POST['skmt_check_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_check_nonce'] ) ), 'skmt_check_updates' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_POST['lumia_check_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_check_nonce'] ) ), 'lumia_check_updates' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		delete_site_transient( 'update_plugins' );
-		delete_transient( 'skmt_github_update_stable' );
-		delete_transient( 'skmt_github_update_dev' );
+		delete_transient( 'lumia_github_update_stable' );
+		delete_transient( 'lumia_github_update_dev' );
 		wp_update_plugins();
 
 		wp_safe_redirect(
 			add_query_arg(
 				[
-					'page'             => $this->slug,
-					'tab'              => 'settings',
-					'skmt_notice'      => 'updates_checked',
-					'skmt_notice_type' => 'success',
+					'page'              => $this->slug,
+					'tab'               => 'settings',
+					'lumia_notice'      => 'updates_checked',
+					'lumia_notice_type' => 'success',
 				],
 				admin_url( 'admin.php' )
 			)
@@ -945,12 +945,12 @@ class Admin {
 	 * Réinitialisation de tous les réglages du plugin aux valeurs par défaut.
 	 */
 	public function handle_reset_settings(): void {
-		if ( ! isset( $_POST['skmt_reset_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_reset_nonce'] ) ), 'skmt_reset_settings' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_POST['lumia_reset_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_reset_nonce'] ) ), 'lumia_reset_settings' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		// Reset réglages globaux
@@ -969,10 +969,10 @@ class Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				[
-					'page'             => $this->slug,
-					'tab'              => 'settings',
-					'skmt_notice'      => 'settings_reset',
-					'skmt_notice_type' => 'success',
+					'page'              => $this->slug,
+					'tab'               => 'settings',
+					'lumia_notice'      => 'settings_reset',
+					'lumia_notice_type' => 'success',
 				],
 				admin_url( 'admin.php' )
 			)
@@ -984,26 +984,26 @@ class Admin {
 	 * Export de tous les réglages du plugin en JSON.
 	 */
 	public function handle_export_settings(): void {
-		if ( ! isset( $_POST['skmt_export_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_export_nonce'] ) ), 'skmt_export_settings' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_POST['lumia_export_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_export_nonce'] ) ), 'lumia_export_settings' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		$data = [
-			'version'  => SKMT_VERSION,
+			'version'  => LUMIA_VERSION,
 			'exported' => current_time( 'c' ),
-			'global'   => get_option( 'skmt_settings', [] ),
+			'global'   => get_option( 'lumia_settings', [] ),
 			'modules'  => [],
 			'extras'   => [],
 		];
 
 		foreach ( $this->modules->get_all() as $module_id => $module ) {
-			$data['modules'][ $module_id ] = get_option( 'skmt_module_' . $module_id, [] );
+			$data['modules'][ $module_id ] = get_option( 'lumia_module_' . $module_id, [] );
 
-			// Données rangées hors de skmt_module_{id} (profils de menu, etc.) :
+			// Données rangées hors de lumia_module_{id} (profils de menu, etc.) :
 			// sans ce bloc, l'export se croit complet alors qu'il ne l'est pas.
 			// get_all() ne renvoie que les définitions : il faut l'instance.
 			$instance = $this->modules->get_instance( $module_id );
@@ -1013,7 +1013,7 @@ class Admin {
 			}
 		}
 
-		$filename = 'skmt-settings-' . gmdate( 'Y-m-d' ) . '.json';
+		$filename = 'lumia-settings-' . gmdate( 'Y-m-d' ) . '.json';
 		header( 'Content-Type: application/json; charset=utf-8' );
 		header( 'Content-Disposition: ' . self::content_disposition( $filename ) );
 		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
@@ -1025,25 +1025,25 @@ class Admin {
 	 * Import des réglages depuis un fichier JSON.
 	 */
 	public function handle_import_settings(): void {
-		if ( ! isset( $_POST['skmt_import_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_import_nonce'] ) ), 'skmt_import_settings' ) ) {
-			wp_die( esc_html__( 'Nonce invalide.', 'studio-kyne-mini-tools' ) );
+		if ( ! isset( $_POST['lumia_import_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_import_nonce'] ) ), 'lumia_import_settings' ) ) {
+			wp_die( esc_html__( 'Nonce invalide.', 'lumia-tools' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) );
+			wp_die( esc_html__( 'Permissions insuffisantes.', 'lumia-tools' ) );
 		}
 
 		// Seuls tmp_name et error sont lus : un chemin temporaire et un code d'erreur PHP, jamais réémis.
-		$tmp_name = isset( $_FILES['skmt_import_file']['tmp_name'] ) ? sanitize_text_field( $_FILES['skmt_import_file']['tmp_name'] ) : '';
-		$error    = isset( $_FILES['skmt_import_file']['error'] ) ? (int) $_FILES['skmt_import_file']['error'] : UPLOAD_ERR_NO_FILE;
+		$tmp_name = isset( $_FILES['lumia_import_file']['tmp_name'] ) ? sanitize_text_field( $_FILES['lumia_import_file']['tmp_name'] ) : '';
+		$error    = isset( $_FILES['lumia_import_file']['error'] ) ? (int) $_FILES['lumia_import_file']['error'] : UPLOAD_ERR_NO_FILE;
 		if ( '' === $tmp_name || UPLOAD_ERR_OK !== $error ) {
 			wp_safe_redirect(
 				add_query_arg(
 					[
-						'page'             => $this->slug,
-						'tab'              => 'settings',
-						'skmt_notice'      => 'import_error_file',
-						'skmt_notice_type' => 'error',
+						'page'              => $this->slug,
+						'tab'               => 'settings',
+						'lumia_notice'      => 'import_error_file',
+						'lumia_notice_type' => 'error',
 					],
 					admin_url( 'admin.php' )
 				)
@@ -1059,10 +1059,10 @@ class Admin {
 			wp_safe_redirect(
 				add_query_arg(
 					[
-						'page'             => $this->slug,
-						'tab'              => 'settings',
-						'skmt_notice'      => 'import_error_file',
-						'skmt_notice_type' => 'error',
+						'page'              => $this->slug,
+						'tab'               => 'settings',
+						'lumia_notice'      => 'import_error_file',
+						'lumia_notice_type' => 'error',
 					],
 					admin_url( 'admin.php' )
 				)
@@ -1078,10 +1078,10 @@ class Admin {
 			wp_safe_redirect(
 				add_query_arg(
 					[
-						'page'             => $this->slug,
-						'tab'              => 'settings',
-						'skmt_notice'      => 'import_error_size',
-						'skmt_notice_type' => 'error',
+						'page'              => $this->slug,
+						'tab'               => 'settings',
+						'lumia_notice'      => 'import_error_size',
+						'lumia_notice_type' => 'error',
 					],
 					admin_url( 'admin.php' )
 				)
@@ -1097,10 +1097,10 @@ class Admin {
 			wp_safe_redirect(
 				add_query_arg(
 					[
-						'page'             => $this->slug,
-						'tab'              => 'settings',
-						'skmt_notice'      => 'import_error_invalid',
-						'skmt_notice_type' => 'error',
+						'page'              => $this->slug,
+						'tab'               => 'settings',
+						'lumia_notice'      => 'import_error_invalid',
+						'lumia_notice_type' => 'error',
 					],
 					admin_url( 'admin.php' )
 				)
@@ -1108,7 +1108,7 @@ class Admin {
 			exit;
 		}
 
-		update_option( 'skmt_settings', $this->sanitize_imported_globals( $data['global'] ) );
+		update_option( 'lumia_settings', $this->sanitize_imported_globals( $data['global'] ) );
 
 		if ( isset( $data['modules'] ) && is_array( $data['modules'] ) ) {
 			foreach ( $data['modules'] as $module_id => $module_settings ) {
@@ -1133,10 +1133,10 @@ class Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				[
-					'page'             => $this->slug,
-					'tab'              => 'settings',
-					'skmt_notice'      => 'settings_imported',
-					'skmt_notice_type' => 'success',
+					'page'              => $this->slug,
+					'tab'               => 'settings',
+					'lumia_notice'      => 'settings_imported',
+					'lumia_notice_type' => 'success',
 				],
 				admin_url( 'admin.php' )
 			)
@@ -1161,7 +1161,7 @@ class Admin {
 	 * ================================================================ */
 
 	/**
-	 * Assainit le bloc « global » (contenu complet de l'option skmt_settings).
+	 * Assainit le bloc « global » (contenu complet de l'option lumia_settings).
 	 *
 	 * Whitelist stricte : seules les clés que le plugin sait interpréter
 	 * survivent, et l'état d'activation se limite aux modules enregistrés.
@@ -1176,7 +1176,7 @@ class Admin {
 
 		// On part de l'existant : un fichier partiel ne doit pas effacer l'état
 		// des modules qu'il ne mentionne pas.
-		$current         = get_option( 'skmt_settings', [] );
+		$current         = get_option( 'lumia_settings', [] );
 		$current         = is_array( $current ) ? $current : [];
 		$current_global  = is_array( $current['global'] ?? null ) ? $current['global'] : [];
 		$current_modules = is_array( $current['modules'] ?? null ) ? $current['modules'] : [];
@@ -1315,7 +1315,7 @@ class Admin {
 	public function render_icon( string $icon, string $size = 'md', string $extra_class = '' ): string {
 		$paths = $this->get_icon_paths();
 		$path  = $paths[ $icon ] ?? $paths['package'];
-		$class = trim( 'skmt-icon skmt-icon--' . $size . ' ' . $extra_class );
+		$class = trim( 'lumia-icon lumia-icon--' . $size . ' ' . $extra_class );
 
 		return '<svg class="' . esc_attr( $class ) . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $path . '</svg>';
 	}
@@ -1327,15 +1327,15 @@ class Admin {
 	 * le texte d'aide, seule la nuance qui allongerait la ligne passe ici.
 	 */
 	public function render_help_tip( string $text, string $placement = 'top' ): string {
-		return '<button type="button" class="skmt-tip-info" tabindex="0"'
-			. ' data-skmt-tip="' . esc_attr( $text ) . '"'
-			. ( 'top' === $placement ? '' : ' data-skmt-tip-placement="' . esc_attr( $placement ) . '"' )
+		return '<button type="button" class="lumia-tip-info" tabindex="0"'
+			. ' data-lumia-tip="' . esc_attr( $text ) . '"'
+			. ( 'top' === $placement ? '' : ' data-lumia-tip-placement="' . esc_attr( $placement ) . '"' )
 			. ' aria-label="' . esc_attr( $text ) . '">'
-			// Le SVG est émis ici plutôt que par render_icon() : `.skmt-icon`
+			// Le SVG est émis ici plutôt que par render_icon() : `.lumia-icon`
 			// force 20px en !important (pour tenir tête à wp-admin), ce qu'une
 			// règle de composant ne peut pas contredire — le marqueur ferait
 			// 20px dans un bouton de 16 et déborderait de la ligne.
-			. '<svg class="skmt-tip-info__i" width="14" height="14" viewBox="0 0 24 24" fill="none"'
+			. '<svg class="lumia-tip-info__i" width="14" height="14" viewBox="0 0 24 24" fill="none"'
 			. ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
 			. ' aria-hidden="true" focusable="false">' . $this->get_icon_paths()['info'] . '</svg>'
 			. '</button>';
@@ -1385,12 +1385,12 @@ class Admin {
 	}
 
 	private function get_menu_separator_css(): string {
-		return '#adminmenu .skmt-menu-separator{pointer-events:none}'
-			. '#adminmenu .skmt-menu-separator a{'
+		return '#adminmenu .lumia-menu-separator{pointer-events:none}'
+			. '#adminmenu .lumia-menu-separator a{'
 			. 'height:1px;min-height:1px;margin:6px 12px;padding:0!important;'
 			. 'background:#c3c4c7;box-shadow:none;text-indent:-9999px;'
 			. '}'
-			. '#adminmenu .skmt-menu-separator a:hover{background:#c3c4c7}';
+			. '#adminmenu .lumia-menu-separator a:hover{background:#c3c4c7}';
 	}
 
 	public function get_slug(): string {

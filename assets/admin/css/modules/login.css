@@ -6,19 +6,19 @@
  * MEDIA PICKER
  * ================================================================ */
 
-.skmt-media-picker {
+.lumia-media-picker {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.skmt-media-preview {
+.lumia-media-preview {
   width: 100%;
   max-width: 320px;
   height: 160px;
-  border: 2px dashed var(--skmt-border);
-  border-radius: var(--skmt-radius);
-  background: var(--skmt-n50);
+  border: 2px dashed var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-n50);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,13 +26,13 @@
   transition: border-color 0.15s;
 }
 
-.skmt-media-preview.has-image {
+.lumia-media-preview.has-image {
   border-style: solid;
-  border-color: var(--skmt-border);
-  background: var(--skmt-n100);
+  border-color: var(--lumia-border);
+  background: var(--lumia-n100);
 }
 
-.skmt-media-preview img {
+.lumia-media-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -40,25 +40,25 @@
 }
 
 /* Version logo (carré) */
-.skmt-media-preview--logo {
+.lumia-media-preview--logo {
   max-width: 180px;
   height: 100px;
   background-size: contain !important;
   background-position: center !important;
 }
 
-.skmt-media-preview--logo img {
+.lumia-media-preview--logo img {
   object-fit: contain;
   padding: 8px;
 }
 
-.skmt-media-actions {
+.lumia-media-actions {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.skmt-media-remove.is-hidden {
+.lumia-media-remove.is-hidden {
   display: none;
 }
 
@@ -66,41 +66,41 @@
  * COLOR PICKER
  * ================================================================ */
 
-.skmt-color-field {
+.lumia-color-field {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.skmt-color-field input[type="color"] {
+.lumia-color-field input[type="color"] {
   width: 36px;
   height: 36px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-xs);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-xs);
   padding: 2px;
   cursor: pointer;
   background: none;
   flex-shrink: 0;
 }
 
-.skmt-color-field__value {
+.lumia-color-field__value {
   font-size: 12px;
   font-family: monospace;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
   min-width: 60px;
 }
 
-.skmt-color-reset {
+.lumia-color-reset {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
   padding: 0;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-xs);
-  background: var(--skmt-surface);
-  color: var(--skmt-text-muted);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-xs);
+  background: var(--lumia-surface);
+  color: var(--lumia-text-muted);
   cursor: pointer;
   font-size: 13px;
   line-height: 1;
@@ -108,36 +108,36 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.skmt-color-reset:hover {
-  background: var(--skmt-n200);
-  color: var(--skmt-text);
+.lumia-color-reset:hover {
+  background: var(--lumia-n200);
+  color: var(--lumia-text);
 }
 
 /* ================================================================
  * INPUT AVEC UNITÉ
  * ================================================================ */
 
-.skmt-input-unit {
+.lumia-input-unit {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.skmt-input-unit__label {
+.lumia-input-unit__label {
   font-size: 12px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
 }
 
-.skmt-input {
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-xs);
+.lumia-input {
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-xs);
   padding: 6px 10px;
   font-size: 13px;
-  color: var(--skmt-text);
-  background: var(--skmt-surface);
+  color: var(--lumia-text);
+  background: var(--lumia-surface);
 }
 
-.skmt-input--sm {
+.lumia-input--sm {
   width: 80px;
 }
 
@@ -145,12 +145,12 @@
  * OPTION COLUMN (media pickers qui prennent toute la largeur)
  * ================================================================ */
 
-.skmt-option--column {
+.lumia-option--column {
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
 }
 
-.skmt-option__control--full {
+.lumia-option__control--full {
   width: 100%;
 }

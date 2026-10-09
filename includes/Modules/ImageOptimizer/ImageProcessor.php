@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ImageOptimizer;
+namespace Lumia\Tools\Modules\ImageOptimizer;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -59,7 +59,7 @@ class ImageProcessor {
 			return $this->capabilities;
 		}
 
-		$cache_key = 'skmt_image_caps_' . md5( PHP_VERSION . '|' . (string) phpversion( 'gd' ) . '|' . (string) phpversion( 'imagick' ) );
+		$cache_key = 'lumia_image_caps_' . md5( PHP_VERSION . '|' . (string) phpversion( 'gd' ) . '|' . (string) phpversion( 'imagick' ) );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) && isset( $cached['editor'] ) ) {
 			$this->capabilities = $cached;
@@ -156,13 +156,6 @@ class ImageProcessor {
 			return $ok && is_string( $blob ) && '' !== $blob;
 		} catch ( \Throwable $e ) {
 			return false;
-		} finally {
-			// Depuis PHP 8.0 GdImage est un objet libere par le GC : imagedestroy()
-			// n'a plus d'effet et devient deprecie en 8.5. Le plugin supporte encore
-			// PHP 7.4, ou l'appel reste utile (ressource, pas objet).
-			if ( PHP_VERSION_ID < 80000 ) {
-				imagedestroy( $image );
-			}
 		}
 	}
 
@@ -417,12 +410,7 @@ class ImageProcessor {
 			$ok = false;
 		}
 
-		// Depuis PHP 8.0 GdImage est un objet libere par le GC : imagedestroy()
-		// n'a plus d'effet et devient deprecie en 8.5. Le plugin supporte encore
-		// PHP 7.4, ou l'appel reste utile (ressource, pas objet).
-		if ( PHP_VERSION_ID < 80000 ) {
-			imagedestroy( $image );
-		}
+		// GdImage est un objet libéré par le GC (PHP 8.0+) : pas d'imagedestroy().
 
 		if ( ! $ok ) {
 			$this->log_error( 'convert/gd', $source, 'encodage ' . $format . ' via GD a échoué' );
@@ -586,7 +574,7 @@ class ImageProcessor {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- journal d'erreur volontaire, sans interface pour l'afficher.
 		error_log(
 			sprintf(
-				'[SKMT Image Optimizer] %s a échoué pour %s : %s',
+				'[LUMIA Image Optimizer] %s a échoué pour %s : %s',
 				$context,
 				$file_path,
 				'' !== $message ? $message : 'erreur inconnue'

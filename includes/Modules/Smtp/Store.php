@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,13 +13,13 @@ defined( 'ABSPATH' ) || exit;
 class Store {
 
 	/** Nom de table, sans préfixe. */
-	const TABLE = 'skmt_mail_log';
+	const TABLE = 'lumia_mail_log';
 
 	/** Version du schéma ; toute modification de CREATE TABLE l'incrémente. */
 	const SCHEMA_VERSION = '1';
 
 	/** Option mémorisant la version de schéma installée. */
-	const SCHEMA_OPTION = 'skmt_mail_log_schema';
+	const SCHEMA_OPTION = 'lumia_mail_log_schema';
 
 	/**
 	 * Corps de message conservé au plus (octets). Un mail avec images inline

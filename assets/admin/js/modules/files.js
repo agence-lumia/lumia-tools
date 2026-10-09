@@ -1,11 +1,11 @@
 /**
- * Studio Kyne Mini Tools — Module Fichiers
+ * Lümia Tools — Module Fichiers
  * Gestionnaire de fichiers vanilla JS.
  */
 (function () {
   "use strict";
 
-  if (typeof skmtAdmin === "undefined") return;
+  if (typeof lumiaAdmin === "undefined") return;
 
   /* ================================================================
    * ÉTAT GLOBAL
@@ -14,9 +14,9 @@
   var fm = {
     path: "",
     selected: [],
-    ajaxUrl: skmtAdmin.ajaxUrl,
+    ajaxUrl: lumiaAdmin.ajaxUrl,
     nonce: "",
-    i18n: skmtAdmin.i18n || {},
+    i18n: lumiaAdmin.i18n || {},
     downloadUrl: "",
     downloadNonce: "",
     editorPath: null,
@@ -33,7 +33,7 @@
    * ================================================================ */
 
   document.addEventListener("DOMContentLoaded", function () {
-    var container = document.getElementById("skmt-files-manager");
+    var container = document.getElementById("lumia-files-manager");
     if (!container) return;
 
     fm.nonce        = container.dataset.nonce || "";
@@ -41,7 +41,7 @@
     fm.downloadNonce = fm.i18n.downloadNonce || "";
 
     // Masquer le bouton "Enregistrer" du header (pas de form dans ce module)
-    var headerSave = document.querySelector('.skmt-page__header-actions [form="skmt-module-form"]');
+    var headerSave = document.querySelector('.lumia-page__header-actions [form="lumia-module-form"]');
     if (headerSave) headerSave.style.display = "none";
 
     loadDirectory("");
@@ -89,7 +89,7 @@
     renderBreadcrumb(path);
     renderLoading();
 
-    ajax("skmt_files_list", { path: path }, function (data) {
+    ajax("lumia_files_list", { path: path }, function (data) {
       if (!data.success) {
         showToast((data.data && data.data.message) || "Erreur", "error");
         renderEmpty();
@@ -104,7 +104,7 @@
    * ================================================================ */
 
   function renderBreadcrumb(path) {
-    var bc = document.getElementById("skmt-files-breadcrumb");
+    var bc = document.getElementById("lumia-files-breadcrumb");
     // Garder uniquement le bouton home
     while (bc.children.length > 1) bc.removeChild(bc.lastChild);
 
@@ -117,13 +117,13 @@
       built = built ? built + "/" + segment : segment;
 
       var sep = document.createElement("span");
-      sep.className = "skmt-files__bc-sep";
+      sep.className = "lumia-files__bc-sep";
       sep.textContent = "/";
       bc.appendChild(sep);
 
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "skmt-files__bc-item";
+      btn.className = "lumia-files__bc-item";
       btn.textContent = segment;
       (function (p) {
         btn.addEventListener("click", function () { loadDirectory(p); });
@@ -134,7 +134,7 @@
 
   /* Bouton home */
   document.addEventListener("DOMContentLoaded", function () {
-    var homeBtn = document.querySelector(".skmt-files__bc-home");
+    var homeBtn = document.querySelector(".lumia-files__bc-home");
     if (homeBtn) {
       homeBtn.addEventListener("click", function () { loadDirectory(""); });
     }
@@ -145,26 +145,26 @@
    * ================================================================ */
 
   function renderLoading() {
-    var tbody = document.getElementById("skmt-files-tbody");
+    var tbody = document.getElementById("lumia-files-tbody");
     if (!tbody) return;
     tbody.innerHTML =
-      '<tr class="skmt-files__row-empty"><td colspan="7">' +
+      '<tr class="lumia-files__row-empty"><td colspan="7">' +
       escHtml(fm.i18n.loading || "Chargement...") +
       "</td></tr>";
   }
 
   function renderEmpty() {
-    var tbody = document.getElementById("skmt-files-tbody");
+    var tbody = document.getElementById("lumia-files-tbody");
     if (!tbody) return;
     tbody.innerHTML =
-      '<tr class="skmt-files__row-empty"><td colspan="7">' +
+      '<tr class="lumia-files__row-empty"><td colspan="7">' +
       escHtml(fm.i18n.emptyFolder || "Ce dossier est vide.") +
       "</td></tr>";
   }
 
   function renderTable(items) {
-    var tbody = document.getElementById("skmt-files-tbody");
-    var checkAll = document.getElementById("skmt-files-check-all");
+    var tbody = document.getElementById("lumia-files-tbody");
+    var checkAll = document.getElementById("lumia-files-check-all");
     if (!tbody) return;
 
     if (checkAll) { checkAll.checked = false; checkAll.indeterminate = false; }
@@ -183,15 +183,15 @@
 
   function buildRow(item) {
     var tr = document.createElement("tr");
-    tr.className = "skmt-files__row" + (item.type === "dir" ? " skmt-files__row--dir" : "");
+    tr.className = "lumia-files__row" + (item.type === "dir" ? " lumia-files__row--dir" : "");
     tr.setAttribute("data-path", item.path);
 
     // Checkbox
     var tdCb = document.createElement("td");
-    tdCb.className = "skmt-files__col-check";
+    tdCb.className = "lumia-files__col-check";
     var cb = document.createElement("input");
     cb.type = "checkbox";
-    cb.className = "skmt-files__row-check";
+    cb.className = "lumia-files__row-check";
     cb.setAttribute("data-path", item.path);
     cb.addEventListener("change", onRowCheckChange);
     tdCb.appendChild(cb);
@@ -199,13 +199,13 @@
 
     // Nom
     var tdName = document.createElement("td");
-    tdName.className = "skmt-files__col-name";
+    tdName.className = "lumia-files__col-name";
     var nameBtn = document.createElement("button");
     nameBtn.type = "button";
-    nameBtn.className = "skmt-files__name-btn";
+    nameBtn.className = "lumia-files__name-btn";
     nameBtn.innerHTML =
       getFileIcon(item) +
-      '<span class="skmt-files__name-text">' + escHtml(item.name) + "</span>";
+      '<span class="lumia-files__name-text">' + escHtml(item.name) + "</span>";
     if (item.type === "dir") {
       nameBtn.addEventListener("click", function () { loadDirectory(item.path); });
     } else {
@@ -218,25 +218,25 @@
     tr.appendChild(tdName);
 
     // Taille
-    tr.appendChild(cell("skmt-files__col-size", item.size_fmt || (item.type === "dir" ? "—" : "")));
+    tr.appendChild(cell("lumia-files__col-size", item.size_fmt || (item.type === "dir" ? "—" : "")));
 
     // Modifié
-    tr.appendChild(cell("skmt-files__col-modified", item.modified_fmt || ""));
+    tr.appendChild(cell("lumia-files__col-modified", item.modified_fmt || ""));
 
     // Droits
     var tdPerms = document.createElement("td");
-    tdPerms.className = "skmt-files__col-perms";
+    tdPerms.className = "lumia-files__col-perms";
     if (item.perms) {
-      tdPerms.innerHTML = '<span class="skmt-files__perms">' + escHtml(item.perms) + "</span>";
+      tdPerms.innerHTML = '<span class="lumia-files__perms">' + escHtml(item.perms) + "</span>";
     }
     tr.appendChild(tdPerms);
 
     // Propriétaire
-    tr.appendChild(cell("skmt-files__col-owner", item.owner || ""));
+    tr.appendChild(cell("lumia-files__col-owner", item.owner || ""));
 
     // Actions
     var tdAct = document.createElement("td");
-    tdAct.className = "skmt-files__col-actions";
+    tdAct.className = "lumia-files__col-actions";
     tdAct.innerHTML = buildActions(item);
     bindActions(tdAct, item);
     tr.appendChild(tdAct);
@@ -267,17 +267,17 @@
     if (item.ext === "zip" || item.ext === "gz" || item.ext === "tar") {
       btns += actionBtn("extract", "Extraire", ICON_EXTRACT, "");
     }
-    btns += actionBtn("delete", "Supprimer", ICON_DELETE, "skmt-files__action-btn--danger");
-    return '<div class="skmt-files__actions">' + btns + "</div>";
+    btns += actionBtn("delete", "Supprimer", ICON_DELETE, "lumia-files__action-btn--danger");
+    return '<div class="lumia-files__actions">' + btns + "</div>";
   }
 
   function actionBtn(action, title, icon, extra) {
     return (
-      '<button type="button" class="skmt-files__action-btn ' +
+      '<button type="button" class="lumia-files__action-btn ' +
       extra +
       '" data-action="' +
       action +
-      '" data-skmt-tip="' +
+      '" data-lumia-tip="' +
       escHtml(title) +
       '">' +
       icon +
@@ -307,14 +307,14 @@
 
   function deleteItems(paths) {
     var msg = fm.i18n.confirmDelete || "Supprimer ce(s) élément(s) ? Cette action est irréversible.";
-    window.skmtModal.open({
+    window.lumiaModal.open({
       title:        "Supprimer",
       message:      msg,
       confirmLabel: "Supprimer",
       cancelLabel:  "Annuler",
       danger:       true,
       onConfirm:    function () {
-        ajax("skmt_files_delete", { paths: paths }, function (data) {
+        ajax("lumia_files_delete", { paths: paths }, function (data) {
           if (!data.success) {
             showToast((data.data && data.data.message) || "Erreur", "error");
             return;
@@ -327,7 +327,7 @@
   }
 
   function extractZip(path) {
-    ajax("skmt_files_extract", { path: path }, function (data) {
+    ajax("lumia_files_extract", { path: path }, function (data) {
       if (!data.success) {
         showToast((data.data && data.data.message) || "Erreur", "error");
         return;
@@ -383,7 +383,7 @@
   }
 
   function setRowDownloadLoading(path, loading) {
-    var tbody = document.getElementById("skmt-files-tbody");
+    var tbody = document.getElementById("lumia-files-tbody");
     if (!tbody) return;
     var rows = tbody.querySelectorAll("tr[data-path]");
     for (var i = 0; i < rows.length; i++) {
@@ -426,15 +426,15 @@
    * ================================================================ */
 
   function initCheckAll() {
-    var checkAll = document.getElementById("skmt-files-check-all");
+    var checkAll = document.getElementById("lumia-files-check-all");
     if (!checkAll) return;
 
     checkAll.addEventListener("change", function () {
-      var all = document.querySelectorAll(".skmt-files__row-check");
+      var all = document.querySelectorAll(".lumia-files__row-check");
       fm.selected = [];
       all.forEach(function (cb) {
         cb.checked = checkAll.checked;
-        cb.closest("tr").classList.toggle("skmt-files__row--selected", checkAll.checked);
+        cb.closest("tr").classList.toggle("lumia-files__row--selected", checkAll.checked);
         if (checkAll.checked) fm.selected.push(cb.getAttribute("data-path"));
       });
       updateSelectionBar();
@@ -442,14 +442,14 @@
   }
 
   function onRowCheckChange() {
-    var all = document.querySelectorAll(".skmt-files__row-check");
+    var all = document.querySelectorAll(".lumia-files__row-check");
     fm.selected = [];
     all.forEach(function (cb) {
-      cb.closest("tr").classList.toggle("skmt-files__row--selected", cb.checked);
+      cb.closest("tr").classList.toggle("lumia-files__row--selected", cb.checked);
       if (cb.checked) fm.selected.push(cb.getAttribute("data-path"));
     });
 
-    var checkAll = document.getElementById("skmt-files-check-all");
+    var checkAll = document.getElementById("lumia-files-check-all");
     if (checkAll) {
       checkAll.checked = fm.selected.length > 0 && fm.selected.length === all.length;
       checkAll.indeterminate = fm.selected.length > 0 && fm.selected.length < all.length;
@@ -458,8 +458,8 @@
   }
 
   function updateSelectionBar() {
-    var bar   = document.getElementById("skmt-files-selection-bar");
-    var count = document.getElementById("skmt-files-selection-count");
+    var bar   = document.getElementById("lumia-files-selection-bar");
+    var count = document.getElementById("lumia-files-selection-count");
     if (!bar) return;
 
     if (fm.selected.length > 0) {
@@ -475,15 +475,15 @@
    * ================================================================ */
 
   function initSelectionBar() {
-    var zipBtn = document.getElementById("skmt-files-zip-btn");
-    var delBtn = document.getElementById("skmt-files-delete-btn");
+    var zipBtn = document.getElementById("lumia-files-zip-btn");
+    var delBtn = document.getElementById("lumia-files-delete-btn");
 
     if (zipBtn) {
       zipBtn.addEventListener("click", function () {
         if (!fm.selected.length) return;
         var name = "archive-" + Date.now() + ".zip";
         zipBtn.disabled = true;
-        ajax("skmt_files_zip", { paths: fm.selected, name: name, parent: fm.path }, function (data) {
+        ajax("lumia_files_zip", { paths: fm.selected, name: name, parent: fm.path }, function (data) {
           zipBtn.disabled = false;
           if (!data.success) {
             showToast((data.data && data.data.message) || "Erreur", "error");
@@ -509,14 +509,14 @@
    * ================================================================ */
 
   function initToolbar() {
-    var mkdirBtn     = document.getElementById("skmt-files-mkdir-btn");
-    var mkdirConfirm = document.getElementById("skmt-mkdir-confirm");
-    var mkdirInput   = document.getElementById("skmt-mkdir-input");
+    var mkdirBtn     = document.getElementById("lumia-files-mkdir-btn");
+    var mkdirConfirm = document.getElementById("lumia-mkdir-confirm");
+    var mkdirInput   = document.getElementById("lumia-mkdir-input");
 
     if (mkdirBtn) {
       mkdirBtn.addEventListener("click", function () {
         if (mkdirInput) mkdirInput.value = "";
-        window.skmtModalOpen("skmt-modal-mkdir");
+        window.lumiaModalOpen("lumia-modal-mkdir");
       });
     }
 
@@ -524,12 +524,12 @@
       function doMkdir() {
         var name = mkdirInput.value.trim();
         if (!name) return;
-        ajax("skmt_files_mkdir", { parent: fm.path, name: name }, function (data) {
+        ajax("lumia_files_mkdir", { parent: fm.path, name: name }, function (data) {
           if (!data.success) {
             showToast((data.data && data.data.message) || "Erreur", "error");
             return;
           }
-          window.skmtModalClose("skmt-modal-mkdir");
+          window.lumiaModalClose("lumia-modal-mkdir");
           showToast("Dossier créé.", "success");
           loadDirectory(fm.path);
         });
@@ -547,7 +547,7 @@
    * ================================================================ */
 
   function initUpload() {
-    var input = document.getElementById("skmt-files-upload-input");
+    var input = document.getElementById("lumia-files-upload-input");
     if (!input) return;
 
     input.addEventListener("change", function () {
@@ -559,7 +559,7 @@
 
   function uploadFiles(files) {
     var form = new FormData();
-    form.append("action", "skmt_files_upload");
+    form.append("action", "lumia_files_upload");
     form.append("nonce", fm.nonce);
     form.append("path", fm.path);
 
@@ -587,7 +587,7 @@
    * ================================================================ */
 
   function initDropZone() {
-    var overlay = document.getElementById("skmt-files-drop-overlay");
+    var overlay = document.getElementById("lumia-files-drop-overlay");
     if (!overlay) return;
 
     document.addEventListener("dragenter", function (e) {
@@ -620,14 +620,14 @@
    * ================================================================ */
 
   function updateSaveBtn() {
-    var btn = document.getElementById("skmt-editor-save");
+    var btn = document.getElementById("lumia-editor-save");
     if (btn) btn.disabled = !fm.editorDirty;
   }
 
   function initEditor() {
-    var editorEl   = document.getElementById("skmt-files-editor");
-    var closeBtn   = document.getElementById("skmt-editor-close");
-    var saveBtn    = document.getElementById("skmt-editor-save");
+    var editorEl   = document.getElementById("lumia-files-editor");
+    var closeBtn   = document.getElementById("lumia-editor-close");
+    var saveBtn    = document.getElementById("lumia-editor-save");
     if (!closeBtn || !saveBtn) return;
 
     if (saveBtn) saveBtn.disabled = true;
@@ -661,16 +661,16 @@
   }
 
   function openEditor(path, name) {
-    ajax("skmt_files_get_content", { path: path }, function (data) {
+    ajax("lumia_files_get_content", { path: path }, function (data) {
       if (!data.success) {
         showToast((data.data && data.data.message) || "Erreur", "error");
         return;
       }
 
       fm.editorPath = path;
-      var editorEl   = document.getElementById("skmt-files-editor");
-      var filenameEl = document.getElementById("skmt-editor-filename");
-      var textarea   = document.getElementById("skmt-editor-textarea");
+      var editorEl   = document.getElementById("lumia-files-editor");
+      var filenameEl = document.getElementById("lumia-editor-filename");
+      var textarea   = document.getElementById("lumia-editor-textarea");
       var content    = data.data.content;
 
       if (filenameEl) filenameEl.textContent = name;
@@ -717,14 +717,14 @@
    * @return {boolean} Vrai si l'éditeur riche a bien été monté.
    */
   function initCodeMirror(name) {
-    var settings = (skmtAdmin.codeEditor || {})[fileExt(name)];
+    var settings = (lumiaAdmin.codeEditor || {})[fileExt(name)];
     if (!settings || !window.wp || !wp.codeEditor) return false;
 
     try {
-      fm.editorCm = wp.codeEditor.initialize("skmt-editor-textarea", settings);
+      fm.editorCm = wp.codeEditor.initialize("lumia-editor-textarea", settings);
     } catch (e) {
       // Coloration indisponible : le textarea nu reste parfaitement utilisable.
-      if (window.console && console.warn) console.warn("[SKMT] CodeMirror :", e);
+      if (window.console && console.warn) console.warn("[LUMIA] CodeMirror :", e);
       fm.editorCm = null;
       return false;
     }
@@ -749,7 +749,7 @@
   /** Contenu courant de l'éditeur, riche ou nu. */
   function editorValue() {
     if (fm.editorCm) return fm.editorCm.codemirror.getValue();
-    var ta = document.getElementById("skmt-editor-textarea");
+    var ta = document.getElementById("lumia-editor-textarea");
     return ta ? ta.value : "";
   }
 
@@ -759,8 +759,8 @@
   }
 
   function closeEditor() {
-    if (fm.editorDirty && typeof window.skmtModal !== "undefined") {
-      window.skmtModal.open({
+    if (fm.editorDirty && typeof window.lumiaModal !== "undefined") {
+      window.lumiaModal.open({
         title:        "Modifications non enregistrées",
         message:      "Voulez-vous quitter sans enregistrer vos modifications ?",
         confirmLabel: "Quitter sans enregistrer",
@@ -775,7 +775,7 @@
 
   function doCloseEditor() {
     destroyCodeMirror();
-    var editorEl = document.getElementById("skmt-files-editor");
+    var editorEl = document.getElementById("lumia-files-editor");
     if (editorEl) editorEl.style.display = "none";
     fm.editorPath  = null;
     fm.editorDirty = false;
@@ -787,10 +787,10 @@
 
     var content = editorValue();
 
-    var saveBtn = document.getElementById("skmt-editor-save");
+    var saveBtn = document.getElementById("lumia-editor-save");
     if (saveBtn) saveBtn.disabled = true;
 
-    ajax("skmt_files_save_content", { path: fm.editorPath, content: content }, function (data) {
+    ajax("lumia_files_save_content", { path: fm.editorPath, content: content }, function (data) {
       if (!data.success) {
         showToast((data.data && data.data.message) || "Erreur", "error");
         // Réactiver le bouton en cas d'erreur
@@ -817,19 +817,19 @@
    * ================================================================ */
 
   function initModals() {
-    var renameConfirm = document.getElementById("skmt-rename-confirm");
-    var renameInput   = document.getElementById("skmt-rename-input");
-    var moveConfirm   = document.getElementById("skmt-move-confirm");
-    var moveInput     = document.getElementById("skmt-move-input");
+    var renameConfirm = document.getElementById("lumia-rename-confirm");
+    var renameInput   = document.getElementById("lumia-rename-input");
+    var moveConfirm   = document.getElementById("lumia-move-confirm");
+    var moveInput     = document.getElementById("lumia-move-input");
 
     if (renameConfirm) {
       renameConfirm.addEventListener("click", function () {
         var newName = (renameInput && renameInput.value.trim()) || "";
         if (!newName || !fm.renamePath) return;
-        ajax("skmt_files_rename", { path: fm.renamePath, new_name: newName }, function (data) {
+        ajax("lumia_files_rename", { path: fm.renamePath, new_name: newName }, function (data) {
           if (!data.success) { showToast((data.data && data.data.message) || "Erreur", "error"); return; }
           showToast("Renommé avec succès.", "success");
-          window.skmtModalClose("skmt-modal-rename");
+          window.lumiaModalClose("lumia-modal-rename");
           loadDirectory(fm.path);
         });
       });
@@ -845,10 +845,10 @@
       moveConfirm.addEventListener("click", function () {
         var dst = (moveInput && moveInput.value.trim()) || "";
         if (!fm.movePath) return;
-        ajax("skmt_files_move", { src: fm.movePath, dst: dst }, function (data) {
+        ajax("lumia_files_move", { src: fm.movePath, dst: dst }, function (data) {
           if (!data.success) { showToast((data.data && data.data.message) || "Erreur", "error"); return; }
           showToast("Déplacé avec succès.", "success");
-          window.skmtModalClose("skmt-modal-move");
+          window.lumiaModalClose("lumia-modal-move");
           loadDirectory(fm.path);
         });
       });
@@ -863,16 +863,16 @@
 
   function openRenameModal(path, name) {
     fm.renamePath = path;
-    var input = document.getElementById("skmt-rename-input");
+    var input = document.getElementById("lumia-rename-input");
     if (input) input.value = name || "";
-    window.skmtModalOpen("skmt-modal-rename");
+    window.lumiaModalOpen("lumia-modal-rename");
   }
 
   function openMoveModal(path) {
     fm.movePath = path;
-    var input = document.getElementById("skmt-move-input");
+    var input = document.getElementById("lumia-move-input");
     if (input) input.value = fm.path;
-    window.skmtModalOpen("skmt-modal-move");
+    window.lumiaModalOpen("lumia-modal-move");
   }
 
   /* ================================================================
@@ -885,7 +885,7 @@
   var ICON_ARCHIVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v11.5"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M8 12v-1"/><path d="M8 18v-2"/><path d="M8 7V6"/><circle cx="8" cy="20" r="2"/></svg>';
   var ICON_TEXT    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>';
   var ICON_FILE    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>';
-  var ICON_SPINNER = '<svg class="skmt-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/></svg>';
+  var ICON_SPINNER = '<svg class="lumia-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/></svg>';
 
   // Map extension → classe CSS (couleur par langage)
   var EXT_CLASS = {
@@ -906,7 +906,7 @@
 
   function getFileIcon(item) {
     if (item.type === "dir") {
-      return '<span class="skmt-files__icon skmt-files__icon--folder">' + ICON_FOLDER + "</span>";
+      return '<span class="lumia-files__icon lumia-files__icon--folder">' + ICON_FOLDER + "</span>";
     }
     var imgs  = ["jpg", "jpeg", "png", "gif", "svg", "webp", "ico", "bmp", "avif"];
     var arch  = ["zip", "tar", "gz", "bz2", "7z", "rar"];
@@ -916,22 +916,22 @@
 
     if (EXT_CLASS[ext]) {
       icon = ICON_CODE;
-      cls  = "skmt-files__icon--lang-" + EXT_CLASS[ext];
+      cls  = "lumia-files__icon--lang-" + EXT_CLASS[ext];
     } else if (imgs.indexOf(ext) !== -1) {
       icon = ICON_IMAGE_F;
-      cls  = "skmt-files__icon--image";
+      cls  = "lumia-files__icon--image";
     } else if (arch.indexOf(ext) !== -1) {
       icon = ICON_ARCHIVE;
-      cls  = "skmt-files__icon--archive";
+      cls  = "lumia-files__icon--archive";
     } else if (texts.indexOf(ext) !== -1) {
       icon = ICON_TEXT;
-      cls  = "skmt-files__icon--text";
+      cls  = "lumia-files__icon--text";
     } else {
       icon = ICON_FILE;
       cls  = "";
     }
 
-    return '<span class="skmt-files__icon ' + cls + '">' + icon + "</span>";
+    return '<span class="lumia-files__icon ' + cls + '">' + icon + "</span>";
   }
 
   /* ================================================================
@@ -959,8 +959,8 @@
   }
 
   function showToast(message, type) {
-    if (typeof window.skmtShowToast === "function") {
-      window.skmtShowToast(message, type || "success");
+    if (typeof window.lumiaShowToast === "function") {
+      window.lumiaShowToast(message, type || "success");
     }
   }
 })();

@@ -1,5 +1,5 @@
 /*
- * Notifications — Toasts SKMT + Centre de notifications WP
+ * Notifications — Toasts LUMIA + Centre de notifications WP
  * Chargé sur tout l'admin WordPress.
  */
 
@@ -7,7 +7,7 @@
  * TOAST CONTAINER (bas-droite, fixed)
  * ================================================================ */
 
-#skmt-toast-container {
+#lumia-toast-container {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -24,10 +24,10 @@
  * TOAST — Structure
  * ================================================================ */
 
-.skmt-toast {
+.lumia-toast {
   pointer-events: all;
-  background: var(--skmt-n900, oklch(0.205 0 0));
-  border: 1px solid var(--skmt-n700, oklch(0.371 0 0));
+  background: var(--lumia-n900, oklch(0.205 0 0));
+  border: 1px solid var(--lumia-n700, oklch(0.371 0 0));
   border-radius: 12px;
   box-shadow:
     0 8px 24px oklch(0 0 0 / 0.32),
@@ -40,19 +40,19 @@
     transform 0.2s ease;
 }
 
-.skmt-toast.is-visible {
+.lumia-toast.is-visible {
   opacity: 1;
   transform: translateX(0) scale(1);
 }
 
-.skmt-toast.is-hiding {
+.lumia-toast.is-hiding {
   opacity: 0;
   transform: translateX(8px) scale(0.97);
   transition-duration: 0.16s;
 }
 
 /* Corps principal */
-.skmt-toast__inner {
+.lumia-toast__inner {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -60,7 +60,7 @@
 }
 
 /* Pastille colorée */
-.skmt-toast__dot {
+.lumia-toast__dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -68,16 +68,16 @@
 }
 
 /* Message */
-.skmt-toast__message {
+.lumia-toast__message {
   flex: 1;
   font-size: 12.5px;
-  color: var(--skmt-n100, oklch(0.97 0 0));
+  color: var(--lumia-n100, oklch(0.97 0 0));
   line-height: 1.45;
   margin: 0;
 }
 
 /* Bouton fermer */
-.skmt-toast__close {
+.lumia-toast__close {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -87,7 +87,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--skmt-n500, oklch(0.556 0 0));
+  color: var(--lumia-n500, oklch(0.556 0 0));
   border-radius: 4px;
   padding: 0;
   transition:
@@ -95,25 +95,25 @@
     background 0.12s;
 }
 
-.skmt-toast__close:hover {
-  color: var(--skmt-n200, oklch(0.922 0 0));
+.lumia-toast__close:hover {
+  color: var(--lumia-n200, oklch(0.922 0 0));
   background: oklch(1 0 0 / 0.08);
 }
 
-.skmt-toast__close svg {
+.lumia-toast__close svg {
   width: 12px;
   height: 12px;
   display: block;
 }
 
 /* Barre de progression */
-.skmt-toast__progress-bar {
+.lumia-toast__progress-bar {
   height: 2px;
   background: oklch(1 0 0 / 0.07);
   overflow: hidden;
 }
 
-.skmt-toast__progress-fill {
+.lumia-toast__progress-fill {
   display: block;
   height: 100%;
   width: 100%;
@@ -126,39 +126,39 @@
  * TOAST — Couleurs par type
  * ================================================================ */
 
-.skmt-toast--success .skmt-toast__dot {
-  background: var(--skmt-success, oklch(0.696 0.17 162.48));
+.lumia-toast--success .lumia-toast__dot {
+  background: var(--lumia-success, oklch(0.696 0.17 162.48));
 }
-.skmt-toast--success .skmt-toast__progress-fill {
-  background: var(--skmt-success, oklch(0.696 0.17 162.48));
-}
-
-.skmt-toast--error .skmt-toast__dot {
-  background: var(--skmt-danger, oklch(0.637 0.237 25.331));
-}
-.skmt-toast--error .skmt-toast__progress-fill {
-  background: var(--skmt-danger, oklch(0.637 0.237 25.331));
+.lumia-toast--success .lumia-toast__progress-fill {
+  background: var(--lumia-success, oklch(0.696 0.17 162.48));
 }
 
-.skmt-toast--warning .skmt-toast__dot {
-  background: var(--skmt-warning, oklch(0.769 0.188 70.08));
+.lumia-toast--error .lumia-toast__dot {
+  background: var(--lumia-danger, oklch(0.637 0.237 25.331));
 }
-.skmt-toast--warning .skmt-toast__progress-fill {
-  background: var(--skmt-warning, oklch(0.769 0.188 70.08));
+.lumia-toast--error .lumia-toast__progress-fill {
+  background: var(--lumia-danger, oklch(0.637 0.237 25.331));
 }
 
-.skmt-toast--info .skmt-toast__dot {
-  background: var(--skmt-accent, oklch(0.585 0.233 277.117));
+.lumia-toast--warning .lumia-toast__dot {
+  background: var(--lumia-warning, oklch(0.769 0.188 70.08));
 }
-.skmt-toast--info .skmt-toast__progress-fill {
-  background: var(--skmt-accent, oklch(0.585 0.233 277.117));
+.lumia-toast--warning .lumia-toast__progress-fill {
+  background: var(--lumia-warning, oklch(0.769 0.188 70.08));
+}
+
+.lumia-toast--info .lumia-toast__dot {
+  background: var(--lumia-accent, oklch(0.585 0.233 277.117));
+}
+.lumia-toast--info .lumia-toast__progress-fill {
+  background: var(--lumia-accent, oklch(0.585 0.233 277.117));
 }
 
 /* ================================================================
  * OVERLAY
  * ================================================================ */
 
-#skmt-notif-overlay {
+#lumia-notif-overlay {
   display: none;
   position: fixed;
   inset: 0;
@@ -167,12 +167,12 @@
   cursor: pointer;
 }
 
-#skmt-notif-overlay.is-open {
+#lumia-notif-overlay.is-open {
   display: block;
-  animation: skmt-overlay-fade 0.2s ease;
+  animation: lumia-overlay-fade 0.2s ease;
 }
 
-@keyframes skmt-overlay-fade {
+@keyframes lumia-overlay-fade {
   from {
     opacity: 0;
   }
@@ -185,7 +185,7 @@
  * DRAWER
  * ================================================================ */
 
-#skmt-notif-drawer {
+#lumia-notif-drawer {
   position: fixed;
   top: 32px;
   right: 0;
@@ -202,11 +202,11 @@
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.08);
 }
 
-#skmt-notif-drawer.is-open {
+#lumia-notif-drawer.is-open {
   transform: translateX(0);
 }
 
-.skmt-notif-drawer__header {
+.lumia-notif-drawer__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -215,7 +215,7 @@
   flex-shrink: 0;
 }
 
-.skmt-notif-drawer__title {
+.lumia-notif-drawer__title {
   font-size: 13.5px;
   font-weight: 600;
   color: #111827;
@@ -225,7 +225,7 @@
   background: none;
 }
 
-.skmt-notif-drawer__close {
+.lumia-notif-drawer__close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -242,19 +242,19 @@
     background 0.15s;
 }
 
-.skmt-notif-drawer__close:hover {
+.lumia-notif-drawer__close:hover {
   color: #374151;
   background: #f3f4f6;
 }
 
-.skmt-notif-drawer__close .skmt-icon,
-.skmt-notif-drawer__close svg {
+.lumia-notif-drawer__close .lumia-icon,
+.lumia-notif-drawer__close svg {
   width: 16px !important;
   height: 16px !important;
   display: block;
 }
 
-.skmt-notif-drawer__body {
+.lumia-notif-drawer__body {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
@@ -264,7 +264,7 @@
 }
 
 /* État vide */
-.skmt-notif-drawer__empty {
+.lumia-notif-drawer__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -277,14 +277,14 @@
   gap: 10px;
 }
 
-.skmt-notif-drawer__empty svg {
+.lumia-notif-drawer__empty svg {
   width: 36px;
   height: 36px;
   opacity: 0.3;
 }
 
 /* Item de notification */
-.skmt-notif-item {
+.lumia-notif-item {
   position: relative;
   display: flex;
   gap: 10px;
@@ -298,7 +298,7 @@
   color: #374151;
 }
 
-.skmt-notif-item__icon {
+.lumia-notif-item__icon {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -307,91 +307,91 @@
   align-items: flex-start;
 }
 
-.skmt-notif-item__icon svg {
+.lumia-notif-item__icon svg {
   width: 16px;
   height: 16px;
 }
 
-.skmt-notif-item__content {
+.lumia-notif-item__content {
   flex: 1;
   min-width: 0;
 }
 
-.skmt-notif-item__content p {
+.lumia-notif-item__content p {
   margin: 0 0 4px;
 }
 
-.skmt-notif-item__content p:last-child {
+.lumia-notif-item__content p:last-child {
   margin-bottom: 0;
 }
 
-.skmt-notif-item__content a {
+.lumia-notif-item__content a {
   color: #2563eb;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.skmt-notif-item--success {
+.lumia-notif-item--success {
   background: #f0fdf4;
   border-color: #bbf7d0;
   border-left-color: #16a34a;
 }
-.skmt-notif-item--success .skmt-notif-item__icon {
+.lumia-notif-item--success .lumia-notif-item__icon {
   color: #16a34a;
 }
 
-.skmt-notif-item--error {
+.lumia-notif-item--error {
   background: #fef2f2;
   border-color: #fecaca;
   border-left-color: #dc2626;
 }
-.skmt-notif-item--error .skmt-notif-item__icon {
+.lumia-notif-item--error .lumia-notif-item__icon {
   color: #dc2626;
 }
 
-.skmt-notif-item--warning {
+.lumia-notif-item--warning {
   background: #fffbeb;
   border-color: #fde68a;
   border-left-color: #d97706;
 }
-.skmt-notif-item--warning .skmt-notif-item__icon {
+.lumia-notif-item--warning .lumia-notif-item__icon {
   color: #d97706;
 }
 
-.skmt-notif-item--info {
+.lumia-notif-item--info {
   background: #eff6ff;
   border-color: #bfdbfe;
   border-left-color: #2563eb;
 }
-.skmt-notif-item--info .skmt-notif-item__icon {
+.lumia-notif-item--info .lumia-notif-item__icon {
   color: #2563eb;
 }
 
-/* Badge source (SKMT / WP) */
-.skmt-notif-item__source {
+/* Badge source (LUMIA / WP) */
+.lumia-notif-item__source {
   display: inline-block;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-radius: var(--skmt-radius-xs, 3px);
+  border-radius: var(--lumia-radius-xs, 3px);
   padding: 1px 5px;
   line-height: 1.4;
   margin-bottom: 4px;
 }
 
-.skmt-notif-item--skmt .skmt-notif-item__source {
-  background: var(--skmt-accent, #2563eb);
+.lumia-notif-item--lumia .lumia-notif-item__source {
+  background: var(--lumia-accent, #2563eb);
   color: #ffffff;
 }
 
-.skmt-notif-item--wp .skmt-notif-item__source {
-  background: var(--skmt-n300, #d1d5db);
+.lumia-notif-item--wp .lumia-notif-item__source {
+  background: var(--lumia-n300, #d1d5db);
   color: #374151;
 }
 
 /* Bouton dismiss (×) — visible au survol de l'item */
-.skmt-notif-item__dismiss {
+.lumia-notif-item__dismiss {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -413,16 +413,16 @@
     background 0.15s;
 }
 
-.skmt-notif-item:hover .skmt-notif-item__dismiss {
+.lumia-notif-item:hover .lumia-notif-item__dismiss {
   opacity: 1;
 }
 
-.skmt-notif-item__dismiss:hover {
+.lumia-notif-item__dismiss:hover {
   color: #374151;
   background: rgba(0, 0, 0, 0.06);
 }
 
-.skmt-notif-item__dismiss svg {
+.lumia-notif-item__dismiss svg {
   width: 12px;
   height: 12px;
   display: block;
@@ -432,7 +432,7 @@
  * ADMIN BAR — bouton cloche + badge en overlay
  * ================================================================ */
 
-#wpadminbar #wp-admin-bar-skmt-notif-center > .ab-item {
+#wpadminbar #wp-admin-bar-lumia-notif-center > .ab-item {
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -441,7 +441,7 @@
 }
 
 /* Wrapper relatif pour positionner le badge en overlay */
-#wpadminbar .skmt-notif-btn-wrap {
+#wpadminbar .lumia-notif-btn-wrap {
   position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -452,8 +452,8 @@
   padding: 0 !important;
 }
 
-#wpadminbar #wp-admin-bar-skmt-notif-center .skmt-notif-bell-icon,
-#wpadminbar #wp-admin-bar-skmt-notif-center .skmt-icon {
+#wpadminbar #wp-admin-bar-lumia-notif-center .lumia-notif-bell-icon,
+#wpadminbar #wp-admin-bar-lumia-notif-center .lumia-icon {
   width: 16px !important;
   height: 16px !important;
   flex-shrink: 0;
@@ -462,7 +462,7 @@
 }
 
 /* Pastille rouge en haut à droite de l'icône : compteur, plafonné à « 9+ » en JS */
-#wpadminbar .skmt-notif-badge {
+#wpadminbar .lumia-notif-badge {
   position: absolute !important;
   top: 1px !important;
   right: -2px !important;
@@ -495,8 +495,8 @@
 }
 
 /* Masquage forcé quand style inline display:none (inline style < !important CSS) */
-#wpadminbar .skmt-notif-badge[style*="display:none"],
-#wpadminbar .skmt-notif-badge[style*="display: none"] {
+#wpadminbar .lumia-notif-badge[style*="display:none"],
+#wpadminbar .lumia-notif-badge[style*="display: none"] {
   display: none !important;
 }
 
@@ -504,13 +504,13 @@
  * ADMIN BAR — repère no-index (site non indexable)
  * ================================================================ */
 
-#wpadminbar #wp-admin-bar-skmt-noindex > .ab-item {
+#wpadminbar #wp-admin-bar-lumia-noindex > .ab-item {
   display: flex !important;
   align-items: center;
   padding: 0 8px !important;
 }
 
-#wpadminbar .skmt-noindex-wrap {
+#wpadminbar .lumia-noindex-wrap {
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
@@ -518,7 +518,7 @@
   color: #f0b849 !important;
 }
 
-#wpadminbar #wp-admin-bar-skmt-noindex .skmt-noindex-icon {
+#wpadminbar #wp-admin-bar-lumia-noindex .lumia-noindex-icon {
   width: 15px !important;
   height: 15px !important;
   display: block !important;
@@ -526,27 +526,27 @@
   flex-shrink: 0;
 }
 
-#wpadminbar .skmt-noindex-label {
+#wpadminbar .lumia-noindex-label {
   font-size: 12px !important;
   line-height: 1 !important;
   letter-spacing: 0.02em !important;
 }
 
-#wpadminbar #wp-admin-bar-skmt-noindex:hover > .ab-item .skmt-noindex-wrap,
-#wpadminbar #wp-admin-bar-skmt-noindex > .ab-item:focus .skmt-noindex-wrap {
+#wpadminbar #wp-admin-bar-lumia-noindex:hover > .ab-item .lumia-noindex-wrap,
+#wpadminbar #wp-admin-bar-lumia-noindex > .ab-item:focus .lumia-noindex-wrap {
   color: #ffd27a !important;
 }
 
 @media screen and (max-width: 782px) {
-  #wpadminbar .skmt-noindex-label {
+  #wpadminbar .lumia-noindex-label {
     display: none !important;
   }
-  #wpadminbar #wp-admin-bar-skmt-noindex > .ab-item {
+  #wpadminbar #wp-admin-bar-lumia-noindex > .ab-item {
     padding: 0 10px !important;
   }
 }
 
 /* Admin bar highlight quand drawer ouvert */
-#wpadminbar #wp-admin-bar-skmt-notif-center.drawer-open > .ab-item {
+#wpadminbar #wp-admin-bar-lumia-notif-center.drawer-open > .ab-item {
   background: rgba(255, 255, 255, 0.08);
 }

@@ -1,9 +1,9 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Admin\Admin;
+use Lumia\Tools\Admin\Admin;
 
 /**
  * Classe principale du plugin.
@@ -83,9 +83,9 @@ class Plugin {
 	 */
 	public function load_textdomain(): void {
 		load_plugin_textdomain(
-			'studio-kyne-mini-tools',
+			'lumia-tools',
 			false,
-			dirname( plugin_basename( SKMT_PLUGIN_FILE ) ) . '/languages/'
+			dirname( plugin_basename( LUMIA_PLUGIN_FILE ) ) . '/languages/'
 		);
 	}
 }

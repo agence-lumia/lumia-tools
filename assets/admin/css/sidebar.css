@@ -2,12 +2,12 @@
  * Sidebar
  */
 
-.skmt-sidebar {
-  width: var(--skmt-sidebar-width);
-  background: var(--skmt-surface);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
-  box-shadow: var(--skmt-shadow-sm);
+.lumia-sidebar {
+  width: var(--lumia-sidebar-width);
+  background: var(--lumia-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  box-shadow: var(--lumia-shadow-sm);
   position: relative;
   flex-shrink: 0;
   display: flex;
@@ -15,126 +15,126 @@
   overflow: hidden;
 }
 
-.skmt-sidebar__header {
+.lumia-sidebar__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
   flex-shrink: 0;
-  background: var(--skmt-n50);
+  background: var(--lumia-n50);
 }
 
-.skmt-sidebar__title {
+.lumia-sidebar__title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-sidebar__actions {
+.lumia-sidebar__actions {
   display: flex;
   gap: 4px;
 }
 
-.skmt-sidebar__icon-btn {
+.lumia-sidebar__icon-btn {
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--skmt-radius-xs);
-  color: var(--skmt-text-secondary);
-  transition: var(--skmt-transition);
+  border-radius: var(--lumia-radius-xs);
+  color: var(--lumia-text-secondary);
+  transition: var(--lumia-transition);
 }
 
-.skmt-sidebar__icon-btn:hover {
-  background: var(--skmt-n100);
-  color: var(--skmt-text);
+.lumia-sidebar__icon-btn:hover {
+  background: var(--lumia-n100);
+  color: var(--lumia-text);
 }
 
-.skmt-sidebar__nav {
+.lumia-sidebar__nav {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
 }
 
-.skmt-sidebar__menu {
+.lumia-sidebar__menu {
   margin: 0;
   padding: 0;
 }
 
-.skmt-sidebar__item {
+.lumia-sidebar__item {
   margin: 0;
   padding: 0;
 }
 
-.skmt-sidebar__link {
+.lumia-sidebar__link {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   text-decoration: none;
-  transition: var(--skmt-transition);
-  border-radius: var(--skmt-radius-sm);
+  transition: var(--lumia-transition);
+  border-radius: var(--lumia-radius-sm);
 }
 
-.skmt-sidebar__link:hover {
-  background: var(--skmt-n50);
-  color: var(--skmt-text);
+.lumia-sidebar__link:hover {
+  background: var(--lumia-n50);
+  color: var(--lumia-text);
 }
 
-.skmt-sidebar__link.is-active {
-  background: var(--skmt-n50);
-  color: var(--skmt-accent);
+.lumia-sidebar__link.is-active {
+  background: var(--lumia-n50);
+  color: var(--lumia-accent);
   font-weight: 500;
 }
 
-.skmt-sidebar__link-text {
+.lumia-sidebar__link-text {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
 }
 
-.skmt-sidebar__link-label {
+.lumia-sidebar__link-label {
   font-size: 13px;
   font-weight: 500;
   line-height: 1.3;
 }
 
-.skmt-sidebar__link-desc {
+.lumia-sidebar__link-desc {
   font-size: 11px;
-  color: var(--skmt-n500);
+  color: var(--lumia-n500);
   line-height: 1.3;
   font-weight: normal;
 }
 
-.skmt-sidebar__divider {
+.lumia-sidebar__divider {
   height: 1px;
-  background: var(--skmt-border);
+  background: var(--lumia-border);
   margin: 8px 12px;
 }
 
-.skmt-sidebar__icon-wrapper {
+.lumia-sidebar__icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 8px;
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-n50);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-n50);
 }
 
-.skmt-sidebar__link.is-active .skmt-icon,
-.skmt-sidebar__link:hover .skmt-icon {
-  color: var(--skmt-accent);
+.lumia-sidebar__link.is-active .lumia-icon,
+.lumia-sidebar__link:hover .lumia-icon {
+  color: var(--lumia-accent);
 }
 
 @media screen and (max-width: 782px) {
-  .skmt-sidebar {
+  .lumia-sidebar {
     width: 100%;
     position: relative;
     border-right: none;
-    border-bottom: 1px solid var(--skmt-border);
+    border-bottom: 1px solid var(--lumia-border);
   }
 }

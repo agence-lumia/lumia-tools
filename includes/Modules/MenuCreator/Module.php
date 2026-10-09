@@ -1,11 +1,11 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\MenuCreator;
+namespace Lumia\Tools\Modules\MenuCreator;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
-use StudioKyne\MiniTools\Modules\ImageOptimizer\SvgHandler;
-use StudioKyne\MiniTools\Modules\WhiteLabel\MenuProfileManager;
+use Lumia\Tools\Core\AbstractModule;
+use Lumia\Tools\Modules\ImageOptimizer\SvgHandler;
+use Lumia\Tools\Modules\WhiteLabel\MenuProfileManager;
 
 /**
  * Module Créateur de menu — gestion des profils de navigation et application aux utilisateurs.
@@ -66,12 +66,12 @@ class Module extends AbstractModule {
 		add_action( 'admin_head', [ $this, 'inject_global_icon_opacity_fix' ] );
 
 		// AJAX endpoints
-		add_action( 'wp_ajax_skmt_wl_save_profile', [ $this, 'ajax_save_profile' ] );
-		add_action( 'wp_ajax_skmt_wl_delete_profile', [ $this, 'ajax_delete_profile' ] );
-		add_action( 'wp_ajax_skmt_wl_duplicate_profile', [ $this, 'ajax_duplicate_profile' ] );
-		add_action( 'wp_ajax_skmt_wl_search_users', [ $this, 'ajax_search_users' ] );
-		add_action( 'wp_ajax_skmt_wl_import_profile', [ $this, 'ajax_import_profile' ] );
-		add_action( 'wp_ajax_skmt_wl_sanitize_svg', [ $this, 'ajax_sanitize_svg' ] );
+		add_action( 'wp_ajax_lumia_wl_save_profile', [ $this, 'ajax_save_profile' ] );
+		add_action( 'wp_ajax_lumia_wl_delete_profile', [ $this, 'ajax_delete_profile' ] );
+		add_action( 'wp_ajax_lumia_wl_duplicate_profile', [ $this, 'ajax_duplicate_profile' ] );
+		add_action( 'wp_ajax_lumia_wl_search_users', [ $this, 'ajax_search_users' ] );
+		add_action( 'wp_ajax_lumia_wl_import_profile', [ $this, 'ajax_import_profile' ] );
+		add_action( 'wp_ajax_lumia_wl_sanitize_svg', [ $this, 'ajax_sanitize_svg' ] );
 
 		// Médiathèque WP pour le picker d'icônes
 		add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_media' ] );
@@ -181,7 +181,7 @@ class Module extends AbstractModule {
 				if ( ! $this->current_user_has_role( (array) ( $item['roles'] ?? [] ) ) ) {
 					continue;
 				}
-				$label    = sanitize_text_field( $item['label'] ?? __( 'Lien', 'studio-kyne-mini-tools' ) );
+				$label    = sanitize_text_field( $item['label'] ?? __( 'Lien', 'lumia-tools' ) );
 				$icon_url = $this->resolve_native_icon_url( $item['icon'] ?? null );
 				add_menu_page( $label, $label, 'read', esc_url_raw( $item['url'] ), '', $icon_url, 999 );
 				continue;
@@ -318,13 +318,13 @@ class Module extends AbstractModule {
 			// une boucle, on rend donc un refus direct.
 			if ( 'index.php' === $pagenow ) {
 				wp_die(
-					esc_html__( 'Vous n’avez pas accès à cette page.', 'studio-kyne-mini-tools' ),
-					esc_html__( 'Accès refusé', 'studio-kyne-mini-tools' ),
+					esc_html__( 'Vous n’avez pas accès à cette page.', 'lumia-tools' ),
+					esc_html__( 'Accès refusé', 'lumia-tools' ),
 					[ 'response' => 403 ]
 				);
 			}
 
-			wp_safe_redirect( admin_url( 'index.php?skmt_denied=1' ) );
+			wp_safe_redirect( admin_url( 'index.php?lumia_denied=1' ) );
 			exit;
 		}
 	}
@@ -457,18 +457,18 @@ class Module extends AbstractModule {
 	 */
 	public function render_denied_toast(): void {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( empty( $_GET['skmt_denied'] ) ) {
+		if ( empty( $_GET['lumia_denied'] ) ) {
 			return;
 		}
-		$message = __( 'Vous n’avez pas accès à cette page.', 'studio-kyne-mini-tools' );
+		$message = __( 'Vous n’avez pas accès à cette page.', 'lumia-tools' );
 		?>
 		<script>
 		( function () {
 			var msg = <?php echo wp_json_encode( $message ); ?>;
 			var tries = 0;
 			( function show() {
-				if ( typeof window.skmtShowToast === 'function' ) {
-					window.skmtShowToast( msg, 'warning' );
+				if ( typeof window.lumiaShowToast === 'function' ) {
+					window.lumiaShowToast( msg, 'warning' );
 				} else if ( tries++ < 20 ) {
 					// Le script des toasts est chargé en pied de page : on laisse
 					// quelques tours de boucle avant d'abandonner silencieusement.
@@ -477,7 +477,7 @@ class Module extends AbstractModule {
 			} )();
 			try {
 				var url = new URL( window.location.href );
-				url.searchParams.delete( 'skmt_denied' );
+				url.searchParams.delete( 'lumia_denied' );
 				window.history.replaceState( null, '', url.toString() );
 			} catch ( e ) {}
 		} )();
@@ -621,11 +621,11 @@ class Module extends AbstractModule {
 
 		// Rendu des icônes en masque : la forme vient du SVG, la couleur de la
 		// feuille de style — donc alignée sur les dashicons natifs, survol inclus.
-		$hide_css .= '#adminmenu .skmt-mc-icon{display:block;width:20px;height:20px;margin:7px auto 0;'
+		$hide_css .= '#adminmenu .lumia-mc-icon{display:block;width:20px;height:20px;margin:7px auto 0;'
 			. 'background-color:#f3f1f1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;'
 			. '-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}'
-			. '#adminmenu li.menu-top:hover .skmt-mc-icon,#adminmenu li.current .skmt-mc-icon,'
-			. '#adminmenu li.wp-has-current-submenu .skmt-mc-icon,#adminmenu a.current .skmt-mc-icon'
+			. '#adminmenu li.menu-top:hover .lumia-mc-icon,#adminmenu li.current .lumia-mc-icon,'
+			. '#adminmenu li.wp-has-current-submenu .lumia-mc-icon,#adminmenu a.current .lumia-mc-icon'
 			. '{background-color:#fff}';
 
 		echo '<style>' . $hide_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -672,7 +672,7 @@ class Module extends AbstractModule {
 				imgEl.innerHTML = '';
 				if ( entry.mask ) {
 					var span = document.createElement( 'span' );
-					span.className = 'skmt-mc-icon';
+					span.className = 'lumia-mc-icon';
 					span.style.setProperty( '-webkit-mask-image', 'url("' + entry.src + '")' );
 					span.style.setProperty( 'mask-image', 'url("' + entry.src + '")' );
 					imgEl.appendChild( span );
@@ -741,7 +741,7 @@ class Module extends AbstractModule {
 	 */
 	private function editor_excluded_slugs(): array {
 		return (array) apply_filters(
-			'skmt_mc_editor_excluded_slugs',
+			'lumia_mc_editor_excluded_slugs',
 			[
 				'link-manager.php',
 			]
@@ -950,19 +950,19 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function ajax_save_profile(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 
 		$raw = isset( $_POST['profile'] ) ? wp_unslash( $_POST['profile'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( empty( $raw ) || ! is_string( $raw ) ) {
-			wp_send_json_error( [ 'message' => __( 'Données manquantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Données manquantes.', 'lumia-tools' ) ] );
 		}
 
 		$profile = json_decode( $raw, true );
 		if ( ! is_array( $profile ) ) {
-			wp_send_json_error( [ 'message' => __( 'JSON invalide.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'JSON invalide.', 'lumia-tools' ) ] );
 		}
 
 		$sanitized = $this->sanitize_profile( $profile );
@@ -971,14 +971,14 @@ class Module extends AbstractModule {
 	}
 
 	public function ajax_delete_profile(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 
 		$profile_id = isset( $_POST['profile_id'] ) ? sanitize_text_field( wp_unslash( $_POST['profile_id'] ) ) : '';
 		if ( empty( $profile_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'ID manquant.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'ID manquant.', 'lumia-tools' ) ] );
 		}
 
 		MenuProfileManager::delete( $profile_id );
@@ -986,20 +986,20 @@ class Module extends AbstractModule {
 	}
 
 	public function ajax_duplicate_profile(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 
 		$profile_id = isset( $_POST['profile_id'] ) ? sanitize_text_field( wp_unslash( $_POST['profile_id'] ) ) : '';
 		$original   = MenuProfileManager::get( $profile_id );
 		if ( ! $original ) {
-			wp_send_json_error( [ 'message' => __( 'Profil introuvable.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Profil introuvable.', 'lumia-tools' ) ] );
 		}
 
 		$copy               = $original;
 		$copy['id']         = wp_generate_uuid4();
-		$copy['name']       = $original['name'] . ' ' . __( '(copie)', 'studio-kyne-mini-tools' );
+		$copy['name']       = $original['name'] . ' ' . __( '(copie)', 'lumia-tools' );
 		$copy['status']     = 'draft';
 		$copy['updated_at'] = time();
 
@@ -1013,7 +1013,7 @@ class Module extends AbstractModule {
 
 	/**
 	 * Les profils de menu vivent sous leur propre option
-	 * (`skmt_wl_menu_profiles`), pas dans `skmt_module_menu_creator` : sans ce
+	 * (`lumia_wl_menu_profiles`), pas dans `lumia_module_menu_creator` : sans ce
 	 * bloc, l'export de configuration du plugin les laisserait de côté.
 	 *
 	 * @return array<string, mixed>
@@ -1058,19 +1058,19 @@ class Module extends AbstractModule {
 	 * pour ne pas remplacer sans prévenir le menu actif des utilisateurs.
 	 */
 	public function ajax_import_profile(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 
 		$raw = isset( $_POST['profile'] ) ? wp_unslash( $_POST['profile'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( empty( $raw ) || ! is_string( $raw ) ) {
-			wp_send_json_error( [ 'message' => __( 'Données manquantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Données manquantes.', 'lumia-tools' ) ] );
 		}
 
 		$decoded = json_decode( $raw, true );
 		if ( ! is_array( $decoded ) ) {
-			wp_send_json_error( [ 'message' => __( 'Fichier illisible : JSON invalide.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Fichier illisible : JSON invalide.', 'lumia-tools' ) ] );
 		}
 
 		if ( isset( $decoded['profiles'] ) && is_array( $decoded['profiles'] ) ) {
@@ -1093,14 +1093,14 @@ class Module extends AbstractModule {
 			$sanitized           = $this->sanitize_profile( $profile );
 			$sanitized['status'] = 'draft';
 			if ( '' === $sanitized['name'] ) {
-				$sanitized['name'] = __( 'Menu importé', 'studio-kyne-mini-tools' );
+				$sanitized['name'] = __( 'Menu importé', 'lumia-tools' );
 			}
 			MenuProfileManager::save( $sanitized );
 			$saved[] = $sanitized;
 		}
 
 		if ( ! $saved ) {
-			wp_send_json_error( [ 'message' => __( 'Ce fichier ne contient aucun menu.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Ce fichier ne contient aucun menu.', 'lumia-tools' ) ] );
 		}
 
 		wp_send_json_success(
@@ -1120,34 +1120,34 @@ class Module extends AbstractModule {
 	 * liste blanche. Le SVG n'est stocké qu'une fois passé par ce filtre.
 	 */
 	public function ajax_sanitize_svg(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 		}
 
 		$raw = isset( $_POST['svg'] ) ? wp_unslash( $_POST['svg'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
-			wp_send_json_error( [ 'message' => __( 'Collez le code d’un SVG.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Collez le code d’un SVG.', 'lumia-tools' ) ] );
 		}
 		if ( strlen( $raw ) > 100000 ) {
-			wp_send_json_error( [ 'message' => __( 'SVG trop volumineux (100 Ko maximum).', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'SVG trop volumineux (100 Ko maximum).', 'lumia-tools' ) ] );
 		}
 
 		if ( ! class_exists( SvgHandler::class ) ) {
-			wp_send_json_error( [ 'message' => __( 'Nettoyage SVG indisponible.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Nettoyage SVG indisponible.', 'lumia-tools' ) ] );
 		}
 
 		$handler = new SvgHandler( [] );
 		$clean   = $handler->sanitize( $raw );
 		if ( null === $clean ) {
-			wp_send_json_error( [ 'message' => __( 'Ce SVG est invalide ou contient du code non autorisé.', 'studio-kyne-mini-tools' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Ce SVG est invalide ou contient du code non autorisé.', 'lumia-tools' ) ] );
 		}
 
 		wp_send_json_success( [ 'icon' => 'svg:' . base64_encode( $clean ) ] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- icône SVG assainie, stockée et rendue en data URI.
 	}
 
 	public function ajax_search_users(): void {
-		check_ajax_referer( 'skmt_admin_nonce', 'nonce' );
+		check_ajax_referer( 'lumia_admin_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error();
 		}
@@ -1289,11 +1289,11 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/menu-creator.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/menu-creator.css' ];
 	}
 
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/menu-creator.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/menu-creator.js' ];
 	}
 
 	/**
@@ -1302,7 +1302,7 @@ class Module extends AbstractModule {
 	 * identiques sous deux handles différents étaient servies deux fois.
 	 */
 	public function get_admin_js_deps(): array {
-		return [ 'skmt-sortable-js' ];
+		return [ 'lumia-sortable-js' ];
 	}
 
 	/**
@@ -1313,12 +1313,12 @@ class Module extends AbstractModule {
 		$data = [
 			'mcProfiles' => MenuProfileManager::get_all(),
 			'i18n'       => [
-				'newMenu'          => __( 'Nouveau menu', 'studio-kyne-mini-tools' ),
-				'draft'            => __( 'Brouillon', 'studio-kyne-mini-tools' ),
-				'active'           => __( 'Actif', 'studio-kyne-mini-tools' ),
-				'unsavedChanges'   => __( 'Modifications non sauvegardées', 'studio-kyne-mini-tools' ),
-				'leaveConfirm'     => __( 'Vos modifications seront perdues. Continuer ?', 'studio-kyne-mini-tools' ),
-				'deleteConfirmMsg' => __( 'Cette action est irréversible.', 'studio-kyne-mini-tools' ),
+				'newMenu'          => __( 'Nouveau menu', 'lumia-tools' ),
+				'draft'            => __( 'Brouillon', 'lumia-tools' ),
+				'active'           => __( 'Actif', 'lumia-tools' ),
+				'unsavedChanges'   => __( 'Modifications non sauvegardées', 'lumia-tools' ),
+				'leaveConfirm'     => __( 'Vos modifications seront perdues. Continuer ?', 'lumia-tools' ),
+				'deleteConfirmMsg' => __( 'Cette action est irréversible.', 'lumia-tools' ),
 			],
 		];
 
@@ -1402,7 +1402,7 @@ class Module extends AbstractModule {
 	private function get_icon_library(): array {
 		return [
 			'general'  => [
-				'label' => __( 'Général', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Général', 'lumia-tools' ),
 				'icons' => [
 					'layout-dashboard' => '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
 					'house'            => '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -1432,7 +1432,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'content'  => [
-				'label' => __( 'Contenu', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Contenu', 'lumia-tools' ),
 				'icons' => [
 					'file'           => '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
 					'file-text'      => '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
@@ -1462,7 +1462,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'media'    => [
-				'label' => __( 'Médias', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Médias', 'lumia-tools' ),
 				'icons' => [
 					'image'                  => '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
 					'images'                 => '<path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"/><path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"/><circle cx="13" cy="7" r="1" fill="currentColor"/><rect x="8" y="2" width="14" height="14" rx="2"/>',
@@ -1483,7 +1483,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'commerce' => [
-				'label' => __( 'Commerce', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Commerce', 'lumia-tools' ),
 				'icons' => [
 					'shopping-bag'  => '<path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/>',
 					'shopping-cart' => '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
@@ -1505,7 +1505,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'users'    => [
-				'label' => __( 'Utilisateurs', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Utilisateurs', 'lumia-tools' ),
 				'icons' => [
 					'user-round'       => '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
 					'users-round'      => '<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
@@ -1523,7 +1523,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'data'     => [
-				'label' => __( 'Données', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Données', 'lumia-tools' ),
 				'icons' => [
 					'chart-column' => '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
 					'chart-line'   => '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
@@ -1537,7 +1537,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'design'   => [
-				'label' => __( 'Apparence', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Apparence', 'lumia-tools' ),
 				'icons' => [
 					'palette'            => '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>',
 					'swatch-book'        => '<path d="M11 17a4 4 0 0 1-8 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2Z"/><path d="M16.7 13H19a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H7"/><path d="M 7 17h.01"/><path d="m11 8 2.3-2.3a2.4 2.4 0 0 1 3.404.004L18.6 7.6a2.4 2.4 0 0 1 .026 3.434L9.9 19.8"/>',
@@ -1557,7 +1557,7 @@ class Module extends AbstractModule {
 				],
 			],
 			'system'   => [
-				'label' => __( 'Système', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Système', 'lumia-tools' ),
 				'icons' => [
 					'settings'      => '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
 					'settings-2'    => '<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
@@ -1809,7 +1809,7 @@ class Module extends AbstractModule {
 	}
 
 	public function maybe_enqueue_media( string $hook ): void {
-		if ( false === strpos( $hook, 'studio-kyne-mini-tools' ) ) {
+		if ( false === strpos( $hook, 'lumia-tools' ) ) {
 			return;
 		}
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended

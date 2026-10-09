@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: skmt-lint-${{ github.ref }}
+  group: lumia-lint-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
       - name: Install dev dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
-      # La compatibilité PHP 7.4 est vérifiée par PHPCompatibilityWP dans PHPCS.
+      # La compatibilité PHP 8.0 est vérifiée par PHPCompatibilityWP dans PHPCS.
       - name: PHP syntax check
         run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
 

@@ -1,10 +1,10 @@
 <?php
-namespace StudioKyne\MiniTools\Core;
+namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Base commune pour les modules SKMT.
+ * Base commune pour les modules LUMIA.
  *
  * Fournit : gestion des options, assets admin vides par défaut,
  * hooks de lifecycle et méthodes statiques pour l'install/uninstall.
@@ -31,7 +31,7 @@ abstract class AbstractModule implements ModuleInterface {
 	 * Clé d'option WordPress pour ce module.
 	 */
 	protected function get_module_option_key(): string {
-		return 'skmt_module_' . $this->id;
+		return 'lumia_module_' . $this->id;
 	}
 
 	/**
@@ -123,10 +123,10 @@ abstract class AbstractModule implements ModuleInterface {
 
 	/**
 	 * Données du module à joindre à l'export de configuration, EN PLUS de son
-	 * option `skmt_module_{id}`.
+	 * option `lumia_module_{id}`.
 	 *
 	 * Un module qui range une partie de son état dans une option à lui
-	 * (Créateur de menu : les profils sous `skmt_wl_menu_profiles`) doit la
+	 * (Créateur de menu : les profils sous `lumia_wl_menu_profiles`) doit la
 	 * déclarer ici, sinon elle est absente du JSON d'export et l'utilisateur
 	 * croit avoir sauvegardé une configuration complète.
 	 *

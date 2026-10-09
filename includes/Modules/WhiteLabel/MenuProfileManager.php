@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\WhiteLabel;
+namespace Lumia\Tools\Modules\WhiteLabel;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -8,8 +8,8 @@ defined( 'ABSPATH' ) || exit;
  */
 class MenuProfileManager {
 
-	const OPTION_KEY       = 'skmt_wl_menu_profiles';
-	const CACHE_KEY_PREFIX = 'skmt_wl_menu_user_';
+	const OPTION_KEY       = 'lumia_wl_menu_profiles';
+	const CACHE_KEY_PREFIX = 'lumia_wl_menu_user_';
 
 	/**
 	 * Génération du cache : incrémentée à chaque mutation de profil et incluse
@@ -17,7 +17,7 @@ class MenuProfileManager {
 	 * d'option, au lieu d'un delete_transient par utilisateur — plafonné à 500
 	 * comptes, au-delà desquels les autres gardaient un profil périmé.
 	 */
-	const CACHE_GEN_OPTION = 'skmt_wl_menu_cache_gen';
+	const CACHE_GEN_OPTION = 'lumia_wl_menu_cache_gen';
 
 	/* ================================================================
 	 * CRUD

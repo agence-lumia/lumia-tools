@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ActivityLog;
+namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,14 +21,14 @@ class Events {
 	 */
 	public static function groups(): array {
 		return [
-			'auth'     => __( 'Connexions', 'studio-kyne-mini-tools' ),
-			'content'  => __( 'Contenus', 'studio-kyne-mini-tools' ),
-			'media'    => __( 'Médias', 'studio-kyne-mini-tools' ),
-			'users'    => __( 'Utilisateurs', 'studio-kyne-mini-tools' ),
-			'plugins'  => __( 'Extensions', 'studio-kyne-mini-tools' ),
-			'themes'   => __( 'Thèmes', 'studio-kyne-mini-tools' ),
-			'options'  => __( 'Réglages WordPress', 'studio-kyne-mini-tools' ),
-			'settings' => __( 'Réglages Mini Tools', 'studio-kyne-mini-tools' ),
+			'auth'     => __( 'Connexions', 'lumia-tools' ),
+			'content'  => __( 'Contenus', 'lumia-tools' ),
+			'media'    => __( 'Médias', 'lumia-tools' ),
+			'users'    => __( 'Utilisateurs', 'lumia-tools' ),
+			'plugins'  => __( 'Extensions', 'lumia-tools' ),
+			'themes'   => __( 'Thèmes', 'lumia-tools' ),
+			'options'  => __( 'Réglages WordPress', 'lumia-tools' ),
+			'settings' => __( 'Réglages Lümia Tools', 'lumia-tools' ),
 		];
 	}
 
@@ -41,111 +41,111 @@ class Events {
 		return [
 			'login'            => [
 				'group' => 'auth',
-				'label' => __( 'Connexion', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Connexion', 'lumia-tools' ),
 			],
 			'login_failed'     => [
 				'group' => 'auth',
-				'label' => __( 'Échec de connexion', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Échec de connexion', 'lumia-tools' ),
 			],
 			'logout'           => [
 				'group' => 'auth',
-				'label' => __( 'Déconnexion', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Déconnexion', 'lumia-tools' ),
 			],
 			'post_created'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu créé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Contenu créé', 'lumia-tools' ),
 			],
 			'post_updated'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Contenu modifié', 'lumia-tools' ),
 			],
 			'post_trashed'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu mis à la corbeille', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Contenu mis à la corbeille', 'lumia-tools' ),
 			],
 			'post_restored'    => [
 				'group' => 'content',
-				'label' => __( 'Contenu restauré', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Contenu restauré', 'lumia-tools' ),
 			],
 			'post_deleted'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Contenu supprimé', 'lumia-tools' ),
 			],
 			'media_added'      => [
 				'group' => 'media',
-				'label' => __( 'Média ajouté', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Média ajouté', 'lumia-tools' ),
 			],
 			'media_updated'    => [
 				'group' => 'media',
-				'label' => __( 'Média modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Média modifié', 'lumia-tools' ),
 			],
 			'media_deleted'    => [
 				'group' => 'media',
-				'label' => __( 'Média supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Média supprimé', 'lumia-tools' ),
 			],
 			'user_created'     => [
 				'group' => 'users',
-				'label' => __( 'Utilisateur créé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Utilisateur créé', 'lumia-tools' ),
 			],
 			'user_updated'     => [
 				'group' => 'users',
-				'label' => __( 'Profil modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Profil modifié', 'lumia-tools' ),
 			],
 			'user_role'        => [
 				'group' => 'users',
-				'label' => __( 'Rôle modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Rôle modifié', 'lumia-tools' ),
 			],
 			'user_deleted'     => [
 				'group' => 'users',
-				'label' => __( 'Utilisateur supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Utilisateur supprimé', 'lumia-tools' ),
 			],
 			'password_reset'   => [
 				'group' => 'users',
-				'label' => __( 'Mot de passe réinitialisé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Mot de passe réinitialisé', 'lumia-tools' ),
 			],
 			'plugin_activated' => [
 				'group' => 'plugins',
-				'label' => __( 'Extension activée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Extension activée', 'lumia-tools' ),
 			],
 			'plugin_disabled'  => [
 				'group' => 'plugins',
-				'label' => __( 'Extension désactivée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Extension désactivée', 'lumia-tools' ),
 			],
 			'plugin_installed' => [
 				'group' => 'plugins',
-				'label' => __( 'Extension installée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Extension installée', 'lumia-tools' ),
 			],
 			'plugin_updated'   => [
 				'group' => 'plugins',
-				'label' => __( 'Extension mise à jour', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Extension mise à jour', 'lumia-tools' ),
 			],
 			'plugin_deleted'   => [
 				'group' => 'plugins',
-				'label' => __( 'Extension supprimée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Extension supprimée', 'lumia-tools' ),
 			],
 			'theme_switched'   => [
 				'group' => 'themes',
-				'label' => __( 'Thème activé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Thème activé', 'lumia-tools' ),
 			],
 			'theme_installed'  => [
 				'group' => 'themes',
-				'label' => __( 'Thème installé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Thème installé', 'lumia-tools' ),
 			],
 			'theme_updated'    => [
 				'group' => 'themes',
-				'label' => __( 'Thème mis à jour', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Thème mis à jour', 'lumia-tools' ),
 			],
 			'theme_deleted'    => [
 				'group' => 'themes',
-				'label' => __( 'Thème supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Thème supprimé', 'lumia-tools' ),
 			],
 			'option_updated'   => [
 				'group' => 'options',
-				'label' => __( 'Réglage modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Réglage modifié', 'lumia-tools' ),
 			],
-			'skmt_settings'    => [
+			'lumia_settings'   => [
 				'group' => 'settings',
-				'label' => __( 'Réglages modifiés', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Réglages modifiés', 'lumia-tools' ),
 			],
 		];
 	}

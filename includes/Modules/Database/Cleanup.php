@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Database;
+namespace Lumia\Tools\Modules\Database;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -50,52 +50,52 @@ class Cleanup {
 	public static function items(): array {
 		return [
 			'revisions'                 => [
-				'label'       => __( 'Révisions', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Anciennes versions des contenus, conservées à chaque enregistrement.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Révisions', 'lumia-tools' ),
+				'description' => __( 'Anciennes versions des contenus, conservées à chaque enregistrement.', 'lumia-tools' ),
 			],
 			'auto_drafts'               => [
-				'label'       => __( 'Brouillons automatiques', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Créés à l\'ouverture de l\'éditeur, jamais enregistrés.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Brouillons automatiques', 'lumia-tools' ),
+				'description' => __( 'Créés à l\'ouverture de l\'éditeur, jamais enregistrés.', 'lumia-tools' ),
 			],
 			'trashed_posts'             => [
-				'label'       => __( 'Contenus dans la corbeille', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Articles, pages et types personnalisés supprimés définitivement.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Contenus dans la corbeille', 'lumia-tools' ),
+				'description' => __( 'Articles, pages et types personnalisés supprimés définitivement.', 'lumia-tools' ),
 			],
 			'spam_comments'             => [
-				'label'       => __( 'Commentaires indésirables', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Commentaires marqués comme spam.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Commentaires indésirables', 'lumia-tools' ),
+				'description' => __( 'Commentaires marqués comme spam.', 'lumia-tools' ),
 			],
 			'trashed_comments'          => [
-				'label'       => __( 'Commentaires dans la corbeille', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Commentaires supprimés définitivement.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Commentaires dans la corbeille', 'lumia-tools' ),
+				'description' => __( 'Commentaires supprimés définitivement.', 'lumia-tools' ),
 			],
 			'expired_transients'        => [
-				'label'       => __( 'Transients expirés', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Données de cache temporaires dont la date d\'expiration est passée.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Transients expirés', 'lumia-tools' ),
+				'description' => __( 'Données de cache temporaires dont la date d\'expiration est passée.', 'lumia-tools' ),
 			],
 			'orphan_transient_timeouts' => [
-				'label'       => __( 'Expirations de transients orphelines', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Dates d\'expiration dont le transient n\'existe plus.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Expirations de transients orphelines', 'lumia-tools' ),
+				'description' => __( 'Dates d\'expiration dont le transient n\'existe plus.', 'lumia-tools' ),
 			],
 			'orphan_postmeta'           => [
-				'label'       => __( 'Métadonnées de contenus orphelines', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Rattachées à un contenu qui n\'existe plus.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Métadonnées de contenus orphelines', 'lumia-tools' ),
+				'description' => __( 'Rattachées à un contenu qui n\'existe plus.', 'lumia-tools' ),
 			],
 			'orphan_commentmeta'        => [
-				'label'       => __( 'Métadonnées de commentaires orphelines', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Rattachées à un commentaire qui n\'existe plus.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Métadonnées de commentaires orphelines', 'lumia-tools' ),
+				'description' => __( 'Rattachées à un commentaire qui n\'existe plus.', 'lumia-tools' ),
 			],
 			'orphan_usermeta'           => [
-				'label'       => __( 'Métadonnées d\'utilisateurs orphelines', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Rattachées à un utilisateur qui n\'existe plus.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Métadonnées d\'utilisateurs orphelines', 'lumia-tools' ),
+				'description' => __( 'Rattachées à un utilisateur qui n\'existe plus.', 'lumia-tools' ),
 			],
 			'orphan_termmeta'           => [
-				'label'       => __( 'Métadonnées de termes orphelines', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Rattachées à une catégorie ou étiquette qui n\'existe plus.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Métadonnées de termes orphelines', 'lumia-tools' ),
+				'description' => __( 'Rattachées à une catégorie ou étiquette qui n\'existe plus.', 'lumia-tools' ),
 			],
 			'orphan_term_relationships' => [
-				'label'       => __( 'Relations de termes orphelines', 'studio-kyne-mini-tools' ),
-				'description' => __( 'Liens entre un terme et un contenu qui n\'existe plus.', 'studio-kyne-mini-tools' ),
+				'label'       => __( 'Relations de termes orphelines', 'lumia-tools' ),
+				'description' => __( 'Liens entre un terme et un contenu qui n\'existe plus.', 'lumia-tools' ),
 			],
 		];
 	}
@@ -514,7 +514,7 @@ class Cleanup {
 		 *
 		 * @param array<string, list<string>> $aliases
 		 */
-		$aliases = (array) apply_filters( 'skmt_db_table_owner_aliases', self::OWNER_ALIASES );
+		$aliases = (array) apply_filters( 'lumia_db_table_owner_aliases', self::OWNER_ALIASES );
 
 		$tables = [];
 		foreach ( $this->site_table_status() as $t ) {

@@ -8,7 +8,7 @@ Architecture, contrats et pièges du cœur (`includes/Core/`, `Admin`, `Abstract
 plugins_loaded → Plugin::instance() (singleton)
   └─ init hook → on_init()
        ├─ load_textdomain()
-       ├─ Modules::register_default_modules()   ← déclenche le filtre skmt_module_definitions
+       ├─ Modules::register_default_modules()   ← déclenche le filtre lumia_module_definitions
        └─ Modules::init_active_modules()         ← appelle Module::init() sur chaque module actif
 ```
 
@@ -16,7 +16,7 @@ plugins_loaded → Plugin::instance() (singleton)
 
 ## Autoloader
 
-`StudioKyne\MiniTools\` correspond directement à `includes/`. Exemple : `StudioKyne\MiniTools\Modules\Security\RateLimiter` → `includes/Modules/Security/RateLimiter.php`. Pas de Composer à l'exécution, pas de `vendor/` embarqué.
+`Lumia\Tools\` correspond directement à `includes/`. Exemple : `Lumia\Tools\Modules\Security\RateLimiter` → `includes/Modules/Security/RateLimiter.php`. Pas de Composer à l'exécution, pas de `vendor/` embarqué.
 
 Les modules peuvent dépendre de classes d'un autre module (`MenuCreator\Module` utilise `WhiteLabel\MenuProfileManager`) : l'autoloader n'isole rien. Le module dépendant ne fonctionne plus correctement si l'autre est désactivé ou désinstallé.
 
@@ -24,11 +24,11 @@ Les modules peuvent dépendre de classes d'un autre module (`MenuCreator\Module`
 
 | Portée | Clé d'option | Accès |
 |---|---|---|
-| Plugin global | `skmt_settings` | `Settings::get('global.update_channel')` (notation pointée) |
-| État des modules | `skmt_settings` → `modules.{id}` | `Settings::get('modules.security')` |
-| Réglages d'un module | `skmt_module_{id}` | `AbstractModule::get_module_settings()` |
+| Plugin global | `lumia_settings` | `Settings::get('global.update_channel')` (notation pointée) |
+| État des modules | `lumia_settings` → `modules.{id}` | `Settings::get('modules.security')` |
+| Réglages d'un module | `lumia_module_{id}` | `AbstractModule::get_module_settings()` |
 
-Les entrées du rate limiter sont des **transients**, clé `_skmt_rl_{md5(ip)}`, TTL 24 h : elles expirent seules et sont volontairement absentes de `get_uninstall_keys()`. Le cache de profil de menu par utilisateur est aussi un transient (`skmt_wl_menu_user_{gen}_{id}`, 1 h).
+Les entrées du rate limiter sont des **transients**, clé `_lumia_rl_{md5(ip)}`, TTL 24 h : elles expirent seules et sont volontairement absentes de `get_uninstall_keys()`. Le cache de profil de menu par utilisateur est aussi un transient (`lumia_wl_menu_user_{gen}_{id}`, 1 h).
 
 `AbstractModule::get_module_settings()` fusionne les valeurs stockées par-dessus les défauts **récursivement** : il descend dans les tableaux associatifs mais remplace les listes (rôles, listes d'IP) en bloc. `wp_parse_args()` seul ne fusionne que le premier niveau : toute sous-clé ajoutée dans une version ultérieure manquerait sur les installations existantes tant que l'utilisateur n'a pas ré-enregistré l'écran, et un réglage dont le défaut est `true` arriverait silencieusement à `false` partout.
 
@@ -54,11 +54,11 @@ Tout fichier PHP de l'extension porte `defined( 'ABSPATH' ) || exit;` — après
 
 ### Export d'état hors option module
 
-`get_export_extras()` / `import_extras()` déclarent l'état du module rangé **hors** de `skmt_module_{id}` (MenuCreator : les profils sous `skmt_wl_menu_profiles`). Sans ça, l'export de configuration se croit complet alors qu'il laisse cette option de côté. Le bloc atterrit sous `extras.{module_id}` dans le JSON, et l'import le renvoie au module — qui le réassainit lui-même, comme `to_form_payload()` pour les réglages.
+`get_export_extras()` / `import_extras()` déclarent l'état du module rangé **hors** de `lumia_module_{id}` (MenuCreator : les profils sous `lumia_wl_menu_profiles`). Sans ça, l'export de configuration se croit complet alors qu'il laisse cette option de côté. Le bloc atterrit sous `extras.{module_id}` dans le JSON, et l'import le renvoie au module — qui le réassainit lui-même, comme `to_form_payload()` pour les réglages.
 
 ### Dépendances JS partagées
 
-`get_admin_js_deps()` renvoie les handles de scripts déjà enregistrés dont le JS du module dépend. À utiliser pour les bibliothèques tierces partagées plutôt que de renvoyer leur URL depuis `get_admin_js()` : deux modules qui font ça produisent deux handles pour le même fichier, que WordPress ne peut pas dédoublonner. `skmt-sortable-js` est enregistré par `Admin::enqueue_assets()` et consommé ainsi par MenuCreator ; le module Média enfile le même handle.
+`get_admin_js_deps()` renvoie les handles de scripts déjà enregistrés dont le JS du module dépend. À utiliser pour les bibliothèques tierces partagées plutôt que de renvoyer leur URL depuis `get_admin_js()` : deux modules qui font ça produisent deux handles pour le même fichier, que WordPress ne peut pas dédoublonner. `lumia-sortable-js` est enregistré par `Admin::enqueue_assets()` et consommé ainsi par MenuCreator ; le module Média enfile le même handle.
 
 ### `to_form_payload()`
 
@@ -68,11 +68,11 @@ Tout fichier PHP de l'extension porte `defined( 'ABSPATH' ) || exit;` — après
 
 Le gabarit d'un module vit dans `includes/Modules/{ModuleName}/settings-template.php` (chargé par `templates/admin/module-settings.php`). Variables disponibles : `$module_id`, `$module`, `$instance`, `$module_settings`, `$tab`.
 
-Les champs doivent utiliser `name="skmt_module_settings[field_name]"` et le champ caché `skmt_tab=module_{id}` pour que `Admin::handle_save_settings()` route le POST.
+Les champs doivent utiliser `name="lumia_module_settings[field_name]"` et le champ caché `lumia_tab=module_{id}` pour que `Admin::handle_save_settings()` route le POST.
 
 ### Données passées au JS
 
-Les valeurs renvoyées par `get_admin_js_data()` sont injectées dans `window.skmtAdmin` par `Admin::enqueue_module_assets()` : la clé `i18n` est fusionnée dans `window.skmtAdmin.i18n`, toute autre clé est posée directement en `window.skmtAdmin[key]` (encodée JSON). Sert à passer n'importe quelle donnée de module au JS (`mcProfiles`, `wpMenu`), pas seulement des traductions.
+Les valeurs renvoyées par `get_admin_js_data()` sont injectées dans `window.lumiaAdmin` par `Admin::enqueue_module_assets()` : la clé `i18n` est fusionnée dans `window.lumiaAdmin.i18n`, toute autre clé est posée directement en `window.lumiaAdmin[key]` (encodée JSON). Sert à passer n'importe quelle donnée de module au JS (`mcProfiles`, `wpMenu`), pas seulement des traductions.
 
 ## Ajouter un module
 
@@ -81,10 +81,10 @@ Les valeurs renvoyées par `get_admin_js_data()` sont injectées dans `window.sk
 3. Enregistrer via le filtre (aucun fichier du cœur à toucher) :
 
 ```php
-add_filter( 'skmt_module_definitions', function( array $modules ) {
+add_filter( 'lumia_module_definitions', function( array $modules ) {
     $modules['my_module'] = [
-        'name'    => __( 'My Module', 'studio-kyne-mini-tools' ),
-        'class'   => 'StudioKyne\\MiniTools\\Modules\\MyModule\\Module',
+        'name'    => __( 'My Module', 'lumia-tools' ),
+        'class'   => 'Lumia\\Tools\\Modules\\MyModule\\Module',
         'icon'    => 'package',
         // name, description, menu_label, menu_desc, icon
     ];
@@ -98,17 +98,17 @@ add_filter( 'skmt_module_definitions', function( array $modules ) {
 
 Tous les formulaires de réglages postent vers `admin-post.php`. Le nom de l'action détermine le handler :
 
-- `skmt_save_settings` → `Admin::handle_save_settings()`
-- `skmt_toggle_module` → `Admin::handle_toggle_module()`
-- `skmt_update_modules` → `Admin::handle_update_modules()`
-- `skmt_check_updates` → `Admin::handle_check_updates()`
-- `skmt_reset_settings` → `Admin::handle_reset_settings()`
+- `lumia_save_settings` → `Admin::handle_save_settings()`
+- `lumia_toggle_module` → `Admin::handle_toggle_module()`
+- `lumia_update_modules` → `Admin::handle_update_modules()`
+- `lumia_check_updates` → `Admin::handle_check_updates()`
+- `lumia_reset_settings` → `Admin::handle_reset_settings()`
 
-Tous vérifient un nonce et la capacité `manage_options`, puis redirigent avec `?skmt_notice=...`.
+Tous vérifient un nonce et la capacité `manage_options`, puis redirigent avec `?lumia_notice=...`.
 
 ### Import de réglages
 
-`handle_import_settings()` ne doit jamais écrire le JSON téléversé directement dans les options — ça contourne chaque assainisseur de module (HTML non filtré dans le pied de page white-label, rôles SVG arbitraires, slug de connexion libre). Chaque bloc de module est rejoué via `to_form_payload()` puis `save_settings()`, si bien que le fichier suit exactement le chemin du formulaire. Deux détails comptent : les valeurs `false` sont retirées avant l'appel, parce qu'un formulaire HTML omet ses cases décochées et que certains modules testent `isset()` plutôt que la valeur ; et le bloc `skmt_settings` est fusionné par-dessus l'option existante plutôt que de la remplacer, pour qu'un fichier partiel n'efface pas l'état d'activation des modules qu'il ne mentionne pas. Avant toute lecture : `is_uploaded_file()` sur `$_FILES[…]['tmp_name']` — cette valeur vient du client, et c'est la seule chose qui atteste qu'elle désigne bien un fichier déposé par *cette* requête et non un chemin arbitraire du serveur — puis un plafond `IMPORT_MAX_BYTES` (2 Mio), le fichier étant lu en entier **puis** décodé en JSON, soit deux copies en mémoire.
+`handle_import_settings()` ne doit jamais écrire le JSON téléversé directement dans les options — ça contourne chaque assainisseur de module (HTML non filtré dans le pied de page white-label, rôles SVG arbitraires, slug de connexion libre). Chaque bloc de module est rejoué via `to_form_payload()` puis `save_settings()`, si bien que le fichier suit exactement le chemin du formulaire. Deux détails comptent : les valeurs `false` sont retirées avant l'appel, parce qu'un formulaire HTML omet ses cases décochées et que certains modules testent `isset()` plutôt que la valeur ; et le bloc `lumia_settings` est fusionné par-dessus l'option existante plutôt que de la remplacer, pour qu'un fichier partiel n'efface pas l'état d'activation des modules qu'il ne mentionne pas. Avant toute lecture : `is_uploaded_file()` sur `$_FILES[…]['tmp_name']` — cette valeur vient du client, et c'est la seule chose qui atteste qu'elle désigne bien un fichier déposé par *cette* requête et non un chemin arbitraire du serveur — puis un plafond `IMPORT_MAX_BYTES` (2 Mio), le fichier étant lu en entier **puis** décodé en JSON, soit deux copies en mémoire.
 
 ### Téléchargements
 
@@ -116,16 +116,16 @@ Tout en-tête `Content-Disposition` passe par `Admin::content_disposition( $file
 
 ## Endpoints AJAX
 
-Les actions AJAX des modules suivent le nommage `wp_ajax_skmt_{module}_{action}` et un motif de garde identique en tête de chaque handler :
+Les actions AJAX des modules suivent le nommage `wp_ajax_lumia_{module}_{action}` et un motif de garde identique en tête de chaque handler :
 
 ```php
-check_ajax_referer( 'skmt_admin_nonce', 'nonce' ); // ou wp_verify_nonce() + wp_send_json_error() manuel
+check_ajax_referer( 'lumia_admin_nonce', 'nonce' ); // ou wp_verify_nonce() + wp_send_json_error() manuel
 if ( ! current_user_can( 'manage_options' ) ) {
-    wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'studio-kyne-mini-tools' ) ] );
+    wp_send_json_error( [ 'message' => __( 'Permissions insuffisantes.', 'lumia-tools' ) ] );
 }
 ```
 
-Toute donnée de requête passe par `sanitize_text_field( wp_unslash( $_POST[...] ) )` (ou l'assainisseur adapté au type) avant usage ; les réponses passent par `wp_send_json_success()` / `wp_send_json_error()`. Le nonce est créé une fois via `wp_create_nonce( 'skmt_admin_nonce' )` et partagé entre modules (`window.skmtNotifData.nonce` / `window.skmtAdmin`).
+Toute donnée de requête passe par `sanitize_text_field( wp_unslash( $_POST[...] ) )` (ou l'assainisseur adapté au type) avant usage ; les réponses passent par `wp_send_json_success()` / `wp_send_json_error()`. Le nonce est créé une fois via `wp_create_nonce( 'lumia_admin_nonce' )` et partagé entre modules (`window.lumiaNotifData.nonce` / `window.lumiaAdmin`).
 
 ## Icônes
 
@@ -135,7 +135,7 @@ Les icônes sont des SVG inline rendus via `Admin::render_icon(string $icon, str
 
 ## Notices persistantes
 
-Distinctes des toasts éphémères (`skmtShowToast`), `Admin::add_persistent_notice(string $id, string $message, string $type, int $user_id = 0)` / `Admin::dismiss_persistent_notice(string $id)` stockent des notices dans la méta utilisateur `skmt_notices` pour qu'elles survivent aux rechargements. `$user_id` vaut l'utilisateur courant par défaut mais peut cibler un utilisateur précis depuis un contexte sans utilisateur (cron qui termine un travail de fond). Rendues dans `window.skmtPersistentNotices` dans le tiroir de notifications ; fermées côté client via l'endpoint `wp_ajax_skmt_dismiss_notice` (`Admin::handle_dismiss_notice()`).
+Distinctes des toasts éphémères (`lumiaShowToast`), `Admin::add_persistent_notice(string $id, string $message, string $type, int $user_id = 0)` / `Admin::dismiss_persistent_notice(string $id)` stockent des notices dans la méta utilisateur `lumia_notices` pour qu'elles survivent aux rechargements. `$user_id` vaut l'utilisateur courant par défaut mais peut cibler un utilisateur précis depuis un contexte sans utilisateur (cron qui termine un travail de fond). Rendues dans `window.lumiaPersistentNotices` dans le tiroir de notifications ; fermées côté client via l'endpoint `wp_ajax_lumia_dismiss_notice` (`Admin::handle_dismiss_notice()`).
 
 ## Updater
 
@@ -144,7 +144,7 @@ Distinctes des toasts éphémères (`skmtShowToast`), `Admin::add_persistent_not
 - **Journal des modifications.** L'API est appelée avec `Accept: application/vnd.github.html+json` : GitHub renvoie les notes déjà rendues (`body_html`), pas de parseur Markdown à embarquer. Le HTML passe par `wp_kses_post()` avant d'aller dans l'onglet `changelog` de `plugins_api`. Sur le canal dev, les notes des 10 dernières versions sont gardées en cache et la modale affiche toutes celles postérieures à la version installée (une mise à jour saute souvent plusieurs pré-versions).
 - **Numérotation des pré-versions (#73).** `release-dev.yml` vise le **patch suivant** la dernière stable : après `v1.1.0` viennent `1.1.1-dev.1`, `1.1.1-dev.2`… Auparavant il repartait de la stable (`1.1.0-dev.N`), or pour SemVer comme pour `version_compare()`, `1.1.0-dev.N` est **plus ancien** que `1.1.0` : l'updater compensait avec des cas particuliers par canal. Désormais `compare_versions()` n'est qu'un `version_compare()`, sans exception.
 - **Le canal dev suit aussi les stables.** Il prend la plus haute version entre pré-versions et stables (hors brouillons). En ne regardant que les pré-versions, un site en `1.0.13-dev.19` ne voyait pas la `1.1.0` avant le push suivant sur `dev`.
-- **Mise à jour automatique.** La bascule des Réglages écrit directement dans l'option WordPress `auto_update_plugins`, la même que la colonne « Mises à jour auto » de la liste des extensions : une seule source de vérité, rien dans `skmt_settings`, donc ni export ni réinitialisation. Elle est désactivée si `wp_is_auto_update_enabled_for_type( 'plugin' )` est faux ou sans `update_plugins` (multisite : réservé au super admin).
+- **Mise à jour automatique.** La bascule des Réglages écrit directement dans l'option WordPress `auto_update_plugins`, la même que la colonne « Mises à jour auto » de la liste des extensions : une seule source de vérité, rien dans `lumia_settings`, donc ni export ni réinitialisation. Elle est désactivée si `wp_is_auto_update_enabled_for_type( 'plugin' )` est faux ou sans `update_plugins` (multisite : réservé au super admin).
 - **Tableau de bord.** `Updater::get_status()` lit **uniquement** le transient : afficher le canal et la version distante ne doit jamais déclencher un appel HTTP de 10 s. Cache vide → pas de badge.
 - **Pas d'ETag, pas de token (décision du 2026-09-19, #18).** Une requête conditionnelle qui reçoit un `304` n'épargne le quota GitHub **que si elle est authentifiée** ; en anonyme elle est décomptée comme une autre. Le dépôt restant public, pas de token, donc l'ETag n'apporterait qu'un gain de bande passante : écarté. Le quota reste protégé par le cache 12 h et le cache négatif.
 

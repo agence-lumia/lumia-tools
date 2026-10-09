@@ -1,5 +1,5 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ImageOptimizer;
+namespace Lumia\Tools\Modules\ImageOptimizer;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -180,7 +180,7 @@ class SvgHandler {
 		}
 
 		if ( ! $this->current_user_can_upload() ) {
-			$file['error'] = __( 'Votre rôle n\'est pas autorisé à téléverser des fichiers SVG.', 'studio-kyne-mini-tools' );
+			$file['error'] = __( 'Votre rôle n\'est pas autorisé à téléverser des fichiers SVG.', 'lumia-tools' );
 			return $file;
 		}
 
@@ -192,13 +192,13 @@ class SvgHandler {
 		// Fichier temporaire local de l'upload PHP : WP_Filesystem, s'il passe par FTP, ne l'atteint pas.
 		$dirty = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		if ( false === $dirty || '' === trim( (string) $dirty ) ) {
-			$file['error'] = __( 'Le fichier SVG est vide ou illisible.', 'studio-kyne-mini-tools' );
+			$file['error'] = __( 'Le fichier SVG est vide ou illisible.', 'lumia-tools' );
 			return $file;
 		}
 
 		$clean = $this->sanitize( $dirty );
 		if ( null === $clean ) {
-			$file['error'] = __( 'Le fichier SVG est invalide ou n\'a pas pu être assaini.', 'studio-kyne-mini-tools' );
+			$file['error'] = __( 'Le fichier SVG est invalide ou n\'a pas pu être assaini.', 'lumia-tools' );
 			return $file;
 		}
 
@@ -221,13 +221,6 @@ class SvgHandler {
 
 		$libxml_previous = libxml_use_internal_errors( true );
 
-		// libxml 2.9+ désactive déjà le chargement d'entités externes par défaut ;
-		// on ne force l'ancien garde-fou que sur PHP < 8.0 (déprécié au-delà).
-		$entity_previous = null;
-		if ( \PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			$entity_previous = libxml_disable_entity_loader( true ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- déprécié en PHP 8, seul garde-fou XXE en PHP 7.4.
-		}
-
 		$dom                     = new \DOMDocument();
 		$dom->preserveWhiteSpace = false;
 
@@ -236,9 +229,6 @@ class SvgHandler {
 
 		libxml_clear_errors();
 		libxml_use_internal_errors( $libxml_previous );
-		if ( null !== $entity_previous && \PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			libxml_disable_entity_loader( $entity_previous ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- idem, restauration de l'état précédent.
-		}
 
 		$root = $dom->documentElement;
 		if ( ! $loaded || ! $root instanceof \DOMElement ) {

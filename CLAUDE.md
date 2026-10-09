@@ -4,15 +4,15 @@ Guide de travail pour Claude Code sur ce dépôt. Les règles ci-dessous sont ab
 
 ## Le projet
 
-**Studio Kyne Mini Tools** est une extension WordPress modulaire (PHP 7.4+, WP 6.0+). Pas de build, pas de Composer à l'exécution, pas de npm : du PHP pur avec un autoloader PSR-4 maison (`StudioKyne\MiniTools\` → `includes/`). Aucun test automatisé. Le JS tiers est embarqué tel quel sous `assets/admin/js/vendor/`, jamais bundlé.
+**Lümia Tools** est une extension WordPress modulaire (PHP 8.0+, WP 6.9+). Pas de build, pas de Composer à l'exécution, pas de npm : du PHP pur avec un autoloader PSR-4 maison (`Lumia\Tools\` → `includes/`). Aucun test automatisé. Le JS tiers est embarqué tel quel sous `assets/admin/js/vendor/`, jamais bundlé.
 
-Dix modules sous `includes/Modules/` : Security, WhiteLabel, ImageOptimizer, MenuCreator, Login, Files, Media, Database, ActivityLog, Smtp. Chacun étend `AbstractModule`, enregistre ses hooks dans `init()`, assainit lui-même ce qu'il persiste (`save_settings()` — le cœur n'applique rien) et déclare ses clés de désinstallation. Réglages : `skmt_settings` (global + état des modules) et `skmt_module_{id}` (par module), fusionnés **récursivement** sur les défauts.
+Dix modules sous `includes/Modules/` : Security, WhiteLabel, ImageOptimizer, MenuCreator, Login, Files, Media, Database, ActivityLog, Smtp. Chacun étend `AbstractModule`, enregistre ses hooks dans `init()`, assainit lui-même ce qu'il persiste (`save_settings()` — le cœur n'applique rien) et déclare ses clés de désinstallation. Réglages : `lumia_settings` (global + état des modules) et `lumia_module_{id}` (par module), fusionnés **récursivement** sur les défauts.
 
-Cycle : `plugins_loaded` → `Plugin::instance()` → `init` → chargement du textdomain, définition des modules (filtre `skmt_module_definitions`), `Module::init()` sur chaque module actif. `Admin` n'existe que sous `is_admin()`. Tout formulaire poste vers `admin-post.php` avec nonce + `manage_options` ; tout endpoint AJAX (`wp_ajax_skmt_{module}_{action}`) vérifie `skmt_admin_nonce` puis la capacité du module.
+Cycle : `plugins_loaded` → `Plugin::instance()` → `init` → chargement du textdomain, définition des modules (filtre `lumia_module_definitions`), `Module::init()` sur chaque module actif. `Admin` n'existe que sous `is_admin()`. Tout formulaire poste vers `admin-post.php` avec nonce + `manage_options` ; tout endpoint AJAX (`wp_ajax_lumia_{module}_{action}`) vérifie `lumia_admin_nonce` puis la capacité du module.
 
 ## Règles absolues
 
-- **Jamais de bump de version manuel.** La CI le fait (`* Version:` et `SKMT_VERSION` dans `studio-kyne-mini-tools.php`, toujours en phase). Push sur `dev` → pré-release automatique ; stable → `workflow_dispatch` sur `main`, entrée `bump` = `patch` (défaut), `minor` ou `major` (`gh workflow run release-please.yml -f bump=minor`).
+- **Jamais de bump de version manuel.** La CI le fait (`* Version:` et `LUMIA_VERSION` dans `lumia-tools.php`, toujours en phase). Push sur `dev` → pré-release automatique ; stable → `workflow_dispatch` sur `main`, entrée `bump` = `patch` (défaut), `minor` ou `major` (`gh workflow run release-please.yml -f bump=minor`).
 - **Garde `ABSPATH`** sur tout fichier PHP : `defined( 'ABSPATH' ) || exit;` après `namespace`, sinon après le docbloc.
 - **Jamais de SVG dessiné ou approximé.** Toute icône vient de [Lucide](https://lucide.dev) (lucide-static v1.34.0), fichier officiel récupéré tel quel — en PHP (`Admin::get_icon_paths()`) comme dans le JS des modules.
 - **Composants du design system uniquement** (`components.css` + `admin.js`) : modales, tooltips, toasts, boutons, formulaires, onglets. Ne pas recoder d'équivalent. Voir [docs/design-system.md](docs/design-system.md).
@@ -34,5 +34,5 @@ Le suivi vit **dans les issues GitHub** (`gh issue list`) : toujours les consult
 ## Où lire le détail
 
 - [docs/core.md](docs/core.md) — démarrage, autoloader, stockage, contrat `AbstractModule` (capacité requise, `to_form_payload()`, `get_export_extras()`, `get_admin_js_deps()`, `get_admin_js_data()`), ajout d'un module, formulaires, import de réglages, téléchargements, AJAX, icônes, notices persistantes, updater, outillage.
-- [docs/design-system.md](docs/design-system.md) — classes BEM `skmt-`, tokens, modales, formulaires, boutons, tooltips, toasts.
+- [docs/design-system.md](docs/design-system.md) — classes BEM `lumia-`, tokens, modales, formulaires, boutons, tooltips, toasts.
 - [docs/modules/](docs/README.md#modules) — une page par module, à ouvrir avant de toucher au module concerné.
