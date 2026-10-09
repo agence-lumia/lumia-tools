@@ -20,6 +20,11 @@ $module_classes = \Lumia\Tools\Core\Activator::MODULE_CLASSES;
 delete_option( 'lumia_settings' );
 delete_site_option( 'lumia_settings' );
 
+// State of the migration from Studio Kyne Mini Tools.
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::MARKER );
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_OPTION );
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::NOTICE_OPTION );
+
 // Metadata written by the plugin core (notification center).
 // No module declares them: they are not attached to any of them.
 delete_metadata( 'user', 0, 'lumia_notices', '', true );

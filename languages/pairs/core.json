@@ -138,5 +138,8 @@
   "You have unsaved changes. Leave without saving?": "Vous avez des modifications non enregistrées. Quitter sans sauvegarder ?",
   "Leave without saving": "Quitter sans sauvegarder",
   "Stay on this page": "Rester sur la page",
-  "No notifications": "Aucune notification"
+  "No notifications": "Aucune notification",
+  "Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.": "Migration depuis Studio Kyne Mini Tools terminée. Vous pouvez supprimer l'ancien plugin.",
+  "Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated.": "Studio Kyne Mini Tools est toujours actif : Lümia Tools ne charge aucun de ses modules tant qu'il n'est pas désactivé.",
+  "The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Deactivate then reactivate Lümia Tools to resume it.": "La migration depuis Studio Kyne Mini Tools s'est arrêtée à l'étape %s : Lümia Tools ne charge aucun de ses modules tant qu'elle n'est pas terminée. Désactivez puis réactivez Lümia Tools pour la reprendre."
 }

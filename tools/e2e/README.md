@@ -22,6 +22,10 @@ tools/e2e/run.sh seed-skmt             # installe SKMT 8d4cd85 + données
 tools/e2e/run.sh capture baseline      # texte de l'admin → tools/e2e/out/baseline/
 tools/e2e/run.sh install-lumia         # zip de l'arbre de travail, installé et activé
 tools/e2e/run.sh assert-compat         # couche de compatibilité SKMT_* / skmt_* (bench avec Lümia installé)
+tools/e2e/run.sh assert-migration      # migration SKMT → Lümia (après seed-skmt puis install-lumia)
+tools/e2e/run.sh reactivate-lumia      # désactivation/réactivation : pas de rejeu, réglage modifié conservé
+tools/e2e/run.sh assert-after-uninstall  # désinstalle SKMT (son uninstall.php s'exécute), données Lümia intactes
+tools/e2e/run.sh assert-partial        # migration interrompue par une erreur injectée, puis reprise
 tools/e2e/run.sh down                  # arrête et supprime les données
 ```
 
@@ -83,6 +87,25 @@ dépréciation 2.0.0), constantes SMTP et clé de chiffrement, attribution des t
 est appliqué et la dépréciation arrive dans `debug.log`. Les snippets de test sont
 déposés dans `wp-content/e2e-snippets/` (chargé par le mu-plugin `e2e-snippets.php`,
 banc seulement) puis supprimés. Active Sécurité (réglages par défaut) si besoin.
+
+## Migration (`assert-migration` et suivantes)
+
+`install-lumia`, lancé sur un banc où SKMT est installé et Lümia pas encore, écrit d'abord
+`out/skmt-snapshot.json` (`assert-migration.php snapshot`) : valeurs brutes et autoload des
+options, nombre de méta par clé, termes, lignes des tables (nombre, id max, empreinte),
+fichiers d'originaux, événement cron du bulk. L'activation migre ; les commandes comparent
+ensuite à cet instantané.
+
+| Commande | Contrôles |
+|---|---|
+| `assert-migration` | chaque ligne du tableau de migration de la spec (options copiées et originales intactes, slug réécrit, secrets rechiffrés et déchiffrables, méta/taxonomie renommées, tables renommées sans table `skmt_*` recréée, dossier `lumia-originals-*`, cron du bulk à l'identique, SKMT désactivé, marqueur), puis HTTP (`wp-login.php` en 404, URL personnalisée en 200), déchiffrement dans une nouvelle requête après `wp_cache_flush()`, notice de succès au premier écran d'admin, « Restaurer l'original » par le module (puis ré-optimisation pour laisser le banc tel quel) ; écrit `out/lumia-snapshot.json` |
+| `reactivate-lumia` | change `rate_limit_attempts`, désactive/réactive Lümia : valeur gardée, marqueur et données inchangés ; remet la valeur |
+| `assert-after-uninstall` | `wp plugin uninstall` de SKMT (exécute `uninstall.php`, contrairement à `wp plugin delete`), puis données Lümia identiques à `lumia-snapshot.json` |
+| `assert-partial` | banc fraîchement semé, sans Lümia : un snippet fait échouer l'`UPDATE` de `_skmt_optimized_mime`, puis `install-lumia` ; vérifie l'arrêt (`lumia_migration_error = post_meta`, SKMT actif, aucun module Lümia, notice), désactive/réactive Lümia et enchaîne `assert-migration` |
+
+Scénarios : `seed-skmt`, `seed-skmt --minimal` et `seed-skmt --encryption-key`, chacun depuis
+`down` + `up`. `assert-compat` se lance sur un banc **non migré** (`down`, `up`,
+`install-lumia`) : il supprime les secrets SMTP et suppose l'URL de connexion par défaut.
 
 ## Journaux et bruit connu
 

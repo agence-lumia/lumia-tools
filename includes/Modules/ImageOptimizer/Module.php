@@ -21,8 +21,15 @@ class Module extends AbstractModule {
 	private const BULK_STATE_SUFFIX = '_bulk_state';
 
 	/** Folder (under uploads) holding the untouched originals, suffixed with a token: see get_backup_dir(). */
-	private const BACKUP_DIR          = 'lumia-originals';
+	public const BACKUP_DIR           = 'lumia-originals';
 	private const BACKUP_TOKEN_SUFFIX = '_backup_token';
+
+	/**
+	 * Same folder under the former name of the plugin (Studio Kyne Mini Tools).
+	 * The migration renames it; when that rename failed, get_backup_dir() keeps
+	 * reading it.
+	 */
+	public const LEGACY_BACKUP_DIR = 'skmt-originals';
 
 	/**
 	 * Meta: source files left next to the converted ones (keep_original),
@@ -552,6 +559,10 @@ class Module extends AbstractModule {
 	 * as is: a fixed name would make every copy guessable from the public
 	 * URL of the image. The .htaccess only protects under Apache (nginx
 	 * ignores it); it is the random, per-site token that protects.
+	 *
+	 * On a site migrated from Studio Kyne Mini Tools whose folder could not be
+	 * renamed (permissions), the old skmt-originals-{token} is used as long as
+	 * it exists and lumia-originals-{token} does not: no original is lost.
 	 */
 	private function get_backup_dir(): string {
 		$key   = $this->get_module_option_key() . self::BACKUP_TOKEN_SUFFIX;
@@ -561,7 +572,11 @@ class Module extends AbstractModule {
 			update_option( $key, $token, false );
 		}
 
-		return trailingslashit( wp_upload_dir()['basedir'] ) . self::BACKUP_DIR . '-' . $token;
+		$base   = trailingslashit( wp_upload_dir()['basedir'] );
+		$dir    = $base . self::BACKUP_DIR . '-' . $token;
+		$legacy = $base . self::LEGACY_BACKUP_DIR . '-' . $token;
+
+		return ! is_dir( $dir ) && is_dir( $legacy ) ? $legacy : $dir;
 	}
 
 	/**

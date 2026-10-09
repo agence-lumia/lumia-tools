@@ -28,6 +28,15 @@ class Crypto {
 	const IV_LENGTH  = 12;
 	const TAG_LENGTH = 16;
 
+	/** Key derivation context, prepended to the key material. */
+	const CONTEXT = 'lumia-smtp|';
+
+	/**
+	 * Context of Studio Kyne Mini Tools, the former name of the plugin: only read
+	 * by reencrypt_from_legacy(), during the migration of its data.
+	 */
+	const LEGACY_CONTEXT = 'skmt-smtp|';
+
 	public static function available(): bool {
 		return function_exists( 'openssl_encrypt' ) && in_array( self::CIPHER, openssl_get_cipher_methods(), true );
 	}
@@ -43,7 +52,7 @@ class Crypto {
 
 		$iv     = random_bytes( self::IV_LENGTH );
 		$tag    = '';
-		$cipher = openssl_encrypt( $plain, self::CIPHER, self::key(), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LENGTH );
+		$cipher = openssl_encrypt( $plain, self::CIPHER, self::key( self::CONTEXT ), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LENGTH );
 
 		if ( false === $cipher ) {
 			return '';
@@ -58,6 +67,32 @@ class Crypto {
 	 *                     value was tampered with.
 	 */
 	public static function decrypt( string $stored ): ?string {
+		return self::decrypt_with( $stored, self::key( self::CONTEXT ) );
+	}
+
+	/**
+	 * Re-encrypts a value written by Studio Kyne Mini Tools (`'skmt-smtp|'`
+	 * context) with the Lumia key. Both keys share the same material, so a site
+	 * that fixed it with `SKMT_ENCRYPTION_KEY` keeps reading its secret.
+	 *
+	 * @return string The Lumia cipher text; `$stored` unchanged when the legacy
+	 *                value cannot be decrypted (salts regenerated since, value
+	 *                tampered with, openssl missing): the same state as before,
+	 *                the administrator types the secret again.
+	 */
+	public static function reencrypt_from_legacy( string $stored ): string {
+		$plain = self::decrypt_with( $stored, self::key( self::LEGACY_CONTEXT ) );
+
+		if ( null === $plain || '' === $plain ) {
+			return $stored;
+		}
+
+		$encrypted = self::encrypt( $plain );
+
+		return '' === $encrypted ? $stored : $encrypted;
+	}
+
+	private static function decrypt_with( string $stored, string $key ): ?string {
 		if ( '' === $stored ) {
 			return '';
 		}
@@ -75,7 +110,7 @@ class Crypto {
 		$plain = openssl_decrypt(
 			substr( $raw, self::IV_LENGTH + self::TAG_LENGTH ),
 			self::CIPHER,
-			self::key(),
+			$key,
 			OPENSSL_RAW_DATA,
 			substr( $raw, 0, self::IV_LENGTH ),
 			substr( $raw, self::IV_LENGTH, self::TAG_LENGTH )
@@ -85,10 +120,14 @@ class Crypto {
 	}
 
 	/**
-	 * Key derived from the site keys. `LUMIA_ENCRYPTION_KEY` allows setting one
-	 * that survives a regeneration of the `wp-config.php` salts.
+	 * Key derived from the site keys. `LUMIA_ENCRYPTION_KEY` (or the legacy
+	 * `SKMT_ENCRYPTION_KEY`) allows setting one that survives a regeneration of
+	 * the `wp-config.php` salts.
+	 *
+	 * @param string $context self::CONTEXT, or self::LEGACY_CONTEXT to read a
+	 *                        value written by Studio Kyne Mini Tools.
 	 */
-	private static function key(): string {
+	private static function key( string $context ): string {
 		$constant = Compat::constant( 'ENCRYPTION_KEY' );
 
 		if ( null !== $constant && '' !== (string) $constant ) {
@@ -103,6 +142,6 @@ class Crypto {
 			$material = wp_salt( 'logged_in' );
 		}
 
-		return hash( 'sha256', 'lumia-smtp|' . $material, true );
+		return hash( 'sha256', $context . $material, true );
 	}
 }

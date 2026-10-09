@@ -4,6 +4,7 @@ namespace Lumia\Tools\Core;
 defined( 'ABSPATH' ) || exit;
 
 use Lumia\Tools\Admin\Admin;
+use Lumia\Tools\Core\Migration\FromSkmt;
 
 /**
  * Main plugin class.
@@ -56,6 +57,21 @@ class Plugin {
 	 * Initializes the plugin.
 	 */
 	private function init(): void {
+		// Updater: also on hold, a fixed version must remain installable.
+		$this->updater->init();
+
+		// Studio Kyne Mini Tools still active, or its migration stopped half-way:
+		// no module, no admin screen (a module enabled from it would create the
+		// `lumia_*` options the migration must still copy), only a notice.
+		// Evaluated here, on plugins_loaded: lumia-tools/ loads before
+		// studio-kyne-mini-tools/, its constants do not exist yet when this
+		// plugin's main file runs.
+		if ( FromSkmt::on_hold() ) {
+			add_action( 'init', [ $this, 'load_textdomain' ] );
+			add_action( 'admin_notices', [ $this, 'render_hold_notice' ] );
+			return;
+		}
+
 		// Load translations and register the modules on the init hook, to avoid
 		// the just-in-time translation warning of WP 6.7+
 		add_action( 'init', [ $this, 'on_init' ] );
@@ -63,10 +79,8 @@ class Plugin {
 		// Admin interface
 		if ( is_admin() ) {
 			new Admin( $this->modules, $this->settings );
+			add_action( 'admin_init', [ $this, 'announce_migration' ] );
 		}
-
-		// Updater
-		$this->updater->init();
 	}
 
 	/**
@@ -76,6 +90,49 @@ class Plugin {
 		$this->load_textdomain();
 		$this->modules->register_default_modules( ! is_admin() );
 		$this->modules->init_active_modules();
+	}
+
+	/**
+	 * Notice shown while the plugin is on hold (see FromSkmt::on_hold()).
+	 */
+	public function render_hold_notice(): void {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		$step = FromSkmt::failed_step();
+
+		if ( '' !== $step ) {
+			$message = sprintf(
+				/* translators: %s: identifier of the migration step that failed, e.g. post_meta. */
+				esc_html__( 'The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Deactivate then reactivate Lümia Tools to resume it.', 'lumia-tools' ),
+				'<code>' . esc_html( $step ) . '</code>'
+			);
+			wp_admin_notice( $message, [ 'type' => 'error' ] );
+			return;
+		}
+
+		wp_admin_notice(
+			esc_html__( 'Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated.', 'lumia-tools' ),
+			[ 'type' => 'warning' ]
+		);
+	}
+
+	/**
+	 * First admin page after a completed migration: persistent success notice
+	 * for the administrator who sees it.
+	 */
+	public function announce_migration(): void {
+		if ( ! FromSkmt::has_pending_notice() || ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		Admin::add_persistent_notice(
+			FromSkmt::MARKER,
+			__( 'Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.', 'lumia-tools' ),
+			'success'
+		);
+		delete_option( FromSkmt::NOTICE_OPTION );
 	}
 
 	/**

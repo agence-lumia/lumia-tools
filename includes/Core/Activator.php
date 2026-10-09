@@ -3,6 +3,8 @@ namespace Lumia\Tools\Core;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Core\Migration\FromSkmt;
+
 /**
  * Handles plugin activation.
  *
@@ -34,6 +36,21 @@ class Activator {
 	 * Runs when the plugin is activated.
 	 */
 	public static function activate(): void {
+		// Migration from Studio Kyne Mini Tools FIRST: once the defaults exist
+		// (`lumia_settings` with every module off, `lumia_module_*`), the copy,
+		// which never overwrites a `lumia_*` option, would skip them.
+		if ( FromSkmt::needed() ) {
+			if ( ! FromSkmt::run() ) {
+				// Stopped half-way: no defaults either, they would block the
+				// copy when the migration resumes (next activation).
+				return;
+			}
+		} else {
+			// Left by a failed attempt whose data is gone since (SKMT deleted):
+			// nothing to resume, Lumia must not stay on hold.
+			delete_option( FromSkmt::ERROR_OPTION );
+		}
+
 		// Build the defaults, including the initial (inactive) state of each module.
 		$modules_defaults = [];
 		foreach ( self::MODULE_CLASSES as $id => $class ) {

@@ -140,7 +140,9 @@ foreach ( [ 'DISABLE_LOGIN_URL', 'SMTP_USER', 'SMTP_PASSWORD', 'BREVO_API_KEY', 
 $e2e_direct   = [];
 $e2e_iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( WP_PLUGIN_DIR . '/lumia-tools/includes', FilesystemIterator::SKIP_DOTS ) );
 foreach ( $e2e_iterator as $e2e_file ) {
-	if ( 'php' !== $e2e_file->getExtension() || 'Compat.php' === $e2e_file->getFilename() ) {
+	// Compat reads the legacy names on purpose; FromSkmt hooks SKMT's own activity log
+	// filter during the migration (it writes, it does not offer a compatibility read).
+	if ( 'php' !== $e2e_file->getExtension() || in_array( $e2e_file->getFilename(), [ 'Compat.php', 'FromSkmt.php' ], true ) ) {
 		continue;
 	}
 	foreach ( token_get_all( (string) file_get_contents( $e2e_file->getPathname() ) ) as $e2e_token ) {

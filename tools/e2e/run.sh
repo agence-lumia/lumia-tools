@@ -39,6 +39,11 @@ wp() {
 	dc --progress quiet run --rm -T cli wp "$@"
 }
 
+# wp-cli with E2E_VALUE passed into the container (wp eval takes no positional argument).
+wp_env() {
+	dc --progress quiet run --rm -T -e "E2E_VALUE=${E2E_VALUE:-}" cli wp "$@"
+}
+
 prepare_out_dir() {
 	mkdir -p "${OUT_DIR}"
 	# The cli container runs as uid 33 and writes here (zips are read, captures written).
@@ -196,6 +201,13 @@ cmd_install_lumia() {
 	build_zip "${REPO_DIR}" "${folder}" "${OUT_DIR}/${zip_name}"
 	chmod 644 "${OUT_DIR}/${zip_name}"
 
+	# First install over a seeded SKMT: record what SKMT holds, so that assert-migration
+	# can compare the migrated data with it (row counts, ids, files, cron timestamp).
+	if [ "${folder}" != "${SKMT_SLUG}" ] && wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1 \
+		&& ! wp plugin is-installed "${folder}" >/dev/null 2>&1; then
+		wp --user=admin eval-file /e2e/assert-migration.php snapshot
+	fi
+
 	wp plugin install "/e2e/out/${zip_name}" --force --activate
 }
 
@@ -273,6 +285,190 @@ EOF
 	echo "assert-compat: all checks passed."
 }
 
+# check <label> <status: 0 = ok>, counting failures in the caller's "failures".
+check() {
+	if [ "$2" -eq 0 ]; then
+		echo "  ok   $1"
+	else
+		echo "  FAIL $1"
+		failures=$((failures + 1))
+	fi
+}
+
+http_code() { # http_code <path> [curl args...]
+	local path="$1"
+	shift
+	curl -s -o /dev/null -w '%{http_code}' "$@" "${SITE_URL}${path}"
+}
+
+# login_checks: wp-login.php stays blocked and the custom login URL answers. Uses "failures".
+login_checks() {
+	local path code
+	path="$(wp eval-file /e2e/assert-migration.php login-path | tr -d '\r')"
+	if [ -z "${path}" ]; then
+		check "a custom login URL is configured" 1
+		return
+	fi
+	code="$(http_code /wp-login.php)"
+	check "wp-login.php is blocked (got ${code})" "$([ "${code}" = 404 ] && echo 0 || echo 1)"
+	code="$(http_code "${path%/}/")"
+	check "${path%/}/ answers 200 (got ${code})" "$([ "${code}" = 200 ] && echo 0 || echo 1)"
+}
+
+# fresh_decrypt_checks: the secrets decrypt in a new process, after an object cache flush.
+fresh_decrypt_checks() {
+	local out
+	wp eval 'wp_cache_flush();' >/dev/null
+	out="$(wp eval-file /e2e/assert-migration.php decrypt | tr -d '\r')"
+	check "fresh request: SMTP password and Brevo key decrypt (${out})" \
+		"$([ "${out}" = '{"password":"e2e-secret","brevo":"e2e-brevo"}' ] && echo 0 || echo 1)"
+}
+
+# option_state <option>: prints "some" if the option exists, "none" otherwise.
+option_state() {
+	if wp option get "$1" >/dev/null 2>&1; then
+		echo some
+	else
+		echo none
+	fi
+}
+
+# assert-migration: after seed-skmt then install-lumia (which activates, hence migrates).
+cmd_assert_migration() {
+	local failures=0 folder notices
+
+	folder="$(working_tree_plugin)"
+	wp plugin is-active "${folder}" >/dev/null 2>&1 || die "${folder} is not active: run 'install-lumia' first"
+	[ -f "${OUT_DIR}/skmt-snapshot.json" ] || die "no SKMT snapshot: run 'install-lumia' on a seeded bench"
+
+	echo "In-process checks"
+	wp --user=admin eval-file /e2e/assert-migration.php migration || failures=$((failures + 1))
+
+	echo "HTTP"
+	login_checks
+
+	if [ "$(option_state skmt_smtp_password)" = some ]; then
+		fresh_decrypt_checks
+	fi
+
+	echo "Success notice"
+	curl -s -o /dev/null -H 'X-E2E-User: admin' "${SITE_URL}/wp-admin/index.php"
+	notices="$(wp eval 'echo wp_json_encode( [ isset( get_user_meta( 1, "lumia_notices", true )["lumia_migrated_from_skmt"] ), get_option( "lumia_migration_notice" ) ] );' | tr -d '\r')"
+	check "first admin page: persistent success notice added, pending flag consumed (${notices})" "$([ "${notices}" = '[true,false]' ] && echo 0 || echo 1)"
+
+	echo "Restore original"
+	wp --user=admin eval-file /e2e/assert-migration.php restore || failures=$((failures + 1))
+
+	wp --user=admin eval-file /e2e/assert-migration.php lumia-snapshot >/dev/null
+
+	[ "${failures}" -eq 0 ] || die "assert-migration: ${failures} check(s) failed"
+	echo "assert-migration: all checks passed."
+}
+
+# assert-after-uninstall: SKMT's uninstall.php must find nothing that belongs to Lumia.
+cmd_assert_after_uninstall() {
+	local failures=0 left
+
+	[ -f "${OUT_DIR}/lumia-snapshot.json" ] || die "no Lumia snapshot: run 'assert-migration' first"
+	wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1 || die "SKMT is not installed"
+
+	# Through WordPress (uninstall_plugin()), so that SKMT's uninstall.php runs; then the
+	# files are deleted. `wp plugin delete` would only delete the files.
+	wp plugin uninstall "${SKMT_SLUG}"
+
+	echo "SKMT uninstalled"
+	check "SKMT files deleted" "$(wp plugin is-installed "${SKMT_SLUG}" >/dev/null 2>&1 && echo 1 || echo 0)"
+	left="$(option_state skmt_settings)"
+	check "uninstall.php ran (skmt_settings: ${left})" "$([ "${left}" = none ] && echo 0 || echo 1)"
+
+	echo "In-process checks"
+	wp --user=admin eval-file /e2e/assert-migration.php lumia-compare || failures=$((failures + 1))
+
+	echo "HTTP"
+	login_checks
+	if [ "$(option_state lumia_smtp_password)" = some ]; then
+		fresh_decrypt_checks
+	fi
+
+	[ "${failures}" -eq 0 ] || die "assert-after-uninstall: ${failures} check(s) failed"
+	echo "assert-after-uninstall: all checks passed."
+}
+
+# reactivate-lumia: a deactivation then reactivation does not replay the migration and
+# keeps a setting changed since.
+cmd_reactivate_lumia() {
+	local failures=0 folder before after
+	# shellcheck disable=SC2016 # PHP code: the single quotes are on purpose.
+	local read_attempts='$s = get_option( "lumia_module_security" ); echo (int) $s["authentication"]["rate_limit_attempts"];'
+	# shellcheck disable=SC2016
+	local write_attempts='$s = get_option( "lumia_module_security" ); $s["authentication"]["rate_limit_attempts"] = (int) getenv( "E2E_VALUE" ); update_option( "lumia_module_security", $s );'
+
+	folder="$(working_tree_plugin)"
+	[ -f "${OUT_DIR}/lumia-snapshot.json" ] || die "no Lumia snapshot: run 'assert-migration' first"
+	wp plugin is-active "${folder}" >/dev/null 2>&1 || die "${folder} is not active"
+
+	before="$(wp eval "${read_attempts}" | tr -d '\r')"
+	E2E_VALUE=9 wp_env --user=admin eval "${write_attempts}"
+
+	wp plugin deactivate "${folder}"
+	wp plugin activate "${folder}"
+
+	echo "Reactivation"
+	after="$(wp eval "${read_attempts}" | tr -d '\r')"
+	check "a setting changed after the migration is kept (rate_limit_attempts ${before} -> 9, now ${after})" "$([ "${after}" = 9 ] && echo 0 || echo 1)"
+	wp --user=admin eval-file /e2e/assert-migration.php lumia-compare lumia_module_security || failures=$((failures + 1))
+
+	# Leave the bench as it was.
+	E2E_VALUE="${before}" wp_env --user=admin eval "${write_attempts}"
+
+	[ "${failures}" -eq 0 ] || die "reactivate-lumia: ${failures} check(s) failed"
+	echo "reactivate-lumia: all checks passed."
+}
+
+# assert-partial: a migration that fails half-way (an SQL failure injected on one post meta
+# key) leaves SKMT active and Lumia on hold; reactivating Lumia then resumes and completes it.
+# Run on a freshly seeded bench without Lumia; ends like install-lumia + assert-migration.
+cmd_assert_partial() {
+	local failures=0 folder page
+
+	folder="$(working_tree_plugin)"
+	if wp plugin is-installed "${folder}" >/dev/null 2>&1; then
+		die "${folder} is already installed: start from a freshly seeded bench"
+	fi
+	trap remove_snippets EXIT
+	remove_snippets
+	write_snippet fail-post-meta <<'PHP'
+<?php
+add_filter(
+	'query',
+	static function ( $query ) {
+		if ( 0 === strpos( ltrim( $query ), 'UPDATE' ) && false !== strpos( $query, "'_skmt_optimized_mime'" ) ) {
+			return 'SELECT e2e_injected_failure FROM e2e_missing_table';
+		}
+		return $query;
+	}
+);
+PHP
+
+	cmd_install_lumia
+
+	echo "Failed migration"
+	wp --user=admin eval-file /e2e/assert-migration.php hold post_meta || failures=$((failures + 1))
+	login_checks
+	page="$(curl -s -H 'X-E2E-User: admin' "${SITE_URL}/wp-admin/index.php")"
+	check "admin notice names the failed step" "$(grep -q 'post_meta' <<<"${page}" && echo 0 || echo 1)"
+	page="$(http_code '/wp-admin/admin.php?page=lumia-tools' -H 'X-E2E-User: admin')"
+	check "the Lumia admin page is not registered while on hold (got ${page})" "$([ "${page}" != 200 ] && echo 0 || echo 1)"
+
+	remove_snippets
+	echo "Resume: deactivate and reactivate ${folder}"
+	wp plugin deactivate "${folder}"
+	wp plugin activate "${folder}"
+
+	[ "${failures}" -eq 0 ] || die "assert-partial: ${failures} check(s) failed before the resume"
+	cmd_assert_migration
+}
+
 usage() {
 	cat <<'EOF'
 Usage: tools/e2e/run.sh <command> [args]
@@ -284,6 +480,10 @@ Usage: tools/e2e/run.sh <command> [args]
   capture <output-dir> [page-slug]     write the admin text to out/<output-dir>/ (slug defaults to studio-kyne-mini-tools)
   install-lumia                        install and activate the plugin built from the working tree
   assert-compat                        check the SKMT compatibility layer (constants, hooks, tables) on an installed bench
+  assert-migration                     check the SKMT -> Lumia migration (after seed-skmt then install-lumia)
+  assert-after-uninstall               uninstall SKMT (its uninstall.php runs), then check the Lumia data is intact
+  reactivate-lumia                     change a setting, deactivate and reactivate Lumia: no replay, setting kept
+  assert-partial                       inject a failure in the migration, check the hold, then resume (seeded bench, no Lumia)
 EOF
 }
 
@@ -298,6 +498,10 @@ case "${command}" in
 	capture) cmd_capture "$@" ;;
 	install-lumia) cmd_install_lumia ;;
 	assert-compat) cmd_assert_compat ;;
+	assert-migration) cmd_assert_migration ;;
+	assert-after-uninstall) cmd_assert_after_uninstall ;;
+	reactivate-lumia) cmd_reactivate_lumia ;;
+	assert-partial) cmd_assert_partial ;;
 	-h | --help | help) usage ;;
 	*)
 		echo "unknown command: ${command}" >&2
