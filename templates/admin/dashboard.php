@@ -1,6 +1,6 @@
 <?php
 /**
- * Template du tableau de bord.
+ * Dashboard template.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -16,84 +16,84 @@ $active_count = count(
 	)
 );
 
-// Lecture du cache seulement : aucun appel à GitHub depuis le tableau de bord.
-$update_status = \StudioKyne\MiniTools\Core\Plugin::instance()->updater->get_status();
+// Cache read only: no GitHub call from the dashboard.
+$update_status = \Lumia\Tools\Core\Plugin::instance()->updater->get_status();
 ?>
-<div class="skmt-page">
-	<div class="skmt-page__header">
-		<div class="skmt-page__header-content">
-			<h1 class="skmt-page__title"><?php echo esc_html__( 'Vue d\'ensemble', 'studio-kyne-mini-tools' ); ?></h1>
-			<p class="skmt-page__subtitle"><?php echo esc_html__( 'Paramètres du plugin principal', 'studio-kyne-mini-tools' ); ?></p>
+<div class="lumia-page">
+	<div class="lumia-page__header">
+		<div class="lumia-page__header-content">
+			<h1 class="lumia-page__title"><?php echo esc_html__( 'Overview', 'lumia-tools' ); ?></h1>
+			<p class="lumia-page__subtitle"><?php echo esc_html__( 'Main plugin settings', 'lumia-tools' ); ?></p>
 		</div>
 	</div>
 
-		<div class="skmt-cards">
-			<div class="skmt-card skmt-card--stat">
-				<div class="skmt-card__icon">
+		<div class="lumia-cards">
+			<div class="lumia-card lumia-card--stat">
+				<div class="lumia-card__icon">
 					<?php echo $this->render_icon( 'package', 'lg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
-				<div class="skmt-card__content">
-					<span class="skmt-card__value"><?php echo esc_html( count( $modules ) ); ?></span>
-					<span class="skmt-card__label"><?php echo esc_html__( 'Modules disponibles', 'studio-kyne-mini-tools' ); ?></span>
+				<div class="lumia-card__content">
+					<span class="lumia-card__value"><?php echo esc_html( count( $modules ) ); ?></span>
+					<span class="lumia-card__label"><?php echo esc_html__( 'Available modules', 'lumia-tools' ); ?></span>
 				</div>
 			</div>
 
-			<div class="skmt-card skmt-card--stat">
-				<div class="skmt-card__icon skmt-card__icon--success">
+			<div class="lumia-card lumia-card--stat">
+				<div class="lumia-card__icon lumia-card__icon--success">
 					<?php echo $this->render_icon( 'check-circle', 'lg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
-				<div class="skmt-card__content">
-					<span class="skmt-card__value"><?php echo esc_html( $active_count ); ?></span>
-					<span class="skmt-card__label"><?php echo esc_html__( 'Modules actifs', 'studio-kyne-mini-tools' ); ?></span>
+				<div class="lumia-card__content">
+					<span class="lumia-card__value"><?php echo esc_html( $active_count ); ?></span>
+					<span class="lumia-card__label"><?php echo esc_html__( 'Active modules', 'lumia-tools' ); ?></span>
 				</div>
 			</div>
 
-			<div class="skmt-card skmt-card--stat">
-				<div class="skmt-card__icon skmt-card__icon--info">
+			<div class="lumia-card lumia-card--stat">
+				<div class="lumia-card__icon lumia-card__icon--info">
 					<?php echo $this->render_icon( 'info', 'lg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
-				<div class="skmt-card__content">
-					<span class="skmt-card__value"><?php echo esc_html( SKMT_VERSION ); ?></span>
-					<span class="skmt-card__label">
+				<div class="lumia-card__content">
+					<span class="lumia-card__value"><?php echo esc_html( LUMIA_VERSION ); ?></span>
+					<span class="lumia-card__label">
 						<?php
 						echo esc_html(
 							'dev' === $update_status['channel']
-								? __( 'Version · canal dev', 'studio-kyne-mini-tools' )
-								: __( 'Version · canal stable', 'studio-kyne-mini-tools' )
+								? __( 'Version · dev channel', 'lumia-tools' )
+								: __( 'Version · stable channel', 'lumia-tools' )
 						);
 						?>
 					</span>
 					<?php if ( $update_status['has_update'] ) : ?>
-						<?php /* translators: %s: numéro de la version disponible. */ ?>
-						<a href="<?php echo esc_url( self_admin_url( 'plugins.php' ) ); ?>" class="skmt-badge skmt-badge--warning"><?php echo esc_html( sprintf( __( 'v%s disponible', 'studio-kyne-mini-tools' ), $update_status['remote'] ) ); ?></a>
+						<?php /* translators: %s: available version number. */ ?>
+						<a href="<?php echo esc_url( self_admin_url( 'plugins.php' ) ); ?>" class="lumia-badge lumia-badge--warning"><?php echo esc_html( sprintf( __( 'v%s available', 'lumia-tools' ), $update_status['remote'] ) ); ?></a>
 					<?php elseif ( null !== $update_status['remote'] ) : ?>
-						<span class="skmt-badge skmt-badge--success"><?php echo esc_html__( 'À jour', 'studio-kyne-mini-tools' ); ?></span>
+						<span class="lumia-badge lumia-badge--success"><?php echo esc_html__( 'Up to date', 'lumia-tools' ); ?></span>
 					<?php endif; ?>
 				</div>
 			</div>
 		</div>
 
-		<div class="skmt-section">
-			<div class="skmt-section__header">
-				<h2 class="skmt-section__title"><?php echo esc_html__( 'Modules actifs', 'studio-kyne-mini-tools' ); ?></h2>
-				<p class="skmt-section__desc"><?php echo esc_html__( 'Voici les modules actuellement actifs sur votre site.', 'studio-kyne-mini-tools' ); ?></p>
+		<div class="lumia-section">
+			<div class="lumia-section__header">
+				<h2 class="lumia-section__title"><?php echo esc_html__( 'Active modules', 'lumia-tools' ); ?></h2>
+				<p class="lumia-section__desc"><?php echo esc_html__( 'These are the modules currently active on your site.', 'lumia-tools' ); ?></p>
 			</div>
-			<div class="skmt-section__content">
+			<div class="lumia-section__content">
 				<?php if ( $active_count > 0 ) : ?>
-					<div class="skmt-module-list">
+					<div class="lumia-module-list">
 						<?php foreach ( $modules as $module_id => $module ) : ?>
 							<?php if ( $this->modules->is_active( $module_id ) ) : ?>
 								<?php $icon = ! empty( $module['icon'] ) ? $module['icon'] : 'package'; ?>
-								<div class="skmt-module-card skmt-module-card--active">
-								<div class="skmt-module-card__header">
+								<div class="lumia-module-card lumia-module-card--active">
+								<div class="lumia-module-card__header">
 										<?php echo $this->render_icon( $icon, 'md' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-										<h3 class="skmt-module-card__title"><?php echo esc_html( $module['name'] ); ?></h3>
-										<span class="skmt-badge skmt-badge--success"><?php echo esc_html__( 'Actif', 'studio-kyne-mini-tools' ); ?></span>
+										<h3 class="lumia-module-card__title"><?php echo esc_html( $module['name'] ); ?></h3>
+										<span class="lumia-badge lumia-badge--success"><?php echo esc_html__( 'Active', 'lumia-tools' ); ?></span>
 									</div>
-									<p class="skmt-module-card__desc"><?php echo esc_html( $module['description'] ); ?></p>
-									<div class="skmt-module-card__actions">
-										<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=module_' . $module_id ) ); ?>" class="skmt-btn skmt-btn--sm skmt-btn--secondary">
-											<?php echo esc_html__( 'Configurer', 'studio-kyne-mini-tools' ); ?>
+									<p class="lumia-module-card__desc"><?php echo esc_html( $module['description'] ); ?></p>
+									<div class="lumia-module-card__actions">
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=module_' . $module_id ) ); ?>" class="lumia-btn lumia-btn--sm lumia-btn--secondary">
+											<?php echo esc_html__( 'Configure', 'lumia-tools' ); ?>
 										</a>
 									</div>
 								</div>
@@ -101,11 +101,11 @@ $update_status = \StudioKyne\MiniTools\Core\Plugin::instance()->updater->get_sta
 						<?php endforeach; ?>
 					</div>
 				<?php else : ?>
-					<div class="skmt-empty">
+					<div class="lumia-empty">
 						<?php echo $this->render_icon( 'package', 'xl' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-						<p><?php echo esc_html__( 'Aucun module actif. Activez des modules depuis la page Modules.', 'studio-kyne-mini-tools' ); ?></p>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=modules' ) ); ?>" class="skmt-btn skmt-btn--primary">
-							<?php echo esc_html__( 'Voir les modules', 'studio-kyne-mini-tools' ); ?>
+						<p><?php echo esc_html__( 'No active modules. Activate modules from the Modules page.', 'lumia-tools' ); ?></p>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=modules' ) ); ?>" class="lumia-btn lumia-btn--primary">
+							<?php echo esc_html__( 'View modules', 'lumia-tools' ); ?>
 						</a>
 					</div>
 				<?php endif; ?>

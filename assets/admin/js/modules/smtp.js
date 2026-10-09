@@ -17,21 +17,21 @@
   var DEFAULT_PORTS = { tls: 587, ssl: 465, none: 25 };
 
   document.addEventListener('DOMContentLoaded', function () {
-    var wrap = document.getElementById('skmt-sm');
+    var wrap = document.getElementById('lumia-sm');
     if (!wrap) return;
 
     state.nonce = wrap.dataset.nonce;
 
     ['search', 'status', 'from', 'to', 'reset', 'clear', 'rows', 'total', 'page', 'prev', 'next'].forEach(function (id) {
-      el[id] = document.getElementById('skmt-sm-' + id);
+      el[id] = document.getElementById('lumia-sm-' + id);
     });
 
     initSettings();
     initTest();
 
-    // Entrée dans un filtre soumettrait le formulaire de réglages qui englobe
-    // la liste (même piège que le journal d'activité).
-    wrap.querySelector('.skmt-sm__filters').addEventListener('keydown', function (e) {
+    // Enter in a filter would submit the settings form that wraps the list
+    // (same pitfall as the activity log).
+    wrap.querySelector('.lumia-sm__filters').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); reload(); }
     });
     el.search.addEventListener('input', function () {
@@ -64,18 +64,18 @@
       if (tr) { e.preventDefault(); openDetail(state.rows[+tr.dataset.index]); }
     });
 
-    document.getElementById('skmt-sm-detail-resend').addEventListener('click', resend);
+    document.getElementById('lumia-sm-detail-resend').addEventListener('click', resend);
 
-    // Le journal ne se charge qu'à l'ouverture de son onglet. admin.js a
-    // déjà restauré l'onglet mémorisé : on regarde s'il est déjà ouvert.
-    if (!wrap.closest('[data-skmt-tab-panel]').hidden) load(1);
-    document.addEventListener('skmt:tab', function (e) {
+    // The log only loads when its tab is opened. admin.js has already
+    // restored the remembered tab: check whether it is already open.
+    if (!wrap.closest('[data-lumia-tab-panel]').hidden) load(1);
+    document.addEventListener('lumia:tab', function (e) {
       if (e.detail.group === 'smtp' && e.detail.name === 'log' && !state.loaded) load(1);
     });
   });
 
-  function t(key, fallback) {
-    return (window.skmtAdmin && skmtAdmin.i18n && skmtAdmin.i18n[key]) || fallback;
+  function t(key) {
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || '';
   }
 
   function format(str) {
@@ -87,7 +87,7 @@
   }
 
   function toast(message, type) {
-    if (typeof window.skmtShowToast === 'function') window.skmtShowToast(message, type);
+    if (typeof window.lumiaShowToast === 'function') window.lumiaShowToast(message, type);
   }
 
   function post(action, data) {
@@ -96,43 +96,43 @@
     fd.append('nonce', state.nonce);
     Object.keys(data || {}).forEach(function (k) { fd.append(k, data[k]); });
 
-    return fetch(skmtAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
+    return fetch(lumiaAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
       .then(function (r) { return r.json(); });
   }
 
   /* ================================================================
-   * RÉGLAGES
+   * SETTINGS
    * ================================================================ */
 
   function initSettings() {
-    var encryption = document.getElementById('skmt_sm_encryption');
-    var port = document.getElementById('skmt_sm_port');
-    var autoTls = document.getElementById('skmt-sm-autotls-row');
-    var auth = document.getElementById('skmt_sm_auth');
-    var credentials = document.getElementById('skmt-sm-credentials');
-    var provider = document.getElementById('skmt_sm_provider');
-    var hint = document.getElementById('skmt-sm-provider-hint');
-    var host = document.getElementById('skmt_sm_host');
-    var username = document.getElementById('skmt_sm_username');
-    var presets = skmtAdmin.smProviders || {};
-    var transport = document.getElementById('skmt_sm_transport');
-    var smtpFields = document.getElementById('skmt-sm-smtp-fields');
-    var apiFields = document.getElementById('skmt-sm-api-fields');
+    var encryption = document.getElementById('lumia_sm_encryption');
+    var port = document.getElementById('lumia_sm_port');
+    var autoTls = document.getElementById('lumia-sm-autotls-row');
+    var auth = document.getElementById('lumia_sm_auth');
+    var credentials = document.getElementById('lumia-sm-credentials');
+    var provider = document.getElementById('lumia_sm_provider');
+    var hint = document.getElementById('lumia-sm-provider-hint');
+    var host = document.getElementById('lumia_sm_host');
+    var username = document.getElementById('lumia_sm_username');
+    var presets = lumiaAdmin.smProviders || {};
+    var transport = document.getElementById('lumia_sm_transport');
+    var smtpFields = document.getElementById('lumia-sm-smtp-fields');
+    var apiFields = document.getElementById('lumia-sm-api-fields');
 
-    // Les champs de l'autre transport sont masqués, pas vidés : ils partent
-    // quand même à l'enregistrement, et revenir en arrière ne perd rien.
+    // The fields of the other transport are hidden, not emptied: they are
+    // still submitted on save, and going back loses nothing.
     transport.addEventListener('change', function () {
       smtpFields.hidden = transport.value !== 'smtp';
       apiFields.hidden = transport.value === 'smtp';
     });
 
-    // Un préréglage remplit hôte, port, chiffrement et, s'il en impose un,
-    // l'identifiant (SendGrid : « apikey »). Tout reste modifiable ensuite ;
-    // repasser sur « personnalisé » ne vide rien.
+    // A preset fills host, port, encryption and, if it requires one, the
+    // username (SendGrid: "apikey"). Everything stays editable afterwards;
+    // going back to "custom" empties nothing.
     provider.addEventListener('change', function () {
       var preset = presets[provider.value];
       if (!preset) {
-        hint.textContent = t('smProviderHint', '');
+        hint.textContent = t('smProviderHint');
         return;
       }
       host.value = preset.host;
@@ -145,8 +145,8 @@
       hint.textContent = preset.hint;
     });
 
-    // Changer de chiffrement change le port attendu ; un port personnalisé
-    // (ni 25, ni 465, ni 587) est laissé tel quel.
+    // Changing the encryption changes the expected port; a custom port
+    // (neither 25, nor 465, nor 587) is left as is.
     encryption.addEventListener('change', function () {
       var known = Object.keys(DEFAULT_PORTS).some(function (k) { return +port.value === DEFAULT_PORTS[k]; });
       if (known || !port.value) port.value = DEFAULT_PORTS[encryption.value];
@@ -159,12 +159,12 @@
   }
 
   /* ================================================================
-   * MAIL DE TEST
+   * TEST EMAIL
    * ================================================================ */
 
   function initTest() {
-    var to = document.getElementById('skmt-sm-test-to');
-    var button = document.getElementById('skmt-sm-test-send');
+    var to = document.getElementById('lumia-sm-test-to');
+    var button = document.getElementById('lumia-sm-test-send');
 
     to.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); button.click(); }
@@ -173,15 +173,15 @@
     button.addEventListener('click', function () {
       var label = button.textContent;
       button.disabled = true;
-      button.textContent = t('smTesting', 'Envoi en cours…');
+      button.textContent = t('smTesting');
 
-      post('skmt_smtp_test', { to: to.value.trim() })
+      post('lumia_smtp_test', { to: to.value.trim() })
         .then(function (res) {
           showTestResult(!!res.success, (res.data && res.data.message) || '', (res.data && res.data.transcript) || []);
           if (state.loaded) load(1);
         })
         .catch(function () {
-          showTestResult(false, t('smError', 'Erreur'), []);
+          showTestResult(false, t('smError'), []);
         })
         .then(function () {
           button.disabled = false;
@@ -191,11 +191,11 @@
   }
 
   function showTestResult(success, message, transcript) {
-    var box = document.getElementById('skmt-sm-test-result');
-    var msg = document.getElementById('skmt-sm-test-message');
-    var pre = document.getElementById('skmt-sm-test-transcript');
+    var box = document.getElementById('lumia-sm-test-result');
+    var msg = document.getElementById('lumia-sm-test-message');
+    var pre = document.getElementById('lumia-sm-test-transcript');
 
-    msg.className = 'skmt-notice ' + (success ? 'skmt-notice--success' : 'skmt-notice--error');
+    msg.className = 'lumia-notice ' + (success ? 'lumia-notice--success' : 'lumia-notice--error');
     msg.textContent = message;
     pre.textContent = transcript.join('\n');
     pre.hidden = !transcript.length;
@@ -203,7 +203,7 @@
   }
 
   /* ================================================================
-   * JOURNAL
+   * LOG
    * ================================================================ */
 
   function filters() {
@@ -223,20 +223,20 @@
     var data = filters();
     data.page = page;
 
-    setState(t('smLoading', 'Chargement…'));
+    setState(t('smLoading'));
 
-    post('skmt_smtp_log_list', data)
+    post('lumia_smtp_log_list', data)
       .then(function (res) {
-        // Seule la dernière requête s'affiche : une frappe rapide en lance
-        // plusieurs, qui peuvent répondre dans le désordre.
+        // Only the latest request is displayed: fast typing fires several,
+        // which may answer out of order.
         if (request !== state.request) return;
         if (!res.success) throw new Error((res.data && res.data.message) || '');
         render(res.data);
       })
       .catch(function (err) {
         if (request !== state.request) return;
-        setState(t('smError', 'Impossible de charger le journal.'));
-        toast((err && err.message) || t('smError', 'Impossible de charger le journal.'), 'error');
+        setState(t('smError'));
+        toast((err && err.message) || t('smError'), 'error');
       });
   }
 
@@ -245,7 +245,7 @@
     var tr = document.createElement('tr');
     var td = document.createElement('td');
     td.colSpan = 4;
-    td.className = 'skmt-sm__state';
+    td.className = 'lumia-sm__state';
     td.textContent = message;
     tr.appendChild(td);
     el.rows.appendChild(tr);
@@ -256,35 +256,35 @@
     state.page = data.page;
     state.pages = data.pages;
 
-    el.total.textContent = format(t('smTotal', '%s mail(s)'), data.total.toLocaleString());
-    el.page.textContent = format(t('smPage', 'Page %1$s sur %2$s'), data.page, data.pages);
+    el.total.textContent = format(t('smTotal'), data.total.toLocaleString());
+    el.page.textContent = format(t('smPage'), data.page, data.pages);
     el.prev.disabled = data.page <= 1;
     el.next.disabled = data.page >= data.pages;
 
     if (!data.rows.length) {
-      setState(t('smEmpty', 'Aucun mail pour ces critères.'));
+      setState(t('smEmpty'));
       return;
     }
 
     el.rows.innerHTML = '';
     data.rows.forEach(function (row, index) {
       var tr = document.createElement('tr');
-      tr.className = 'skmt-sm__row';
+      tr.className = 'lumia-sm__row';
       tr.dataset.index = index;
       tr.tabIndex = 0;
 
-      tr.appendChild(cell(row.date, 'skmt-sm__date'));
+      tr.appendChild(cell(row.date, 'lumia-sm__date'));
 
-      var status = cell('', 'skmt-sm__status');
+      var status = cell('', 'lumia-sm__status');
       status.appendChild(badge(row));
       tr.appendChild(status);
 
-      tr.appendChild(cell(row.to, 'skmt-sm__to'));
+      tr.appendChild(cell(row.to, 'lumia-sm__to'));
 
-      var subject = cell(row.subject || t('smNoSubject', '(sans objet)'), 'skmt-sm__subject');
+      var subject = cell(row.subject || t('smNoSubject'), 'lumia-sm__subject');
       if (row.status === 'failed' && row.error) {
         var error = document.createElement('span');
-        error.className = 'skmt-sm__error';
+        error.className = 'lumia-sm__error';
         error.textContent = row.error;
         subject.appendChild(error);
       }
@@ -297,8 +297,8 @@
   function badge(row) {
     var span = document.createElement('span');
     var sent = row.status === 'sent';
-    span.className = 'skmt-badge skmt-sm__badge ' + (sent ? 'skmt-badge--success' : 'skmt-badge--danger');
-    span.textContent = sent ? t('smSent', 'Envoyé') : t('smFailed', 'Échec');
+    span.className = 'lumia-badge lumia-sm__badge ' + (sent ? 'lumia-badge--success' : 'lumia-badge--danger');
+    span.textContent = sent ? t('smSent') : t('smFailed');
     return span;
   }
 
@@ -314,14 +314,14 @@
   }
 
   function confirmClear() {
-    window.skmtModal.open({
-      title: t('smClearTitle', 'Vider le journal des mails ?'),
-      message: t('smClearMessage', 'Tous les mails journalisés seront supprimés définitivement.'),
-      confirmLabel: t('smClearConfirm', 'Vider le journal'),
-      cancelLabel: t('smCancel', 'Annuler'),
+    window.lumiaModal.open({
+      title: t('smClearTitle'),
+      message: t('smClearMessage'),
+      confirmLabel: t('smClearConfirm'),
+      cancelLabel: t('cancel'),
       danger: true,
       onConfirm: function () {
-        post('skmt_smtp_log_clear')
+        post('lumia_smtp_log_clear')
           .then(function (res) {
             toast((res.data && res.data.message) || '', res.success ? 'success' : 'error');
             reload();
@@ -331,44 +331,44 @@
   }
 
   /* ================================================================
-   * DÉTAIL
+   * DETAIL
    * ================================================================ */
 
   function openDetail(row) {
     if (!row) return;
 
-    post('skmt_smtp_log_detail', { id: row.id })
+    post('lumia_smtp_log_detail', { id: row.id })
       .then(function (res) {
         if (!res.success) throw new Error((res.data && res.data.message) || '');
         fillDetail(res.data);
-        window.skmtModalOpen('skmt-sm-detail-modal');
+        window.lumiaModalOpen('lumia-sm-detail-modal');
       })
       .catch(function (err) {
-        toast((err && err.message) || t('smError', 'Erreur'), 'error');
+        toast((err && err.message) || t('smError'), 'error');
       });
   }
 
   function fillDetail(mail) {
     state.current = mail;
 
-    document.getElementById('skmt-sm-detail-title').textContent = mail.subject || t('smNoSubject', '(sans objet)');
+    document.getElementById('lumia-sm-detail-title').textContent = mail.subject || t('smNoSubject');
 
-    var meta = document.getElementById('skmt-sm-detail-meta');
+    var meta = document.getElementById('lumia-sm-detail-meta');
     meta.innerHTML = '';
 
     var attachments = mail.attachments.map(function (a) {
-      return a.name + (a.exists ? '' : ' (' + t('smMissing', 'introuvable') + ')');
+      return a.name + (a.exists ? '' : ' (' + t('smMissing') + ')');
     }).join(', ');
 
     [
-      [t('smDate', 'Date'), mail.date],
-      [t('smStatus', 'Statut'), mail.status === 'sent' ? t('smSent', 'Envoyé') : t('smFailed', 'Échec')],
-      [t('smFrom', 'Expéditeur'), mail.from],
-      [t('smTo', 'Destinataire'), mail.to],
-      [t('smTransport', 'Transport'), mail.transport],
-      [t('smAttachments', 'Pièces jointes'), attachments],
-      [t('smResentOf', 'Renvoi de'), mail.resent_of ? '#' + mail.resent_of : ''],
-      [t('smTruncatedLabel', 'Tronqué'), mail.truncated ? t('smTruncated', 'Message trop long, tronqué à l\'enregistrement.') : ''],
+      [t('smDate'), mail.date],
+      [t('smStatus'), mail.status === 'sent' ? t('smSent') : t('smFailed')],
+      [t('smFrom'), mail.from],
+      [t('smTo'), mail.to],
+      [t('smTransport'), mail.transport],
+      [t('smAttachments'), attachments],
+      [t('smResentOf'), mail.resent_of ? '#' + mail.resent_of : ''],
+      [t('smTruncatedLabel'), mail.truncated ? t('smTruncated') : ''],
     ].forEach(function (pair) {
       if (!pair[1]) return;
       var dt = document.createElement('dt');
@@ -379,15 +379,15 @@
       meta.appendChild(dd);
     });
 
-    var error = document.getElementById('skmt-sm-detail-error');
+    var error = document.getElementById('lumia-sm-detail-error');
     error.textContent = mail.error;
     error.hidden = !mail.error;
 
-    var frame = document.getElementById('skmt-sm-detail-html');
-    var text = document.getElementById('skmt-sm-detail-text');
+    var frame = document.getElementById('lumia-sm-detail-html');
+    var text = document.getElementById('lumia-sm-detail-text');
     if (mail.is_html) {
-      // srcdoc dans un iframe sandbox="" : le HTML du mail est rendu sans
-      // script ni accès à la page d'administration.
+      // srcdoc in a sandbox="" iframe: the email HTML is rendered without
+      // script or access to the admin page.
       frame.srcdoc = mail.message;
       frame.hidden = false;
       text.hidden = true;
@@ -398,31 +398,31 @@
       text.hidden = false;
     }
 
-    var headersWrap = document.getElementById('skmt-sm-detail-headers-wrap');
-    document.getElementById('skmt-sm-detail-headers').textContent = mail.headers.join('\n');
+    var headersWrap = document.getElementById('lumia-sm-detail-headers-wrap');
+    document.getElementById('lumia-sm-detail-headers').textContent = mail.headers.join('\n');
     headersWrap.hidden = !mail.headers.length;
     headersWrap.open = false;
 
-    document.getElementById('skmt-sm-detail-resend').hidden = !mail.can_resend;
+    document.getElementById('lumia-sm-detail-resend').hidden = !mail.can_resend;
   }
 
   function resend() {
     var mail = state.current;
-    var button = document.getElementById('skmt-sm-detail-resend');
+    var button = document.getElementById('lumia-sm-detail-resend');
     if (!mail) return;
 
     var label = button.textContent;
     button.disabled = true;
-    button.textContent = t('smResending', 'Renvoi en cours…');
+    button.textContent = t('smResending');
 
-    post('skmt_smtp_log_resend', { id: mail.id })
+    post('lumia_smtp_log_resend', { id: mail.id })
       .then(function (res) {
         toast((res.data && res.data.message) || '', res.success ? 'success' : 'error');
-        if (res.success) window.skmtModalClose('skmt-sm-detail-modal');
+        if (res.success) window.lumiaModalClose('lumia-sm-detail-modal');
         reload();
       })
       .catch(function () {
-        toast(t('smError', 'Erreur'), 'error');
+        toast(t('smError'), 'error');
       })
       .then(function () {
         button.disabled = false;

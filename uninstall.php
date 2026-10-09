@@ -1,30 +1,40 @@
 <?php
 /**
- * Nettoyage des données lors de la désinstallation.
+ * Data cleanup on uninstall.
  *
- * Chaque module déclare les clés à supprimer via ::get_uninstall_keys().
- * La liste des modules vit dans Activator::MODULE_CLASSES.
+ * Each module declares the keys to delete through ::get_uninstall_keys().
+ * The module list lives in Activator::MODULE_CLASSES.
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-// Chargement de l'autoloader pour accéder aux classes des modules.
+// Load the autoloader to reach the module classes.
 require_once plugin_dir_path( __FILE__ ) . 'includes/Core/Autoloader.php';
-\StudioKyne\MiniTools\Core\Autoloader::register();
+\Lumia\Tools\Core\Autoloader::register();
 
-$module_classes = \StudioKyne\MiniTools\Core\Activator::MODULE_CLASSES;
+$module_classes = \Lumia\Tools\Core\Activator::MODULE_CLASSES;
 
-// Suppression de l'option globale.
-delete_option( 'skmt_settings' );
-delete_site_option( 'skmt_settings' );
+// Delete the global option.
+delete_option( 'lumia_settings' );
+delete_site_option( 'lumia_settings' );
 
-// Métadonnées écrites par le cœur du plugin (centre de notifications).
-// Aucun module ne les déclare : elles ne sont rattachées à aucun d'entre eux.
-delete_metadata( 'user', 0, 'skmt_notices', '', true );
+// State of the migration from Studio Kyne Mini Tools. The marker
+// (FromSkmt::MARKER) is deliberately KEPT, as a tombstone: SKMT removed with
+// `wp plugin delete` (files only, its uninstall.php never runs) leaves its
+// `skmt_*` options behind, and without the marker a later reinstall of Lumia
+// would migrate them again — months-old settings, login slug, SMTP secret and
+// module states replacing the site's current ones. One small row, not autoloaded.
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_OPTION );
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_DETAIL_OPTION );
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::NOTICE_OPTION );
 
-// Suppression des options et meta propres à chaque module.
+// Metadata written by the plugin core (notification center).
+// No module declares them: they are not attached to any of them.
+delete_metadata( 'user', 0, 'lumia_notices', '', true );
+
+// Delete the options and meta that belong to each module.
 foreach ( $module_classes as $id => $class ) {
 	if ( ! class_exists( $class ) ) {
 		continue;
@@ -41,15 +51,15 @@ foreach ( $module_classes as $id => $class ) {
 		delete_post_meta_by_key( $meta_key );
 	}
 
-	// Tables propres à un module, déclarées sans préfixe. Le nom ne vient que
-	// du code du module, jamais d'une saisie : on le restreint quand même aux
-	// caractères d'un identifiant avant de l'interpoler.
+	// Tables owned by a module, declared without a prefix. The name only comes
+	// from the module code, never from user input: it is still restricted to
+	// identifier characters before being interpolated.
 	foreach ( $keys['tables'] ?? [] as $table ) {
 		if ( ! preg_match( '/^[a-z0-9_]+$/', $table ) ) {
 			continue;
 		}
 		$table = $GLOBALS['wpdb']->prefix . $table;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nom de table validé ci-dessus.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name validated above.
 		$GLOBALS['wpdb']->query( "DROP TABLE IF EXISTS `{$table}`" );
 	}
 
@@ -57,15 +67,15 @@ foreach ( $module_classes as $id => $class ) {
 		wp_clear_scheduled_hook( $hook );
 	}
 
-	// Métadonnées d'utilisateur : delete_post_meta_by_key() ne les touche pas,
-	// elles vivent dans une autre table.
+	// User metadata: delete_post_meta_by_key() does not touch it, it lives in
+	// another table.
 	foreach ( $keys['user_meta'] ?? [] as $meta_key ) {
 		delete_metadata( 'user', 0, $meta_key, '', true );
 	}
 
-	// Suppression des post types custom
+	// Delete the custom post types
 	foreach ( $keys['post_type'] ?? [] as $post_type ) {
-		// Récupérer tous les posts du type custom
+		// Fetch every post of the custom type
 		$posts = get_posts(
 			[
 				'post_type'      => $post_type,
@@ -79,9 +89,9 @@ foreach ( $module_classes as $id => $class ) {
 		}
 	}
 
-	// Suppression des taxonomies custom (tous les termes).
-	// Le plugin n'étant pas booté ici, la taxonomie n'est pas enregistrée : on
-	// l'enregistre à la volée pour que get_terms()/wp_delete_term() fonctionnent.
+	// Delete the custom taxonomies (every term).
+	// The plugin is not booted here, so the taxonomy is not registered: register
+	// it on the fly so that get_terms()/wp_delete_term() work.
 	foreach ( $keys['taxonomy'] ?? [] as $tax_name ) {
 		if ( '' === $tax_name ) {
 			continue;

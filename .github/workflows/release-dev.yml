@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: skmt-release-dev
+  group: lumia-release-dev
   cancel-in-progress: false
   queue: max
 
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          file_version=$(grep -Eo "define[[:space:]]*\([[:space:]]*'SKMT_VERSION'[[:space:]]*,[[:space:]]*'[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?'" studio-kyne-mini-tools.php | sed -E "s/.*'([0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?)'/\1/")
+          file_version=$(grep -Eo "define[[:space:]]*\([[:space:]]*'LUMIA_VERSION'[[:space:]]*,[[:space:]]*'[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?'" lumia-tools.php | sed -E "s/.*'([0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?)'/\1/")
           if [[ -z "$file_version" ]]; then
             echo "Unable to detect plugin version"
             exit 1
@@ -85,8 +85,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          sed -E -i "s/^ \* Version:[[:space:]]+.*/ * Version:     ${VERSION}/" studio-kyne-mini-tools.php
-          sed -E -i "s/(define[[:space:]]*\([[:space:]]*'SKMT_VERSION'[[:space:]]*,[[:space:]]*')[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]*)?/\1${VERSION}/" studio-kyne-mini-tools.php
+          sed -E -i "s/^ \* Version:[[:space:]]+.*/ * Version:     ${VERSION}/" lumia-tools.php
+          sed -E -i "s/(define[[:space:]]*\([[:space:]]*'LUMIA_VERSION'[[:space:]]*,[[:space:]]*')[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]*)?/\1${VERSION}/" lumia-tools.php
 
       - name: Create and push tag
         env:
@@ -100,7 +100,7 @@ jobs:
             exit 1
           fi
 
-          git add studio-kyne-mini-tools.php
+          git add lumia-tools.php
           git commit -m "chore(release): v${VERSION}"
           git tag -a "$TARGET_TAG" -m "Dev release ${TARGET_TAG}"
           git push origin HEAD:refs/heads/dev
@@ -112,35 +112,37 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p dist/package/studio-kyne-mini-tools
-          rsync -a ./ dist/package/studio-kyne-mini-tools/ \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.vscode' \
-            --exclude='node_modules' \
-            --exclude='dist' \
-            --exclude='.claude' \
-            --exclude='.mcp.json' \
-            --exclude='.gitignore' \
-            --exclude='vendor' \
-            --exclude='composer.json' \
-            --exclude='composer.lock' \
-            --exclude='phpcs.xml.dist' \
-            --exclude='phpstan.neon.dist' \
-            --exclude='phpstan-baseline.neon' \
-            --exclude='phpcs.baseline.xml' \
-            --exclude='.phpcs.cache' \
-            --exclude='tools' \
-            --exclude='CLAUDE.md' \
-            --exclude='docs'
+          mkdir -p dist/package/lumia-tools
+          rsync -a ./ dist/package/lumia-tools/ \
+            --exclude='/.git' \
+            --exclude='/.github' \
+            --exclude='/.vscode' \
+            --exclude='/node_modules' \
+            --exclude='/dist' \
+            --exclude='/.claude' \
+            --exclude='/.mcp.json' \
+            --exclude='/.gitignore' \
+            --exclude='/vendor' \
+            --exclude='/composer.json' \
+            --exclude='/composer.lock' \
+            --exclude='/phpcs.xml.dist' \
+            --exclude='/phpstan.neon.dist' \
+            --exclude='/phpstan-baseline.neon' \
+            --exclude='/phpcs.baseline.xml' \
+            --exclude='/.phpcs.cache' \
+            --exclude='/tools' \
+            --exclude='/CLAUDE.md' \
+            --exclude='/docs' \
+            --exclude='/.superpowers' \
+            --exclude='/.DS_Store'
           cd dist/package
-          zip -r "../studio-kyne-mini-tools-${VERSION}.zip" studio-kyne-mini-tools
+          zip -r "../lumia-tools-${VERSION}.zip" lumia-tools
 
       - name: Publish GitHub pre-release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          files: dist/studio-kyne-mini-tools-${{ steps.version.outputs.version }}.zip
+          files: dist/lumia-tools-${{ steps.version.outputs.version }}.zip
           prerelease: true
           generate_release_notes: true
           body: |

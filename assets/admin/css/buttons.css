@@ -2,102 +2,102 @@
  * Buttons
  */
 
-.skmt-btn {
+.lumia-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 10px 20px;
-  border-radius: var(--skmt-radius-sm);
+  border-radius: var(--lumia-radius-sm);
   font-size: 14px;
   font-weight: 500;
-  border: 1px solid var(--skmt-border);
+  border: 1px solid var(--lumia-border);
   cursor: pointer;
-  transition: var(--skmt-transition);
+  transition: var(--lumia-transition);
   text-decoration: none;
   line-height: 1.5;
   font-family: inherit;
   white-space: nowrap;
   min-height: 42px;
-  background: var(--skmt-white);
-  color: var(--skmt-text);
+  background: var(--lumia-white);
+  color: var(--lumia-text);
 }
 
-.skmt-btn:disabled {
+.lumia-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.skmt-btn--sm {
+.lumia-btn--sm {
   padding: 7px 14px;
   font-size: 13px;
   min-height: 34px;
 }
 
-.skmt-btn--primary {
-  background: var(--skmt-accent);
-  color: var(--skmt-white);
-  border-color: var(--skmt-accent);
+.lumia-btn--primary {
+  background: var(--lumia-accent);
+  color: var(--lumia-white);
+  border-color: var(--lumia-accent);
 }
 
-.skmt-btn--primary:hover:not(:disabled) {
-  background: var(--skmt-accent-hover);
-  border-color: var(--skmt-accent-hover);
+.lumia-btn--primary:hover:not(:disabled) {
+  background: var(--lumia-accent-hover);
+  border-color: var(--lumia-accent-hover);
 }
 
-.skmt-btn--secondary {
-  background: var(--skmt-white);
-  color: var(--skmt-text);
-  border-color: var(--skmt-border);
+.lumia-btn--secondary {
+  background: var(--lumia-white);
+  color: var(--lumia-text);
+  border-color: var(--lumia-border);
 }
 
-.skmt-btn--secondary:hover:not(:disabled) {
-  background: var(--skmt-n50);
-  border-color: var(--skmt-border-strong);
+.lumia-btn--secondary:hover:not(:disabled) {
+  background: var(--lumia-n50);
+  border-color: var(--lumia-border-strong);
 }
 
-.skmt-btn--danger {
-  background: var(--skmt-danger-bg);
-  color: var(--skmt-danger);
-  border-color: var(--skmt-danger);
+.lumia-btn--danger {
+  background: var(--lumia-danger-bg);
+  color: var(--lumia-danger);
+  border-color: var(--lumia-danger);
 }
 
-.skmt-btn--danger:hover:not(:disabled) {
-  background: var(--skmt-danger);
-  color: var(--skmt-white);
-  border-color: var(--skmt-danger);
+.lumia-btn--danger:hover:not(:disabled) {
+  background: var(--lumia-danger);
+  color: var(--lumia-white);
+  border-color: var(--lumia-danger);
 }
 
 /*
- * Boutons-liens : wp-admin colore `a:hover`/`a:focus` en bleu, et cette règle
- * l'emporte sur la couleur posée par `.skmt-btn--*` (l'état ajoute une
- * pseudo-classe). Chaque état doit donc redéclarer la couleur, sinon un
- * `<a class="skmt-btn">` vire au bleu au survol.
+ * Link buttons: wp-admin colors `a:hover`/`a:focus` blue, and this rule wins
+ * over the color set by `.lumia-btn--*` (the state adds a pseudo-class). Each
+ * state must therefore redeclare the color, otherwise an
+ * `<a class="lumia-btn">` turns blue on hover.
  */
-a.skmt-btn:hover,
-a.skmt-btn:focus,
-a.skmt-btn:active {
-  color: var(--skmt-text);
+a.lumia-btn:hover,
+a.lumia-btn:focus,
+a.lumia-btn:active {
+  color: var(--lumia-text);
   box-shadow: none;
 }
 
-a.skmt-btn--primary:hover,
-a.skmt-btn--primary:focus,
-a.skmt-btn--primary:active {
-  color: var(--skmt-white);
+a.lumia-btn--primary:hover,
+a.lumia-btn--primary:focus,
+a.lumia-btn--primary:active {
+  color: var(--lumia-white);
 }
 
-a.skmt-btn--secondary:hover,
-a.skmt-btn--secondary:focus,
-a.skmt-btn--secondary:active {
-  color: var(--skmt-text);
+a.lumia-btn--secondary:hover,
+a.lumia-btn--secondary:focus,
+a.lumia-btn--secondary:active {
+  color: var(--lumia-text);
 }
 
-a.skmt-btn--danger:hover,
-a.skmt-btn--danger:active {
-  color: var(--skmt-white);
+a.lumia-btn--danger:hover,
+a.lumia-btn--danger:active {
+  color: var(--lumia-white);
 }
 
-a.skmt-btn--danger:focus {
-  color: var(--skmt-danger);
+a.lumia-btn--danger:focus {
+  color: var(--lumia-danger);
 }

@@ -1,19 +1,19 @@
 /* ================================================================
-   MODULE CRÉATEUR DE MENU — éditeur intégré (embedded)
+   MENU CREATOR MODULE — built-in (embedded) editor
    ================================================================ */
 
 /* ----------------------------------------------------------------
-   Layout parent : l'éditeur remplit toute la hauteur disponible
+   Parent layout: the editor fills the whole available height
    ---------------------------------------------------------------- */
 
-.skmt-admin-main:has(.skmt-mc-editor) {
+.lumia-admin-main:has(.lumia-mc-editor) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   padding-bottom: 0;
 }
 
-.skmt-admin-main:has(.skmt-mc-editor) .skmt-page {
+.lumia-admin-main:has(.lumia-mc-editor) .lumia-page {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -21,78 +21,78 @@
   overflow: hidden;
 }
 
-/* Topbar module : sticky dans les pages normales, statique dans l'éditeur */
-.skmt-admin-main:has(.skmt-mc-editor) .skmt-page__header {
+/* Module topbar: sticky on regular pages, static in the editor */
+.lumia-admin-main:has(.lumia-mc-editor) .lumia-page__header {
   position: static;
   flex-shrink: 0;
 }
 
 /* ----------------------------------------------------------------
-   CORPS DE L'ÉDITEUR (3 colonnes)
+   EDITOR BODY (3 columns)
    ---------------------------------------------------------------- */
 
-.skmt-mc-editor {
+.lumia-mc-editor {
   flex: 1;
   min-height: 0;
   display: flex;
   gap: 10px;
   padding: 10px;
   overflow: hidden;
-  background: var(--skmt-n100, #f3f4f6);
+  background: var(--lumia-n100, #f3f4f6);
 }
 
-.skmt-mc-editor *,
-.skmt-mc-editor *::before,
-.skmt-mc-editor *::after {
+.lumia-mc-editor *,
+.lumia-mc-editor *::before,
+.lumia-mc-editor *::after {
   box-sizing: border-box;
 }
 
 /* ----------------------------------------------------------------
-   COLONNE GAUCHE — liste des profils
+   LEFT COLUMN — profile list
    ---------------------------------------------------------------- */
 
-.skmt-wl-ep__profiles-col {
+.lumia-wl-ep__profiles-col {
   width: 216px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--skmt-surface, #fff);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
+  background: var(--lumia-surface, #fff);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
   overflow: hidden;
 }
 
-.skmt-wl-ep__profiles-header {
+.lumia-wl-ep__profiles-header {
   display: flex;
   align-items: center;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
   flex-shrink: 0;
-  background: var(--skmt-n50, #f9fafb);
+  background: var(--lumia-n50, #f9fafb);
 }
 
-.skmt-wl-ep__profiles-title {
+.lumia-wl-ep__profiles-title {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-mc-hdr-actions {
+.lumia-mc-hdr-actions {
   display: flex;
   align-items: center;
   gap: 2px;
   margin-left: auto;
 }
 
-.skmt-mc-hdr-btn,
-.skmt-wl-ep__profiles-add {
+.lumia-mc-hdr-btn,
+.lumia-wl-ep__profiles-add {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: var(--skmt-radius-xs);
-  color: var(--skmt-text-secondary);
+  border-radius: var(--lumia-radius-xs);
+  color: var(--lumia-text-secondary);
   background: none;
   border: none;
   cursor: pointer;
@@ -100,38 +100,38 @@
   transition: background 0.12s, color 0.12s;
 }
 
-.skmt-mc-hdr-btn:hover,
-.skmt-wl-ep__profiles-add:hover {
-  background: var(--skmt-n200, #e5e7eb);
-  color: var(--skmt-text);
+.lumia-mc-hdr-btn:hover,
+.lumia-wl-ep__profiles-add:hover {
+  background: var(--lumia-n200, #e5e7eb);
+  color: var(--lumia-text);
 }
 
-/* Search — wrapper stylisé comme un input */
-.skmt-wl-ep__profiles-search-wrap {
+/* Search — wrapper styled like an input */
+.lumia-wl-ep__profiles-search-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 6px 8px;
   padding: 0 8px;
   min-height: 32px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm, 6px);
-  background: var(--skmt-n50, #f9fafb);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm, 6px);
+  background: var(--lumia-n50, #f9fafb);
   flex-shrink: 0;
   transition: border-color 0.12s, box-shadow 0.12s;
 }
 
-.skmt-wl-ep__profiles-search-wrap:focus-within {
-  border-color: var(--skmt-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--skmt-accent) 15%, transparent);
+.lumia-wl-ep__profiles-search-wrap:focus-within {
+  border-color: var(--lumia-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lumia-accent) 15%, transparent);
 }
 
-.skmt-wl-ep__profiles-search-wrap > svg {
-  color: var(--skmt-n400, #9ca3af);
+.lumia-wl-ep__profiles-search-wrap > svg {
+  color: var(--lumia-n400, #9ca3af);
   flex-shrink: 0;
 }
 
-.skmt-wl-ep__profiles-search {
+.lumia-wl-ep__profiles-search {
   flex: 1 !important;
   min-width: 0 !important;
   padding: 0 !important;
@@ -141,7 +141,7 @@
   border: none !important;
   border-radius: 0 !important;
   background: transparent !important;
-  color: var(--skmt-text) !important;
+  color: var(--lumia-text) !important;
   outline: none !important;
   box-shadow: none !important;
   width: auto !important;
@@ -151,41 +151,41 @@
 }
 
 /* Filter tabs */
-.skmt-wl-ep__profiles-tabs {
+.lumia-wl-ep__profiles-tabs {
   display: flex;
   padding: 5px 8px;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
   flex-shrink: 0;
   gap: 2px;
 }
 
-.skmt-wl-ep__profiles-tab {
+.lumia-wl-ep__profiles-tab {
   flex: 1;
   padding: 3px 4px;
   font-size: 0.6875rem;
   font-weight: 500;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--skmt-radius-xs);
+  border-radius: var(--lumia-radius-xs);
   cursor: pointer;
   text-align: center;
   transition: color 0.12s, background 0.12s;
 }
 
-.skmt-wl-ep__profiles-tab:hover {
-  color: var(--skmt-text);
-  background: var(--skmt-n100, #f3f4f6);
+.lumia-wl-ep__profiles-tab:hover {
+  color: var(--lumia-text);
+  background: var(--lumia-n100, #f3f4f6);
 }
 
-.skmt-wl-ep__profiles-tab.is-active {
-  color: var(--skmt-accent);
-  background: color-mix(in srgb, var(--skmt-accent) 8%, transparent);
-  border-color: color-mix(in srgb, var(--skmt-accent) 18%, transparent);
+.lumia-wl-ep__profiles-tab.is-active {
+  color: var(--lumia-accent);
+  background: color-mix(in srgb, var(--lumia-accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--lumia-accent) 18%, transparent);
 }
 
 /* Profile list */
-.skmt-wl-ep__profiles-scroll {
+.lumia-wl-ep__profiles-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -193,16 +193,16 @@
   flex-direction: column;
 }
 
-.skmt-wl-ep__profiles-list {
+.lumia-wl-ep__profiles-list {
   padding: 5px 5px 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
 }
 
-/* Création : bouton fantôme en fin de liste, là où le nouveau menu
-   apparaîtra — plutôt qu'une icône « + » isolée dans l'en-tête. */
-.skmt-mc-add-placeholder {
+/* Creation: ghost button at the end of the list, where the new menu will
+   appear — rather than an isolated "+" icon in the header. */
+.lumia-mc-add-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -212,26 +212,26 @@
   flex-shrink: 0;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   background: transparent;
-  border: 1px dashed var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  border: 1px dashed var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
   cursor: pointer;
   transition: color 0.12s, border-color 0.12s, background 0.12s;
 }
 
-.skmt-mc-add-placeholder:hover {
-  color: var(--skmt-accent);
-  border-color: color-mix(in srgb, var(--skmt-accent) 35%, transparent);
-  background: color-mix(in srgb, var(--skmt-accent) 5%, transparent);
+.lumia-mc-add-placeholder:hover {
+  color: var(--lumia-accent);
+  border-color: color-mix(in srgb, var(--lumia-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--lumia-accent) 5%, transparent);
 }
 
 /* ----------------------------------------------------------------
-   ITEM DE LA SIDEBAR (profil)
-   -- hauteur stable : les actions sont toujours en layout --
+   SIDEBAR ITEM (profile)
+   -- stable height: the actions are always in the layout --
    ---------------------------------------------------------------- */
 
-.skmt-wl-ep-profile-item {
+.lumia-wl-ep-profile-item {
   width: 100%;
   display: flex;
   align-items: center;
@@ -239,25 +239,25 @@
   padding: 6px 7px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--skmt-radius-sm);
+  border-radius: var(--lumia-radius-sm);
   cursor: pointer;
   text-align: left;
   transition: background 0.1s, border-color 0.1s;
 }
 
-.skmt-wl-ep-profile-item:hover {
-  background: var(--skmt-n50, #f9fafb);
+.lumia-wl-ep-profile-item:hover {
+  background: var(--lumia-n50, #f9fafb);
 }
 
-.skmt-wl-ep-profile-item.is-active {
-  background: color-mix(in srgb, var(--skmt-accent) 7%, transparent);
-  border-color: color-mix(in srgb, var(--skmt-accent) 16%, transparent);
+.lumia-wl-ep-profile-item.is-active {
+  background: color-mix(in srgb, var(--lumia-accent) 7%, transparent);
+  border-color: color-mix(in srgb, var(--lumia-accent) 16%, transparent);
 }
 
-.skmt-wl-ep-profile-item__name {
+.lumia-wl-ep-profile-item__name {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -265,24 +265,24 @@
   min-width: 0;
 }
 
-/* Pastille de statut */
-.skmt-mc-dot {
+/* Status dot */
+.lumia-mc-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.skmt-mc-dot--active {
+.lumia-mc-dot--active {
   background: #10b981; /* emerald-500 */
 }
 
-.skmt-mc-dot--draft {
+.lumia-mc-dot--draft {
   background: #f59e0b; /* amber-400 */
 }
 
-/* Actions — toujours en layout, visibilité gérée */
-.skmt-mc-item-actions {
+/* Actions — always in the layout, visibility managed */
+.lumia-mc-item-actions {
   display: flex;
   align-items: center;
   gap: 1px;
@@ -290,11 +290,11 @@
   visibility: hidden;
 }
 
-.skmt-wl-ep-profile-item:hover .skmt-mc-item-actions {
+.lumia-wl-ep-profile-item:hover .lumia-mc-item-actions {
   visibility: visible;
 }
 
-.skmt-mc-item-action {
+.lumia-mc-item-action {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,54 +305,54 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   transition: background 0.1s, color 0.1s;
   flex-shrink: 0;
 }
 
-.skmt-mc-item-action:hover {
-  background: var(--skmt-n200, #e5e7eb);
-  color: var(--skmt-text);
+.lumia-mc-item-action:hover {
+  background: var(--lumia-n200, #e5e7eb);
+  color: var(--lumia-text);
 }
 
-.skmt-mc-item-action--danger:hover {
-  background: color-mix(in srgb, var(--skmt-danger) 10%, transparent);
-  color: var(--skmt-danger);
+.lumia-mc-item-action--danger:hover {
+  background: color-mix(in srgb, var(--lumia-danger) 10%, transparent);
+  color: var(--lumia-danger);
 }
 
-.skmt-wl-ep-profiles-empty {
+.lumia-wl-ep-profiles-empty {
   padding: 1.5rem 0.75rem;
   font-size: 0.75rem;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   text-align: center;
   line-height: 1.6;
 }
 
 /* ----------------------------------------------------------------
-   COLONNE CENTRALE — arbre du menu + placeholder
+   CENTER COLUMN — menu tree + placeholder
    ---------------------------------------------------------------- */
 
-.skmt-wl-ep__tree-col {
+.lumia-wl-ep__tree-col {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--skmt-surface, #fff);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
+  background: var(--lumia-surface, #fff);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
   overflow: hidden;
 }
 
-.skmt-wl-ep__tree-actions {
+.lumia-wl-ep__tree-actions {
   display: flex;
   gap: 0.5rem;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
   flex-shrink: 0;
-  background: var(--skmt-n50, #f9fafb);
+  background: var(--lumia-n50, #f9fafb);
 }
 
-.skmt-wl-ep__tree {
+.lumia-wl-ep__tree {
   flex: 1;
   overflow-y: auto;
   padding: 6px;
@@ -360,7 +360,7 @@
 }
 
 /* Placeholder */
-.skmt-mc-placeholder {
+.lumia-mc-placeholder {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -371,63 +371,63 @@
   gap: 0.75rem;
 }
 
-.skmt-mc-placeholder__icon {
-  color: var(--skmt-n300, #d1d5db);
+.lumia-mc-placeholder__icon {
+  color: var(--lumia-n300, #d1d5db);
 }
 
-.skmt-mc-placeholder h3 {
+.lumia-mc-placeholder h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   margin: 0;
 }
 
-.skmt-mc-placeholder p {
+.lumia-mc-placeholder p {
   font-size: 0.875rem;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   max-width: 280px;
   line-height: 1.6;
   margin: 0;
 }
 
 /* ----------------------------------------------------------------
-   ITEMS DE L'ARBRE
+   TREE ITEMS
    ---------------------------------------------------------------- */
 
-.skmt-wl-tree-item {
-  border-radius: var(--skmt-radius-sm);
+.lumia-wl-tree-item {
+  border-radius: var(--lumia-radius-sm);
   margin-bottom: 2px;
   user-select: none;
 }
 
-.skmt-wl-tree-item.is-selected > .skmt-wl-tree-item__row {
-  background: color-mix(in srgb, var(--skmt-accent) 8%, transparent);
+.lumia-wl-tree-item.is-selected > .lumia-wl-tree-item__row {
+  background: color-mix(in srgb, var(--lumia-accent) 8%, transparent);
 }
 
-.skmt-wl-tree-item.is-dragging {
+.lumia-wl-tree-item.is-dragging {
   opacity: 0.3;
 }
 
-.skmt-wl-tree-item__row {
+.lumia-wl-tree-item__row {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 7px 8px;
   cursor: pointer;
-  border-radius: var(--skmt-radius-sm);
+  border-radius: var(--lumia-radius-sm);
   transition: background 0.1s;
   user-select: none;
   min-height: 36px;
   position: relative;
 }
 
-.skmt-wl-tree-item__row:hover {
-  background: var(--skmt-n50, #f9fafb);
+.lumia-wl-tree-item__row:hover {
+  background: var(--lumia-n50, #f9fafb);
 }
 
-/* Drag handle — visible uniquement au survol */
-.skmt-wl-tree-item__handle {
-  color: var(--skmt-n300, #d1d5db);
+/* Drag handle — only visible on hover */
+.lumia-wl-tree-item__handle {
+  color: var(--lumia-n300, #d1d5db);
   cursor: grab;
   flex-shrink: 0;
   display: flex;
@@ -437,13 +437,13 @@
   transition: opacity 0.1s;
 }
 
-.skmt-wl-tree-item__row:hover .skmt-wl-tree-item__handle {
+.lumia-wl-tree-item__row:hover .lumia-wl-tree-item__handle {
   opacity: 1;
-  color: var(--skmt-n400, #9ca3af);
+  color: var(--lumia-n400, #9ca3af);
 }
 
 /* Chevron toggle (collapse/expand) */
-.skmt-wl-tree-item__toggle {
+.lumia-wl-tree-item__toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -453,48 +453,48 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--skmt-n400, #9ca3af);
+  color: var(--lumia-n400, #9ca3af);
   flex-shrink: 0;
   border-radius: 3px;
   transition: color 0.1s;
 }
 
-.skmt-wl-tree-item__toggle:hover {
-  color: var(--skmt-text);
-  background: var(--skmt-n100, #f3f4f6);
+.lumia-wl-tree-item__toggle:hover {
+  color: var(--lumia-text);
+  background: var(--lumia-n100, #f3f4f6);
 }
 
-.skmt-wl-tree-item__toggle-ph {
+.lumia-wl-tree-item__toggle-ph {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
 }
 
-/* Icône du menu */
-.skmt-wl-tree-item__icon,
-.skmt-wl-tree-item__icon-ph {
+/* Menu icon */
+.lumia-wl-tree-item__icon,
+.lumia-wl-tree-item__icon-ph {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
   object-fit: contain;
 }
 
-.skmt-wl-tree-item__icon.dashicons {
+.lumia-wl-tree-item__icon.dashicons {
   font-size: 16px;
   width: 16px;
   height: 16px;
   line-height: 16px;
-  color: var(--skmt-n500, #6b7280);
+  color: var(--lumia-n500, #6b7280);
 }
 
 /**
- * Icône SVG rendue en masque : la source ne donne que la forme, la couleur
- * vient d'ici. Indispensable pour les icônes de menu monochromes, peintes
- * pour la barre latérale sombre de wp-admin (fill blanc chez WooCommerce ou
- * Bricks, stroke currentColor — donc noir en <img> — pour un fichier Lucide),
- * qui seraient sinon invisibles ou hors thème sur le fond clair de l'éditeur.
+ * SVG icon rendered as a mask: the source only gives the shape, the color
+ * comes from here. Essential for monochrome menu icons painted for the dark
+ * wp-admin sidebar (white fill for WooCommerce or Bricks, stroke currentColor
+ * — hence black in an <img> — for a Lucide file), which would otherwise be
+ * invisible or off-theme on the editor's light background.
  */
-.skmt-wl-icon-mask {
+.lumia-wl-icon-mask {
   display: inline-block;
   background-color: currentColor;
   -webkit-mask-repeat: no-repeat;
@@ -505,32 +505,32 @@
           mask-size: contain;
 }
 
-.skmt-wl-tree-item__icon.skmt-wl-icon-mask {
-  color: var(--skmt-n500, #6b7280);
+.lumia-wl-tree-item__icon.lumia-wl-icon-mask {
+  color: var(--lumia-n500, #6b7280);
 }
 
-/* Cadenas « accès direct bloqué » */
-.skmt-wl-tree-item__lock {
+/* Padlock "direct access blocked" */
+.lumia-wl-tree-item__lock {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  color: var(--skmt-warning, #b45309);
+  color: var(--lumia-warning, #b45309);
 }
 
-.skmt-wl-tree-item__stale {
+.lumia-wl-tree-item__stale {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  color: var(--skmt-warning, #b45309);
+  color: var(--lumia-warning, #b45309);
 }
 
-.skmt-wl-tree-item.is-stale > .skmt-wl-tree-item__row .skmt-wl-tree-item__label {
-  color: var(--skmt-text-secondary);
+.lumia-wl-tree-item.is-stale > .lumia-wl-tree-item__row .lumia-wl-tree-item__label {
+  color: var(--lumia-text-secondary);
   font-style: italic;
 }
 
-/* Bandeau des entrées obsolètes, au-dessus de l'arbre. */
-.skmt-mc-stale-bar {
+/* Banner of the stale entries, above the tree. */
+.lumia-mc-stale-bar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -538,51 +538,51 @@
   padding: 8px 10px;
   font-size: 0.75rem;
   line-height: 1.45;
-  color: var(--skmt-text);
-  background: color-mix(in srgb, var(--skmt-warning, #b45309) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--skmt-warning, #b45309) 28%, transparent);
-  border-radius: var(--skmt-radius-sm);
+  color: var(--lumia-text);
+  background: color-mix(in srgb, var(--lumia-warning, #b45309) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lumia-warning, #b45309) 28%, transparent);
+  border-radius: var(--lumia-radius-sm);
 }
 
-.skmt-mc-stale-bar__icon {
+.lumia-mc-stale-bar__icon {
   display: inline-flex;
   flex-shrink: 0;
-  color: var(--skmt-warning, #b45309);
+  color: var(--lumia-warning, #b45309);
 }
 
-.skmt-mc-stale-bar__text {
+.lumia-mc-stale-bar__text {
   flex: 1;
   min-width: 0;
 }
 
-.skmt-mc-stale-bar .skmt-btn {
+.lumia-mc-stale-bar .lumia-btn {
   flex-shrink: 0;
 }
 
 /* Label */
-.skmt-wl-tree-item__label {
+.lumia-wl-tree-item__label {
   flex: 1;
   font-size: 0.8125rem;
   font-weight: 400;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
 }
 
-/* Premier niveau : un peu plus de poids */
-.skmt-wl-tree-item:not(.skmt-wl-tree-item--child) > .skmt-wl-tree-item__row .skmt-wl-tree-item__label {
+/* First level: a bit more weight */
+.lumia-wl-tree-item:not(.lumia-wl-tree-item--child) > .lumia-wl-tree-item__row .lumia-wl-tree-item__label {
   font-weight: 500;
 }
 
-.skmt-wl-tree-item__label.is-hidden {
-  color: var(--skmt-n400, #9ca3af);
+.lumia-wl-tree-item__label.is-hidden {
+  color: var(--lumia-n400, #9ca3af);
   text-decoration: line-through;
 }
 
-/* Groupe de boutons à droite */
-.skmt-wl-tree-item__btns {
+/* Button group on the right */
+.lumia-wl-tree-item__btns {
   display: flex;
   align-items: center;
   gap: 1px;
@@ -591,14 +591,14 @@
   transition: opacity 0.1s;
 }
 
-.skmt-wl-tree-item__row:hover .skmt-wl-tree-item__btns {
+.lumia-wl-tree-item__row:hover .lumia-wl-tree-item__btns {
   opacity: 1;
 }
 
-/* Boutons individuels */
-.skmt-wl-tree-item__vis,
-.skmt-wl-tree-item__mv,
-.skmt-wl-tree-item__del {
+/* Individual buttons */
+.lumia-wl-tree-item__vis,
+.lumia-wl-tree-item__mv,
+.lumia-wl-tree-item__del {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -608,98 +608,98 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  color: var(--skmt-n400, #9ca3af);
+  color: var(--lumia-n400, #9ca3af);
   border-radius: 3px;
   flex-shrink: 0;
   transition: background 0.1s, color 0.1s;
 }
 
-.skmt-wl-tree-item__vis:hover,
-.skmt-wl-tree-item__mv:hover {
-  color: var(--skmt-text);
-  background: var(--skmt-n100, #f3f4f6);
+.lumia-wl-tree-item__vis:hover,
+.lumia-wl-tree-item__mv:hover {
+  color: var(--lumia-text);
+  background: var(--lumia-n100, #f3f4f6);
 }
 
-.skmt-wl-tree-item__del:hover {
-  color: var(--skmt-danger);
-  background: color-mix(in srgb, var(--skmt-danger) 8%, transparent);
+.lumia-wl-tree-item__del:hover {
+  color: var(--lumia-danger);
+  background: color-mix(in srgb, var(--lumia-danger) 8%, transparent);
 }
 
 /* Children */
-.skmt-wl-tree-item__children {
+.lumia-wl-tree-item__children {
   padding-left: 20px;
 }
 
-/* Séparateur visuel */
-.skmt-wl-tree-item--sep .skmt-wl-tree-item__row {
+/* Visual separator */
+.lumia-wl-tree-item--sep .lumia-wl-tree-item__row {
   cursor: default;
 }
 
-.skmt-wl-tree-sep-line {
+.lumia-wl-tree-sep-line {
   flex: 1;
   height: 1px;
-  background: var(--skmt-n200, #e5e7eb);
+  background: var(--lumia-n200, #e5e7eb);
   border-radius: 1px;
 }
 
-/* Séparateur : juste une ligne, pas de texte */
-.skmt-wl-tree-sep-label {
+/* Separator: just a line, no text */
+.lumia-wl-tree-sep-label {
   display: none;
 }
 
 /* ----------------------------------------------------------------
-   COLONNE DROITE — panel header + panels + footer
+   RIGHT COLUMN — panel header + panels + footer
    ---------------------------------------------------------------- */
 
-.skmt-wl-ep__settings-col {
+.lumia-wl-ep__settings-col {
   width: 40%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--skmt-surface, #fff);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
+  background: var(--lumia-surface, #fff);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
   overflow: hidden;
 }
 
-/* En-tête du panel — titre + bouton retour */
-.skmt-mc-panel-header {
+/* Panel header — title + back button */
+.lumia-mc-panel-header {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 0 12px;
   height: 40px;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
   flex-shrink: 0;
-  background: var(--skmt-n50);
+  background: var(--lumia-n50);
 }
 
-.skmt-mc-back-btn {
+.lumia-mc-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   padding: 2px 6px 2px 2px;
   background: none;
   border: 1px solid transparent;
-  border-radius: var(--skmt-radius-xs);
+  border-radius: var(--lumia-radius-xs);
   cursor: pointer;
   font-size: 0.6875rem;
   font-weight: 500;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   transition: background 0.1s, color 0.1s, border-color 0.1s;
   flex-shrink: 0;
 }
 
-.skmt-mc-back-btn:hover {
-  background: var(--skmt-n100);
-  color: var(--skmt-text);
-  border-color: var(--skmt-border);
+.lumia-mc-back-btn:hover {
+  background: var(--lumia-n100);
+  color: var(--lumia-text);
+  border-color: var(--lumia-border);
 }
 
-.skmt-mc-panel-title {
+.lumia-mc-panel-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -707,38 +707,38 @@
   min-width: 0;
 }
 
-/* Panels (scrollables) */
-.skmt-wl-settings-panel {
+/* Panels (scrollable) */
+.lumia-wl-settings-panel {
   flex: 1;
   overflow-y: auto;
   padding: 0.875rem;
   overscroll-behavior: contain;
 }
 
-/* Pied de page ancré en bas */
-.skmt-mc-panel-footer {
+/* Footer anchored at the bottom */
+.lumia-mc-panel-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 8px 12px;
-  border-top: 1px solid var(--skmt-border);
+  border-top: 1px solid var(--lumia-border);
   flex-shrink: 0;
-  background: var(--skmt-n50);
+  background: var(--lumia-n50);
 }
 
-/* Groupe statut */
-.skmt-mc-status-group {
+/* Status group */
+.lumia-mc-status-group {
   width: 100%;
 }
 
-.skmt-mc-status-label-wrap {
+.lumia-mc-status-label-wrap {
   display: flex !important;
   align-items: center;
   gap: 8px;
 }
 
-.skmt-mc-status-badge {
+.lumia-mc-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -748,157 +748,157 @@
   flex-shrink: 0;
 }
 
-.skmt-mc-status-badge::before {
+.lumia-mc-status-badge::before {
   content: "";
   display: inline-block;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--skmt-n300);
+  background: var(--lumia-n300);
 }
 
-.skmt-mc-status-badge.is-active {
+.lumia-mc-status-badge.is-active {
   color: #10b981;
 }
 
-.skmt-mc-status-badge.is-active::before {
+.lumia-mc-status-badge.is-active::before {
   background: #10b981;
 }
 
-.skmt-mc-status-badge.is-draft {
+.lumia-mc-status-badge.is-draft {
   color: #f59e0b;
 }
 
-.skmt-mc-status-badge.is-draft::before {
+.lumia-mc-status-badge.is-draft::before {
   background: #f59e0b;
 }
 
-/* Lignes de paramètres */
-.skmt-wl-settings-row {
+/* Settings rows */
+.lumia-wl-settings-row {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem 0;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
 }
 
-.skmt-wl-settings-row:last-child {
+.lumia-wl-settings-row:last-child {
   border-bottom: none;
 }
 
-.skmt-wl-settings-row--inline {
+.lumia-wl-settings-row--inline {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-/* Le bloc de libellé absorbe la place restante ; sans min-width:0 son texte
-   d'aide impose sa largeur intrinsèque et pousse le contrôle hors du panneau. */
-.skmt-wl-settings-row--inline > .skmt-wl-settings-row__label {
+/* The label block absorbs the remaining space; without min-width:0 its help
+   text imposes its intrinsic width and pushes the control out of the panel. */
+.lumia-wl-settings-row--inline > .lumia-wl-settings-row__label {
   flex: 1;
   min-width: 0;
 }
 
-.skmt-wl-settings-row--col {
+.lumia-wl-settings-row--col {
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.skmt-wl-settings-row__label > span {
+.lumia-wl-settings-row__label > span {
   display: block;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   line-height: 1.4;
 }
 
-.skmt-wl-settings-row .skmt-input {
+.lumia-wl-settings-row .lumia-input {
   width: 100%;
 }
 
-.skmt-wl-note {
+.lumia-wl-note {
   font-size: 0.8125rem;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   padding: 0.5rem 0;
   margin: 0;
 }
 
-.skmt-wl-item-reset-row {
+.lumia-wl-item-reset-row {
   padding-top: 0.75rem;
 }
 
 /* ----------------------------------------------------------------
-   SEGMENTED CONTROL (Statut)
+   SEGMENTED CONTROL (Status)
    ---------------------------------------------------------------- */
 
-.skmt-wl-seg {
+.lumia-wl-seg {
   display: flex;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
   overflow: hidden;
   width: 100%;
 }
 
-.skmt-wl-seg__btn {
+.lumia-wl-seg__btn {
   flex: 1;
   padding: 0.375rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
   background: transparent;
   border: none;
-  border-right: 1px solid var(--skmt-border);
+  border-right: 1px solid var(--lumia-border);
   cursor: pointer;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   transition: background 0.12s, color 0.12s;
   white-space: nowrap;
   text-align: center;
 }
 
-.skmt-wl-seg__btn:last-child {
+.lumia-wl-seg__btn:last-child {
   border-right: none;
 }
 
-.skmt-wl-seg__btn:hover {
-  background: var(--skmt-n50, #f9fafb);
-  color: var(--skmt-text);
+.lumia-wl-seg__btn:hover {
+  background: var(--lumia-n50, #f9fafb);
+  color: var(--lumia-text);
 }
 
-.skmt-wl-seg__btn.is-active {
-  background: var(--skmt-n950, #0d0d0d);
+.lumia-wl-seg__btn.is-active {
+  background: var(--lumia-n950, #0d0d0d);
   color: #fff;
 }
 
 /* ----------------------------------------------------------------
-   ICON PICKER — aperçu + bouton (le dropdown est flottant)
+   ICON PICKER — preview + button (the dropdown is floating)
    ---------------------------------------------------------------- */
 
-.skmt-wl-icon-preview-row {
+.lumia-wl-icon-preview-row {
   display: flex;
   align-items: center;
   gap: 0.625rem;
 }
 
-.skmt-wl-icon-btn {
+.lumia-wl-icon-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   padding: 5px 10px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-surface);
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   transition: background 0.1s, border-color 0.1s;
 }
 
-.skmt-wl-icon-btn:hover {
-  background: var(--skmt-n50);
-  border-color: var(--skmt-n300);
+.lumia-wl-icon-btn:hover {
+  background: var(--lumia-n50);
+  border-color: var(--lumia-n300);
 }
 
-.skmt-wl-icon-btn-thumb {
+.lumia-wl-icon-btn-thumb {
   width: 18px;
   height: 18px;
   display: flex;
@@ -907,51 +907,51 @@
   flex-shrink: 0;
 }
 
-.skmt-wl-icon-btn-thumb img,
-.skmt-wl-icon-btn-thumb__i {
+.lumia-wl-icon-btn-thumb img,
+.lumia-wl-icon-btn-thumb__i {
   width: 16px;
   height: 16px;
   object-fit: contain;
 }
 
-.skmt-wl-icon-btn-thumb .skmt-wl-icon-mask {
-  color: var(--skmt-text);
+.lumia-wl-icon-btn-thumb .lumia-wl-icon-mask {
+  color: var(--lumia-text);
 }
 
-.skmt-wl-icon-btn-thumb .dashicons {
+.lumia-wl-icon-btn-thumb .dashicons {
   font-size: 16px;
   width: 16px;
   height: 16px;
   line-height: 16px;
 }
 
-/* Dropdown flottant (appended to body) */
-.skmt-wl-icon-float {
+/* Floating dropdown (appended to body) */
+.lumia-wl-icon-float {
   position: fixed;
   z-index: 99999;
-  background: var(--skmt-surface, #fff);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  box-shadow: var(--skmt-shadow-lg, 0 10px 40px rgba(0,0,0,.15));
+  background: var(--lumia-surface, #fff);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  box-shadow: var(--lumia-shadow-lg, 0 10px 40px rgba(0,0,0,.15));
   width: 300px;
   overflow: hidden;
 }
 
-.skmt-wl-icon-float.is-hidden {
+.lumia-wl-icon-float.is-hidden {
   display: none;
 }
 
-.skmt-wl-icon-picker-tabs {
+.lumia-wl-icon-picker-tabs {
   display: flex;
-  border-bottom: 1px solid var(--skmt-border);
+  border-bottom: 1px solid var(--lumia-border);
 }
 
-.skmt-wl-icon-tab {
+.lumia-wl-icon-tab {
   flex: 1;
   padding: 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -959,24 +959,24 @@
   transition: color 0.12s;
 }
 
-.skmt-wl-icon-tab:hover {
-  color: var(--skmt-text);
+.lumia-wl-icon-tab:hover {
+  color: var(--lumia-text);
 }
 
-.skmt-wl-icon-tab.is-active {
-  color: var(--skmt-accent);
-  border-bottom-color: var(--skmt-accent);
+.lumia-wl-icon-tab.is-active {
+  color: var(--lumia-accent);
+  border-bottom-color: var(--lumia-accent);
 }
 
-.skmt-wl-icon-pane {
+.lumia-wl-icon-pane {
   max-height: 300px;
   overflow-y: auto;
 }
 
-/* Panneaux sans grille (médiathèque, code SVG) : le padding est porté par le
-   corps, pour que la barre de recherche du panneau Bibliothèque puisse rester
-   collée en haut sans marge parasite. */
-.skmt-wl-icon-pane__body {
+/* Panes without a grid (media library, SVG code): the padding is carried by
+   the body, so that the search bar of the Library pane can stay stuck to the
+   top without a stray margin. */
+.lumia-wl-icon-pane__body {
   padding: 0.625rem;
   display: flex;
   flex-direction: column;
@@ -984,39 +984,39 @@
   align-items: flex-start;
 }
 
-.skmt-wl-icon-search-wrap {
+.lumia-wl-icon-search-wrap {
   position: sticky;
   top: 0;
   z-index: 1;
   padding: 0.5rem 0.625rem;
-  background: var(--skmt-surface, #fff);
-  border-bottom: 1px solid var(--skmt-border);
+  background: var(--lumia-surface, #fff);
+  border-bottom: 1px solid var(--lumia-border);
 }
 
-.skmt-wl-icon-search {
+.lumia-wl-icon-search {
   width: 100%;
   font-size: 0.75rem;
   padding: 0.3rem 0.5rem;
 }
 
-.skmt-wl-icon-scroll {
+.lumia-wl-icon-scroll {
   padding: 0.625rem;
 }
 
-.skmt-wl-icon-cat + .skmt-wl-icon-cat {
+.lumia-wl-icon-cat + .lumia-wl-icon-cat {
   margin-top: 0.625rem;
 }
 
-.skmt-wl-icon-cat__title {
+.lumia-wl-icon-cat__title {
   margin: 0 0 0.25rem;
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-wl-icon-code {
+.lumia-wl-icon-code {
   width: 100%;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.6875rem;
@@ -1024,8 +1024,8 @@
   resize: vertical;
 }
 
-/* Bouton de repli : l'aperçu de l'icône native rend le « rétablir » explicite. */
-.skmt-wl-icon-picker-footer .skmt-btn {
+/* Fallback button: the native icon preview makes the "restore" explicit. */
+.lumia-wl-icon-picker-footer .lumia-btn {
   width: 100%;
   display: inline-flex;
   align-items: center;
@@ -1034,10 +1034,10 @@
   line-height: 1;
 }
 
-/* Boîte de 16px centrée : sans elle, un dashicon garde son font-size de 20px
-   (il déborde et pousse le libellé) et une icône <img> se cale sur la ligne
-   de base du texte au lieu d'être centrée. */
-.skmt-wl-icon-reset-thumb {
+/* Centered 16px box: without it, a dashicon keeps its 20px font-size (it
+   overflows and pushes the label) and an <img> icon sits on the text baseline
+   instead of being centered. */
+.lumia-wl-icon-reset-thumb {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1046,37 +1046,37 @@
   flex-shrink: 0;
 }
 
-.skmt-wl-icon-reset__i {
+.lumia-wl-icon-reset__i {
   width: 16px;
   height: 16px;
   object-fit: contain;
   color: currentColor;
 }
 
-.skmt-wl-icon-reset__i.dashicons {
+.lumia-wl-icon-reset__i.dashicons {
   font-size: 16px;
   line-height: 16px;
 }
 
-.skmt-mc-panel-header__action {
+.lumia-mc-panel-header__action {
   margin-left: auto;
 }
 
-.skmt-wl-icon-lib-empty {
+.lumia-wl-icon-lib-empty {
   font-size: 0.75rem;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   text-align: center;
   padding: 0.5rem 0;
   margin: 0;
 }
 
-.skmt-wl-icon-grid {
+.lumia-wl-icon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
   gap: 3px;
 }
 
-.skmt-wl-icon-grid-item {
+.lumia-wl-icon-grid-item {
   width: 32px;
   height: 32px;
   display: flex;
@@ -1084,76 +1084,76 @@
   justify-content: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--skmt-radius-xs);
+  border-radius: var(--lumia-radius-xs);
   cursor: pointer;
   padding: 0;
   transition: background 0.1s, border-color 0.1s;
 }
 
-.skmt-wl-icon-grid-item:hover {
-  background: var(--skmt-n100, #f3f4f6);
-  border-color: var(--skmt-border);
+.lumia-wl-icon-grid-item:hover {
+  background: var(--lumia-n100, #f3f4f6);
+  border-color: var(--lumia-border);
 }
 
-.skmt-wl-icon-grid-item img,
-.skmt-wl-icon-grid-item__i {
+.lumia-wl-icon-grid-item img,
+.lumia-wl-icon-grid-item__i {
   width: 20px;
   height: 20px;
   object-fit: contain;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-wl-icon-media-preview {
+.lumia-wl-icon-media-preview {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
   margin-top: 0.5rem;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-xs);
-  color: var(--skmt-text);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-xs);
+  color: var(--lumia-text);
 }
 
-.skmt-wl-icon-media-preview__i {
+.lumia-wl-icon-media-preview__i {
   width: 24px;
   height: 24px;
   object-fit: contain;
 }
 
-.skmt-wl-icon-picker-footer {
+.lumia-wl-icon-picker-footer {
   padding: 0.5rem 0.625rem;
-  border-top: 1px solid var(--skmt-border);
-  background: var(--skmt-n50, #f9fafb);
+  border-top: 1px solid var(--lumia-border);
+  background: var(--lumia-n50, #f9fafb);
 }
 
 /* ----------------------------------------------------------------
    MULTI-SELECT (chips)
    ---------------------------------------------------------------- */
 
-.skmt-wl-multiselect {
+.lumia-wl-multiselect {
   position: relative;
   width: 100%;
 }
 
-.skmt-wl-ms-tags {
+.lumia-wl-ms-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
   padding: 0.3125rem 0.5rem;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-surface, #fff);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-surface, #fff);
   min-height: 34px;
   cursor: text;
   transition: border-color 0.12s;
 }
 
-.skmt-wl-ms-tags:focus-within {
-  border-color: var(--skmt-accent);
+.lumia-wl-ms-tags:focus-within {
+  border-color: var(--lumia-accent);
 }
 
-.skmt-wl-ms-input {
+.lumia-wl-ms-input {
   border: none !important;
   outline: none !important;
   background: transparent !important;
@@ -1161,7 +1161,7 @@
   border-radius: 0 !important;
   padding: 0.125rem 0 !important;
   font-size: 0.75rem;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   min-width: 80px;
   flex: 1;
   -webkit-appearance: none !important;
@@ -1172,21 +1172,21 @@
   vertical-align: baseline !important;
 }
 
-.skmt-wl-ms-dropdown {
+.lumia-wl-ms-dropdown {
   position: absolute;
   top: calc(100% + 3px);
   left: 0;
   right: 0;
   z-index: 200;
-  background: var(--skmt-surface, #fff);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  box-shadow: var(--skmt-shadow-md);
+  background: var(--lumia-surface, #fff);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  box-shadow: var(--lumia-shadow-md);
   max-height: 160px;
   overflow-y: auto;
 }
 
-.skmt-wl-ms-option {
+.lumia-wl-ms-option {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1196,57 +1196,57 @@
   transition: background 0.1s;
 }
 
-.skmt-wl-ms-option:hover {
-  background: var(--skmt-n50, #f9fafb);
+.lumia-wl-ms-option:hover {
+  background: var(--lumia-n50, #f9fafb);
 }
 
-.skmt-wl-ms-empty {
+.lumia-wl-ms-empty {
   padding: 0.625rem 0.75rem;
   font-size: 0.75rem;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   text-align: center;
 }
 
-.skmt-wl-chip {
+.lumia-wl-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   padding: 0.1875rem 0.375rem 0.1875rem 0.5rem;
-  background: color-mix(in srgb, var(--skmt-accent) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--skmt-accent) 20%, transparent);
+  background: color-mix(in srgb, var(--lumia-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lumia-accent) 20%, transparent);
   border-radius: 999px;
   font-size: 0.6875rem;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   white-space: nowrap;
 }
 
-.skmt-wl-chip__remove {
+.lumia-wl-chip__remove {
   background: none;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   padding: 0;
-  color: var(--skmt-n400, #9ca3af);
+  color: var(--lumia-n400, #9ca3af);
   line-height: 1;
 }
 
-.skmt-wl-chip__remove:hover {
-  color: var(--skmt-danger);
+.lumia-wl-chip__remove:hover {
+  color: var(--lumia-danger);
 }
 
 /* ----------------------------------------------------------------
    DRAG & DROP (SortableJS)
    ---------------------------------------------------------------- */
 
-.skmt-mc-sortable-ghost {
+.lumia-mc-sortable-ghost {
   opacity: 0.6;
-  background: color-mix(in srgb, var(--skmt-accent) 12%, transparent);
-  outline: 2px dashed var(--skmt-accent);
+  background: color-mix(in srgb, var(--lumia-accent) 12%, transparent);
+  outline: 2px dashed var(--lumia-accent);
   outline-offset: -1px;
-  border-radius: var(--skmt-radius-sm);
+  border-radius: var(--lumia-radius-sm);
 }
 
-.skmt-mc-sortable-ghost > * {
+.lumia-mc-sortable-ghost > * {
   opacity: 0;
 }

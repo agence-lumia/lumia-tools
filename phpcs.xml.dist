@@ -1,46 +1,48 @@
 <?xml version="1.0"?>
-<ruleset name="Studio Kyne Mini Tools">
-	<description>Standards WordPress (WPCS) et compatibilité PHP 7.4+ pour l'extension.</description>
+<ruleset name="Lümia Tools">
+	<description>WordPress coding standards (WPCS) and PHP 8.0+ compatibility for the plugin.</description>
 
-	<!-- Fichiers analysés -->
+	<!-- Files analysed -->
 	<file>.</file>
 	<exclude-pattern>*/vendor/*</exclude-pattern>
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
 	<exclude-pattern>*/dist/*</exclude-pattern>
 	<exclude-pattern>*/assets/*</exclude-pattern>
+	<!-- Docker bench (authentication mu-plugin, seed, capture): never shipped, not plugin code. -->
+	<exclude-pattern>*/tools/e2e/*</exclude-pattern>
 
-	<!-- Options : PHP uniquement, chemins relatifs, parallélisme, couleurs -->
+	<!-- Options: PHP only, relative paths, parallelism, colors -->
 	<arg name="extensions" value="php"/>
 	<arg name="basepath" value="."/>
 	<arg name="parallel" value="8"/>
 	<arg name="colors"/>
 	<arg value="sp"/>
 
-	<!-- Standard WordPress complet (Core + Docs + Extra) -->
+	<!-- Full WordPress standard (Core + Docs + Extra) -->
 	<rule ref="WordPress">
-		<!-- Le projet est documenté en français, sans docblocs systématiques : on ne bloque pas la CI dessus. -->
+		<!-- Docblocks are not systematic: the CI is not blocked on them. -->
 		<exclude name="Squiz.Commenting"/>
 		<exclude name="Generic.Commenting"/>
-		<!-- Le nom des fichiers suit PSR-4 (Module.php, RateLimiter.php), pas class-xxx.php. -->
+		<!-- File names follow PSR-4 (Module.php, RateLimiter.php), not class-xxx.php. -->
 		<exclude name="WordPress.Files.FileName"/>
-		<!-- Interdit les instructions de contrôle sans accolades sur une ligne : déjà couvert par Generic.ControlStructures. -->
+		<!-- Forbids single-line control structures without braces: already covered by Generic.ControlStructures. -->
 		<exclude name="Universal.ControlStructures.DisallowLonelyIf"/>
-		<!-- Les tableaux courts [] sont utilisés partout. -->
+		<!-- Short arrays [] are used everywhere. -->
 		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
-		<!-- Git normalise les fins de ligne (autocrlf) : le poste Windows verrait 45 faux positifs. -->
+		<!-- Git normalizes line endings (autocrlf): a Windows machine would see 45 false positives. -->
 		<exclude name="Generic.Files.LineEndings"/>
-		<!-- Les propriétés lues sont celles d'objets WordPress et DOM (WP_Post, DOMNode…) : leur casse n'est pas la nôtre. -->
+		<!-- The properties read belong to WordPress and DOM objects (WP_Post, DOMNode...): their casing is not ours. -->
 		<exclude name="WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase"/>
 	</rule>
 
-	<!-- Les gabarits sont inclus depuis une méthode d'Admin : leurs variables ne sont pas globales. -->
+	<!-- Templates are included from an Admin method: their variables are not globals. -->
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound">
 		<exclude-pattern>*/templates/*</exclude-pattern>
 		<exclude-pattern>*/settings-template.php</exclude-pattern>
 		<exclude-pattern>*/uninstall.php</exclude-pattern>
 	</rule>
 
-	<!-- Même raison : $tab ou $wp_version y sont des locales de la méthode, et $this y désigne l'instance d'Admin. -->
+	<!-- Same reason: $tab or $wp_version are locals of the method there, and $this is the Admin instance. -->
 	<rule ref="WordPress.WP.GlobalVariablesOverride.Prohibited">
 		<exclude-pattern>*/templates/*</exclude-pattern>
 	</rule>
@@ -48,35 +50,35 @@
 		<exclude-pattern>*/templates/*</exclude-pattern>
 	</rule>
 
-	<!-- uninstall.php est procédural par contrat WordPress : ses variables de boucle ne sont pas des globales à protéger. -->
+	<!-- uninstall.php is procedural by WordPress contract: its loop variables are not globals to protect. -->
 	<rule ref="WordPress.WP.GlobalVariablesOverride.Prohibited">
 		<exclude-pattern>*/uninstall.php</exclude-pattern>
 	</rule>
 
-	<!-- Domaine de traduction -->
+	<!-- Text domain -->
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="studio-kyne-mini-tools"/>
+				<element value="lumia-tools"/>
 			</property>
 		</properties>
 	</rule>
 
-	<!-- Préfixes attendus pour tout ce qui atterrit dans l'espace global -->
+	<!-- Expected prefixes for anything that lands in the global namespace -->
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="skmt"/>
-				<element value="SKMT"/>
-				<element value="StudioKyne"/>
+				<element value="lumia"/>
+				<element value="LUMIA"/>
+				<element value="Lumia"/>
 			</property>
 		</properties>
 	</rule>
 
-	<!-- Compatibilité PHP : version minimale déclarée dans l'en-tête -->
-	<config name="testVersion" value="7.4-"/>
+	<!-- PHP compatibility: minimum version declared in the header -->
+	<config name="testVersion" value="8.0-"/>
 	<rule ref="PHPCompatibilityWP"/>
 
-	<!-- Version WordPress minimale (fonctions dépréciées) -->
-	<config name="minimum_wp_version" value="6.0"/>
+	<!-- Minimum WordPress version (deprecated functions) -->
+	<config name="minimum_wp_version" value="6.9"/>
 </ruleset>

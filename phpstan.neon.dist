@@ -1,11 +1,11 @@
-# Analyse statique, niveau 8 sans baseline : niveau final, voir docs/core.md (outillage).
-# L'extension szepeviktor/phpstan-wordpress est chargée automatiquement (phpstan/extension-installer).
-# Les gabarits (templates/, settings-template.php) sont inclus depuis une méthode d'Admin : leur
-# portée ($this, $tab, $module…) est invisible pour l'analyse, on les laisse à PHPCS.
+# Static analysis, level 8 without a baseline: final level, see docs/core.md (tooling).
+# The szepeviktor/phpstan-wordpress extension is loaded automatically (phpstan/extension-installer).
+# Templates (templates/, settings-template.php) are included from an Admin method: their
+# scope ($this, $tab, $module...) is invisible to the analysis, so they are left to PHPCS.
 parameters:
     level: 8
     paths:
-        - studio-kyne-mini-tools.php
+        - lumia-tools.php
         - uninstall.php
         - includes
     excludePaths:

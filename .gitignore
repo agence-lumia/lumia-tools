@@ -1,10 +1,16 @@
-# Environnement de dev local (Claude Code, MCP) — jamais distribué
+# Local dev environment (Claude Code, MCP) - never shipped
 .claude/settings.local.json
 .mcp.json
 .vscode/
 node_modules/
 dist/
 
-# Outillage Composer (dev uniquement, jamais distribué)
+# Composer tooling (development only, never shipped)
 vendor/
 .phpcs.cache
+
+# Docker bench: generated captures and zips (development only)
+tools/e2e/out/
+
+# Language tooling: WP-CLI phar downloaded on demand (tools/i18n/wp.sh)
+tools/i18n/.cache/

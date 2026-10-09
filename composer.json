@@ -1,11 +1,11 @@
 {
-    "name": "studiokyne/studio-kyne-mini-tools",
-    "description": "Suite d'outils modulaires pour WordPress. Composer sert uniquement à l'outillage de développement : aucune dépendance d'exécution, le dossier vendor/ n'est jamais distribué.",
+    "name": "agence-lumia/lumia-tools",
+    "description": "Modular toolkit for WordPress. Composer is used only for development tooling: no runtime dependency, the vendor/ folder is never shipped.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
-    "homepage": "https://github.com/studiokyne/studio-kyne-mini-tools",
+    "homepage": "https://github.com/agence-lumia/lumia-tools",
     "require": {
-        "php": ">=7.4"
+        "php": ">=8.0"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
@@ -30,6 +30,16 @@
         "check": [
             "@lint",
             "@analyse"
-        ]
+        ],
+        "i18n:pot": "sh tools/i18n/wp.sh i18n make-pot . languages/lumia-tools.pot --slug=lumia-tools --domain=lumia-tools --exclude=vendor,tools,docs,dist",
+        "i18n:mo": "sh tools/i18n/wp.sh i18n make-mo languages/",
+        "i18n:check": "@php tools/i18n/build-po.php check languages/lumia-tools.pot languages/lumia-tools-fr_FR.po languages/lumia-tools-fr_FR.mo",
+        "i18n:test": "sh tools/i18n/test.sh"
+    },
+    "scripts-descriptions": {
+        "i18n:pot": "Regenerate languages/lumia-tools.pot from the source (WP-CLI make-pot).",
+        "i18n:mo": "Compile the .po files of languages/ into .mo (WP-CLI make-mo).",
+        "i18n:check": "Check the .po covers the .pot and the .mo matches the .po.",
+        "i18n:test": "Run the tests of tools/i18n/build-po.php."
     }
 }

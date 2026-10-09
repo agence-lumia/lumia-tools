@@ -1,23 +1,24 @@
-# Documentation technique
+# Technical documentation
 
-Documentation interne du plugin, exclue des ZIP de release. `CLAUDE.md` à la racine porte les règles absolues et renvoie ici pour le détail.
+Internal plugin documentation, excluded from the release ZIPs. `CLAUDE.md` at the root holds the absolute rules and points here for the details.
 
-- [core.md](core.md) — séquence de démarrage, autoloader, stockage des réglages, contrat `AbstractModule`, formulaires et endpoints AJAX, icônes, notices, updater, outillage (Composer, PHPCS, PHPStan).
-- [design-system.md](design-system.md) — classes CSS, tokens, modales, formulaires, boutons, tooltips, toasts.
+- [core.md](core.md) — boot sequence, autoloader, settings storage, `AbstractModule` contract, JS strings and translations, forms and AJAX endpoints, icons, notices, updater, tooling (Composer, PHPCS, PHPStan).
+- [design-system.md](design-system.md) — CSS classes, tokens, modals, forms, buttons, tooltips, toasts.
+- [migration-from-skmt.md](migration-from-skmt.md) — per-site procedure to move a site from Studio Kyne Mini Tools to Lümia Tools: backup, install, activation, checks, deletion of the old plugin, recovery after a failed migration.
 
 ## Modules
 
-| Module | Page | Ce qu'on y trouve |
+| Module | Page | What you will find there |
 |---|---|---|
-| Security | [modules/security.md](modules/security.md) | résolution d'IP, rate limiter (dont mots de passe d'application), URL de connexion, anti-énumération, `X-Powered-By` |
-| WhiteLabel | [modules/white-label.md](modules/white-label.md) | barre d'admin, profil, avatars locaux, `MenuProfileManager` et son cache |
-| ImageOptimizer | [modules/image-optimizer.md](modules/image-optimizer.md) | détection des encodeurs, `UrlRewriter`, bulk, assainisseur SVG |
-| MenuCreator | [modules/menu-creator.md](modules/menu-creator.md) | application des profils, blocage d'accès, export, historique, icônes |
-| Login | [modules/login.md](modules/login.md) | hooks `login_*` |
-| Files | [modules/files.md](modules/files.md) | `FileManager`, CodeMirror du cœur, `DISALLOW_FILE_*` |
-| Media | [modules/media.md](modules/media.md) | taxonomie de dossiers, filtrage serveur, capacités, drag & drop |
-| Database | [modules/database.md](modules/database.md) | validation des identifiants, `normalize_sql()`, éditeur SQL, export |
-| ActivityLog | [modules/activity-log.md](modules/activity-log.md) | table dédiée, pièges de journalisation (auto-draft, Gutenberg, Bricks), plafond de force brute, purge, export CSV |
-| Smtp | [modules/smtp.md](modules/smtp.md) | `phpmailer_init` plutôt qu'un `wp_mail()` remplacé, PHPMailer global, expéditeur et Return-Path, mot de passe chiffré hors export, journal, masquage de la transcription |
+| Security | [modules/security.md](modules/security.md) | IP resolution, rate limiter (including application passwords), login URL, anti-enumeration, `X-Powered-By` |
+| WhiteLabel | [modules/white-label.md](modules/white-label.md) | admin bar, profile, local avatars, `MenuProfileManager` and its cache |
+| ImageOptimizer | [modules/image-optimizer.md](modules/image-optimizer.md) | encoder detection, `UrlRewriter`, bulk, SVG sanitizer |
+| MenuCreator | [modules/menu-creator.md](modules/menu-creator.md) | profile application, access blocking, export, history, icons |
+| Login | [modules/login.md](modules/login.md) | `login_*` hooks |
+| Files | [modules/files.md](modules/files.md) | `FileManager`, core CodeMirror, `DISALLOW_FILE_*` |
+| Media | [modules/media.md](modules/media.md) | folder taxonomy, server-side filtering, capabilities, drag & drop |
+| Database | [modules/database.md](modules/database.md) | identifier validation, `normalize_sql()`, SQL editor, export |
+| ActivityLog | [modules/activity-log.md](modules/activity-log.md) | dedicated table, logging pitfalls (auto-draft, Gutenberg, Bricks), brute-force ceiling, purge, CSV export |
+| Smtp | [modules/smtp.md](modules/smtp.md) | `phpmailer_init` rather than a replaced `wp_mail()`, global PHPMailer, sender and Return-Path, password encrypted and left out of the export, log, transcript masking |
 
-Chaque page de module documente les **pièges et décisions** (ce qui a cassé, pourquoi la solution est celle-là), pas le code lui-même : le code se lit dans `includes/Modules/<Module>/`.
+Each module page documents the **pitfalls and decisions** (what broke, why the solution is the one it is), not the code itself: the code reads from `includes/Modules/<Module>/`.

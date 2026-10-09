@@ -1,20 +1,20 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\WhiteLabel;
+namespace Lumia\Tools\Modules\WhiteLabel;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
- * Module Marque Blanche — nettoyage de la barre d'administration WordPress
- * et personnalisation du footer admin.
+ * White Label module: cleans up the WordPress admin bar and customizes the
+ * admin footer.
  */
 class Module extends AbstractModule {
 
 	/**
-	 * Clé de user meta stockant l'ID de pièce jointe de l'avatar local.
+	 * User meta key storing the attachment ID of the local avatar.
 	 */
-	private const AVATAR_META = 'skmt_local_avatar';
+	private const AVATAR_META = 'lumia_local_avatar';
 
 	/**
 	 * @var array<string, mixed>
@@ -50,8 +50,8 @@ class Module extends AbstractModule {
 			add_action( 'admin_head', [ $this, 'hide_screen_options_css' ] );
 		}
 		if ( ! empty( $ab['remove_howdy'] ) ) {
-			// 9999 : le cœur n'ajoute « Mon compte » qu'à la priorité 9991
-			// (wp_admin_bar_my_account_item), bien après ses autres nœuds.
+			// 9999: core only adds "My Account" at priority 9991
+			// (wp_admin_bar_my_account_item), well after its other nodes.
 			add_action( 'admin_bar_menu', [ $this, 'remove_howdy' ], 9999 );
 		}
 		if ( ! empty( $ab['hide_frontend'] ) ) {
@@ -66,24 +66,24 @@ class Module extends AbstractModule {
 			add_filter( 'update_footer', [ $this, 'filter_footer_right' ], 20 );
 		}
 
-		// Épuration de la page de profil : uniquement si au moins un toggle est actif.
+		// Profile page cleanup: only if at least one toggle is on.
 		if ( array_filter( $s['profile'] ) ) {
 			add_action( 'admin_head', [ $this, 'clean_profile_page' ] );
 		}
 
-		// Avatars locaux : l'avatar téléversé prime, sinon on laisse WordPress
-		// retomber sur Gravatar (comportement par défaut).
+		// Local avatars: the uploaded avatar wins, otherwise WordPress falls
+		// back to Gravatar (default behavior).
 		if ( ! empty( $s['avatars']['local'] ) ) {
 			add_filter( 'get_avatar_data', [ $this, 'apply_local_avatar' ], 10, 2 );
-			// personal_options se déclenche en haut du formulaire de profil
-			// (dans « Options personnelles », avant la section « Nom »), sur
-			// profile.php ET user-edit.php.
+			// personal_options fires at the top of the profile form (inside
+			// "Personal Options", before the "Name" section), on profile.php
+			// AND user-edit.php.
 			add_action( 'personal_options', [ $this, 'render_avatar_field' ] );
 			add_action( 'personal_options_update', [ $this, 'save_avatar_field' ] );
 			add_action( 'edit_user_profile_update', [ $this, 'save_avatar_field' ] );
 			add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_avatar_media' ] );
-			// Masque l'« Illustration du profil » native (Gravatar) au profit
-			// de l'avatar local.
+			// Hides the native "Profile Picture" (Gravatar) in favor of the
+			// local avatar.
 			add_action( 'admin_head', [ $this, 'hide_native_profile_picture' ] );
 		}
 	}
@@ -126,13 +126,13 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Retire la salutation du nœud « Mon compte ».
+	 * Removes the greeting from the "My Account" node.
 	 *
-	 * Le cœur construit ce titre comme sprintf( __( 'Howdy, %s' ), <span
-	 * class="display-name">…</span> ) suivi de l'avatar : on retranche le
-	 * préfixe traduit tel qu'il est réellement rendu. Un filtre gettext
-	 * faisait la même chose, mais en s'exécutant pour CHAQUE chaîne traduite
-	 * de chaque page d'admin.
+	 * Core builds this title as sprintf( __( 'Howdy, %s' ), <span
+	 * class="display-name">…</span> ) followed by the avatar: we strip the
+	 * translated prefix exactly as it is actually rendered. A gettext filter
+	 * did the same thing, but ran for EVERY translated string of every admin
+	 * page.
 	 */
 	public function remove_howdy( \WP_Admin_Bar $bar ): void {
 		$node = $bar->get_node( 'my-account' );
@@ -141,7 +141,7 @@ class Module extends AbstractModule {
 		}
 
 		/* translators: %s: user's display name. */
-		$prefix = sprintf( __( 'Howdy, %s' ), '' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- chaîne du cœur, à retrouver dans sa traduction.
+		$prefix = sprintf( __( 'Howdy, %s' ), '' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- core string, to be looked up in its translation.
 		if ( '' === $prefix || 0 !== strpos( $node->title, $prefix ) ) {
 			return;
 		}
@@ -172,16 +172,16 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * PAGE DE PROFIL (profile.php / user-edit.php)
+	 * PROFILE PAGE (profile.php / user-edit.php)
 	 * ================================================================ */
 
 	/**
-	 * Masque les sections choisies de la page de profil via CSS.
+	 * Hides the chosen sections of the profile page via CSS.
 	 *
-	 * On cible les classes de <tr>/section stables de core (profile.php et
-	 * user-edit.php) plutôt que de dépendre de remove_action (registrations
-	 * variables selon la version WP). Masquage visuel : les fonctionnalités
-	 * (ex. mots de passe d'application) restent intactes côté serveur.
+	 * We target the stable <tr>/section classes of core (profile.php and
+	 * user-edit.php) rather than depending on remove_action (registrations
+	 * vary with the WP version). Visual hiding only: the features
+	 * (e.g. application passwords) stay intact on the server side.
 	 */
 	public function clean_profile_page(): void {
 		$pagenow = $GLOBALS['pagenow'] ?? '';
@@ -226,19 +226,19 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * AVATARS LOCAUX
+	 * LOCAL AVATARS
 	 * ================================================================ */
 
 	/**
-	 * Remplace l'avatar par l'image locale de l'utilisateur si elle existe.
-	 * Sinon on ne touche à rien : WordPress retombe sur Gravatar.
+	 * Replaces the avatar with the user's local image if there is one.
+	 * Otherwise we leave everything alone: WordPress falls back to Gravatar.
 	 *
 	 * @param array<string, mixed> $args
 	 * @param mixed $id_or_email
 	 * @return array<string, mixed>
 	 */
 	public function apply_local_avatar( array $args, $id_or_email ): array {
-		// Respecte une demande explicite de l'avatar par défaut.
+		// Honors an explicit request for the default avatar.
 		if ( ! empty( $args['force_default'] ) ) {
 			return $args;
 		}
@@ -250,13 +250,13 @@ class Module extends AbstractModule {
 
 		$attachment_id = (int) get_user_meta( $user_id, self::AVATAR_META, true );
 		if ( $attachment_id <= 0 ) {
-			return $args; // Pas d'avatar local → comportement WordPress (Gravatar).
+			return $args; // No local avatar → WordPress behavior (Gravatar).
 		}
 
 		$size = isset( $args['size'] ) ? max( 1, (int) $args['size'] ) : 96;
 		$src  = wp_get_attachment_image_url( $attachment_id, [ $size, $size ] );
 		if ( ! $src ) {
-			return $args; // Pièce jointe supprimée → fallback Gravatar.
+			return $args; // Attachment deleted → Gravatar fallback.
 		}
 
 		$args['url']          = $src;
@@ -265,8 +265,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Résout un identifiant d'avatar WordPress (ID, e-mail, WP_User,
-	 * WP_Post, WP_Comment) vers un ID utilisateur, ou 0 si introuvable.
+	 * Resolves a WordPress avatar identifier (ID, email, WP_User,
+	 * WP_Post, WP_Comment) to a user ID, or 0 if not found.
 	 *
 	 * @param mixed $id_or_email
 	 */
@@ -296,7 +296,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Charge le media uploader WP sur les pages de profil.
+	 * Loads the WP media uploader on profile pages.
 	 */
 	public function enqueue_avatar_media( string $hook ): void {
 		if ( 'profile.php' !== $hook && 'user-edit.php' !== $hook ) {
@@ -306,46 +306,46 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Affiche le champ « Avatar local » en haut du formulaire de profil.
+	 * Renders the "Local avatar" field at the top of the profile form.
 	 *
-	 * Rendu sous forme de <tr> car branché sur `personal_options`, qui est
-	 * appelé à l'intérieur de la table « Options personnelles ».
+	 * Rendered as a <tr> because it hooks into `personal_options`, which is
+	 * fired inside the "Personal Options" table.
 	 */
 	public function render_avatar_field( \WP_User $user ): void {
 		$attachment_id = (int) get_user_meta( $user->ID, self::AVATAR_META, true );
 		?>
-		<tr class="skmt-local-avatar-wrap">
-			<th><label for="skmt-local-avatar-choose"><?php esc_html_e( 'Avatar', 'studio-kyne-mini-tools' ); ?></label></th>
+		<tr class="lumia-local-avatar-wrap">
+			<th><label for="lumia-local-avatar-choose"><?php esc_html_e( 'Avatar', 'lumia-tools' ); ?></label></th>
 			<td>
-				<?php wp_nonce_field( 'skmt_local_avatar', 'skmt_local_avatar_nonce' ); ?>
-				<div class="skmt-local-avatar" style="display:flex;align-items:center;gap:16px">
-					<span class="skmt-local-avatar__preview" style="display:inline-flex;border-radius:50%;overflow:hidden;line-height:0">
+				<?php wp_nonce_field( 'lumia_local_avatar', 'lumia_local_avatar_nonce' ); ?>
+				<div class="lumia-local-avatar" style="display:flex;align-items:center;gap:16px">
+					<span class="lumia-local-avatar__preview" style="display:inline-flex;border-radius:50%;overflow:hidden;line-height:0">
 						<?php echo get_avatar( $user->ID, 96 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</span>
 					<span>
-						<input type="hidden" id="skmt-local-avatar-input" name="skmt_local_avatar" value="<?php echo esc_attr( (string) $attachment_id ); ?>">
-						<button type="button" class="button" id="skmt-local-avatar-choose"><?php esc_html_e( 'Choisir une image', 'studio-kyne-mini-tools' ); ?></button>
-						<button type="button" class="button-link delete" id="skmt-local-avatar-remove" style="<?php echo $attachment_id ? '' : 'display:none'; ?>;margin-left:8px"><?php esc_html_e( 'Retirer', 'studio-kyne-mini-tools' ); ?></button>
-						<p class="description"><?php esc_html_e( 'Prioritaire sur Gravatar. Laissez vide pour utiliser Gravatar (comportement WordPress par défaut).', 'studio-kyne-mini-tools' ); ?></p>
+						<input type="hidden" id="lumia-local-avatar-input" name="lumia_local_avatar" value="<?php echo esc_attr( (string) $attachment_id ); ?>">
+						<button type="button" class="button" id="lumia-local-avatar-choose"><?php esc_html_e( 'Choose image', 'lumia-tools' ); ?></button>
+						<button type="button" class="button-link delete" id="lumia-local-avatar-remove" style="<?php echo $attachment_id ? '' : 'display:none'; ?>;margin-left:8px"><?php echo esc_html_x( 'Remove', 'local avatar', 'lumia-tools' ); ?></button>
+						<p class="description"><?php esc_html_e( 'Takes priority over Gravatar. Leave empty to use Gravatar (default WordPress behavior).', 'lumia-tools' ); ?></p>
 					</span>
 				</div>
 				<script>
 				( function () {
 					function init() {
-						var choose  = document.getElementById( 'skmt-local-avatar-choose' );
-						var remove  = document.getElementById( 'skmt-local-avatar-remove' );
-						var input   = document.getElementById( 'skmt-local-avatar-input' );
-						var preview = document.querySelector( '.skmt-local-avatar__preview img' );
+						var choose  = document.getElementById( 'lumia-local-avatar-choose' );
+						var remove  = document.getElementById( 'lumia-local-avatar-remove' );
+						var input   = document.getElementById( 'lumia-local-avatar-input' );
+						var preview = document.querySelector( '.lumia-local-avatar__preview img' );
 						if ( ! choose || ! input ) { return; }
 						var frame;
 						choose.addEventListener( 'click', function ( e ) {
 							e.preventDefault();
-							// wp.media est chargé en footer : on le teste au clic, pas au parse.
+							// wp.media is loaded in the footer: test it on click, not at parse time.
 							if ( ! window.wp || ! window.wp.media ) { return; }
 							if ( frame ) { frame.open(); return; }
 							frame = window.wp.media( {
-								title: <?php echo wp_json_encode( __( 'Choisir un avatar', 'studio-kyne-mini-tools' ) ); ?>,
-								button: { text: <?php echo wp_json_encode( __( 'Utiliser cette image', 'studio-kyne-mini-tools' ) ); ?> },
+								title: <?php echo wp_json_encode( __( 'Choose an avatar', 'lumia-tools' ) ); ?>,
+								button: { text: <?php echo wp_json_encode( __( 'Use this image', 'lumia-tools' ) ); ?> },
 								library: { type: 'image' },
 								multiple: false
 							} );
@@ -379,8 +379,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Masque l'« Illustration du profil » native (aperçu + lien Gravatar)
-	 * lorsque les avatars locaux sont activés.
+	 * Hides the native "Profile Picture" (preview + Gravatar link)
+	 * when local avatars are enabled.
 	 */
 	public function hide_native_profile_picture(): void {
 		$pagenow = $GLOBALS['pagenow'] ?? '';
@@ -391,18 +391,18 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Enregistre l'avatar local choisi sur la page de profil.
+	 * Saves the local avatar chosen on the profile page.
 	 */
 	public function save_avatar_field( int $user_id ): void {
 		if ( ! current_user_can( 'edit_user', $user_id ) ) {
 			return;
 		}
-		if ( ! isset( $_POST['skmt_local_avatar_nonce'] ) ||
-			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['skmt_local_avatar_nonce'] ) ), 'skmt_local_avatar' ) ) {
+		if ( ! isset( $_POST['lumia_local_avatar_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lumia_local_avatar_nonce'] ) ), 'lumia_local_avatar' ) ) {
 			return;
 		}
 
-		$attachment_id = isset( $_POST['skmt_local_avatar'] ) ? absint( wp_unslash( $_POST['skmt_local_avatar'] ) ) : 0;
+		$attachment_id = isset( $_POST['lumia_local_avatar'] ) ? absint( wp_unslash( $_POST['lumia_local_avatar'] ) ) : 0;
 		if ( $attachment_id > 0 ) {
 			update_user_meta( $user_id, self::AVATAR_META, $attachment_id );
 		} else {
@@ -502,10 +502,10 @@ class Module extends AbstractModule {
 
 	public static function get_uninstall_keys(): array {
 		return [
-			'options'   => [ 'skmt_module_white_label' ],
+			'options'   => [ 'lumia_module_white_label' ],
 			'meta'      => [],
-			// L'avatar local est stocké sur l'UTILISATEUR, pas sur un post :
-			// déclaré en 'meta', il n'était jamais supprimé.
+			// The local avatar is stored on the USER, not on a post:
+			// declared under 'meta', it was never deleted.
 			'user_meta' => [ self::AVATAR_META ],
 		];
 	}
@@ -515,7 +515,7 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/white-label.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/white-label.css' ];
 	}
 
 	public function get_admin_js(): array {

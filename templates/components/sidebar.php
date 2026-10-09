@@ -1,52 +1,52 @@
 <?php
 /**
- * Composant sidebar réutilisable.
+ * Reusable sidebar component.
  */
 
 defined( 'ABSPATH' ) || exit;
 
-$tab     = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- lecture de navigation (onglet ou page affichée), aucune action déclenchée.
+$tab     = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- navigation read (tab or displayed page), no action triggered.
 $modules = $this->modules->get_all();
 
 $core_items = [
 	[
 		'id'    => 'dashboard',
-		'label' => __( 'Vue d\'ensemble', 'studio-kyne-mini-tools' ),
-		'desc'  => __( 'Tableau de bord', 'studio-kyne-mini-tools' ),
+		'label' => __( 'Overview', 'lumia-tools' ),
+		'desc'  => __( 'Dashboard', 'lumia-tools' ),
 		'icon'  => 'layout-dashboard',
 	],
 	[
 		'id'    => 'modules',
-		'label' => __( 'Modules', 'studio-kyne-mini-tools' ),
-		'desc'  => __( 'Gérer les modules', 'studio-kyne-mini-tools' ),
+		'label' => __( 'Modules', 'lumia-tools' ),
+		'desc'  => __( 'Manage modules', 'lumia-tools' ),
 		'icon'  => 'package',
 	],
 	[
 		'id'    => 'settings',
-		'label' => __( 'Réglages', 'studio-kyne-mini-tools' ),
-		'desc'  => __( 'Configuration globale', 'studio-kyne-mini-tools' ),
+		'label' => __( 'Settings', 'lumia-tools' ),
+		'desc'  => __( 'Global configuration', 'lumia-tools' ),
 		'icon'  => 'settings',
 	],
 ];
 ?>
-<aside class="skmt-sidebar">
-	<div class="skmt-sidebar__header">
-		<h2 class="skmt-sidebar__title"><?php echo esc_html__( 'Navigation', 'studio-kyne-mini-tools' ); ?></h2>
-		<div class="skmt-sidebar__actions"></div>
+<aside class="lumia-sidebar">
+	<div class="lumia-sidebar__header">
+		<h2 class="lumia-sidebar__title"><?php echo esc_html__( 'Navigation', 'lumia-tools' ); ?></h2>
+		<div class="lumia-sidebar__actions"></div>
 	</div>
 
-	<nav class="skmt-sidebar__nav">
-		<ul class="skmt-sidebar__menu">
+	<nav class="lumia-sidebar__nav">
+		<ul class="lumia-sidebar__menu">
 			<?php foreach ( $core_items as $item ) : ?>
-				<li class="skmt-sidebar__item">
+				<li class="lumia-sidebar__item">
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=' . $item['id'] ) ); ?>"
-						class="skmt-sidebar__link <?php echo $item['id'] === $tab ? 'is-active' : ''; ?>">
-						<div class="skmt-sidebar__icon-wrapper">
+						class="lumia-sidebar__link <?php echo $item['id'] === $tab ? 'is-active' : ''; ?>">
+						<div class="lumia-sidebar__icon-wrapper">
 							<?php echo $this->render_icon( $item['icon'], 'sm' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</div>
-						<div class="skmt-sidebar__link-text">
-							<span class="skmt-sidebar__link-label"><?php echo esc_html( $item['label'] ); ?></span>
-							<span class="skmt-sidebar__link-desc"><?php echo esc_html( $item['desc'] ); ?></span>
+						<div class="lumia-sidebar__link-text">
+							<span class="lumia-sidebar__link-label"><?php echo esc_html( $item['label'] ); ?></span>
+							<span class="lumia-sidebar__link-desc"><?php echo esc_html( $item['desc'] ); ?></span>
 						</div>
 					</a>
 				</li>
@@ -54,8 +54,8 @@ $core_items = [
 		</ul>
 
 		<?php if ( ! empty( $modules ) ) : ?>
-			<div class="skmt-sidebar__divider"></div>
-			<ul class="skmt-sidebar__menu">
+			<div class="lumia-sidebar__divider"></div>
+			<ul class="lumia-sidebar__menu">
 				<?php foreach ( $modules as $module_id => $module ) : ?>
 					<?php if ( $this->modules->is_active( $module_id ) ) : ?>
 						<?php
@@ -63,15 +63,15 @@ $core_items = [
 							$desc  = ! empty( $module['menu_desc'] ) ? $module['menu_desc'] : $module['description'];
 							$icon  = ! empty( $module['icon'] ) ? $module['icon'] : 'package';
 						?>
-						<li class="skmt-sidebar__item">
+						<li class="lumia-sidebar__item">
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=module_' . $module_id ) ); ?>"
-								class="skmt-sidebar__link <?php echo 'module_' . $module_id === $tab ? 'is-active' : ''; ?>">
-								<div class="skmt-sidebar__icon-wrapper">
+								class="lumia-sidebar__link <?php echo 'module_' . $module_id === $tab ? 'is-active' : ''; ?>">
+								<div class="lumia-sidebar__icon-wrapper">
 									<?php echo $this->render_icon( $icon, 'sm' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								</div>
-								<div class="skmt-sidebar__link-text">
-									<span class="skmt-sidebar__link-label"><?php echo esc_html( $label ); ?></span>
-									<span class="skmt-sidebar__link-desc"><?php echo esc_html( $desc ); ?></span>
+								<div class="lumia-sidebar__link-text">
+									<span class="lumia-sidebar__link-label"><?php echo esc_html( $label ); ?></span>
+									<span class="lumia-sidebar__link-desc"><?php echo esc_html( $desc ); ?></span>
 								</div>
 							</a>
 						</li>

@@ -1,23 +1,23 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\WhiteLabel;
+namespace Lumia\Tools\Modules\WhiteLabel;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gestion du stockage et de la résolution des profils de menu.
+ * Storage and resolution of menu profiles.
  */
 class MenuProfileManager {
 
-	const OPTION_KEY       = 'skmt_wl_menu_profiles';
-	const CACHE_KEY_PREFIX = 'skmt_wl_menu_user_';
+	const OPTION_KEY       = 'lumia_wl_menu_profiles';
+	const CACHE_KEY_PREFIX = 'lumia_wl_menu_user_';
 
 	/**
-	 * Génération du cache : incrémentée à chaque mutation de profil et incluse
-	 * dans la clé de transient. Invalider tout le monde coûte une écriture
-	 * d'option, au lieu d'un delete_transient par utilisateur — plafonné à 500
-	 * comptes, au-delà desquels les autres gardaient un profil périmé.
+	 * Cache generation: incremented on every profile mutation and included in
+	 * the transient key. Invalidating everyone costs one option write instead
+	 * of one delete_transient per user, which was capped at 500 accounts,
+	 * beyond which the others kept a stale profile.
 	 */
-	const CACHE_GEN_OPTION = 'skmt_wl_menu_cache_gen';
+	const CACHE_GEN_OPTION = 'lumia_wl_menu_cache_gen';
 
 	/* ================================================================
 	 * CRUD
@@ -44,7 +44,7 @@ class MenuProfileManager {
 	}
 
 	/**
-	 * Insert ou met à jour un profil (match par id).
+	 * Inserts or updates a profile (matched by id).
 	 *
 	 * @param array<string, mixed> $profile
 	 */
@@ -81,15 +81,15 @@ class MenuProfileManager {
 	}
 
 	/* ================================================================
-	 * RÉSOLUTION PROFIL ACTIF
+	 * ACTIVE PROFILE RESOLUTION
 	 * ================================================================ */
 
 	/**
-	 * Retourne le profil actif le plus prioritaire pour un utilisateur donné.
+	 * Returns the highest-priority active profile for a given user.
 	 *
-	 * Priorité : include_users > include_roles > apply_to_all
-	 * En cas d'égalité : profil le plus récent (updated_at).
-	 * Les exclusions (exclude_users, exclude_roles) priment sur tout.
+	 * Priority: include_users > include_roles > apply_to_all
+	 * On a tie: the most recent profile (updated_at).
+	 * Exclusions (exclude_users, exclude_roles) override everything.
 	 *
 	 * @return array<string, mixed>|null
 	 */
@@ -182,7 +182,7 @@ class MenuProfileManager {
 		self::clear_all_cache();
 	}
 
-	/** Les transients de l'ancienne génération expirent d'eux-mêmes (1 h). */
+	/** Transients of the previous generation expire on their own (1 h). */
 	public static function clear_all_cache(): void {
 		update_option( self::CACHE_GEN_OPTION, (int) get_option( self::CACHE_GEN_OPTION, 1 ) + 1 );
 	}

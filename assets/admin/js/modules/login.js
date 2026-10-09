@@ -1,6 +1,6 @@
 /**
- * Module Connexion — JS admin
- * Gère les media pickers (logo + image panneau) et les color pickers.
+ * Login module: admin JS
+ * Handles the media pickers (logo + panel image) and the color pickers.
  */
 (function () {
   "use strict";
@@ -16,27 +16,27 @@
    * ================================================================ */
 
   function initMediaPickers() {
-    document.querySelectorAll(".skmt-media-picker").forEach(function (picker) {
+    document.querySelectorAll(".lumia-media-picker").forEach(function (picker) {
       var hiddenInput = picker.querySelector('input[type="hidden"]');
-      var preview = picker.querySelector(".skmt-media-preview");
+      var preview = picker.querySelector(".lumia-media-preview");
       var previewImg = preview ? preview.querySelector("img") : null;
-      var selectBtn = picker.querySelector(".skmt-media-select");
-      var removeBtn = picker.querySelector(".skmt-media-remove");
+      var selectBtn = picker.querySelector(".lumia-media-select");
+      var removeBtn = picker.querySelector(".lumia-media-remove");
 
       if (!hiddenInput || !selectBtn) return;
 
       var frame;
 
       selectBtn.addEventListener("click", function () {
-        // Réutilise la frame si déjà ouverte
+        // Reuses the frame if already open
         if (frame) {
           frame.open();
           return;
         }
 
         frame = wp.media({
-          title: selectBtn.dataset.title || "Choisir une image",
-          button: { text: selectBtn.dataset.button || "Utiliser cette image" },
+          title: selectBtn.dataset.title || "",
+          button: { text: selectBtn.dataset.button || "" },
           multiple: false,
           library: { type: "image" },
         });
@@ -84,7 +84,7 @@
           if (preview) preview.classList.remove("has-image");
           removeBtn.classList.add("is-hidden");
 
-          // Réinitialise la frame pour forcer une nouvelle sélection
+          // Resets the frame to force a new selection
           frame = null;
         });
       }
@@ -92,14 +92,14 @@
   }
 
   /* ================================================================
-   * COLOR PICKERS — met à jour la valeur hex affichée en live
+   * COLOR PICKERS: updates the displayed hex value live
    * ================================================================ */
 
   function initColorPickers() {
-    document.querySelectorAll(".skmt-color-field").forEach(function (field) {
+    document.querySelectorAll(".lumia-color-field").forEach(function (field) {
       var input = field.querySelector('input[type="color"]');
-      var label = field.querySelector(".skmt-color-field__value");
-      var resetBtn = field.querySelector(".skmt-color-reset");
+      var label = field.querySelector(".lumia-color-field__value");
+      var resetBtn = field.querySelector(".lumia-color-reset");
 
       if (!input || !label) return;
 
@@ -119,12 +119,12 @@
   }
 
   function initColorResets() {
-    document.querySelectorAll(".skmt-color-reset").forEach(function (btn) {
+    document.querySelectorAll(".lumia-color-reset").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var field = btn.closest(".skmt-color-field");
+        var field = btn.closest(".lumia-color-field");
         if (!field) return;
         var input = field.querySelector('input[type="color"]');
-        var label = field.querySelector(".skmt-color-field__value");
+        var label = field.querySelector(".lumia-color-field__value");
         var def = btn.dataset.default;
         if (input && def) {
           input.value = def;

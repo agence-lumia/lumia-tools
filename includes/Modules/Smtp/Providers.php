@@ -1,19 +1,19 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Smtp;
+namespace Lumia\Tools\Modules\Smtp;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Préréglages SMTP des fournisseurs courants.
+ * SMTP presets for common providers.
  *
- * Un préréglage ne fait que pré-remplir hôte, port, chiffrement et, le cas
- * échéant, l'identifiant : tout reste modifiable, et l'envoi passe par le même
- * relais SMTP générique. L'envoi par API HTTP (ports SMTP bloqués par
- * l'hébergeur) est un autre chantier.
+ * A preset only pre-fills host, port, encryption and, where relevant, the
+ * username: everything stays editable, and sending goes through the same
+ * generic SMTP relay. Sending through an HTTP API (SMTP ports blocked by the
+ * host) is a separate piece of work.
  */
 class Providers {
 
-	/** Clé du choix « serveur personnalisé ». */
+	/** Key of the "custom server" choice. */
 	const CUSTOM = 'custom';
 
 	/**
@@ -27,7 +27,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant et clé SMTP : Brevo › SMTP & API › onglet SMTP. La clé SMTP n\'est pas la clé API.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'SMTP login and key: Brevo › SMTP & API › SMTP tab. The SMTP key is not the API key.', 'lumia-tools' ),
 			],
 			'mailgun'    => [
 				'label'      => 'Mailgun (US)',
@@ -35,15 +35,15 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiants SMTP du domaine d\'envoi : Mailgun › Sending › Domain settings › SMTP credentials.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'SMTP credentials of the sending domain: Mailgun › Sending › Domain settings › SMTP credentials.', 'lumia-tools' ),
 			],
 			'mailgun_eu' => [
-				'label'      => 'Mailgun (UE)',
+				'label'      => __( 'Mailgun (EU)', 'lumia-tools' ),
 				'host'       => 'smtp.eu.mailgun.org',
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Pour un domaine créé dans la région UE de Mailgun. Identifiants SMTP : Sending › Domain settings › SMTP credentials.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'For a domain created in Mailgun\'s EU region. SMTP credentials: Sending › Domain settings › SMTP credentials.', 'lumia-tools' ),
 			],
 			'sendgrid'   => [
 				'label'      => 'SendGrid',
@@ -51,7 +51,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => 'apikey',
-				'hint'       => __( 'Identifiant : « apikey », littéralement. Mot de passe : une clé API avec le droit Mail Send.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Username: "apikey", literally. Password: an API key with the Mail Send permission.', 'lumia-tools' ),
 			],
 			'postmark'   => [
 				'label'      => 'Postmark',
@@ -59,7 +59,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant et mot de passe : le même Server API Token (Server › API Tokens).', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Username and password: the same Server API Token (Server › API Tokens).', 'lumia-tools' ),
 			],
 			'ses'        => [
 				'label'      => 'Amazon SES',
@@ -67,7 +67,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Remplacez eu-west-3 par la région de votre compte SES. Identifiants SMTP propres à SES (SMTP settings › Create SMTP credentials), différents des clés d\'accès IAM.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Replace eu-west-3 with the region of your SES account. SMTP credentials specific to SES (SMTP settings › Create SMTP credentials), different from IAM access keys.', 'lumia-tools' ),
 			],
 			'mailjet'    => [
 				'label'      => 'Mailjet',
@@ -75,15 +75,15 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant : clé API ; mot de passe : clé secrète (Account settings › API keys).', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Username: API key; password: secret key (Account settings › API keys).', 'lumia-tools' ),
 			],
 			'ovh'        => [
-				'label'      => 'OVHcloud (e-mail pro / MX Plan)',
+				'label'      => __( 'OVHcloud (business email / MX Plan)', 'lumia-tools' ),
 				'host'       => 'ssl0.ovh.net',
 				'port'       => 465,
 				'encryption' => 'ssl',
 				'username'   => '',
-				'hint'       => __( 'Identifiant : l\'adresse e-mail complète ; mot de passe : celui de la boîte.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Username: the full email address; password: the mailbox password.', 'lumia-tools' ),
 			],
 			'gmail'      => [
 				'label'      => 'Gmail / Google Workspace',
@@ -91,7 +91,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'Identifiant : l\'adresse Gmail ; mot de passe : un mot de passe d\'application (validation en deux étapes requise), pas celui du compte. Limite d\'environ 500 envois par jour.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'Username: the Gmail address; password: an app password (2-step verification required), not the account password. Limit of about 500 emails per day.', 'lumia-tools' ),
 			],
 			'office365'  => [
 				'label'      => 'Microsoft 365 / Outlook',
@@ -99,7 +99,7 @@ class Providers {
 				'port'       => 587,
 				'encryption' => 'tls',
 				'username'   => '',
-				'hint'       => __( 'L\'authentification SMTP doit être autorisée pour la boîte dans le centre d\'administration Microsoft 365 ; elle y est souvent désactivée par défaut.', 'studio-kyne-mini-tools' ),
+				'hint'       => __( 'SMTP authentication must be allowed for the mailbox in the Microsoft 365 admin center; it is often disabled there by default.', 'lumia-tools' ),
 			],
 		];
 	}

@@ -3,96 +3,96 @@
  */
 
 /* ================================================================
- * TÉLÉCHARGEMENTS SVG — sélecteur de rôles pleine largeur
+ * SVG UPLOADS — full-width role picker
  * ================================================================ */
-.skmt-svg-roles {
+.lumia-svg-roles {
   margin-top: 16px;
   padding: 16px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
-  background: var(--skmt-n50);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-n50);
   transition: opacity 0.2s ease;
 }
 
-.skmt-svg-roles__head {
+.lumia-svg-roles__head {
   display: flex;
   flex-direction: column;
   gap: 2px;
   margin-bottom: 12px;
 }
 
-.skmt-svg-roles__title {
+.lumia-svg-roles__title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-svg-roles__hint {
+.lumia-svg-roles__hint {
   font-size: 12px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-svg-roles__grid {
+.lumia-svg-roles__grid {
   display: grid;
-  /* Colonnes assez larges pour que les noms de rôles longs
-	 ("Administrateur/administratrice") tiennent sur une seule ligne
-	 au lieu de renvoyer une lettre isolée à la ligne suivante. */
+  /* Columns wide enough for long role names
+	 (e.g. the French "Administrateur/administratrice") to fit on a single line
+	 instead of wrapping a lone letter onto the next line. */
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 8px;
 }
 
-.skmt-svg-role {
+.lumia-svg-role {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-surface);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.skmt-svg-role:hover {
-  border-color: var(--skmt-accent);
+.lumia-svg-role:hover {
+  border-color: var(--lumia-accent);
 }
 
-/* Le toggle ne doit jamais être écrasé par un libellé de rôle long. */
-.skmt-svg-role .skmt-toggle {
+/* The toggle must never be squashed by a long role label. */
+.lumia-svg-role .lumia-toggle {
   flex-shrink: 0;
 }
 
-.skmt-svg-role__name {
+.lumia-svg-role__name {
   flex: 1;
   min-width: 0;
   font-size: 13px;
   line-height: 1.3;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   user-select: none;
-  /* Filet de sécurité pour les écrans très étroits : évite le débordement
-	 hors de la carte (les noms de rôles sont des mots insécables). Sur les
-	 colonnes larges définies ci-dessus, aucun retour à la ligne ne se produit. */
+  /* Safety net for very narrow screens: prevents overflow
+	 outside the card (role names are unbreakable words). On the
+	 wide columns defined above, no line wrap happens. */
   overflow-wrap: anywhere;
 }
 
-/* Master toggle off → rôles grisés et non interactifs */
-.skmt-svg-roles.is-disabled {
+/* Master toggle off → roles greyed out and non-interactive */
+.lumia-svg-roles.is-disabled {
   opacity: 0.5;
   pointer-events: none;
 }
 
 /* ================================================================
- * OPTIMISATION EN MASSE
+ * BULK OPTIMIZATION
  * ================================================================ */
-.skmt-bulk {
+.lumia-bulk {
   padding: 18px 20px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
-  background: var(--skmt-n50);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-n50);
 }
 
-/* État initial : invitation au scan */
-.skmt-bulk__scan {
+/* Initial state: prompt to scan */
+.lumia-bulk__scan {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,21 +100,21 @@
   flex-wrap: wrap;
 }
 
-.skmt-bulk__scan-hint {
+.lumia-bulk__scan-hint {
   flex: 1;
   min-width: 200px;
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-bulk__scan .skmt-btn svg,
-.skmt-bulk__action .skmt-btn svg {
+.lumia-bulk__scan .lumia-btn svg,
+.lumia-bulk__action .lumia-btn svg {
   width: 15px;
   height: 15px;
 }
 
-/* Résultat du scan : stats + action */
-.skmt-bulk__result {
+/* Scan result: stats + action */
+.lumia-bulk__result {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -122,69 +122,69 @@
   flex-wrap: wrap;
 }
 
-.skmt-bulk__stats {
+.lumia-bulk__stats {
   display: flex;
   gap: 32px;
   flex-wrap: wrap;
 }
 
-.skmt-bulk__stat {
+.lumia-bulk__stat {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.skmt-bulk__stat-value {
+.lumia-bulk__stat-value {
   font-size: 22px;
   font-weight: 700;
   line-height: 1.1;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-bulk__stat-label {
+.lumia-bulk__stat-label {
   font-size: 12px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-bulk__action {
+.lumia-bulk__action {
   flex-shrink: 0;
 }
 
-.skmt-bulk__progress {
+.lumia-bulk__progress {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 14px;
 }
 
-.skmt-bulk-status__message {
+.lumia-bulk-status__message {
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-progress {
+.lumia-progress {
   width: 100%;
   height: 6px;
-  background: var(--skmt-n200);
+  background: var(--lumia-n200);
   border-radius: 3px;
   overflow: hidden;
 }
 
-.skmt-progress__bar {
+.lumia-progress__bar {
   height: 100%;
-  background: var(--skmt-accent);
+  background: var(--lumia-accent);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
 @media screen and (max-width: 782px) {
-  .skmt-bulk__result {
+  .lumia-bulk__result {
     align-items: stretch;
   }
 
-  .skmt-bulk__action,
-  .skmt-bulk__action .skmt-btn,
-  .skmt-bulk__scan .skmt-btn {
+  .lumia-bulk__action,
+  .lumia-bulk__action .lumia-btn,
+  .lumia-bulk__scan .lumia-btn {
     width: 100%;
   }
 }

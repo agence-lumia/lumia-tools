@@ -1,23 +1,23 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ImageOptimizer;
+namespace Lumia\Tools\Modules\ImageOptimizer;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Support SVG sécurisé pour la médiathèque.
+ * Secure SVG support for the media library.
  *
- * - Autorise l'upload de .svg uniquement pour les rôles cochés dans les réglages.
- * - Assainit chaque fichier à l'upload (suppression du JS, gestionnaires d'événements,
- *   références externes, etc.) via une passe DOMDocument à liste blanche.
- * - Corrige la détection MIME de WordPress qui rejette sinon le fichier.
+ * - Allows .svg uploads only for the roles ticked in the settings.
+ * - Sanitizes every file on upload (removal of JS, event handlers,
+ *   external references, etc.) through a whitelist-based DOMDocument pass.
+ * - Fixes WordPress's MIME detection, which would otherwise reject the file.
  *
- * Rien n'est branché tant que le réglage n'est pas activé (voir Module::init()).
+ * Nothing is hooked until the setting is enabled (see Module::init()).
  */
 class SvgHandler {
 
 	private const MIME = 'image/svg+xml';
 
-	/** Éléments SVG autorisés (liste blanche). */
+	/** Allowed SVG elements (whitelist). */
 	private const ALLOWED_TAGS = [
 		'a',
 		'circle',
@@ -76,7 +76,7 @@ class SvgHandler {
 	];
 
 	/**
-	 * Réglages du module (svg_upload, svg_roles).
+	 * Module settings (svg_upload, svg_roles).
 	 *
 	 * @var array<string, mixed>
 	 */
@@ -90,7 +90,7 @@ class SvgHandler {
 	}
 
 	/**
-	 * Branche les filtres si le support SVG est activé.
+	 * Hooks the filters if SVG support is enabled.
 	 */
 	public function init(): void {
 		if ( empty( $this->settings['svg_upload'] ) ) {
@@ -103,11 +103,11 @@ class SvgHandler {
 	}
 
 	/* ================================================================
-	 * AUTORISATIONS
+	 * PERMISSIONS
 	 * ================================================================ */
 
 	/**
-	 * L'utilisateur courant a-t-il un rôle autorisé à uploader des SVG ?
+	 * Does the current user have a role allowed to upload SVGs?
 	 */
 	private function current_user_can_upload(): bool {
 		$allowed = (array) ( $this->settings['svg_roles'] ?? [] );
@@ -124,7 +124,7 @@ class SvgHandler {
 	}
 
 	/**
-	 * Ajoute le MIME SVG à la liste autorisée pour les rôles habilités.
+	 * Adds the SVG MIME type to the allowed list for the authorized roles.
 	 *
 	 * @param array<string, string> $mimes
 	 * @return array<string, string>
@@ -137,7 +137,7 @@ class SvgHandler {
 	}
 
 	/**
-	 * Corrige la détection type/extension de WordPress pour les .svg.
+	 * Fixes WordPress's type/extension detection for .svg files.
 	 *
 	 * @param array<string, mixed> $data
 	 * @param string $file
@@ -158,12 +158,12 @@ class SvgHandler {
 	}
 
 	/* ================================================================
-	 * ASSAINISSEMENT
+	 * SANITIZATION
 	 * ================================================================ */
 
 	/**
-	 * Filtre wp_handle_upload_prefilter : assainit le SVG avant qu'il ne soit
-	 * déplacé dans la médiathèque. Rejette le fichier si l'assainissement échoue.
+	 * Filter wp_handle_upload_prefilter: sanitizes the SVG before it is
+	 * moved into the media library. Rejects the file if sanitization fails.
 	 *
 	 * @param array<string, mixed> $file
 	 * @return array<string, mixed>
@@ -180,7 +180,7 @@ class SvgHandler {
 		}
 
 		if ( ! $this->current_user_can_upload() ) {
-			$file['error'] = __( 'Votre rôle n\'est pas autorisé à téléverser des fichiers SVG.', 'studio-kyne-mini-tools' );
+			$file['error'] = __( 'Your role is not allowed to upload SVG files.', 'lumia-tools' );
 			return $file;
 		}
 
@@ -189,16 +189,16 @@ class SvgHandler {
 			return $file;
 		}
 
-		// Fichier temporaire local de l'upload PHP : WP_Filesystem, s'il passe par FTP, ne l'atteint pas.
+		// Local temporary file of the PHP upload: WP_Filesystem, if it goes through FTP, cannot reach it.
 		$dirty = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		if ( false === $dirty || '' === trim( (string) $dirty ) ) {
-			$file['error'] = __( 'Le fichier SVG est vide ou illisible.', 'studio-kyne-mini-tools' );
+			$file['error'] = __( 'The SVG file is empty or unreadable.', 'lumia-tools' );
 			return $file;
 		}
 
 		$clean = $this->sanitize( $dirty );
 		if ( null === $clean ) {
-			$file['error'] = __( 'Le fichier SVG est invalide ou n\'a pas pu être assaini.', 'studio-kyne-mini-tools' );
+			$file['error'] = __( 'The SVG file is invalid or could not be sanitized.', 'lumia-tools' );
 			return $file;
 		}
 
@@ -208,37 +208,27 @@ class SvgHandler {
 	}
 
 	/**
-	 * Assainit une chaîne SVG. Retourne le SVG nettoyé, ou null si invalide.
+	 * Sanitizes an SVG string. Returns the cleaned SVG, or null if invalid.
 	 */
 	public function sanitize( string $svg ): ?string {
-		// Retire une éventuelle BOM et les instructions de traitement PHP.
+		// Removes a possible BOM and the PHP processing instructions.
 		$svg = (string) preg_replace( '/<\?php.*?\?>/is', '', $svg );
 
-		// Bloque les définitions de type de document (attaques XXE / entités externes).
+		// Blocks document type definitions (XXE / external entity attacks).
 		if ( preg_match( '/<!DOCTYPE/i', $svg ) && preg_match( '/<!ENTITY/i', $svg ) ) {
 			return null;
 		}
 
 		$libxml_previous = libxml_use_internal_errors( true );
 
-		// libxml 2.9+ désactive déjà le chargement d'entités externes par défaut ;
-		// on ne force l'ancien garde-fou que sur PHP < 8.0 (déprécié au-delà).
-		$entity_previous = null;
-		if ( \PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			$entity_previous = libxml_disable_entity_loader( true ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- déprécié en PHP 8, seul garde-fou XXE en PHP 7.4.
-		}
-
 		$dom                     = new \DOMDocument();
 		$dom->preserveWhiteSpace = false;
 
-		// NB : on n'ajoute jamais LIBXML_NOENT — l'expansion d'entités est un vecteur d'attaque.
+		// NB: we never add LIBXML_NOENT — entity expansion is an attack vector.
 		$loaded = $dom->loadXML( $svg, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
 
 		libxml_clear_errors();
 		libxml_use_internal_errors( $libxml_previous );
-		if ( null !== $entity_previous && \PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			libxml_disable_entity_loader( $entity_previous ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- idem, restauration de l'état précédent.
-		}
 
 		$root = $dom->documentElement;
 		if ( ! $loaded || ! $root instanceof \DOMElement ) {
@@ -249,14 +239,14 @@ class SvgHandler {
 			return null;
 		}
 
-		// Supprime les DOCTYPE et nœuds de type doctype.
+		// Removes DOCTYPE and doctype-type nodes.
 		foreach ( iterator_to_array( $dom->childNodes ) as $child ) {
 			if ( XML_DOCUMENT_TYPE_NODE === $child->nodeType ) {
 				$dom->removeChild( $child );
 			}
 		}
 
-		// Nettoie les attributs de la racine <svg> elle-même, puis récursivement les enfants.
+		// Cleans the attributes of the <svg> root itself, then the children recursively.
 		$this->clean_attributes( $root );
 		$this->clean_node( $root );
 
@@ -269,17 +259,17 @@ class SvgHandler {
 	}
 
 	/**
-	 * Nettoie récursivement un nœud : supprime les balises hors liste blanche
-	 * et tout attribut dangereux.
+	 * Recursively cleans a node: removes the tags outside the whitelist
+	 * and any dangerous attribute.
 	 */
 	private function clean_node( \DOMNode $node ): void {
-		// Parcourt une copie : on mute les enfants pendant l'itération.
+		// Walks a copy: we mutate the children during the iteration.
 		if ( ! $node->hasChildNodes() ) {
 			return;
 		}
 		foreach ( iterator_to_array( $node->childNodes ) as $child ) {
 			if ( ! $child instanceof \DOMElement ) {
-				// Retire commentaires / PI / doctype résiduels.
+				// Removes leftover comments / PIs / doctypes.
 				if ( in_array( $child->nodeType, [ XML_COMMENT_NODE, XML_PI_NODE ], true ) ) {
 					$node->removeChild( $child );
 				}
@@ -296,11 +286,11 @@ class SvgHandler {
 
 			$this->clean_attributes( $child );
 
-			// <style> est sur la liste blanche, mais seuls ses ATTRIBUTS étaient
-			// nettoyés : le nœud texte à l'intérieur traversait l'assainisseur
-			// intact. Un `@import url("//evil.tld/x.css")` survivait donc à
-			// l'upload et déclenchait une requête sortante à chaque rendu du
-			// SVG — traçage, et CSS arbitraire si le SVG est intégré en ligne.
+			// <style> is on the whitelist, but only its ATTRIBUTES were
+			// cleaned: the text node inside went through the sanitizer
+			// untouched. So an `@import url("//evil.tld/x.css")` survived the
+			// upload and triggered an outgoing request on every render of the
+			// SVG — tracking, and arbitrary CSS if the SVG is inlined.
 			if ( 'style' === $tag ) {
 				$this->clean_style_element( $child );
 				continue;
@@ -311,42 +301,42 @@ class SvgHandler {
 	}
 
 	/**
-	 * Assainit le contenu textuel d'un élément <style>.
+	 * Sanitizes the text content of a <style> element.
 	 *
-	 * Le CSS n'a rien d'inerte : `@import` et `url()` sont des requêtes
-	 * réseau, `expression()` et `-moz-binding` ont été des vecteurs
-	 * d'exécution. On applique aux ressources la MÊME liste blanche que
-	 * `is_safe_href()` — ancres internes et images en data: — pour ne pas
-	 * entretenir deux définitions du « sûr » qui finiraient par diverger.
+	 * CSS is not inert: `@import` and `url()` are network
+	 * requests, `expression()` and `-moz-binding` have been execution
+	 * vectors. We apply to resources the SAME whitelist as
+	 * `is_safe_href()` — internal anchors and data: images — so as not to
+	 * maintain two definitions of "safe" that would end up diverging.
 	 */
 	private function clean_style_element( \DOMElement $el ): void {
 		$css = $el->textContent;
 
-		$propre = $this->sanitize_css( (string) $css );
+		$clean = $this->sanitize_css( (string) $css );
 
 		while ( $el->firstChild ) {
 			$el->removeChild( $el->firstChild );
 		}
 
-		if ( '' !== trim( $propre ) && null !== $el->ownerDocument ) {
-			$el->appendChild( $el->ownerDocument->createTextNode( $propre ) );
+		if ( '' !== trim( $clean ) && null !== $el->ownerDocument ) {
+			$el->appendChild( $el->ownerDocument->createTextNode( $clean ) );
 		}
 	}
 
 	/**
-	 * Retire d'une feuille de style tout ce qui sort du document ou s'exécute.
+	 * Removes from a stylesheet everything that leaves the document or executes.
 	 *
-	 * Deux précautions d'ordre, comme pour la requête SQL de l'éditeur de base
-	 * de données :
-	 *  - les commentaires CSS partent EN PREMIER : `@imp/⁎ ⁎/ort` n'est pas un
-	 *    at-rule valide, mais un `url(/⁎ ⁎/…)` suffisait à brouiller un motif ;
-	 *  - les échappements hexadécimaux sont décodés avant tout test. `\40 import`
-	 *    EST `@import` pour le navigateur ; ne pas le décoder, c'est ne
-	 *    reconnaître que la forme naïve de l'attaque.
+	 * Two ordering precautions, as for the SQL query of the database
+	 * editor:
+	 *  - CSS comments go FIRST: `@imp/⁎ ⁎/ort` is not a valid
+	 *    at-rule, but a `url(/⁎ ⁎/…)` was enough to throw a pattern off;
+	 *  - hexadecimal escapes are decoded before any test. `\40 import`
+	 *    IS `@import` for the browser; not decoding it means only
+	 *    recognizing the naive form of the attack.
 	 */
 	private function sanitize_css( string $css ): string {
-		$sans_commentaires = preg_replace( '#/\*.*?\*/#s', ' ', $css );
-		$css               = ( null === $sans_commentaires ) ? $css : $sans_commentaires;
+		$without_comments = preg_replace( '#/\*.*?\*/#s', ' ', $css );
+		$css              = ( null === $without_comments ) ? $css : $without_comments;
 
 		if ( function_exists( 'mb_chr' ) ) {
 			$decode = preg_replace_callback(
@@ -360,17 +350,17 @@ class SvgHandler {
 			$css    = ( null === $decode ) ? $css : $decode;
 		}
 
-		// At-rules qui chargent une ressource externe.
+		// At-rules that load an external resource.
 		$css = (string) preg_replace( '/@\s*(import|namespace)\b[^;{]*(;|\{[^}]*\})?/i', '', $css );
 
-		// Vecteurs d'exécution historiques. On retire la DÉCLARATION entière et
-		// pas le seul mot-clé : effacer « expression( » laissait « alert(1)) »
-		// derrière soi, c'est-à-dire du CSS invalide dans un fichier qu'on vient
-		// de déclarer propre.
+		// Historical execution vectors. We remove the whole DECLARATION and
+		// not just the keyword: erasing "expression(" left "alert(1))"
+		// behind, i.e. invalid CSS in a file we have just
+		// declared clean.
 		$css = (string) preg_replace( '/[\w-]+\s*:[^;}]*expression\s*\([^;}]*/i', '', $css );
 		$css = (string) preg_replace( '/(-moz-binding|behavior)\s*:[^;}]*/i', '', $css );
 
-		// url() : seules les ancres internes et les images en data: passent.
+		// url(): only internal anchors and data: images get through.
 		$css = (string) preg_replace_callback(
 			'/url\(\s*([\'"]?)([^)\'"]*)\1\s*\)/i',
 			function ( array $m ) {
@@ -379,10 +369,10 @@ class SvgHandler {
 			$css
 		);
 
-		// Filet : si un schéma exécutable ou un vecteur historique subsiste
-		// malgré tout (ex. « expression(…) » sans propriété devant, que le
-		// motif de déclaration ne couvre pas), on ne cherche pas à réparer la
-		// feuille — on la jette.
+		// Safety net: if an executable scheme or a historical vector remains
+		// anyway (e.g. "expression(…)" with no property in front, which the
+		// declaration pattern does not cover), we do not try to repair the
+		// stylesheet — we throw it away.
 		if ( preg_match( '/(javascript|vbscript|data\s*:\s*text\/html)\s*:|expression\s*\(|-moz-binding|behavior\s*:/i', $css ) ) {
 			return '';
 		}
@@ -391,20 +381,20 @@ class SvgHandler {
 	}
 
 	/**
-	 * Supprime les attributs dangereux d'un élément.
+	 * Removes the dangerous attributes of an element.
 	 */
 	private function clean_attributes( \DOMElement $el ): void {
 		foreach ( iterator_to_array( $el->attributes ) as $attr ) {
 			$name  = strtolower( $attr->nodeName );
 			$value = $attr->nodeValue;
 
-			// Tout gestionnaire d'événement (onload, onclick, …).
+			// Any event handler (onload, onclick, …).
 			if ( 0 === strpos( $name, 'on' ) ) {
 				$el->removeAttributeNode( $attr );
 				continue;
 			}
 
-			// href / xlink:href : n'autorise que les schémas sûrs ou les ancres internes.
+			// href / xlink:href: only allows safe schemes or internal anchors.
 			if ( 'href' === $name || 'xlink:href' === $name ) {
 				if ( ! $this->is_safe_href( (string) $value ) ) {
 					$el->removeAttributeNode( $attr );
@@ -412,7 +402,7 @@ class SvgHandler {
 				continue;
 			}
 
-			// Attributs pouvant embarquer du script.
+			// Attributes that may embed script.
 			$decoded = html_entity_decode( (string) $value, ENT_QUOTES );
 			$decoded = (string) preg_replace( '/\s+/', '', $decoded );
 			if ( preg_match( '/(javascript|data:text\/html|vbscript):/i', $decoded ) ) {
@@ -420,23 +410,23 @@ class SvgHandler {
 				continue;
 			}
 
-			// style : le MÊME nettoyeur que l'élément <style> (commentaires et
-			// échappements normalisés, url() sur liste blanche, expression()
-			// et -moz-binding retirés) — on n'entretient pas deux définitions
-			// du « sûr ». Un style vidé par le nettoyage est retiré.
+			// style: the SAME cleaner as the <style> element (comments and
+			// escapes normalized, url() whitelisted, expression()
+			// and -moz-binding removed) — we do not maintain two definitions
+			// of "safe". A style emptied by the cleaning is removed.
 			if ( 'style' === $name ) {
-				$propre = trim( $this->sanitize_css( (string) $value ) );
-				if ( '' === $propre ) {
+				$clean = trim( $this->sanitize_css( (string) $value ) );
+				if ( '' === $clean ) {
 					$el->removeAttributeNode( $attr );
 				} else {
-					$attr->nodeValue = $propre;
+					$attr->nodeValue = $clean;
 				}
 			}
 		}
 	}
 
 	/**
-	 * Un href est-il sûr ? Ancres internes (#id) et data: d'image uniquement.
+	 * Is an href safe? Internal anchors (#id) and image data: URIs only.
 	 */
 	private function is_safe_href( string $value ): bool {
 		$value = trim( html_entity_decode( $value, ENT_QUOTES ) );
@@ -445,7 +435,7 @@ class SvgHandler {
 			return true;
 		}
 
-		// data:image/... autorisé ; data:text/html interdit.
+		// data:image/... allowed; data:text/html forbidden.
 		if ( preg_match( '/^data:image\/(png|jpe?g|gif|webp);base64,/i', $value ) ) {
 			return true;
 		}

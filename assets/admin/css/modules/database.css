@@ -1,327 +1,327 @@
 /*
- * Module Base de données — explorateur de tables
+ * Database module: table explorer
  */
 
-/* Masquer le bouton "Enregistrer" du header (ce module n'a pas de form) */
-.skmt-page__header-actions [form="skmt-module-form"] { display: none !important; }
+/* Hide the header "Save" button (this module has no form) */
+.lumia-page__header-actions [form="lumia-module-form"] { display: none !important; }
 
 /* ================================================================
- * LAYOUT — panneau qui remplit la hauteur dispo, scroll INTERNE (jamais la page).
- * Tout est géré en flex depuis .skmt-admin-main (aucune hauteur calculée en JS).
- * Même pattern :has() que le Créateur de menu (voir menu-creator.css).
+ * LAYOUT: panel that fills the available height, INTERNAL scroll (never the page).
+ * Everything is handled in flex from .lumia-admin-main (no height computed in JS).
+ * Same :has() pattern as the Menu Creator (see menu-creator.css).
  * ================================================================ */
-.skmt-admin-main:has(.skmt-db) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
-.skmt-admin-main:has(.skmt-db) .skmt-page { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.skmt-admin-main:has(.skmt-db) .skmt-page__header { position: static; flex-shrink: 0; }
+.lumia-admin-main:has(.lumia-db) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.lumia-admin-main:has(.lumia-db) .lumia-page { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.lumia-admin-main:has(.lumia-db) .lumia-page__header { position: static; flex-shrink: 0; }
 
-.skmt-db { padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.lumia-db { padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
-.skmt-db__layout {
+.lumia-db__layout {
   display: flex;
   flex: 1;
   min-height: 0;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
   overflow: hidden;
-  background: var(--skmt-surface);
+  background: var(--lumia-surface);
 }
 
 /* ================================================================
  * SIDEBAR
  * ================================================================ */
-.skmt-db__sidebar {
+.lumia-db__sidebar {
   width: 250px;
   flex-shrink: 0;
-  border-right: 1px solid var(--skmt-border);
+  border-right: 1px solid var(--lumia-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--skmt-n50);
+  background: var(--lumia-n50);
 }
-.skmt-db__sidebar-header { padding: 8px; border-bottom: 1px solid var(--skmt-border); flex-shrink: 0; }
-.skmt-db__table-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
-.skmt-db__loading,
-.skmt-db__no-tables { padding: 12px; font-size: 13px; color: var(--skmt-text-secondary); }
+.lumia-db__sidebar-header { padding: 8px; border-bottom: 1px solid var(--lumia-border); flex-shrink: 0; }
+.lumia-db__table-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
+.lumia-db__loading,
+.lumia-db__no-tables { padding: 12px; font-size: 13px; color: var(--lumia-text-secondary); }
 
-.skmt-db__table-group-label {
+.lumia-db__table-group-label {
   padding: 8px 12px 4px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
-.skmt-db__table-item {
+.lumia-db__table-item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 5px 10px; cursor: pointer; border-radius: var(--skmt-radius-xs);
+  padding: 5px 10px; cursor: pointer; border-radius: var(--lumia-radius-xs);
   margin: 1px 6px; gap: 8px; transition: background .1s, color .1s;
 }
-.skmt-db__table-item:hover { background: var(--skmt-n100); }
-.skmt-db__table-item.is-active { background: var(--skmt-accent); color: #fff; }
-.skmt-db__table-item.is-active .skmt-db__table-item-rows { color: rgba(255,255,255,.85); }
-.skmt-db__table-item-name {
+.lumia-db__table-item:hover { background: var(--lumia-n100); }
+.lumia-db__table-item.is-active { background: var(--lumia-accent); color: #fff; }
+.lumia-db__table-item.is-active .lumia-db__table-item-rows { color: rgba(255,255,255,.85); }
+.lumia-db__table-item-name {
   flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; display: flex; align-items: center; gap: 6px;
 }
-.skmt-db__table-item-rows { font-size: 11px; color: var(--skmt-text-secondary); flex-shrink: 0; }
+.lumia-db__table-item-rows { font-size: 11px; color: var(--lumia-text-secondary); flex-shrink: 0; }
 
-/* Recherche : utilise le composant réutilisable .skmt-search (components.css).
-   Seules les contraintes de largeur propres au module sont définies ici. */
-.skmt-db__search--data { min-width: 240px; max-width: 320px; }
+/* Search: uses the reusable .lumia-search component (components.css).
+   Only the module's own width constraints are defined here. */
+.lumia-db__search--data { min-width: 240px; max-width: 320px; }
 
 /* ================================================================
- * ZONE PRINCIPALE
+ * MAIN AREA
  * ================================================================ */
-.skmt-db__main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.skmt-db__empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--skmt-text-secondary); }
+.lumia-db__main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.lumia-db__empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--lumia-text-secondary); }
 
-/* Vue table = colonne flex qui remplit le main et distribue le scroll interne */
-.skmt-db__view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* Table view = flex column that fills the main area and distributes the internal scroll */
+.lumia-db__view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
-.skmt-db__table-header {
+.lumia-db__table-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; border-bottom: 1px solid var(--skmt-border); gap: 12px; flex-shrink: 0;
+  padding: 12px 16px; border-bottom: 1px solid var(--lumia-border); gap: 12px; flex-shrink: 0;
 }
-.skmt-db__table-name { font-size: 15px; font-weight: 600; margin: 0; }
-.skmt-db__table-meta { font-size: 12px; color: var(--skmt-text-secondary); }
-.skmt-db__table-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-.skmt-db__table-actions svg { flex-shrink: 0; }
-.skmt-db__table-actions .skmt-btn { display: inline-flex; align-items: center; gap: 6px; }
+.lumia-db__table-name { font-size: 15px; font-weight: 600; margin: 0; }
+.lumia-db__table-meta { font-size: 12px; color: var(--lumia-text-secondary); }
+.lumia-db__table-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.lumia-db__table-actions svg { flex-shrink: 0; }
+.lumia-db__table-actions .lumia-btn { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ================================================================
- * MENU D'ACTIONS (dropdown regroupant export + zone dangereuse)
+ * ACTIONS MENU (dropdown grouping export + danger zone)
  * ================================================================ */
-.skmt-db__menu-wrap { position: relative; }
-.skmt-db__menu {
+.lumia-db__menu-wrap { position: relative; }
+.lumia-db__menu {
   position: absolute; top: calc(100% + 6px); right: 0;
   min-width: 240px; padding: 6px;
-  background: var(--skmt-surface);
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius); box-shadow: var(--skmt-shadow-md);
+  background: var(--lumia-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius); box-shadow: var(--lumia-shadow-md);
   z-index: 120;
 }
-.skmt-db__menu[hidden] { display: none; }
-.skmt-db__menu-item {
+.lumia-db__menu[hidden] { display: none; }
+.lumia-db__menu-item {
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 8px 10px; border: none; background: none; cursor: pointer;
-  font-size: 13px; color: var(--skmt-text); text-align: left;
-  border-radius: var(--skmt-radius-xs); transition: background .1s, color .1s;
+  font-size: 13px; color: var(--lumia-text); text-align: left;
+  border-radius: var(--lumia-radius-xs); transition: background .1s, color .1s;
 }
-.skmt-db__menu-item svg { color: var(--skmt-text-secondary); flex-shrink: 0; }
-.skmt-db__menu-item:hover { background: var(--skmt-n100); }
-.skmt-db__menu-item--danger { color: var(--skmt-danger); }
-.skmt-db__menu-item--danger svg { color: var(--skmt-danger); }
-.skmt-db__menu-item--danger:hover { background: var(--skmt-danger-bg); }
-.skmt-db__menu-sep { height: 1px; background: var(--skmt-border); margin: 6px 4px; }
-.skmt-db__menu-label {
+.lumia-db__menu-item svg { color: var(--lumia-text-secondary); flex-shrink: 0; }
+.lumia-db__menu-item:hover { background: var(--lumia-n100); }
+.lumia-db__menu-item--danger { color: var(--lumia-danger); }
+.lumia-db__menu-item--danger svg { color: var(--lumia-danger); }
+.lumia-db__menu-item--danger:hover { background: var(--lumia-danger-bg); }
+.lumia-db__menu-sep { height: 1px; background: var(--lumia-border); margin: 6px 4px; }
+.lumia-db__menu-label {
   padding: 4px 10px 2px; font-size: 10px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .05em; color: var(--skmt-text-secondary);
+  text-transform: uppercase; letter-spacing: .05em; color: var(--lumia-text-secondary);
 }
 
 /* ================================================================
  * TABS
  * ================================================================ */
-/* Composant partagé skmt-tabs, resserré sur la marge de l'explorateur. */
-.skmt-db .skmt-tabs { padding: 0 16px; gap: 0; }
+/* Shared lumia-tabs component, tightened to the explorer's margin. */
+.lumia-db .lumia-tabs { padding: 0 16px; gap: 0; }
 
-/* Chaque tab-content remplit l'espace restant et scrolle en interne */
-.skmt-db__tab-content { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+/* Each tab-content fills the remaining space and scrolls internally */
+.lumia-db__tab-content { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
 
 /* ================================================================
- * ONGLET DONNÉES
+ * DATA TAB
  * ================================================================ */
-.skmt-db__data-toolbar {
+.lumia-db__data-toolbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px; border-bottom: 1px solid var(--skmt-border);
-  gap: 12px; flex-wrap: wrap; flex-shrink: 0; background: var(--skmt-surface);
+  padding: 10px 16px; border-bottom: 1px solid var(--lumia-border);
+  gap: 12px; flex-wrap: wrap; flex-shrink: 0; background: var(--lumia-surface);
 }
-.skmt-db__data-count { font-size: 12px; color: var(--skmt-text-secondary); white-space: nowrap; }
-.skmt-db__toolbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-.skmt-db__per-page { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--skmt-text-secondary); white-space: nowrap; }
-.skmt-db__pagination { display: flex; align-items: center; gap: 4px; }
-.skmt-db__page-btn {
+.lumia-db__data-count { font-size: 12px; color: var(--lumia-text-secondary); white-space: nowrap; }
+.lumia-db__toolbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.lumia-db__per-page { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--lumia-text-secondary); white-space: nowrap; }
+.lumia-db__pagination { display: flex; align-items: center; gap: 4px; }
+.lumia-db__page-btn {
   min-width: 30px; height: 30px; padding: 0 6px; display: inline-flex; align-items: center;
-  justify-content: center; background: var(--skmt-surface); border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm); cursor: pointer; font-size: 12px; color: var(--skmt-text);
+  justify-content: center; background: var(--lumia-surface); border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm); cursor: pointer; font-size: 12px; color: var(--lumia-text);
 }
-.skmt-db__page-btn:hover:not(:disabled) { background: var(--skmt-n100); }
-.skmt-db__page-btn:disabled { opacity: .4; cursor: default; }
-.skmt-db__page-btn.is-active { background: var(--skmt-accent); color: #fff; border-color: var(--skmt-accent); }
-.skmt-db__page-ellipsis { padding: 0 2px; color: var(--skmt-text-secondary); }
+.lumia-db__page-btn:hover:not(:disabled) { background: var(--lumia-n100); }
+.lumia-db__page-btn:disabled { opacity: .4; cursor: default; }
+.lumia-db__page-btn.is-active { background: var(--lumia-accent); color: #fff; border-color: var(--lumia-accent); }
+.lumia-db__page-ellipsis { padding: 0 2px; color: var(--lumia-text-secondary); }
 
-/* Zone de table scrollable (horizontale ET verticale) */
-.skmt-db__data-table-wrap { overflow: auto; }
-/* Dans l'onglet Données uniquement, la table remplit l'espace restant */
-#skmt-db-tab-data .skmt-db__data-table-wrap { flex: 1; min-height: 0; }
+/* Scrollable table area (horizontal AND vertical) */
+.lumia-db__data-table-wrap { overflow: auto; }
+/* In the Data tab only, the table fills the remaining space */
+#lumia-db-tab-data .lumia-db__data-table-wrap { flex: 1; min-height: 0; }
 
-.skmt-db__data-table { width: auto; min-width: 100%; border-collapse: collapse; font-size: 12px; }
-.skmt-db__data-table th {
-  padding: 7px 10px; text-align: left; background: var(--skmt-n50);
-  border-bottom: 1px solid var(--skmt-border); white-space: nowrap; cursor: pointer;
+.lumia-db__data-table { width: auto; min-width: 100%; border-collapse: collapse; font-size: 12px; }
+.lumia-db__data-table th {
+  padding: 7px 10px; text-align: left; background: var(--lumia-n50);
+  border-bottom: 1px solid var(--lumia-border); white-space: nowrap; cursor: pointer;
   user-select: none; position: sticky; top: 0; z-index: 2;
-  font-size: 11px; font-weight: 600; color: var(--skmt-text-secondary);
+  font-size: 11px; font-weight: 600; color: var(--lumia-text-secondary);
   text-transform: uppercase; letter-spacing: .03em;
 }
-.skmt-db__data-table th:hover { background: var(--skmt-n100); }
-.skmt-db__data-table th.is-sorted-asc::after { content: ' ↑'; color: var(--skmt-accent); }
-.skmt-db__data-table th.is-sorted-desc::after { content: ' ↓'; color: var(--skmt-accent); }
-.skmt-db__data-table th.skmt-db__col-actions { cursor: default; width: 1%; position: sticky; right: 0; }
-.skmt-db__data-table th.skmt-db__col-static { cursor: default; text-transform: none; }
-.skmt-db__data-table td {
-  padding: 5px 10px; border-bottom: 1px solid var(--skmt-n100); max-width: 360px;
+.lumia-db__data-table th:hover { background: var(--lumia-n100); }
+.lumia-db__data-table th.is-sorted-asc::after { content: ' ↑'; color: var(--lumia-accent); }
+.lumia-db__data-table th.is-sorted-desc::after { content: ' ↓'; color: var(--lumia-accent); }
+.lumia-db__data-table th.lumia-db__col-actions { cursor: default; width: 1%; position: sticky; right: 0; }
+.lumia-db__data-table th.lumia-db__col-static { cursor: default; text-transform: none; }
+.lumia-db__data-table td {
+  padding: 5px 10px; border-bottom: 1px solid var(--lumia-n100); max-width: 360px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; cursor: text;
 }
-.skmt-db__data-table td.skmt-db__col-actions {
+.lumia-db__data-table td.lumia-db__col-actions {
   cursor: default; text-align: right; position: sticky; right: 0;
-  background: var(--skmt-surface);
+  background: var(--lumia-surface);
 }
-.skmt-db__data-table tr:hover td.skmt-db__col-actions { background: var(--skmt-n50); }
-.skmt-db__data-table td.is-editing { padding: 0; max-width: none; }
-.skmt-db__edit-wrap { display: flex; flex-direction: column; }
-.skmt-db__data-table td.is-editing input,
-.skmt-db__data-table td.is-editing textarea {
-  width: 100%; padding: 5px 10px; border: 2px solid var(--skmt-accent); outline: none;
+.lumia-db__data-table tr:hover td.lumia-db__col-actions { background: var(--lumia-n50); }
+.lumia-db__data-table td.is-editing { padding: 0; max-width: none; }
+.lumia-db__edit-wrap { display: flex; flex-direction: column; }
+.lumia-db__data-table td.is-editing input,
+.lumia-db__data-table td.is-editing textarea {
+  width: 100%; padding: 5px 10px; border: 2px solid var(--lumia-accent); outline: none;
   font-size: 12px; box-sizing: border-box; font-family: inherit;
 }
-.skmt-db__data-table td.is-editing textarea { min-height: 80px; resize: vertical; }
-/* Barre d'action de l'édition inline (bouton NULL) */
-.skmt-db__edit-actions {
+.lumia-db__data-table td.is-editing textarea { min-height: 80px; resize: vertical; }
+/* Inline edit action bar (NULL button) */
+.lumia-db__edit-actions {
   display: flex; justify-content: flex-end; gap: 6px;
-  padding: 3px 6px; background: var(--skmt-n50); border: 2px solid var(--skmt-accent); border-top: none;
+  padding: 3px 6px; background: var(--lumia-n50); border: 2px solid var(--lumia-accent); border-top: none;
 }
-.skmt-db__edit-null {
+.lumia-db__edit-null {
   border: none; background: none; cursor: pointer; font-size: 11px;
-  color: var(--skmt-text-secondary); text-decoration: underline; padding: 0;
+  color: var(--lumia-text-secondary); text-decoration: underline; padding: 0;
 }
-.skmt-db__edit-null:hover { color: var(--skmt-danger); }
-.skmt-db__data-table tr:hover td { background: var(--skmt-n50); }
-.skmt-db__data-table td.skmt-db__td-null { color: var(--skmt-text-secondary); font-style: italic; }
-.skmt-db__data-table td.skmt-db__td-binary { color: var(--skmt-text-secondary); font-style: italic; cursor: default; }
-.skmt-db__data-empty { text-align: center; color: var(--skmt-text-secondary); cursor: default; padding: 24px; }
+.lumia-db__edit-null:hover { color: var(--lumia-danger); }
+.lumia-db__data-table tr:hover td { background: var(--lumia-n50); }
+.lumia-db__data-table td.lumia-db__td-null { color: var(--lumia-text-secondary); font-style: italic; }
+.lumia-db__data-table td.lumia-db__td-binary { color: var(--lumia-text-secondary); font-style: italic; cursor: default; }
+.lumia-db__data-empty { text-align: center; color: var(--lumia-text-secondary); cursor: default; padding: 24px; }
 
-/* Bouton de suppression discret : icône seule, révélée au survol de la ligne. */
-.skmt-db__delete-row {
+/* Discreet delete button: icon only, revealed on row hover. */
+.lumia-db__delete-row {
   display: inline-flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; padding: 0;
-  border: none; background: none; border-radius: var(--skmt-radius-xs);
-  color: var(--skmt-n400); cursor: pointer;
+  border: none; background: none; border-radius: var(--lumia-radius-xs);
+  color: var(--lumia-n400); cursor: pointer;
   opacity: 0; transition: opacity .12s, background .12s, color .12s;
 }
-.skmt-db__delete-row svg { width: 15px; height: 15px; pointer-events: none; }
-.skmt-db__data-table tr:hover .skmt-db__delete-row,
-.skmt-db__delete-row:focus-visible { opacity: 1; }
-.skmt-db__delete-row:hover { background: var(--skmt-danger-bg); color: var(--skmt-danger); }
+.lumia-db__delete-row svg { width: 15px; height: 15px; pointer-events: none; }
+.lumia-db__data-table tr:hover .lumia-db__delete-row,
+.lumia-db__delete-row:focus-visible { opacity: 1; }
+.lumia-db__delete-row:hover { background: var(--lumia-danger-bg); color: var(--lumia-danger); }
 
 /* ================================================================
- * ONGLET STRUCTURE
+ * STRUCTURE TAB
  * ================================================================ */
-.skmt-db__structure-section-title {
-  padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--skmt-border);
-  font-size: 13px; background: var(--skmt-n50); position: sticky; top: 0; z-index: 1;
+.lumia-db__structure-section-title {
+  padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--lumia-border);
+  font-size: 13px; background: var(--lumia-n50); position: sticky; top: 0; z-index: 1;
 }
 
 /* ================================================================
- * ÉDITEUR SQL
+ * SQL EDITOR
  * ================================================================ */
-.skmt-db__query-warning {
+.lumia-db__query-warning {
   display: flex; align-items: flex-start; gap: 8px;
-  padding: 10px 16px; background: var(--skmt-warning-bg);
-  border-bottom: 1px solid oklch(from var(--skmt-warning) l c h / 0.35);
-  font-size: 12px; color: var(--skmt-text); flex-shrink: 0;
+  padding: 10px 16px; background: var(--lumia-warning-bg);
+  border-bottom: 1px solid oklch(from var(--lumia-warning) l c h / 0.35);
+  font-size: 12px; color: var(--lumia-text); flex-shrink: 0;
 }
-.skmt-db__query-warning svg { flex-shrink: 0; color: var(--skmt-warning); margin-top: 1px; }
-.skmt-db__query-editor-wrap { padding: 12px 16px; border-bottom: 1px solid var(--skmt-border); flex-shrink: 0; }
-.skmt-db__query-input {
+.lumia-db__query-warning svg { flex-shrink: 0; color: var(--lumia-warning); margin-top: 1px; }
+.lumia-db__query-editor-wrap { padding: 12px 16px; border-bottom: 1px solid var(--lumia-border); flex-shrink: 0; }
+.lumia-db__query-input {
   width: 100%; min-height: 120px; font-family: "SFMono-Regular", Consolas, Menlo, monospace;
-  font-size: 13px; resize: vertical; padding: 10px; border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm); background: var(--skmt-n50); line-height: 1.6; box-sizing: border-box;
+  font-size: 13px; resize: vertical; padding: 10px; border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm); background: var(--lumia-n50); line-height: 1.6; box-sizing: border-box;
 }
-.skmt-db__query-input:focus { border-color: var(--skmt-accent); outline: none; }
-.skmt-db__query-toolbar { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-.skmt-db__query-result { padding: 16px; overflow: auto; flex: 1; min-height: 0; }
-.skmt-db__query-result-meta { font-size: 12px; color: var(--skmt-text-secondary); margin-bottom: 8px; }
-.skmt-db__query-success {
-  padding: 12px; background: var(--skmt-success-bg, oklch(from var(--skmt-success) l c h / 0.1));
-  border-radius: var(--skmt-radius-sm); border: 1px solid oklch(from var(--skmt-success) l c h / 0.3); font-size: 13px;
+.lumia-db__query-input:focus { border-color: var(--lumia-accent); outline: none; }
+.lumia-db__query-toolbar { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.lumia-db__query-result { padding: 16px; overflow: auto; flex: 1; min-height: 0; }
+.lumia-db__query-result-meta { font-size: 12px; color: var(--lumia-text-secondary); margin-bottom: 8px; }
+.lumia-db__query-success {
+  padding: 12px; background: var(--lumia-success-bg, oklch(from var(--lumia-success) l c h / 0.1));
+  border-radius: var(--lumia-radius-sm); border: 1px solid oklch(from var(--lumia-success) l c h / 0.3); font-size: 13px;
 }
-.skmt-db__query-error {
-  padding: 12px; background: var(--skmt-danger-bg);
-  border-radius: var(--skmt-radius-sm); border: 1px solid oklch(from var(--skmt-danger) l c h / 0.3);
-  font-family: monospace; font-size: 12px; color: var(--skmt-danger); white-space: pre-wrap;
+.lumia-db__query-error {
+  padding: 12px; background: var(--lumia-danger-bg);
+  border-radius: var(--lumia-radius-sm); border: 1px solid oklch(from var(--lumia-danger) l c h / 0.3);
+  font-family: monospace; font-size: 12px; color: var(--lumia-danger); white-space: pre-wrap;
 }
 
-/* Historique */
-.skmt-db__query-history-wrap { position: relative; }
-.skmt-db__history-dropdown {
+/* History */
+.lumia-db__query-history-wrap { position: relative; }
+.lumia-db__history-dropdown {
   position: absolute; bottom: calc(100% + 4px); left: 0;
   min-width: 400px; max-height: 250px; overflow-y: auto;
-  background: var(--skmt-surface); border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius); box-shadow: var(--skmt-shadow-md); z-index: 100;
+  background: var(--lumia-surface); border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius); box-shadow: var(--lumia-shadow-md); z-index: 100;
 }
-.skmt-db__history-item {
+.lumia-db__history-item {
   padding: 8px 12px; font-size: 12px; font-family: monospace; cursor: pointer;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.skmt-db__history-item:hover { background: var(--skmt-n100); }
-.skmt-db__history-empty { padding: 12px; font-size: 12px; color: var(--skmt-text-secondary); }
-.skmt-db__history-footer {
-  border-top: 1px solid var(--skmt-border); padding: 6px 12px; position: sticky; bottom: 0;
-  background: var(--skmt-surface);
+.lumia-db__history-item:hover { background: var(--lumia-n100); }
+.lumia-db__history-empty { padding: 12px; font-size: 12px; color: var(--lumia-text-secondary); }
+.lumia-db__history-footer {
+  border-top: 1px solid var(--lumia-border); padding: 6px 12px; position: sticky; bottom: 0;
+  background: var(--lumia-surface);
 }
-.skmt-db__history-clear {
+.lumia-db__history-clear {
   border: none; background: none; cursor: pointer; font-size: 11px;
-  color: var(--skmt-danger); padding: 0; text-decoration: underline;
+  color: var(--lumia-danger); padding: 0; text-decoration: underline;
 }
 
 /* ================================================================
- * MODALE AJOUT DE LIGNE
+ * ADD ROW MODAL
  * ================================================================ */
-.skmt-db__insert-fields { display: flex; flex-direction: column; gap: 12px; }
-.skmt-db__insert-field { margin: 0; }
-.skmt-db__insert-hint {
-  font-weight: 400; font-size: 11px; color: var(--skmt-text-secondary);
+.lumia-db__insert-fields { display: flex; flex-direction: column; gap: 12px; }
+.lumia-db__insert-field { margin: 0; }
+.lumia-db__insert-hint {
+  font-weight: 400; font-size: 11px; color: var(--lumia-text-secondary);
   font-family: "SFMono-Regular", Consolas, monospace;
 }
-.skmt-db__insert-input:disabled { opacity: .5; }
-.skmt-db__insert-null {
+.lumia-db__insert-input:disabled { opacity: .5; }
+.lumia-db__insert-null {
   display: inline-flex; align-items: center; gap: 5px; margin-top: 4px;
-  font-size: 12px; color: var(--skmt-text-secondary); cursor: pointer;
+  font-size: 12px; color: var(--lumia-text-secondary); cursor: pointer;
 }
-.skmt-db__insert-null input { margin: 0; }
+.lumia-db__insert-null input { margin: 0; }
 
-/* Modal suppression : nom de table mis en évidence */
-#skmt-db-drop-name {
+/* Delete modal: table name highlighted */
+#lumia-db-drop-name {
   display: inline-block; margin-top: 4px; padding: 2px 6px;
-  background: var(--skmt-n100); border-radius: var(--skmt-radius-xs);
-  font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: var(--skmt-danger);
+  background: var(--lumia-n100); border-radius: var(--lumia-radius-xs);
+  font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: var(--lumia-danger);
 }
 
 /* ================================================================
- * NETTOYAGE (issue #16)
+ * CLEANUP (issue #16)
  * ================================================================ */
-/* Entrée de la barre latérale : un <button> qui reprend le look d'une table. */
-.skmt-db__cleanup-link {
+/* Sidebar entry: a <button> that takes on the look of a table. */
+.lumia-db__cleanup-link {
   width: calc(100% - 12px); margin-top: 6px; border: 0; background: none;
   font: inherit; color: inherit; text-align: left; font-weight: 500;
 }
-.skmt-db__cleanup-link svg { flex-shrink: 0; }
+.lumia-db__cleanup-link svg { flex-shrink: 0; }
 
-.skmt-db__cleanup { overflow-y: auto; }
-.skmt-db__cleanup.is-busy button { pointer-events: none; opacity: .6; }
-.skmt-db__cleanup-inner { padding: 16px 20px 24px; max-width: 920px; }
-.skmt-db__cleanup-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
-.skmt-db__cleanup-intro { margin: 4px 0 0; font-size: 13px; color: var(--skmt-text-secondary); }
-.skmt-db__cleanup-section { margin-top: 24px; }
-.skmt-db__cleanup-title {
+.lumia-db__cleanup { overflow-y: auto; }
+.lumia-db__cleanup.is-busy button { pointer-events: none; opacity: .6; }
+.lumia-db__cleanup-inner { padding: 16px 20px 24px; max-width: 920px; }
+.lumia-db__cleanup-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+.lumia-db__cleanup-intro { margin: 4px 0 0; font-size: 13px; color: var(--lumia-text-secondary); }
+.lumia-db__cleanup-section { margin-top: 24px; }
+.lumia-db__cleanup-title {
   margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--skmt-text-secondary);
+  letter-spacing: .06em; color: var(--lumia-text-secondary);
 }
-.skmt-db__cleanup-list { margin: 8px 0 0; padding: 0; list-style: none; border: 1px solid var(--skmt-border); border-radius: var(--skmt-radius-sm); }
-.skmt-db__cleanup-list .skmt-db__cleanup-row + .skmt-db__cleanup-row { border-top: 1px solid var(--skmt-border); }
-.skmt-db__cleanup-section > .skmt-db__cleanup-row { border: 1px solid var(--skmt-border); border-radius: var(--skmt-radius-sm); }
-.skmt-db__cleanup-row { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 14px; }
-.skmt-db__cleanup-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
-.skmt-db__cleanup-text span { color: var(--skmt-text-secondary); font-size: 12px; }
-.skmt-db__cleanup-text code { font-size: 12px; background: none; padding: 0; word-break: break-all; }
-.skmt-db__cleanup-count { min-width: 64px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-.skmt-db__cleanup-count.is-zero { color: var(--skmt-text-secondary); font-weight: 400; }
+.lumia-db__cleanup-list { margin: 8px 0 0; padding: 0; list-style: none; border: 1px solid var(--lumia-border); border-radius: var(--lumia-radius-sm); }
+.lumia-db__cleanup-list .lumia-db__cleanup-row + .lumia-db__cleanup-row { border-top: 1px solid var(--lumia-border); }
+.lumia-db__cleanup-section > .lumia-db__cleanup-row { border: 1px solid var(--lumia-border); border-radius: var(--lumia-radius-sm); }
+.lumia-db__cleanup-row { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 14px; }
+.lumia-db__cleanup-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.lumia-db__cleanup-text span { color: var(--lumia-text-secondary); font-size: 12px; }
+.lumia-db__cleanup-text code { font-size: 12px; background: none; padding: 0; word-break: break-all; }
+.lumia-db__cleanup-count { min-width: 64px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lumia-db__cleanup-count.is-zero { color: var(--lumia-text-secondary); font-weight: 400; }

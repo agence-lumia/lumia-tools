@@ -1,12 +1,18 @@
 /**
- * Studio Kyne Mini Tools - Admin JavaScript
- * Vanilla JS uniquement. Chargé uniquement sur les pages SKMT.
- * La logique toast/notifications est dans notifications.js (chargé global).
+ * Lümia Tools - Admin JavaScript
+ * Vanilla JS only. Loaded only on the Lümia pages.
+ * The toast/notifications logic lives in notifications.js (loaded globally).
  */
 (function () {
   "use strict";
 
   var isDirty = false;
+
+  // Translated strings come from PHP: lumiaAdmin.i18n, built in
+  // Admin::localize_admin_script() (see docs/core.md).
+  function t(key) {
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || "";
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
     initToggles();
@@ -25,12 +31,12 @@
 
   function initToggles() {
     var toggles = document.querySelectorAll(
-      '.skmt-toggle input[type="checkbox"]',
+      '.lumia-toggle input[type="checkbox"]',
     );
 
     toggles.forEach(function (toggle) {
       toggle.addEventListener("change", function () {
-        var label = this.closest(".skmt-form__group--toggle");
+        var label = this.closest(".lumia-form__group--toggle");
         if (label) {
           label.classList.toggle("is-active", this.checked);
         }
@@ -39,11 +45,11 @@
   }
 
   /* ================================================================
-   * VALIDATION FORMULAIRES
+   * FORM VALIDATION
    * ================================================================ */
 
   function initFormValidation() {
-    var forms = document.querySelectorAll(".skmt-form");
+    var forms = document.querySelectorAll(".lumia-form");
 
     forms.forEach(function (form) {
       form.addEventListener("submit", function (e) {
@@ -67,22 +73,22 @@
   }
 
   /* ================================================================
-   * MODAL RÉUTILISABLE
-   * Usage : window.skmtModal.open({ title, message, confirmLabel,
+   * REUSABLE MODAL
+   * Usage: window.lumiaModal.open({ title, message, confirmLabel,
    *         cancelLabel, onConfirm, danger })
    * ================================================================ */
 
   var modalOverlay, modalEl, modalTitle, modalMessage, modalConfirmBtn, modalCancelBtn;
 
   function initModal() {
-    modalOverlay = document.getElementById("skmt-modal-overlay");
+    modalOverlay = document.getElementById("lumia-modal-overlay");
     if (!modalOverlay) return;
 
-    modalEl         = modalOverlay.querySelector(".skmt-modal");
-    modalTitle      = modalOverlay.querySelector(".skmt-modal__title");
-    modalMessage    = modalOverlay.querySelector(".skmt-modal__message");
-    modalConfirmBtn = modalOverlay.querySelector(".skmt-modal__confirm");
-    modalCancelBtn  = modalOverlay.querySelector(".skmt-modal__cancel");
+    modalEl         = modalOverlay.querySelector(".lumia-modal");
+    modalTitle      = modalOverlay.querySelector(".lumia-modal__title");
+    modalMessage    = modalOverlay.querySelector(".lumia-modal__message");
+    modalConfirmBtn = modalOverlay.querySelector(".lumia-modal__confirm");
+    modalCancelBtn  = modalOverlay.querySelector(".lumia-modal__cancel");
 
     modalCancelBtn.addEventListener("click", closeModal);
     modalOverlay.addEventListener("click", function (e) {
@@ -101,11 +107,11 @@
     options = options || {};
     modalTitle.textContent      = options.title   || "";
     modalMessage.textContent    = options.message || "";
-    modalConfirmBtn.textContent = options.confirmLabel || "Confirmer";
-    modalCancelBtn.textContent  = options.cancelLabel  || "Annuler";
+    modalConfirmBtn.textContent = options.confirmLabel || t("confirm");
+    modalCancelBtn.textContent  = options.cancelLabel  || t("cancel");
 
-    modalConfirmBtn.className = "skmt-btn skmt-btn--sm " +
-      (options.danger ? "skmt-btn--danger" : "skmt-btn--primary");
+    modalConfirmBtn.className = "lumia-btn lumia-btn--sm " +
+      (options.danger ? "lumia-btn--danger" : "lumia-btn--primary");
 
     var handler = options.onConfirm || function () {};
     var newBtn  = modalConfirmBtn.cloneNode(true);
@@ -129,11 +135,11 @@
     modalOverlay.setAttribute("aria-hidden", "true");
   }
 
-  window.skmtModal = { open: openModal, close: closeModal };
+  window.lumiaModal = { open: openModal, close: closeModal };
 
   /* ================================================================
-   * DÉCLENCHEURS [data-modal-confirm]
-   * Boutons qui déclenchent la modal avant de soumettre un form.
+   * [data-modal-confirm] TRIGGERS
+   * Buttons that open the modal before submitting a form.
    * ================================================================ */
 
   function initModalTriggers() {
@@ -146,10 +152,10 @@
       var form   = formId ? document.getElementById(formId) : null;
 
       openModal({
-        title:        btn.getAttribute("data-modal-title")   || "Confirmer",
+        title:        btn.getAttribute("data-modal-title")   || t("confirm"),
         message:      btn.getAttribute("data-modal-message") || "",
-        confirmLabel: btn.getAttribute("data-modal-confirm-label") || "Confirmer",
-        danger:       btn.hasAttribute("data-modal-danger") || btn.classList.contains("skmt-btn--danger"),
+        confirmLabel: btn.getAttribute("data-modal-confirm-label") || t("confirm"),
+        danger:       btn.hasAttribute("data-modal-danger") || btn.classList.contains("lumia-btn--danger"),
         onConfirm: function () {
           if (form) form.submit();
         },
@@ -158,17 +164,16 @@
   }
 
   /* ================================================================
-   * AVERTISSEMENT MODIFICATIONS NON SAUVEGARDÉES
+   * UNSAVED CHANGES WARNING
    * ================================================================ */
 
   function initUnsavedWarning() {
     var forms   = document.querySelectorAll(
-      ".skmt-form, #skmt-save-settings-form, #skmt-module-form",
+      ".lumia-form, #lumia-save-settings-form, #lumia-module-form",
     );
 
-    // Seul un champ nommé part à l'enregistrement. Recherche, filtres d'une
-    // liste ou champ de test (journaux, SMTP) n'ont pas de name : les
-    // manipuler ne laisse rien de non sauvegardé.
+    // Only a named field is sent on save. Search, list filters or test fields
+    // (logs, SMTP) have no name: using them leaves nothing unsaved.
     function markDirty(e) {
       if (e.target && e.target.name) isDirty = true;
     }
@@ -176,11 +181,11 @@
     forms.forEach(function (form) {
       form.addEventListener("input", markDirty, { passive: true });
       form.addEventListener("change", markDirty, { passive: true });
-      // Soumettre le form reset l'état dirty
+      // Submitting the form resets the dirty state
       form.addEventListener("submit", function () { isDirty = false; });
     });
 
-    // Intercepte les liens de navigation interne (sidebar, menus WP, etc.)
+    // Intercept internal navigation links (sidebar, WP menus, etc.)
     document.addEventListener("click", function (e) {
       if (!isDirty) return;
       var link = e.target.closest("a[href]");
@@ -189,26 +194,26 @@
       var href = link.getAttribute("href");
       if (!href || href.startsWith("#")) return;
 
-      // Ignorer les déconnexions
+      // Ignore logouts
       if (href.indexOf("action=logout") !== -1) return;
 
-      // Résoudre l'URL absolue pour comparer l'origine
+      // Resolve the absolute URL to compare the origin
       var resolved;
       try {
         resolved = new URL(href, window.location.href);
       } catch (_) {
         return;
       }
-      // Ignorer les liens vers un autre domaine
+      // Ignore links to another domain
       if (resolved.origin !== window.location.origin) return;
 
       e.preventDefault();
       var fullHref = resolved.href;
       openModal({
-        title:        "Modifications non sauvegardées",
-        message:      "Vous avez des modifications non enregistrées. Quitter sans sauvegarder ?",
-        confirmLabel: "Quitter sans sauvegarder",
-        cancelLabel:  "Rester sur la page",
+        title:        t("unsavedTitle"),
+        message:      t("unsavedText"),
+        confirmLabel: t("unsavedLeave"),
+        cancelLabel:  t("unsavedStay"),
         danger:       true,
         onConfirm: function () {
           isDirty = false;
@@ -226,34 +231,34 @@
   }
 
   /* ================================================================
-   * AJAX TOGGLE MODULES
+   * AJAX MODULE TOGGLES
    * ================================================================ */
 
   function initModuleAjaxToggles() {
-    var moduleGrid = document.querySelector(".skmt-module-grid");
-    if (!moduleGrid || typeof skmtAdmin === "undefined") return;
+    var moduleGrid = document.querySelector(".lumia-module-grid");
+    if (!moduleGrid || typeof lumiaAdmin === "undefined") return;
 
     moduleGrid.addEventListener("change", function (e) {
       var checkbox = e.target.closest(
-        '.skmt-module-card .skmt-toggle input[type="checkbox"]',
+        '.lumia-module-card .lumia-toggle input[type="checkbox"]',
       );
       if (!checkbox) return;
 
-      var card     = checkbox.closest(".skmt-module-card");
+      var card     = checkbox.closest(".lumia-module-card");
       var moduleId = checkbox.getAttribute("data-module-id");
       if (!card || !moduleId) return;
 
       var action  = checkbox.checked ? "activate" : "deactivate";
       var formData = new FormData();
-      formData.append("action",       "skmt_ajax_toggle_module");
-      formData.append("nonce",        skmtAdmin.nonce);
+      formData.append("action",       "lumia_ajax_toggle_module");
+      formData.append("nonce",        lumiaAdmin.nonce);
       formData.append("module",       moduleId);
-      formData.append("skmt_action",  action);
+      formData.append("lumia_action",  action);
 
-      // Feedback visuel immédiat
+      // Immediate visual feedback
       checkbox.disabled = true;
 
-      fetch(skmtAdmin.ajaxUrl, {
+      fetch(lumiaAdmin.ajaxUrl, {
         method:      "POST",
         credentials: "same-origin",
         body:        formData,
@@ -262,11 +267,11 @@
         .then(function (data) {
           checkbox.disabled = false;
           if (!data.success) {
-            // Revenir à l'état précédent
+            // Revert to the previous state
             checkbox.checked = !checkbox.checked;
-            if (typeof window.skmtShowToast === "function") {
-              window.skmtShowToast(
-                (data.data && data.data.message) || "Erreur",
+            if (typeof window.lumiaShowToast === "function") {
+              window.lumiaShowToast(
+                (data.data && data.data.message) || t("error"),
                 "error",
               );
             }
@@ -274,18 +279,18 @@
           }
 
           var isActive = data.data.active;
-          card.classList.toggle("skmt-module-card--active", isActive);
+          card.classList.toggle("lumia-module-card--active", isActive);
 
-          // Mettre à jour / créer le bouton "Configurer"
-          var actions = card.querySelector(".skmt-module-card__actions");
+          // Update / create the "Configure" button
+          var actions = card.querySelector(".lumia-module-card__actions");
           if (actions) {
-            var existingLink = actions.querySelector(".skmt-btn");
+            var existingLink = actions.querySelector(".lumia-btn");
             if (isActive) {
               if (!existingLink) {
                 var a    = document.createElement("a");
                 a.href   = data.data.configure_url;
-                a.className = "skmt-btn skmt-btn--sm skmt-btn--secondary";
-                a.textContent = "Configurer";
+                a.className = "lumia-btn lumia-btn--sm lumia-btn--secondary";
+                a.textContent = t("configure");
                 actions.appendChild(a);
               }
             } else {
@@ -293,11 +298,11 @@
             }
           }
 
-          if (typeof window.skmtShowToast === "function") {
-            window.skmtShowToast(data.data.notice, "success");
+          if (typeof window.lumiaShowToast === "function") {
+            window.lumiaShowToast(data.data.notice, "success");
           }
 
-          // Recharger la page pour mettre à jour la navigation latérale
+          // Reload the page to update the side navigation
           isDirty = false;
           setTimeout(function () {
             window.location.reload();
@@ -311,105 +316,101 @@
   }
 
   /* ================================================================
-   * ONGLETS — [data-skmt-tabs] + [data-skmt-tab-panel]
-   * Sous-onglets d'un écran, côté client : tous les panneaux restent
-   * dans le DOM (et dans le formulaire, donc postés à l'enregistrement).
-   * Le dernier onglet ouvert est rappelé par sessionStorage : après un
-   * enregistrement, la redirection ramène sur l'écran, pas sur l'onglet.
+   * TABS — [data-lumia-tabs] + [data-lumia-tab-panel]
+   * Client-side sub-tabs of a screen: all the panels stay in the DOM (and
+   * in the form, hence posted on save). The last opened tab is remembered
+   * through sessionStorage: after a save, the redirect brings back to the
+   * screen, not to the tab.
    * ================================================================ */
 
   function initTabs() {
-    document.querySelectorAll("[data-skmt-tabs]").forEach(function (list) {
-      var group = list.dataset.skmtTabs;
-      var tabs = Array.prototype.slice.call(list.querySelectorAll("[data-skmt-tab]"));
-      var panels = document.querySelectorAll('[data-skmt-tab-panel][data-skmt-tabs-group="' + group + '"]');
-      var key = "skmt-tab:" + group;
+    document.querySelectorAll("[data-lumia-tabs]").forEach(function (list) {
+      var group = list.dataset.lumiaTabs;
+      var tabs = Array.prototype.slice.call(list.querySelectorAll("[data-lumia-tab]"));
+      var panels = document.querySelectorAll('[data-lumia-tab-panel][data-lumia-tabs-group="' + group + '"]');
+      var key = "lumia-tab:" + group;
 
       if (!tabs.length) return;
 
       function activate(name, focus) {
-        var found = tabs.some(function (tab) { return tab.dataset.skmtTab === name; });
-        if (!found) name = tabs[0].dataset.skmtTab;
+        var found = tabs.some(function (tab) { return tab.dataset.lumiaTab === name; });
+        if (!found) name = tabs[0].dataset.lumiaTab;
 
         tabs.forEach(function (tab) {
-          var on = tab.dataset.skmtTab === name;
+          var on = tab.dataset.lumiaTab === name;
           tab.classList.toggle("is-active", on);
           tab.setAttribute("aria-selected", on ? "true" : "false");
           tab.tabIndex = on ? 0 : -1;
           if (on && focus) tab.focus();
         });
         panels.forEach(function (panel) {
-          panel.hidden = panel.dataset.skmtTabPanel !== name;
+          panel.hidden = panel.dataset.lumiaTabPanel !== name;
         });
 
-        try { sessionStorage.setItem(key, name); } catch (e) { /* stockage indisponible */ }
+        try { sessionStorage.setItem(key, name); } catch (e) { /* storage unavailable */ }
 
-        list.dispatchEvent(new CustomEvent("skmt:tab", { bubbles: true, detail: { group: group, name: name } }));
+        list.dispatchEvent(new CustomEvent("lumia:tab", { bubbles: true, detail: { group: group, name: name } }));
       }
 
       list.addEventListener("click", function (e) {
-        var tab = e.target.closest("[data-skmt-tab]");
-        if (tab && list.contains(tab)) activate(tab.dataset.skmtTab, false);
+        var tab = e.target.closest("[data-lumia-tab]");
+        if (tab && list.contains(tab)) activate(tab.dataset.lumiaTab, false);
       });
 
-      // Flèches, Début, Fin : motif « tabs » de l'ARIA Authoring Practices.
+      // Arrows, Home, End: the "tabs" pattern of the ARIA Authoring Practices.
       list.addEventListener("keydown", function (e) {
         var index = tabs.indexOf(document.activeElement);
         if (index < 0) return;
         var next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 }[e.key];
         if (next === undefined) return;
         e.preventDefault();
-        activate(tabs[(next + tabs.length) % tabs.length].dataset.skmtTab, true);
+        activate(tabs[(next + tabs.length) % tabs.length].dataset.lumiaTab, true);
       });
 
-      // Un champ invalide dans un panneau masqué : le navigateur refuse de
-      // soumettre sans pouvoir montrer le champ. On ouvre son onglet.
+      // An invalid field in a hidden panel: the browser refuses to submit
+      // without being able to show the field. Open its tab.
       panels.forEach(function (panel) {
         panel.addEventListener("invalid", function () {
-          if (panel.hidden) activate(panel.dataset.skmtTabPanel, false);
+          if (panel.hidden) activate(panel.dataset.lumiaTabPanel, false);
         }, true);
       });
 
       var initial = null;
-      try { initial = sessionStorage.getItem(key); } catch (e) { /* stockage indisponible */ }
-      activate(initial || (list.querySelector("[data-skmt-tab].is-active") || tabs[0]).dataset.skmtTab, false);
+      try { initial = sessionStorage.getItem(key); } catch (e) { /* storage unavailable */ }
+      activate(initial || (list.querySelector("[data-lumia-tab].is-active") || tabs[0]).dataset.lumiaTab, false);
 
-      list.skmtActivate = activate;
+      list.lumiaActivate = activate;
     });
   }
 
-  /** Ouvre un onglet par programme : window.skmtTabs.activate('smtp', 'log'). */
-  window.skmtTabs = {
+  /** Opens a tab programmatically: window.lumiaTabs.activate('smtp', 'log'). */
+  window.lumiaTabs = {
     activate: function (group, name) {
-      var list = document.querySelector('[data-skmt-tabs="' + group + '"]');
-      if (list && list.skmtActivate) list.skmtActivate(name, false);
+      var list = document.querySelector('[data-lumia-tabs="' + group + '"]');
+      if (list && list.lumiaActivate) list.lumiaActivate(name, false);
     },
   };
 
   /* ================================================================
-   * UTILITAIRES
+   * UTILITIES
    * ================================================================ */
 
-  window.skmtConfirm = function (message) {
-    return confirm(
-      message ||
-        (window.skmtAdmin && skmtAdmin.i18n.confirmAction) ||
-        "Êtes-vous sûr ?",
-    );
+  window.lumiaConfirm = function (message) {
+    return confirm(message || t("confirmAction"));
   };
 
   /* ================================================================
-   * MODALS NOMMÉES — skmtModalOpen / skmtModalClose
-   * Pour les modals avec HTML persistant (form, etc.).
-   * Complément à skmtModal.open() qui est programmatique.
-   * Usage : skmtModalOpen('mon-modal-id')
+   * NAMED MODALS — lumiaModalOpen / lumiaModalClose
+   * For modals with persistent HTML (form, etc.).
+   * Complements lumiaModal.open(), which is programmatic.
+   * Usage: lumiaModalOpen('my-modal-id')
    * ================================================================ */
 
-  window.skmtModalOpen = function (id) {
+  window.lumiaModalOpen = function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.classList.add("is-open");
-    // Focaliser le premier champ texte si présent
+    // Focus the first text field if present
     var input = el.querySelector("input[type='text'], input[type='number'], textarea");
     if (input) {
       setTimeout(function () {
@@ -419,36 +420,36 @@
     }
   };
 
-  window.skmtModalClose = function (id) {
+  window.lumiaModalClose = function (id) {
     var el = document.getElementById(id);
     if (el) el.classList.remove("is-open");
   };
 
-  // Délégation globale : click hors du .skmt-modal ou sur .skmt-modal-close
+  // Global delegation: click outside .lumia-modal or on .lumia-modal-close
   document.addEventListener("click", function (e) {
-    // Clic sur l'overlay lui-même (hors de la boîte)
+    // Click on the overlay itself (outside the box)
     if (
-      e.target.classList.contains("skmt-modal-overlay") &&
-      e.target.id !== "skmt-modal-overlay" // géré par initModal()
+      e.target.classList.contains("lumia-modal-overlay") &&
+      e.target.id !== "lumia-modal-overlay" // handled by initModal()
     ) {
       e.target.classList.remove("is-open");
       return;
     }
-    // Bouton de fermeture explicite
-    var closeBtn = e.target.closest && e.target.closest(".skmt-modal-close");
+    // Explicit close button
+    var closeBtn = e.target.closest && e.target.closest(".lumia-modal-close");
     if (closeBtn) {
-      var overlay = closeBtn.closest(".skmt-modal-overlay");
-      if (overlay && overlay.id !== "skmt-modal-overlay") {
+      var overlay = closeBtn.closest(".lumia-modal-overlay");
+      if (overlay && overlay.id !== "lumia-modal-overlay") {
         overlay.classList.remove("is-open");
       }
     }
   });
 
-  // Échap ferme toutes les modals nommées ouvertes (sauf la principale)
+  // Escape closes all the open named modals (except the main one)
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     var open = document.querySelectorAll(
-      ".skmt-modal-overlay.is-open:not(#skmt-modal-overlay)",
+      ".lumia-modal-overlay.is-open:not(#lumia-modal-overlay)",
     );
     open.forEach(function (el) {
       el.classList.remove("is-open");
@@ -458,24 +459,24 @@
   /* ================================================================
    * TOOLTIPS
    *
-   * Usage : <button data-skmt-tip="Texte"> — et, si besoin,
-   * data-skmt-tip-placement="top|bottom|left|right" (défaut : top).
-   * Aucune initialisation à faire : tout passe par délégation, donc le
-   * markup rendu en JS après coup (arbre du créateur de menu, listes
-   * rechargées en AJAX) est couvert sans y penser.
+   * Usage: <button data-lumia-tip="Text"> — and, if needed,
+   * data-lumia-tip-placement="top|bottom|left|right" (default: top).
+   * No initialization needed: everything goes through delegation, so markup
+   * rendered in JS afterwards (menu creator tree, lists reloaded through
+   * AJAX) is covered without a second thought.
    *
-   * Le positionnement est en `fixed` + translate3d : un tooltip enfant
-   * d'une colonne en overflow:hidden serait rogné, et un tooltip en
-   * position absolue devrait connaître les décalages de chacun de ses
-   * parents. En contrepartie il faut suivre le défilement — d'où le
-   * recalcul sur scroll/resize, throttlé en requestAnimationFrame.
+   * Positioning is `fixed` + translate3d: a tooltip that is a child of an
+   * overflow:hidden column would be clipped, and an absolutely positioned
+   * tooltip would have to know the offsets of each of its parents. In return
+   * scrolling must be tracked — hence the recalculation on scroll/resize,
+   * throttled with requestAnimationFrame.
    * ================================================================ */
 
   var tipEl      = null;
   var tipBox     = null;
   var tipArrow   = null;
   var tipText    = null;
-  var tipRef     = null;   // élément actuellement décrit
+  var tipRef     = null;   // element currently described
   var tipShowT   = null;
   var tipHideT   = null;
   var tipRaf     = null;
@@ -483,12 +484,12 @@
 
   var TIP_SHOW_DELAY = 140;
   var TIP_HIDE_DELAY = 60;
-  var TIP_MARGIN     = 8;  // marge minimale avec le bord de la fenêtre
-  var TIP_OFFSET     = 8;  // distance entre l'élément et la boîte
+  var TIP_MARGIN     = 8;  // minimum margin with the window edge
+  var TIP_OFFSET     = 8;  // distance between the element and the box
 
   function initTooltips() {
-    // mouseover/mouseout (et non mouseenter/leave) : seuls les premiers
-    // remontent, condition d'une délégation unique sur le document.
+    // mouseover/mouseout (not mouseenter/leave): only the former bubble, which
+    // is the condition for a single delegation on the document.
     document.addEventListener("mouseover", function (e) {
       var el = tipTarget(e.target);
       if (el) tipScheduleShow(el);
@@ -497,13 +498,13 @@
     document.addEventListener("mouseout", function (e) {
       var el = tipTarget(e.target);
       if (!el || el !== tipRef) return;
-      // Passage sur un enfant de la même cible : ce n'est pas une sortie.
+      // Moving onto a child of the same target: not an exit.
       if (e.relatedTarget && el.contains(e.relatedTarget)) return;
       tipScheduleHide();
     });
 
-    // Clavier : même déclencheur au focus, sinon le tooltip n'existe pas
-    // pour qui navigue au Tab — c'est justement ce que `title` fait mal.
+    // Keyboard: same trigger on focus, otherwise the tooltip does not exist
+    // for those who navigate with Tab — which is exactly what `title` does badly.
     document.addEventListener("focusin", function (e) {
       var el = tipTarget(e.target);
       if (el) tipShow(el);
@@ -512,8 +513,8 @@
       if (tipRef && tipTarget(e.target) === tipRef) tipHide();
     });
 
-    // Un clic ouvre en général un panneau ou une modale : garder le
-    // tooltip par-dessus n'a aucun intérêt.
+    // A click usually opens a panel or a modal: keeping the tooltip on top
+    // is pointless.
     document.addEventListener("mousedown", function () { tipHide(); }, true);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") tipHide();
@@ -525,8 +526,8 @@
 
   function tipTarget(node) {
     if (!node || !node.closest) return null;
-    var el = node.closest("[data-skmt-tip]");
-    if (!el || !el.getAttribute("data-skmt-tip")) return null;
+    var el = node.closest("[data-lumia-tip]");
+    if (!el || !el.getAttribute("data-lumia-tip")) return null;
     if (el.disabled) return null;
     return el;
   }
@@ -534,25 +535,25 @@
   function tipEnsureEl() {
     if (tipEl) return;
     tipEl = document.createElement("div");
-    tipEl.className = "skmt-tooltip";
+    tipEl.className = "lumia-tooltip";
     tipEl.setAttribute("role", "tooltip");
     tipEl.innerHTML =
-      '<div class="skmt-tooltip__box">' +
-        '<span class="skmt-tooltip__text"></span>' +
-        '<span class="skmt-tooltip__arrow"></span>' +
+      '<div class="lumia-tooltip__box">' +
+        '<span class="lumia-tooltip__text"></span>' +
+        '<span class="lumia-tooltip__arrow"></span>' +
       "</div>";
     document.body.appendChild(tipEl);
-    tipBox   = tipEl.querySelector(".skmt-tooltip__box");
-    tipText  = tipEl.querySelector(".skmt-tooltip__text");
-    tipArrow = tipEl.querySelector(".skmt-tooltip__arrow");
+    tipBox   = tipEl.querySelector(".lumia-tooltip__box");
+    tipText  = tipEl.querySelector(".lumia-tooltip__text");
+    tipArrow = tipEl.querySelector(".lumia-tooltip__arrow");
   }
 
   function tipScheduleShow(el) {
     if (el === tipRef && tipVisible) { clearTimeout(tipHideT); return; }
     clearTimeout(tipHideT);
     clearTimeout(tipShowT);
-    // Un tooltip déjà ouvert : on enchaîne sans délai, comme un menu dont
-    // les entrées se survolent (réattendre 140 ms donne une UI molle).
+    // A tooltip already open: chain without delay, like a menu whose entries
+    // are hovered (waiting 140 ms again gives a sluggish UI).
     if (tipVisible) { tipShow(el); return; }
     tipShowT = setTimeout(function () { tipShow(el); }, TIP_SHOW_DELAY);
   }
@@ -564,17 +565,17 @@
   }
 
   function tipShow(el) {
-    var text = el.getAttribute("data-skmt-tip");
+    var text = el.getAttribute("data-lumia-tip");
     if (!text) return;
     tipEnsureEl();
     clearTimeout(tipShowT);
     clearTimeout(tipHideT);
 
-    // `title` ferait doublon avec notre boîte : on le retire, en le
-    // gardant de côté pour pouvoir le rendre si besoin.
+    // `title` would duplicate our box: remove it, keeping it aside so it can
+    // be given back if needed.
     var native = el.getAttribute("title");
     if (native) {
-      el.setAttribute("data-skmt-tip-title", native);
+      el.setAttribute("data-lumia-tip-title", native);
       el.removeAttribute("title");
     }
 
@@ -596,7 +597,7 @@
   }
 
   function tipPlacementOf(el) {
-    var p = el.getAttribute("data-skmt-tip-placement") || "top";
+    var p = el.getAttribute("data-lumia-tip-placement") || "top";
     return /^(top|bottom|left|right)$/.test(p) ? p : "top";
   }
 
@@ -611,8 +612,8 @@
   function tipPlace() {
     if (!tipVisible || !tipRef) return;
 
-    // L'élément a pu disparaître (re-rendu d'une liste) ou sortir de
-    // l'écran en défilant dans sa colonne : plus rien à décrire.
+    // The element may have disappeared (list re-render) or left the screen by
+    // scrolling in its column: nothing left to describe.
     if (!document.contains(tipRef)) { tipHide(); return; }
     var r = tipRef.getBoundingClientRect();
     if (!r.width && !r.height) { tipHide(); return; }
@@ -624,8 +625,8 @@
     var h = tipEl.offsetHeight;
     var p = tipPlacementOf(tipRef);
 
-    // Bascule sur le côté opposé quand la place manque — et seulement si
-    // l'opposé en offre davantage, pour ne pas osciller.
+    // Flip to the opposite side when room is lacking — and only if the
+    // opposite offers more, to avoid oscillating.
     var space = {
       top:    r.top - TIP_OFFSET - TIP_MARGIN,
       bottom: window.innerHeight - r.bottom - TIP_OFFSET - TIP_MARGIN,
@@ -645,8 +646,8 @@
       left = p === "left" ? r.left - w - TIP_OFFSET : r.right + TIP_OFFSET;
     }
 
-    // Recadrage dans la fenêtre : la boîte glisse, la flèche reste sur
-    // l'élément (sinon elle pointe à côté dans les coins).
+    // Clamp within the window: the box slides, the arrow stays on the
+    // element (otherwise it points next to it in the corners).
     var maxLeft = window.innerWidth - w - TIP_MARGIN;
     var maxTop  = window.innerHeight - h - TIP_MARGIN;
     left = Math.max(TIP_MARGIN, Math.min(left, Math.max(TIP_MARGIN, maxLeft)));
@@ -669,16 +670,16 @@
   }
 
   /**
-   * API publique — utile quand le DOM bouge sous le tooltip (ligne
-   * supprimée, panneau replié) ou pour poser un texte à la volée.
+   * Public API — useful when the DOM moves under the tooltip (row removed,
+   * panel collapsed) or to set a text on the fly.
    */
-  window.skmtTooltip = {
+  window.lumiaTooltip = {
     hide: tipHide,
     refresh: tipPlace,
     set: function (el, text) {
       if (!el) return;
-      if (text) el.setAttribute("data-skmt-tip", text);
-      else      el.removeAttribute("data-skmt-tip");
+      if (text) el.setAttribute("data-lumia-tip", text);
+      else      el.removeAttribute("data-lumia-tip");
       if (tipRef === el) {
         if (text) tipShow(el);
         else      tipHide();

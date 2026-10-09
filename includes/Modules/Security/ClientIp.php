@@ -1,24 +1,24 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Security;
+namespace Lumia\Tools\Modules\Security;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Résolution de l'IP cliente — source unique de vérité pour tout le module.
+ * Client IP resolution — single source of truth for the whole module.
  *
- * Les en-têtes de proxy (CF-Connecting-IP, X-Forwarded-For) sont envoyés par le
- * client : sur un site qui n'est PAS derrière un proxy, n'importe qui peut les
- * fabriquer. Les lire sans condition rend le rate limiting inopérant — il suffit
- * de changer l'en-tête à chaque tentative pour repartir d'un compteur neuf — et
- * permet d'usurper une IP de la liste blanche.
+ * Proxy headers (CF-Connecting-IP, X-Forwarded-For) are sent by the client: on
+ * a site that is NOT behind a proxy, anyone can forge them. Reading them
+ * unconditionally makes rate limiting useless — changing the header on every
+ * attempt is enough to start from a fresh counter — and lets an attacker
+ * spoof an IP from the whitelist.
  *
- * On ne les consulte donc que si l'administrateur a explicitement déclaré la
- * topologie du site (réglage « Origine de l'IP »). Par défaut : REMOTE_ADDR,
- * la seule valeur que le client ne peut pas falsifier.
+ * They are therefore only read when the administrator has explicitly declared
+ * the site topology (the "IP address source" setting). Default: REMOTE_ADDR,
+ * the only value the client cannot forge.
  */
 class ClientIp {
 
-	/** Sources d'IP proposées dans les réglages. */
+	/** IP sources offered in the settings. */
 	const SOURCE_REMOTE_ADDR = 'remote_addr';
 	const SOURCE_CLOUDFLARE  = 'cloudflare';
 	const SOURCE_FORWARDED   = 'x_forwarded_for';
@@ -29,17 +29,16 @@ class ClientIp {
 		self::SOURCE_FORWARDED,
 	];
 
-	/** Valeur retournée quand aucune IP exploitable n'est disponible. */
+	/** Value returned when no usable IP is available. */
 	const UNKNOWN = '0.0.0.0';
 
 	/**
-	 * Retourne l'IP cliente selon la source déclarée.
+	 * Returns the client IP according to the declared source.
 	 *
-	 * Toute valeur non conforme à une IP retombe sur REMOTE_ADDR : un en-tête
-	 * de proxy absent ou malformé ne doit jamais produire une clé de compteur
-	 * arbitraire.
+	 * Any value that is not a valid IP falls back to REMOTE_ADDR: a missing or
+	 * malformed proxy header must never produce an arbitrary counter key.
 	 *
-	 * @param string $source Une des constantes SOURCE_*.
+	 * @param string $source One of the SOURCE_* constants.
 	 */
 	public static function resolve( string $source = self::SOURCE_REMOTE_ADDR ): string {
 		$remote = self::valid_ip( self::server( 'REMOTE_ADDR' ) );
@@ -60,7 +59,7 @@ class ClientIp {
 	}
 
 	/**
-	 * Normalise une source lue depuis un formulaire ou une option.
+	 * Normalizes a source read from a form or an option.
 	 *
 	 * @param mixed $source
 	 */
@@ -71,14 +70,14 @@ class ClientIp {
 	}
 
 	/**
-	 * En-têtes de proxy effectivement présents sur la requête courante.
+	 * Proxy headers actually present on the current request.
 	 *
-	 * Sert uniquement à informer l'administrateur dans l'écran de réglages :
-	 * il choisit ainsi sa topologie en connaissance de cause, plutôt qu'en
-	 * devinant. Ne JAMAIS s'en servir pour décider automatiquement de la
-	 * source — leur présence est précisément ce qu'un attaquant contrôle.
+	 * Only used to inform the administrator on the settings screen: they can
+	 * pick their topology knowingly instead of guessing. NEVER use it to pick
+	 * the source automatically — their presence is exactly what an attacker
+	 * controls.
 	 *
-	 * @return array<string, string> Nom d'en-tête => valeur brute.
+	 * @return array<string, string> Header name => raw value.
 	 */
 	public static function detected_headers(): array {
 		$found = [];
@@ -97,13 +96,12 @@ class ClientIp {
 	}
 
 	/**
-	 * Extrait l'IP cliente d'un X-Forwarded-For.
+	 * Extracts the client IP from an X-Forwarded-For header.
 	 *
-	 * L'en-tête se lit « client, proxy1, proxy2… » : chaque intermédiaire
-	 * ajoute à droite l'adresse qu'il a vue. La DERNIÈRE entrée est donc celle
-	 * qu'a inscrite le proxy le plus proche de nous — la seule que le client ne
-	 * puisse pas avoir écrite lui-même. Les entrées de gauche, elles, viennent
-	 * telles quelles de la requête entrante.
+	 * The header reads "client, proxy1, proxy2…": each intermediary appends on
+	 * the right the address it saw. The LAST entry is therefore the one written
+	 * by the proxy closest to us — the only one the client cannot have written
+	 * itself. The entries on the left come as is from the incoming request.
 	 */
 	private static function from_forwarded_for( string $header ): string {
 		if ( '' === $header ) {
@@ -119,7 +117,7 @@ class ClientIp {
 	}
 
 	/**
-	 * Retourne '' si la valeur n'est pas une IP valide.
+	 * Returns '' if the value is not a valid IP.
 	 */
 	private static function valid_ip( string $value ): string {
 		return filter_var( $value, FILTER_VALIDATE_IP ) ? $value : '';

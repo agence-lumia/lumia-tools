@@ -13,19 +13,19 @@
   var el = {};
 
   document.addEventListener('DOMContentLoaded', function () {
-    var wrap = document.getElementById('skmt-al');
+    var wrap = document.getElementById('lumia-al');
     if (!wrap) return;
 
     state.nonce = wrap.dataset.nonce;
 
     ['search', 'user', 'type', 'from', 'to', 'reset', 'export', 'rows', 'total', 'page', 'prev', 'next'].forEach(function (id) {
-      el[id] = document.getElementById('skmt-al-' + id);
+      el[id] = document.getElementById('lumia-al-' + id);
     });
 
-    // Entrée dans n'importe quel filtre (recherche, dates) soumettrait le
-    // formulaire de réglages qui englobe la liste : rechargement de la page,
-    // filtres perdus et faux « Réglages modifiés » au journal.
-    wrap.querySelector('.skmt-al__filters').addEventListener('keydown', function (e) {
+    // Enter in any filter (search, dates) would submit the settings form that
+    // wraps the list: page reload, lost filters and a false "Settings
+    // changed" entry in the log.
+    wrap.querySelector('.lumia-al__filters').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); reload(); }
     });
     el.search.addEventListener('input', function () {
@@ -62,8 +62,9 @@
     load(1);
   });
 
-  function t(key, fallback) {
-    return (window.skmtAdmin && skmtAdmin.i18n && skmtAdmin.i18n[key]) || fallback;
+  /** String translated by PHP (Module::get_admin_js_data()); empty if missing. */
+  function t(key) {
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || '';
   }
 
   function format(str) {
@@ -74,7 +75,7 @@
     });
   }
 
-  /** Filtres courants, sous la forme attendue par le serveur. */
+  /** Current filters, in the shape the server expects. */
   function filters() {
     var type = el.type.value;
     return {
@@ -94,27 +95,27 @@
     var fd = new FormData();
     var request = ++state.request;
 
-    fd.append('action', 'skmt_activity_log_list');
+    fd.append('action', 'lumia_activity_log_list');
     fd.append('nonce', state.nonce);
     fd.append('page', page);
     Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
 
-    setState(t('alLoading', 'Chargement…'));
+    setState(t('alLoading'));
 
-    fetch(skmtAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
+    fetch(lumiaAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
       .then(function (r) { return r.json(); })
       .then(function (res) {
-        // Une frappe rapide dans la recherche lance plusieurs requêtes : seule
-        // la dernière doit s'afficher, même si une plus ancienne répond après.
+        // Fast typing in the search box fires several requests: only the last
+        // one must be displayed, even if an older one answers afterwards.
         if (request !== state.request) return;
         if (!res.success) throw new Error((res.data && res.data.message) || '');
         render(res.data);
       })
       .catch(function (err) {
         if (request !== state.request) return;
-        setState(t('alError', 'Impossible de charger le journal.'));
-        if (typeof window.skmtShowToast === 'function') {
-          window.skmtShowToast((err && err.message) || t('alError', 'Impossible de charger le journal.'), 'error');
+        setState(t('alError'));
+        if (typeof window.lumiaShowToast === 'function') {
+          window.lumiaShowToast((err && err.message) || t('alError'), 'error');
         }
       });
   }
@@ -124,7 +125,7 @@
     var tr = document.createElement('tr');
     var td = document.createElement('td');
     td.colSpan = 5;
-    td.className = 'skmt-al__state';
+    td.className = 'lumia-al__state';
     td.textContent = message;
     tr.appendChild(td);
     el.rows.appendChild(tr);
@@ -135,59 +136,59 @@
     state.page = data.page;
     state.pages = data.pages;
 
-    el.total.textContent = format(t('alTotal', '%s événement(s)'), data.total.toLocaleString());
-    el.page.textContent = format(t('alPage', 'Page %1$s sur %2$s'), data.page, data.pages);
+    el.total.textContent = format(t('alTotal'), data.total.toLocaleString());
+    el.page.textContent = format(t('alPage'), data.page, data.pages);
     el.prev.disabled = data.page <= 1;
     el.next.disabled = data.page >= data.pages;
 
     if (!data.rows.length) {
-      setState(t('alEmpty', 'Aucun événement pour ces critères.'));
+      setState(t('alEmpty'));
       return;
     }
 
     el.rows.innerHTML = '';
     data.rows.forEach(function (row, index) {
       var tr = document.createElement('tr');
-      tr.className = 'skmt-al__row';
+      tr.className = 'lumia-al__row';
       tr.dataset.index = index;
       tr.tabIndex = 0;
 
-      tr.appendChild(cell(row.date, 'skmt-al__date'));
+      tr.appendChild(cell(row.date, 'lumia-al__date'));
 
-      var user = cell(row.user, 'skmt-al__user');
+      var user = cell(row.user, 'lumia-al__user');
       if (row.role) {
         var role = document.createElement('span');
-        role.className = 'skmt-al__muted';
+        role.className = 'lumia-al__muted';
         role.textContent = row.role;
         user.appendChild(role);
       }
       tr.appendChild(user);
 
-      var event = cell('', 'skmt-al__event');
+      var event = cell('', 'lumia-al__event');
       var badge = document.createElement('span');
-      badge.className = 'skmt-badge skmt-al__badge ' + badgeClass(row);
+      badge.className = 'lumia-badge lumia-al__badge ' + badgeClass(row);
       badge.textContent = row.group;
       event.appendChild(badge);
       event.appendChild(document.createTextNode(row.event));
       tr.appendChild(event);
 
-      tr.appendChild(cell(row.object, 'skmt-al__object'));
-      tr.appendChild(cell(row.ip, 'skmt-al__ip'));
+      tr.appendChild(cell(row.object, 'lumia-al__object'));
+      tr.appendChild(cell(row.ip, 'lumia-al__ip'));
 
       el.rows.appendChild(tr);
     });
   }
 
-  /** Variante de badge du design system selon la famille ; rouge pour ce qui détruit ou échoue. */
+  /** Design system badge variant by group; red for what deletes or fails. */
   function badgeClass(row) {
-    if (row.event_key === 'login_failed' || /_deleted$/.test(row.event_key)) return 'skmt-badge--danger';
+    if (row.event_key === 'login_failed' || /_deleted$/.test(row.event_key)) return 'lumia-badge--danger';
     return {
-      auth: 'skmt-badge--info',
-      content: 'skmt-badge--success',
-      users: 'skmt-badge--warning',
-      options: 'skmt-badge--warning',
-      settings: 'skmt-badge--info',
-    }[row.group_key] || 'skmt-badge--neutral';
+      auth: 'lumia-badge--info',
+      content: 'lumia-badge--success',
+      users: 'lumia-badge--warning',
+      options: 'lumia-badge--warning',
+      settings: 'lumia-badge--info',
+    }[row.group_key] || 'lumia-badge--neutral';
   }
 
   function cell(text, className) {
@@ -204,18 +205,18 @@
   function openDetail(row) {
     if (!row) return;
 
-    document.getElementById('skmt-al-detail-title').textContent = row.event + (row.object ? ' — ' + row.object : '');
+    document.getElementById('lumia-al-detail-title').textContent = row.event + (row.object ? ' — ' + row.object : '');
 
-    var body = document.getElementById('skmt-al-detail-body');
+    var body = document.getElementById('lumia-al-detail-body');
     body.innerHTML = '';
 
     var lines = [
-      [t('alDate', 'Date'), row.date],
-      [t('alUser', 'Utilisateur'), row.user],
-      [t('alRole', 'Rôle'), row.role],
-      [t('alIp', 'Adresse IP'), row.ip],
-      [t('alEvent', 'Événement'), row.group + ' — ' + row.event],
-      [t('alObject', 'Objet'), row.object],
+      [t('alDate'), row.date],
+      [t('alUser'), row.user],
+      [t('alRole'), row.role],
+      [t('alIp'), row.ip],
+      [t('alEvent'), row.group + ' — ' + row.event],
+      [t('alObject'), row.object],
     ].concat(row.details);
 
     lines.forEach(function (pair) {
@@ -228,7 +229,7 @@
       body.appendChild(dd);
     });
 
-    var link = document.getElementById('skmt-al-detail-link');
+    var link = document.getElementById('lumia-al-detail-link');
     if (row.link) {
       link.href = row.link;
       link.hidden = false;
@@ -237,24 +238,24 @@
       link.hidden = true;
     }
 
-    window.skmtModalOpen('skmt-al-detail-modal');
+    window.lumiaModalOpen('lumia-al-detail-modal');
   }
 
   /**
-   * Téléchargement par un formulaire POST éphémère : le navigateur gère le
-   * fichier renvoyé, ce que fetch() ne sait pas faire sans passer par un Blob
-   * gardé entier en mémoire.
+   * Download through a temporary POST form: the browser handles the returned
+   * file, which fetch() cannot do without going through a Blob kept entirely
+   * in memory.
    */
   function exportCsv() {
     var form = document.createElement('form');
     var data = filters();
 
     form.method = 'post';
-    form.action = skmtAdmin.alExportUrl;
+    form.action = lumiaAdmin.alExportUrl;
     form.hidden = true;
 
-    data.action = 'skmt_activity_log_export';
-    data.skmt_nonce = skmtAdmin.alExportNonce;
+    data.action = 'lumia_activity_log_export';
+    data.lumia_nonce = lumiaAdmin.alExportNonce;
 
     Object.keys(data).forEach(function (k) {
       var input = document.createElement('input');

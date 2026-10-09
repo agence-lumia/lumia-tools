@@ -2,38 +2,38 @@
  * Security module — admin styles
  */
 
-.skmt-security-sub {
+.lumia-security-sub {
   padding: 12px 0 4px 0;
 }
 
-.skmt-security-sub__textarea {
+.lumia-security-sub__textarea {
   min-height: 80px;
   resize: vertical;
   font-family: monospace;
   font-size: 12px;
 }
 
-.skmt-custom-login-url {
+.lumia-custom-login-url {
   display: flex;
   align-items: center;
   gap: 0;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
   overflow: hidden;
-  background: var(--skmt-white);
+  background: var(--lumia-white);
 }
 
-.skmt-custom-login-url:focus-within {
-  border-color: var(--skmt-accent);
+.lumia-custom-login-url:focus-within {
+  border-color: var(--lumia-accent);
   box-shadow: 0 0 0 3px oklch(0.7 0.15 275 / 0.12);
 }
 
-.skmt-custom-login-url__base {
+.lumia-custom-login-url__base {
   padding: 10px 10px 10px 14px;
   font-size: 13px;
-  color: var(--skmt-text-muted);
-  background: var(--skmt-n50);
-  border-right: 1px solid var(--skmt-border);
+  color: var(--lumia-text-muted);
+  background: var(--lumia-n50);
+  border-right: 1px solid var(--lumia-border);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -41,7 +41,7 @@
   flex-shrink: 0;
 }
 
-.skmt-custom-login-url__input {
+.lumia-custom-login-url__input {
   flex: 1;
   border: none !important;
   box-shadow: none !important;
@@ -50,7 +50,7 @@
   padding-left: 10px !important;
 }
 
-.skmt-custom-login-url__input:focus {
+.lumia-custom-login-url__input:focus {
   outline: none;
   box-shadow: none !important;
   border-color: transparent !important;

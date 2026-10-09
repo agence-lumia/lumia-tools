@@ -1,12 +1,12 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\Login;
+namespace Lumia\Tools\Modules\Login;
 
 defined( 'ABSPATH' ) || exit;
 
-use StudioKyne\MiniTools\Core\AbstractModule;
+use Lumia\Tools\Core\AbstractModule;
 
 /**
- * Module Connexion — personnalisation de la page de connexion WordPress.
+ * Login module: customizes the WordPress login page.
  */
 class Module extends AbstractModule {
 
@@ -16,7 +16,7 @@ class Module extends AbstractModule {
 	private array $settings = [];
 
 	/**
-	 * Initialise les hooks WordPress.
+	 * Registers the WordPress hooks.
 	 */
 	public function init(): void {
 		$this->settings = $this->get_settings();
@@ -45,24 +45,24 @@ class Module extends AbstractModule {
 			add_action( 'login_head', [ $this, 'hide_privacy_policy_css' ], 99 );
 		}
 
-		// Charge le media uploader WP sur la page de réglages du module.
+		// Loads the WP media uploader on the module settings page.
 		add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_media' ] );
 	}
 
 	/**
-	 * Enqueue le CSS de la page de connexion.
+	 * Enqueues the login page CSS.
 	 */
 	public function enqueue_login_assets(): void {
 		wp_enqueue_style(
-			'skmt-login-css',
-			SKMT_ASSETS_URL . 'login/css/login.css',
+			'lumia-login-css',
+			LUMIA_ASSETS_URL . 'login/css/login.css',
 			[],
-			SKMT_VERSION
+			LUMIA_VERSION
 		);
 	}
 
 	/**
-	 * Injecte les variables CSS custom dans <head> de la page de connexion.
+	 * Prints the custom CSS variables in the <head> of the login page.
 	 */
 	public function inject_css_variables(): void {
 		$s = $this->settings;
@@ -74,7 +74,7 @@ class Module extends AbstractModule {
 		$link_color = $this->sanitize_color( $s['form']['link_color'] ?? '#615FFF' );
 		$logo_width = absint( $s['branding']['logo_width'] ?? 150 );
 
-		// Image du panneau
+		// Panel image
 		$panel_img_url = '';
 		$panel_img_id  = absint( $s['layout']['panel_image_id'] ?? 0 );
 		if ( $panel_img_id > 0 ) {
@@ -84,7 +84,7 @@ class Module extends AbstractModule {
 			}
 		}
 
-		// Logo custom
+		// Custom logo
 		$logo_url = '';
 		$logo_id  = absint( $s['branding']['logo_id'] ?? 0 );
 		if ( $logo_id > 0 ) {
@@ -94,27 +94,27 @@ class Module extends AbstractModule {
 			}
 		}
 
-		echo '<style id="skmt-login-vars">';
+		echo '<style id="lumia-login-vars">';
 		echo ':root{';
-		echo '--skmt-l-bg:' . esc_html( $bg_color ) . ';';
-		echo '--skmt-l-panel-bg:' . esc_html( $panel_bg ) . ';';
-		echo '--skmt-l-btn-bg:' . esc_html( $btn_bg ) . ';';
-		echo '--skmt-l-btn-color:' . esc_html( $btn_color ) . ';';
-		echo '--skmt-l-link:' . esc_html( $link_color ) . ';';
-		echo '--skmt-l-logo-width:' . $logo_width . 'px;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '--lumia-l-bg:' . esc_html( $bg_color ) . ';';
+		echo '--lumia-l-panel-bg:' . esc_html( $panel_bg ) . ';';
+		echo '--lumia-l-btn-bg:' . esc_html( $btn_bg ) . ';';
+		echo '--lumia-l-btn-color:' . esc_html( $btn_color ) . ';';
+		echo '--lumia-l-link:' . esc_html( $link_color ) . ';';
+		echo '--lumia-l-logo-width:' . $logo_width . 'px;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		if ( $panel_img_url ) {
-			echo '--skmt-l-panel-img:url(' . $panel_img_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '--lumia-l-panel-img:url(' . $panel_img_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		} else {
-			echo '--skmt-l-panel-img:none;';
+			echo '--lumia-l-panel-img:none;';
 		}
 
 		if ( $logo_url ) {
-			echo '--skmt-l-logo-url:url(' . $logo_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo '--skmt-l-logo-display:block;';
+			echo '--lumia-l-logo-url:url(' . $logo_url . ');'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '--lumia-l-logo-display:block;';
 		} else {
-			echo '--skmt-l-logo-url:none;';
-			echo '--skmt-l-logo-display:none;';
+			echo '--lumia-l-logo-url:none;';
+			echo '--lumia-l-logo-display:none;';
 		}
 
 		echo '}';
@@ -122,70 +122,70 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Injecte un style pour masquer le lien "Mot de passe oublié".
+	 * Prints a style that hides the "Lost your password?" link.
 	 */
 	public function hide_lost_password_css(): void {
 		echo '<style>#nav{display:none!important}</style>';
 	}
 
 	/**
-	 * Injecte un style pour masquer le lien "Aller à NOM DU SITE".
+	 * Prints a style that hides the "Go to SITE NAME" link.
 	 */
 	public function hide_back_to_blog_css(): void {
 		echo '<style>#backtoblog{display:none!important}</style>';
 	}
 
 	/**
-	 * Injecte un style pour masquer le lien "Politique de confidentialité".
+	 * Prints a style that hides the "Privacy Policy" link.
 	 *
-	 * Masquage CSS et non filtre `the_privacy_policy_link` : ce filtre est global,
-	 * il retirerait aussi le lien du pied de page public du thème.
+	 * CSS hiding rather than the `the_privacy_policy_link` filter: that filter is global,
+	 * it would also remove the link from the theme's public footer.
 	 */
 	public function hide_privacy_policy_css(): void {
 		echo '<style>.privacy-policy-page-link{display:none!important}</style>';
 	}
 
 	/**
-	 * Remplace l'URL du logo par l'accueil du site.
+	 * Replaces the logo URL with the site home page.
 	 */
 	public function filter_logo_url( string $url ): string {
 		return home_url( '/' );
 	}
 
 	/**
-	 * Remplace le texte alternatif du logo par le nom du site.
+	 * Replaces the logo alternative text with the site name.
 	 */
 	public function filter_logo_text( string $text ): string {
 		return get_bloginfo( 'name' );
 	}
 
 	/**
-	 * Ajoute la classe CSS pour le layout split.
+	 * Adds the CSS class for the split layout.
 	 *
 	 * @param string[] $classes
 	 * @return string[]
 	 */
 	public function add_body_class( array $classes ): array {
-		$classes[] = 'skmt-login-split';
+		$classes[] = 'lumia-login-split';
 		$logo_id   = absint( $this->settings['branding']['logo_id'] ?? 0 );
 		if ( $logo_id > 0 ) {
-			$classes[] = 'skmt-has-logo';
+			$classes[] = 'lumia-has-logo';
 		}
 		return $classes;
 	}
 
 	/**
-	 * Injecte le panneau image/couleur côté droit après le formulaire.
+	 * Prints the image/color panel on the right-hand side after the form.
 	 */
 	public function render_side_panel(): void {
-		echo '<div class="skmt-login-panel" aria-hidden="true"></div>';
+		echo '<div class="lumia-login-panel" aria-hidden="true"></div>';
 	}
 
 	/**
-	 * Injecte les tweaks DOM JS de la page de connexion :
-	 * - Titre "Se connecter" entre logo et formulaire
-	 * - Password header (label + lien MDP oublié en space-between)
-	 * - Réordonnancement bouton → "Se souvenir de moi"
+	 * Prints the JS DOM tweaks of the login page:
+	 * - "Log in" title between the logo and the form
+	 * - Password header (label + lost password link in space-between)
+	 * - Reorders the button before "Remember Me"
 	 */
 	public function render_login_dom_tweaks(): void {
 		?>
@@ -202,19 +202,19 @@ class Module extends AbstractModule {
 
 			if (h1) {
 				var title = document.createElement('p');
-				title.className = 'skmt-login-title';
-				title.textContent = '<?php echo esc_js( __( 'Se connecter', 'studio-kyne-mini-tools' ) ); ?>';
+				title.className = 'lumia-login-title';
+				title.textContent = '<?php echo esc_js( __( 'Log in', 'lumia-tools' ) ); ?>';
 				h1.insertAdjacentElement('afterend', title);
 			}
 
 			if (userPassWrap && passwordLabel) {
 				var passHeader = document.createElement('div');
-				passHeader.className = 'skmt-pass-header';
+				passHeader.className = 'lumia-pass-header';
 				passHeader.appendChild(passwordLabel.cloneNode(true));
 				var navIsHidden = nav && window.getComputedStyle(nav).display === 'none';
 				if (navLink && !navIsHidden) {
 					passHeader.appendChild(navLink.cloneNode(true));
-					if (nav) nav.classList.add('skmt-nav-hidden');
+					if (nav) nav.classList.add('lumia-nav-hidden');
 				}
 				userPassWrap.parentElement.insertBefore(passHeader, userPassWrap);
 				passwordLabel.style.display = 'none';
@@ -229,10 +229,10 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Charge wp_enqueue_media() uniquement sur la page de réglages du module.
+	 * Loads wp_enqueue_media() only on the module settings page.
 	 */
 	public function maybe_enqueue_media( string $hook ): void {
-		if ( strpos( $hook, 'studio-kyne-mini-tools' ) === false ) {
+		if ( strpos( $hook, 'lumia-tools' ) === false ) {
 			return;
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -254,7 +254,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Valide et sauvegarde les settings.
+	 * Validates and saves the settings.
 	 *
 	 * @param array<string, mixed> $settings
 	 */
@@ -273,7 +273,7 @@ class Module extends AbstractModule {
 			$current['branding']['logo_width'] = min( 600, max( 40, absint( $settings['branding']['logo_width'] ?? 150 ) ) );
 		}
 
-		// Formulaire
+		// Form
 		if ( isset( $settings['form'] ) && is_array( $settings['form'] ) ) {
 			$current['form']['hide_language_switcher'] = ! empty( $settings['form']['hide_language_switcher'] );
 			$current['form']['hide_lost_password']     = ! empty( $settings['form']['hide_lost_password'] );
@@ -290,7 +290,7 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Valeurs par défaut des settings.
+	 * Default values of the settings.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -318,35 +318,35 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Clés à supprimer lors de la désinstallation.
+	 * Keys to delete on uninstall.
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'skmt_module_login' ],
+			'options' => [ 'lumia_module_login' ],
 			'meta'    => [],
 		];
 	}
 
 	/**
-	 * Assets CSS pour la page de réglages admin.
+	 * CSS assets for the admin settings page.
 	 */
 	public function get_admin_css(): array {
-		return [ SKMT_ASSETS_URL . 'admin/css/modules/login.css' ];
+		return [ LUMIA_ASSETS_URL . 'admin/css/modules/login.css' ];
 	}
 
 	/**
-	 * Assets JS pour la page de réglages admin.
+	 * JS assets for the admin settings page.
 	 */
 	public function get_admin_js(): array {
-		return [ SKMT_ASSETS_URL . 'admin/js/modules/login.js' ];
+		return [ LUMIA_ASSETS_URL . 'admin/js/modules/login.js' ];
 	}
 
 	/* ================================================================
-	 * HELPERS PRIVÉS
+	 * PRIVATE HELPERS
 	 * ================================================================ */
 
 	/**
-	 * Valide une couleur hex. Retourne la valeur par défaut si invalide.
+	 * Validates a hex color. Returns the fallback value if invalid.
 	 */
 	private function sanitize_color( string $color, string $fallback = '' ): string {
 		$color = sanitize_hex_color( trim( $color ) );

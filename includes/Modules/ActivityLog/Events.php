@@ -1,39 +1,38 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ActivityLog;
+namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Catalogue des événements journalisés : familles et libellés.
+ * Catalogue of logged events: groups and labels.
  *
- * Un événement appartient à une seule famille ; c'est la famille qui sert
- * d'unité aux exclusions et au filtre de la liste. La colonne `event` de la
- * table ne stocke que la clé : le libellé est traduit à l'affichage, si bien
- * qu'un journal écrit en français se relit en anglais après changement de
- * langue.
+ * An event belongs to a single group; the group is the unit used by the
+ * exclusions and by the list filter. The `event` column of the table only
+ * stores the key: the label is translated at display time, so a log written
+ * in French reads back in English after a language change.
  */
 class Events {
 
 	/**
-	 * Familles d'événements.
+	 * Event groups.
 	 *
-	 * @return array<string, string> Clé => libellé.
+	 * @return array<string, string> Key => label.
 	 */
 	public static function groups(): array {
 		return [
-			'auth'     => __( 'Connexions', 'studio-kyne-mini-tools' ),
-			'content'  => __( 'Contenus', 'studio-kyne-mini-tools' ),
-			'media'    => __( 'Médias', 'studio-kyne-mini-tools' ),
-			'users'    => __( 'Utilisateurs', 'studio-kyne-mini-tools' ),
-			'plugins'  => __( 'Extensions', 'studio-kyne-mini-tools' ),
-			'themes'   => __( 'Thèmes', 'studio-kyne-mini-tools' ),
-			'options'  => __( 'Réglages WordPress', 'studio-kyne-mini-tools' ),
-			'settings' => __( 'Réglages Mini Tools', 'studio-kyne-mini-tools' ),
+			'auth'     => __( 'Logins', 'lumia-tools' ),
+			'content'  => __( 'Content', 'lumia-tools' ),
+			'media'    => __( 'Media', 'lumia-tools' ),
+			'users'    => __( 'Users', 'lumia-tools' ),
+			'plugins'  => __( 'Plugins', 'lumia-tools' ),
+			'themes'   => __( 'Themes', 'lumia-tools' ),
+			'options'  => __( 'WordPress settings', 'lumia-tools' ),
+			'settings' => __( 'Lümia Tools settings', 'lumia-tools' ),
 		];
 	}
 
 	/**
-	 * Événements connus.
+	 * Known events.
 	 *
 	 * @return array<string, array{group: string, label: string}>
 	 */
@@ -41,132 +40,132 @@ class Events {
 		return [
 			'login'            => [
 				'group' => 'auth',
-				'label' => __( 'Connexion', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Login', 'lumia-tools' ),
 			],
 			'login_failed'     => [
 				'group' => 'auth',
-				'label' => __( 'Échec de connexion', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Login failed', 'lumia-tools' ),
 			],
 			'logout'           => [
 				'group' => 'auth',
-				'label' => __( 'Déconnexion', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Logout', 'lumia-tools' ),
 			],
 			'post_created'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu créé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Content created', 'lumia-tools' ),
 			],
 			'post_updated'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Content updated', 'lumia-tools' ),
 			],
 			'post_trashed'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu mis à la corbeille', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Content trashed', 'lumia-tools' ),
 			],
 			'post_restored'    => [
 				'group' => 'content',
-				'label' => __( 'Contenu restauré', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Content restored', 'lumia-tools' ),
 			],
 			'post_deleted'     => [
 				'group' => 'content',
-				'label' => __( 'Contenu supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Content deleted', 'lumia-tools' ),
 			],
 			'media_added'      => [
 				'group' => 'media',
-				'label' => __( 'Média ajouté', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Media added', 'lumia-tools' ),
 			],
 			'media_updated'    => [
 				'group' => 'media',
-				'label' => __( 'Média modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Media updated', 'lumia-tools' ),
 			],
 			'media_deleted'    => [
 				'group' => 'media',
-				'label' => __( 'Média supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Media deleted', 'lumia-tools' ),
 			],
 			'user_created'     => [
 				'group' => 'users',
-				'label' => __( 'Utilisateur créé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'User created', 'lumia-tools' ),
 			],
 			'user_updated'     => [
 				'group' => 'users',
-				'label' => __( 'Profil modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Profile updated', 'lumia-tools' ),
 			],
 			'user_role'        => [
 				'group' => 'users',
-				'label' => __( 'Rôle modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Role changed', 'lumia-tools' ),
 			],
 			'user_deleted'     => [
 				'group' => 'users',
-				'label' => __( 'Utilisateur supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'User deleted', 'lumia-tools' ),
 			],
 			'password_reset'   => [
 				'group' => 'users',
-				'label' => __( 'Mot de passe réinitialisé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Password reset', 'lumia-tools' ),
 			],
 			'plugin_activated' => [
 				'group' => 'plugins',
-				'label' => __( 'Extension activée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Plugin activated', 'lumia-tools' ),
 			],
 			'plugin_disabled'  => [
 				'group' => 'plugins',
-				'label' => __( 'Extension désactivée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Plugin deactivated', 'lumia-tools' ),
 			],
 			'plugin_installed' => [
 				'group' => 'plugins',
-				'label' => __( 'Extension installée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Plugin installed', 'lumia-tools' ),
 			],
 			'plugin_updated'   => [
 				'group' => 'plugins',
-				'label' => __( 'Extension mise à jour', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Plugin updated', 'lumia-tools' ),
 			],
 			'plugin_deleted'   => [
 				'group' => 'plugins',
-				'label' => __( 'Extension supprimée', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Plugin deleted', 'lumia-tools' ),
 			],
 			'theme_switched'   => [
 				'group' => 'themes',
-				'label' => __( 'Thème activé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Theme activated', 'lumia-tools' ),
 			],
 			'theme_installed'  => [
 				'group' => 'themes',
-				'label' => __( 'Thème installé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Theme installed', 'lumia-tools' ),
 			],
 			'theme_updated'    => [
 				'group' => 'themes',
-				'label' => __( 'Thème mis à jour', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Theme updated', 'lumia-tools' ),
 			],
 			'theme_deleted'    => [
 				'group' => 'themes',
-				'label' => __( 'Thème supprimé', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Theme deleted', 'lumia-tools' ),
 			],
 			'option_updated'   => [
 				'group' => 'options',
-				'label' => __( 'Réglage modifié', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Setting changed', 'lumia-tools' ),
 			],
-			'skmt_settings'    => [
+			'lumia_settings'   => [
 				'group' => 'settings',
-				'label' => __( 'Réglages modifiés', 'studio-kyne-mini-tools' ),
+				'label' => __( 'Settings changed', 'lumia-tools' ),
 			],
 		];
 	}
 
 	/**
-	 * Famille d'un événement, '' s'il est inconnu.
+	 * Group of an event, '' if it is unknown.
 	 */
 	public static function group_of( string $event ): string {
 		return self::all()[ $event ]['group'] ?? '';
 	}
 
 	/**
-	 * Libellé d'un événement ; la clé brute s'il est inconnu (ligne écrite par
-	 * une version ultérieure, ou par un tiers via le filtre).
+	 * Label of an event; the raw key if it is unknown (row written by a later
+	 * version, or by a third party through the filter).
 	 */
 	public static function label( string $event ): string {
 		return self::all()[ $event ]['label'] ?? $event;
 	}
 
 	/**
-	 * Clés des événements d'une famille.
+	 * Keys of the events of a group.
 	 *
 	 * @return string[]
 	 */

@@ -1,41 +1,41 @@
 <?php
-namespace StudioKyne\MiniTools\Modules\ActivityLog;
+namespace Lumia\Tools\Modules\ActivityLog;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Table du journal d'activité : schéma, écriture, lecture filtrée, purge.
+ * Activity log table: schema, writing, filtered reading, purge.
  *
- * Table dédiée plutôt que postmeta ou option : un journal grossit sans cesse,
- * se filtre par date et par utilisateur, et se purge par lots — trois choses
- * qu'une option sérialisée ou un type de contenu font mal.
+ * A dedicated table rather than postmeta or an option: a log keeps growing,
+ * is filtered by date and by user, and is purged in batches, three things a
+ * serialized option or a post type do poorly.
  *
- * Le nom de table est interpolé dans le SQL : `%i` (identifiant) n'existe dans
- * wpdb::prepare() que depuis WordPress 6.2, l'extension en supporte 6.0. Le
- * nom ne vient jamais d'une requête, seulement de `$wpdb->prefix`.
+ * The table name is interpolated into the SQL: `%i` (identifier) only exists
+ * in wpdb::prepare() since WordPress 6.2, and the plugin supports 6.0. The
+ * name never comes from a request, only from `$wpdb->prefix`.
  */
 class Store {
 
-	/** Nom de table, sans préfixe. */
-	const TABLE = 'skmt_activity_log';
+	/** Table name, without prefix. */
+	const TABLE = 'lumia_activity_log';
 
-	/** Version du schéma ; toute modification de CREATE TABLE l'incrémente. */
+	/** Schema version; any change to CREATE TABLE increments it. */
 	const SCHEMA_VERSION = '1';
 
-	/** Option mémorisant la version de schéma installée. */
-	const SCHEMA_OPTION = 'skmt_activity_log_schema';
+	/** Option storing the installed schema version. */
+	const SCHEMA_OPTION = 'lumia_activity_log_schema';
 
 	/**
-	 * Lignes supprimées par requête lors d'une purge : un DELETE de cent mille
-	 * lignes d'un bloc verrouille la table le temps de l'opération, et chaque
-	 * écriture du site attend derrière.
+	 * Rows deleted per query during a purge: a single DELETE of a hundred
+	 * thousand rows locks the table for the duration of the operation, and every
+	 * write on the site waits behind it.
 	 */
 	const PURGE_BATCH = 5000;
 
-	/** Plafond de lots par purge, pour qu'un cron ne tourne jamais sans fin. */
+	/** Cap on batches per purge, so a cron never runs endlessly. */
 	const PURGE_MAX_BATCHES = 200;
 
-	/** Colonnes renvoyées par la recherche plein texte. */
+	/** Columns matched by the full-text search. */
 	const SEARCH_COLUMNS = [ 'object_label', 'user_login', 'ip' ];
 
 	public static function table(): string {
@@ -44,13 +44,13 @@ class Store {
 	}
 
 	/**
-	 * Crée ou met à jour la table si le schéma installé n'est pas le bon.
+	 * Creates or updates the table if the installed schema is not the right one.
 	 *
-	 * Appelé à chaque chargement du module : le test ne coûte qu'une lecture
-	 * d'option autochargée. L'activation seule ne suffit pas : un module activé
-	 * par import de configuration n'y passe pas. Une table supprimée à la main
-	 * (onglet Base de données) garde l'option à jour : ce cas-là est rattrapé
-	 * par insert(), au premier échec d'écriture.
+	 * Called on every module load: the test only costs one autoloaded option
+	 * read. Activation alone is not enough: a module enabled by a configuration
+	 * import does not go through it. A table deleted by hand (Database tab)
+	 * leaves the option up to date: that case is caught by insert(), on the
+	 * first failed write.
 	 */
 	public static function maybe_install(): void {
 		if ( self::SCHEMA_VERSION === get_option( self::SCHEMA_OPTION ) ) {
@@ -68,8 +68,8 @@ class Store {
 		$table   = self::table();
 		$charset = $wpdb->get_charset_collate();
 
-		// dbDelta() est pointilleux : deux espaces après PRIMARY KEY, un champ
-		// par ligne, pas de guillemets inversés autour des noms de colonnes.
+		// dbDelta() is picky: two spaces after PRIMARY KEY, one field per line,
+		// no backticks around column names.
 		dbDelta(
 			"CREATE TABLE {$table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -95,9 +95,9 @@ class Store {
 	}
 
 	/**
-	 * Insère une ligne. Les valeurs sont tronquées à la largeur des colonnes :
-	 * en mode SQL strict, un titre de 300 caractères faisait échouer l'INSERT
-	 * entier, et l'événement était perdu.
+	 * Inserts a row. Values are truncated to the column width: in strict SQL
+	 * mode, a 300-character title made the whole INSERT fail, and the event was
+	 * lost.
 	 *
 	 * @param array<string, mixed> $row
 	 */
@@ -120,28 +120,28 @@ class Store {
 		];
 		$format  = [ '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s' ];
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- table propre au module, pas d'API WordPress pour l'écrire.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- the module's own table, no WordPress API to write to it.
 		if ( false !== $wpdb->insert( self::table(), $data, $format ) ) {
 			return;
 		}
 
-		// Table supprimée depuis l'onglet Base de données : l'option de schéma
-		// dit encore « installée », maybe_install() ne la recrée donc pas, et
-		// chaque écriture échouait en silence — journal muet jusqu'à une
-		// réactivation. Tester l'existence de la table à chaque requête
-		// coûterait une requête SQL par page ; on ne paie qu'en cas d'échec.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- lecture de schéma, pas de cache pertinent.
+		// Table deleted from the Database tab: the schema option still says
+		// "installed", so maybe_install() does not recreate it, and every write
+		// failed silently, leaving the log mute until a reactivation. Testing
+		// that the table exists on every request would cost one SQL query per
+		// page; we only pay on failure.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- schema read, no relevant cache.
 		if ( self::table() !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( self::table() ) ) ) ) {
 			self::install();
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- voir plus haut.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- see above.
 			$wpdb->insert( self::table(), $data, $format );
 		}
 	}
 
 	/**
-	 * Lignes filtrées, les plus récentes d'abord.
+	 * Filtered rows, most recent first.
 	 *
-	 * @param array<string, mixed> $filters Voir where().
+	 * @param array<string, mixed> $filters See where().
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function query( array $filters, int $limit, int $offset = 0 ): array {
@@ -152,7 +152,7 @@ class Store {
 		$args[]           = $limit;
 		$args[]           = $offset;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- nom de table interne ; la clause WHERE n'assemble que des marqueurs de where(), dont les valeurs arrivent dans $args avec LIMIT et OFFSET.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- internal table name; the WHERE clause only assembles placeholders from where(), whose values arrive in $args along with LIMIT and OFFSET.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT %d OFFSET %d", $args ), ARRAY_A );
 
 		return is_array( $rows ) ? $rows : [];
@@ -169,18 +169,18 @@ class Store {
 		$sql              = "SELECT COUNT(*) FROM {$table} WHERE {$where}";
 
 		if ( $args ) {
-			$sql = $wpdb->prepare( $sql, $args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql n'assemble que des marqueurs de where().
+			$sql = $wpdb->prepare( $sql, $args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql only assembles placeholders from where().
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- préparée juste au-dessus quand elle porte des valeurs.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- prepared just above when it carries values.
 		return (int) $wpdb->get_var( $sql );
 	}
 
 	/**
-	 * Utilisateurs présents dans le journal, pour le filtre de la liste.
+	 * Users present in the log, for the list filter.
 	 *
-	 * Lus dans la table et non dans wp_users : un compte supprimé doit rester
-	 * filtrable, c'est souvent lui qu'on cherche.
+	 * Read from the table and not from wp_users: a deleted account must remain
+	 * filterable, it is often the one being looked for.
 	 *
 	 * @return array<int, array{user_id: int, user_login: string}>
 	 */
@@ -189,7 +189,7 @@ class Store {
 
 		$table = self::table();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nom de table interne, aucune valeur externe.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name, no external value.
 		$rows = $wpdb->get_results( "SELECT user_id, MAX(user_login) AS user_login FROM {$table} WHERE user_id > 0 GROUP BY user_id ORDER BY user_login LIMIT 500", ARRAY_A );
 
 		$users = [];
@@ -204,10 +204,10 @@ class Store {
 	}
 
 	/**
-	 * Supprime les lignes plus anciennes que `$days` jours, puis tout ce qui
-	 * dépasse les `$max_rows` plus récentes.
+	 * Deletes the rows older than `$days` days, then everything beyond the
+	 * `$max_rows` most recent ones.
 	 *
-	 * @return int Lignes supprimées.
+	 * @return int Rows deleted.
 	 */
 	public static function purge( int $days, int $max_rows ): int {
 		global $wpdb;
@@ -218,21 +218,21 @@ class Store {
 		if ( $days > 0 ) {
 			$cutoff   = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
 			$deleted += self::delete_in_batches(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nom de table interne.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
 				$wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s LIMIT %d", $cutoff, self::PURGE_BATCH )
 			);
 		}
 
 		if ( $max_rows > 0 ) {
-			// MySQL refuse LIMIT dans une sous-requête sur la table qu'on
-			// modifie : on lit d'abord l'identifiant de la plus récente ligne
-			// en trop, puis on supprime tout ce qui est plus ancien.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nom de table interne.
+			// MySQL rejects LIMIT in a subquery on the table being modified: we
+			// first read the ID of the most recent excess row, then delete
+			// everything older.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
 			$threshold = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} ORDER BY id DESC LIMIT 1 OFFSET %d", $max_rows ) );
 
 			if ( $threshold > 0 ) {
 				$deleted += self::delete_in_batches(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nom de table interne.
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
 					$wpdb->prepare( "DELETE FROM {$table} WHERE id <= %d LIMIT %d", $threshold, self::PURGE_BATCH )
 				);
 			}
@@ -242,11 +242,11 @@ class Store {
 	}
 
 	/**
-	 * Clause WHERE et ses valeurs à partir de filtres DÉJÀ assainis par le
-	 * module (entiers, clés, dates `Y-m-d`) : ici on ne fait que les placer
-	 * derrière des marqueurs.
+	 * WHERE clause and its values from filters ALREADY sanitized by the module
+	 * (integers, keys, `Y-m-d` dates): here we only put them behind
+	 * placeholders.
 	 *
-	 * @param array<string, mixed> $filters before_id, user_id, group, event, from, to (Y-m-d, heure du site), search.
+	 * @param array<string, mixed> $filters before_id, user_id, group, event, from, to (Y-m-d, site time), search.
 	 * @return array{0: string, 1: array<int, mixed>}
 	 */
 	private static function where( array $filters ): array {
@@ -255,8 +255,8 @@ class Store {
 		$clauses = [ '1=1' ];
 		$args    = [];
 
-		// Pagination par clé pour l'export : un OFFSET se décale si des lignes
-		// arrivent pendant qu'on lit.
+		// Keyset pagination for the export: an OFFSET shifts if rows arrive
+		// while we are reading.
 		if ( ! empty( $filters['before_id'] ) ) {
 			$clauses[] = 'id < %d';
 			$args[]    = (int) $filters['before_id'];
@@ -277,7 +277,7 @@ class Store {
 			$args[]    = (string) $filters['event'];
 		}
 
-		// Les dates saisies sont celles du site ; la table est en UTC.
+		// The dates entered are site dates; the table is in UTC.
 		if ( ! empty( $filters['from'] ) ) {
 			$clauses[] = 'created_at >= %s';
 			$args[]    = get_gmt_from_date( $filters['from'] . ' 00:00:00' );
@@ -302,7 +302,7 @@ class Store {
 	}
 
 	/**
-	 * Rejoue un DELETE … LIMIT jusqu'à ce qu'il ne supprime plus rien.
+	 * Replays a DELETE … LIMIT until it no longer deletes anything.
 	 */
 	private static function delete_in_batches( string $sql ): int {
 		global $wpdb;
@@ -310,7 +310,7 @@ class Store {
 		$total = 0;
 
 		for ( $i = 0; $i < self::PURGE_MAX_BATCHES; $i++ ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- préparée par l'appelant.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- prepared by the caller.
 			$affected = (int) $wpdb->query( $sql );
 			$total   += $affected;
 
@@ -323,7 +323,7 @@ class Store {
 	}
 
 	/**
-	 * Tronque en caractères, pas en octets : la colonne est en utf8mb4.
+	 * Truncates by characters, not bytes: the column is utf8mb4.
 	 */
 	private static function cut( string $value, int $length ): string {
 		return mb_substr( $value, 0, $length );

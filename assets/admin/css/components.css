@@ -2,48 +2,48 @@
  * Components
  */
 
-.skmt-icon,
-.skmt-admin-wrap .skmt-icon {
+.lumia-icon,
+.lumia-admin-wrap .lumia-icon {
   width: 20px !important;
   height: 20px !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
 }
 
-.skmt-icon--sm,
-.skmt-admin-wrap .skmt-icon--sm {
+.lumia-icon--sm,
+.lumia-admin-wrap .lumia-icon--sm {
   width: 18px;
   height: 18px;
 }
 
-.skmt-icon--md,
-.skmt-admin-wrap .skmt-icon--md {
+.lumia-icon--md,
+.lumia-admin-wrap .lumia-icon--md {
   width: 20px;
   height: 20px;
 }
 
-.skmt-icon--lg,
-.skmt-admin-wrap .skmt-icon--lg {
+.lumia-icon--lg,
+.lumia-admin-wrap .lumia-icon--lg {
   width: 22px;
   height: 22px;
 }
 
-.skmt-icon--xl,
-.skmt-admin-wrap .skmt-icon--xl {
+.lumia-icon--xl,
+.lumia-admin-wrap .lumia-icon--xl {
   width: 48px;
   height: 48px;
 }
 
-.skmt-admin-wrap .skmt-icon {
+.lumia-admin-wrap .lumia-icon {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-.skmt-option {
+.lumia-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -51,136 +51,136 @@
   padding: 12px 0;
 }
 
-.skmt-option + .skmt-option {
-  border-top: 1px solid var(--skmt-n100);
+.lumia-option + .lumia-option {
+  border-top: 1px solid var(--lumia-n100);
 }
 
-.skmt-option__label {
+.lumia-option__label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   line-height: 1.4;
 }
 
-.skmt-option__desc {
+.lumia-option__desc {
   font-size: 12px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
   margin-top: 2px;
   line-height: 1.4;
 }
 
-.skmt-option__control {
+.lumia-option__control {
   flex-shrink: 0;
 }
 
-.skmt-option--full .skmt-option__control {
+.lumia-option--full .lumia-option__control {
   width: 100%;
 }
 
-.skmt-option--full .skmt-option__content {
+.lumia-option--full .lumia-option__content {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.skmt-toggle {
+.lumia-toggle {
   position: relative;
   display: inline-block;
   width: 40px;
   height: 24px;
-  /* Dans une ligne flex, un libellé long écraserait le toggle : sa largeur
-     est fixe, il ne doit jamais servir de variable d'ajustement. */
+  /* In a flex row, a long label would squash the toggle: its width is
+     fixed, it must never serve as an adjustment variable. */
   flex-shrink: 0;
 }
 
-.skmt-toggle input {
+.lumia-toggle input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.skmt-toggle__slider {
+.lumia-toggle__slider {
   position: absolute;
   cursor: pointer;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--skmt-n300);
-  transition: var(--skmt-transition);
+  background-color: var(--lumia-n300);
+  transition: var(--lumia-transition);
   border-radius: 24px;
 }
 
-.skmt-toggle__slider::before {
+.lumia-toggle__slider::before {
   position: absolute;
   content: "";
   height: 18px;
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: var(--skmt-white);
-  transition: var(--skmt-transition);
+  background-color: var(--lumia-white);
+  transition: var(--lumia-transition);
   border-radius: 50%;
   box-shadow: 0 1px 2px oklch(0 0 0 / 0.15);
 }
 
-.skmt-toggle input:checked + .skmt-toggle__slider {
-  background-color: var(--skmt-accent);
+.lumia-toggle input:checked + .lumia-toggle__slider {
+  background-color: var(--lumia-accent);
 }
 
-.skmt-toggle input:checked + .skmt-toggle__slider::before {
+.lumia-toggle input:checked + .lumia-toggle__slider::before {
   transform: translateX(16px);
 }
 
-.skmt-toggle input:focus-visible + .skmt-toggle__slider {
+.lumia-toggle input:focus-visible + .lumia-toggle__slider {
   box-shadow: 0 0 0 3px oklch(0.7 0.15 275 / 0.25);
 }
 
-.skmt-toggle input:disabled + .skmt-toggle__slider {
+.lumia-toggle input:disabled + .lumia-toggle__slider {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.skmt-input,
-input[type="text"].skmt-input,
-input[type="number"].skmt-input,
-input[type="email"].skmt-input,
-input[type="password"].skmt-input,
-input[type="date"].skmt-input,
-textarea.skmt-input {
+.lumia-input,
+input[type="text"].lumia-input,
+input[type="number"].lumia-input,
+input[type="email"].lumia-input,
+input[type="password"].lumia-input,
+input[type="date"].lumia-input,
+textarea.lumia-input {
   width: 100%;
   padding: 10px 16px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
   font-size: 14px;
-  color: var(--skmt-text);
-  background: var(--skmt-white);
-  transition: var(--skmt-transition);
+  color: var(--lumia-text);
+  background: var(--lumia-white);
+  transition: var(--lumia-transition);
   font-family: inherit;
   line-height: 1.5;
   min-height: 42px;
   box-shadow: none;
 }
 
-.skmt-input:focus,
-input[type="text"].skmt-input:focus,
-input[type="number"].skmt-input:focus,
-input[type="email"].skmt-input:focus,
-input[type="password"].skmt-input:focus,
-input[type="date"].skmt-input:focus,
-textarea.skmt-input:focus {
+.lumia-input:focus,
+input[type="text"].lumia-input:focus,
+input[type="number"].lumia-input:focus,
+input[type="email"].lumia-input:focus,
+input[type="password"].lumia-input:focus,
+input[type="date"].lumia-input:focus,
+textarea.lumia-input:focus {
   outline: none;
-  border-color: var(--skmt-accent);
+  border-color: var(--lumia-accent);
   box-shadow: 0 0 0 3px oklch(0.7 0.15 275 / 0.12);
 }
 
-/* Les sous-champs natifs de Chromium gonflent la hauteur (≈ 50px) : on la fige. */
-input[type="date"].skmt-input {
+/* Chromium's native sub-fields inflate the height (≈ 50px): pin it. */
+input[type="date"].lumia-input {
   height: 42px;
 }
 
-/* Icône Lucide « calendar » à la place de l'indicateur natif (Chromium, Safari). */
-input[type="date"].skmt-input::-webkit-calendar-picker-indicator {
+/* Lucide "calendar" icon in place of the native indicator (Chromium, Safari). */
+input[type="date"].lumia-input::-webkit-calendar-picker-indicator {
   width: 16px;
   height: 16px;
   margin-left: 8px;
@@ -189,34 +189,34 @@ input[type="date"].skmt-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-input[type="date"].skmt-input::-webkit-datetime-edit {
+input[type="date"].lumia-input::-webkit-datetime-edit {
   padding: 0;
 }
 
-.skmt-input::placeholder {
-  color: var(--skmt-text-muted);
+.lumia-input::placeholder {
+  color: var(--lumia-text-muted);
 }
 
-.skmt-input--sm {
+.lumia-input--sm {
   width: auto;
   max-width: 140px;
 }
 
-.skmt-input--xs {
+.lumia-input--xs {
   width: auto;
   max-width: 100px;
 }
 
-.skmt-admin-wrap select.skmt-select,
-#wpcontent .skmt-admin-wrap select.skmt-select {
+.lumia-admin-wrap select.lumia-select,
+#wpcontent .lumia-admin-wrap select.lumia-select {
   width: 100%;
   padding: 10px 40px 10px 16px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
   font-size: 14px;
-  color: var(--skmt-text);
-  background: var(--skmt-white);
-  transition: var(--skmt-transition);
+  color: var(--lumia-text);
+  background: var(--lumia-white);
+  transition: var(--lumia-transition);
   font-family: inherit;
   appearance: none;
   -webkit-appearance: none;
@@ -231,20 +231,20 @@ input[type="date"].skmt-input::-webkit-datetime-edit {
   box-shadow: none;
 }
 
-.skmt-admin-wrap select.skmt-select:focus,
-#wpcontent .skmt-admin-wrap select.skmt-select:focus {
+.lumia-admin-wrap select.lumia-select:focus,
+#wpcontent .lumia-admin-wrap select.lumia-select:focus {
   outline: none;
-  border-color: var(--skmt-accent);
+  border-color: var(--lumia-accent);
   box-shadow: 0 0 0 3px oklch(0.7 0.15 275 / 0.12);
 }
 
-.skmt-admin-wrap select.skmt-select--sm,
-#wpcontent .skmt-admin-wrap select.skmt-select--sm {
+.lumia-admin-wrap select.lumia-select--sm,
+#wpcontent .lumia-admin-wrap select.lumia-select--sm {
   width: auto;
   max-width: 200px;
 }
 
-.skmt-badge {
+.lumia-badge {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
@@ -255,37 +255,37 @@ input[type="date"].skmt-input::-webkit-datetime-edit {
   white-space: nowrap;
 }
 
-.skmt-badge--success {
-  background: var(--skmt-success-bg);
-  color: var(--skmt-success);
+.lumia-badge--success {
+  background: var(--lumia-success-bg);
+  color: var(--lumia-success);
 }
 
-.skmt-badge--inactive {
-  background: var(--skmt-n100);
-  color: var(--skmt-text-muted);
+.lumia-badge--inactive {
+  background: var(--lumia-n100);
+  color: var(--lumia-text-muted);
 }
 
-.skmt-badge--danger {
-  background: var(--skmt-danger-bg);
-  color: var(--skmt-danger);
+.lumia-badge--danger {
+  background: var(--lumia-danger-bg);
+  color: var(--lumia-danger);
 }
 
-.skmt-badge--neutral {
-  background: var(--skmt-n100);
-  color: var(--skmt-text-secondary);
+.lumia-badge--neutral {
+  background: var(--lumia-n100);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-badge--warning {
-  background: var(--skmt-warning-bg);
-  color: var(--skmt-warning);
+.lumia-badge--warning {
+  background: var(--lumia-warning-bg);
+  color: var(--lumia-warning);
 }
 
-.skmt-badge--info {
-  background: var(--skmt-accent-light);
-  color: var(--skmt-accent);
+.lumia-badge--info {
+  background: var(--lumia-accent-light);
+  color: var(--lumia-accent);
 }
 
-.skmt-cards {
+.lumia-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
@@ -293,235 +293,235 @@ input[type="date"].skmt-input::-webkit-datetime-edit {
   padding: 20px 28px 0;
 }
 
-.skmt-card {
-  background: var(--skmt-surface-raised);
-  border-radius: var(--skmt-radius);
-  border: 1px solid var(--skmt-border);
-  box-shadow: var(--skmt-shadow-sm);
+.lumia-card {
+  background: var(--lumia-surface-raised);
+  border-radius: var(--lumia-radius);
+  border: 1px solid var(--lumia-border);
+  box-shadow: var(--lumia-shadow-sm);
   overflow: hidden;
 }
 
-.skmt-card--stat {
+.lumia-card--stat {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 20px;
 }
 
-.skmt-card__icon {
+.lumia-card__icon {
   width: 44px;
   height: 44px;
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-n50);
-  color: var(--skmt-accent);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-n50);
+  color: var(--lumia-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.skmt-card__icon .skmt-icon,
-.skmt-card__icon .skmt-icon {
+.lumia-card__icon .lumia-icon,
+.lumia-card__icon .lumia-icon {
   color: currentColor;
 }
 
-.skmt-card__icon--success {
-  /* background: var(--skmt-success-bg); */
-  color: var(--skmt-success);
+.lumia-card__icon--success {
+  /* background: var(--lumia-success-bg); */
+  color: var(--lumia-success);
 }
 
-.skmt-card__icon--info {
-  /* background: var(--skmt-warning-bg); */
-  color: var(--skmt-warning);
+.lumia-card__icon--info {
+  /* background: var(--lumia-warning-bg); */
+  color: var(--lumia-warning);
 }
 
-.skmt-card__content {
+.lumia-card__content {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.skmt-card__value {
+.lumia-card__value {
   font-size: 22px;
   font-weight: 700;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   line-height: 1;
 }
 
-.skmt-card__label {
+.lumia-card__label {
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-/* La colonne flex étire ses enfants : un badge garderait toute la largeur. */
-.skmt-card__content .skmt-badge {
+/* The flex column stretches its children: a badge would keep the full width. */
+.lumia-card__content .lumia-badge {
   align-self: flex-start;
   margin-top: 4px;
 }
 
-.skmt-card__header {
+.lumia-card__header {
   padding: 20px 20px 0;
 }
 
-.skmt-card__title {
+.lumia-card__title {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
-.skmt-card__desc {
+.lumia-card__desc {
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-card__body {
+.lumia-card__body {
   padding: 20px;
 }
 
-.skmt-module-grid {
+.lumia-module-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
-.skmt-module-list {
+.lumia-module-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.skmt-module-card {
-  background: var(--skmt-surface-raised);
-  border-radius: var(--skmt-radius);
-  border: 1px solid var(--skmt-border);
-  box-shadow: var(--skmt-shadow-sm);
+.lumia-module-card {
+  background: var(--lumia-surface-raised);
+  border-radius: var(--lumia-radius);
+  border: 1px solid var(--lumia-border);
+  box-shadow: var(--lumia-shadow-sm);
   padding: 20px;
-  transition: var(--skmt-transition);
+  transition: var(--lumia-transition);
 }
 
-.skmt-module-card:hover {
-  box-shadow: var(--skmt-shadow);
+.lumia-module-card:hover {
+  box-shadow: var(--lumia-shadow);
 }
 
-.skmt-module-card--active {
+.lumia-module-card--active {
   border-color: oklch(0.8 0.08 150 / 0.3);
 }
 
-.skmt-module-card__header {
+.lumia-module-card__header {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
 }
 
-.skmt-module-card__header .skmt-icon,
-.skmt-module-card__header .skmt-icon {
-  color: var(--skmt-accent);
+.lumia-module-card__header .lumia-icon,
+.lumia-module-card__header .lumia-icon {
+  color: var(--lumia-accent);
 }
 
-.skmt-module-card__title {
+.lumia-module-card__title {
   font-size: 14px;
   font-weight: 600;
   flex: 1;
 }
 
-.skmt-module-card__desc {
+.lumia-module-card__desc {
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   margin-bottom: 16px;
   line-height: 1.5;
 }
 
-.skmt-module-card__actions {
+.lumia-module-card__actions {
   margin-top: 16px;
   display: flex;
   gap: 8px;
 }
 
-.skmt-server-status {
+.lumia-server-status {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.skmt-server-status__item {
+.lumia-server-status__item {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-  background: var(--skmt-n50);
-  border-radius: var(--skmt-radius-sm);
-  border: 1px solid var(--skmt-border);
+  background: var(--lumia-n50);
+  border-radius: var(--lumia-radius-sm);
+  border: 1px solid var(--lumia-border);
 }
 
-.skmt-server-status__label {
+.lumia-server-status__label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
 }
 
-.skmt-form__row {
+.lumia-form__row {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.skmt-form__row .skmt-form__group {
+.lumia-form__row .lumia-form__group {
   flex: 1;
   min-width: 120px;
   max-width: 200px;
 }
 
-.skmt-form__group {
+.lumia-form__group {
   margin-bottom: 16px;
 }
 
-.skmt-form__group:last-child {
+.lumia-form__group:last-child {
   margin-bottom: 0;
 }
 
-.skmt-form__group--toggle {
+.lumia-form__group--toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.skmt-form__toggle-label {
+.lumia-form__toggle-label {
   flex: 1;
 }
 
-.skmt-form__label {
+.lumia-form__label {
   display: block;
   font-size: 13px;
   font-weight: 500;
   margin-bottom: 6px;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
 }
 
-.skmt-form__help {
+.lumia-form__help {
   font-size: 12px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
   margin-top: 4px;
   line-height: 1.4;
 }
 
-.skmt-inline {
+.lumia-inline {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.skmt-inline--center {
+.lumia-inline--center {
   align-items: center;
 }
 
 /* ================================================================
- * LABEL VARIANTE DANGER
+ * DANGER LABEL VARIANT
  * ================================================================ */
 
-.skmt-form__label--danger {
+.lumia-form__label--danger {
   color: #dc2626;
 }
 
@@ -529,65 +529,65 @@ input[type="date"].skmt-input::-webkit-datetime-edit {
  * CONFIGURATION CARDS
  * ================================================================ */
 
-.skmt-config-grid {
+.lumia-config-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-.skmt-config-card {
+.lumia-config-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-n50);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-n50);
   overflow: hidden;
 }
 
-.skmt-config-card__body {
+.lumia-config-card__body {
   flex: 1;
   padding: 16px 16px 12px;
 }
 
-.skmt-config-card__title {
+.lumia-config-card__title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   margin-bottom: 4px;
 }
 
-.skmt-config-card__title--danger {
-  color: var(--skmt-danger);
+.lumia-config-card__title--danger {
+  color: var(--lumia-danger);
 }
 
-.skmt-config-card__desc {
+.lumia-config-card__desc {
   font-size: 12px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
   line-height: 1.5;
 }
 
-.skmt-config-card__footer {
+.lumia-config-card__footer {
   padding: 12px 16px;
-  border-top: 1px solid var(--skmt-border);
-  background: var(--skmt-surface);
+  border-top: 1px solid var(--lumia-border);
+  background: var(--lumia-surface);
 }
 
-.skmt-config-card__footer .skmt-btn,
-.skmt-config-card__footer button {
+.lumia-config-card__footer .lumia-btn,
+.lumia-config-card__footer button {
   width: 100%;
 }
 
-.skmt-config-card__footer .skmt-import-row {
+.lumia-config-card__footer .lumia-import-row {
   flex-direction: column;
   align-items: stretch;
 }
 
-.skmt-config-card__footer .skmt-import-row .skmt-btn {
+.lumia-config-card__footer .lumia-import-row .lumia-btn {
   width: 100%;
 }
 
 @media screen and (max-width: 782px) {
-  .skmt-config-grid {
+  .lumia-config-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -596,46 +596,46 @@ input[type="date"].skmt-input::-webkit-datetime-edit {
  * IMPORT ROW
  * ================================================================ */
 
-.skmt-import-row {
+.lumia-import-row {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.skmt-file-input {
+.lumia-file-input {
   font-size: 13px;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   cursor: pointer;
 }
 
-.skmt-file-input::file-selector-button {
+.lumia-file-input::file-selector-button {
   font-size: 12px;
   font-weight: 500;
   padding: 5px 10px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-xs);
-  background: var(--skmt-surface);
-  color: var(--skmt-text);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-xs);
+  background: var(--lumia-surface);
+  color: var(--lumia-text);
   cursor: pointer;
   transition: background 0.15s;
   margin-right: 8px;
 }
 
-.skmt-file-input::file-selector-button:hover {
-  background: var(--skmt-n100);
+.lumia-file-input::file-selector-button:hover {
+  background: var(--lumia-n100);
 }
 
 /* ================================================================
- * SECTION COLLAPSIBLE (details/summary)
+ * COLLAPSIBLE SECTION (details/summary)
  * ================================================================ */
 
-.skmt-section--collapsible {
+.lumia-section--collapsible {
   border: none;
   padding: 0;
 }
 
-.skmt-section__header--summary {
+.lumia-section__header--summary {
   list-style: none;
   cursor: pointer;
   display: flex;
@@ -646,52 +646,52 @@ input[type="date"].skmt-input::-webkit-datetime-edit {
   padding-bottom: 20px;
 }
 
-.skmt-section__header--summary::-webkit-details-marker {
+.lumia-section__header--summary::-webkit-details-marker {
   display: none;
 }
 
-.skmt-section__chevron {
+.lumia-section__chevron {
   flex-shrink: 0;
   margin-top: 4px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
   transition: transform 0.2s ease;
 }
 
-details[open] .skmt-section__chevron {
+details[open] .lumia-section__chevron {
   transform: rotate(180deg);
 }
 
 /* ================================================================
- * TABLEAU INFORMATIONS SERVEUR
+ * SERVER INFORMATION TABLE
  * ================================================================ */
 
-.skmt-server-table {
+.lumia-server-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.skmt-server-table tbody tr {
-  border-bottom: 1px solid var(--skmt-border);
+.lumia-server-table tbody tr {
+  border-bottom: 1px solid var(--lumia-border);
 }
 
-.skmt-server-table tbody tr:last-child {
+.lumia-server-table tbody tr:last-child {
   border-bottom: none;
 }
 
-.skmt-server-table td {
+.lumia-server-table td {
   padding: 10px 0;
   vertical-align: middle;
 }
 
-.skmt-server-table__label {
+.lumia-server-table__label {
   font-weight: 500;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   width: 50%;
   padding-right: 16px;
 }
 
-.skmt-form__actions {
+.lumia-form__actions {
   display: flex;
   gap: 10px;
   margin-top: 20px;
@@ -701,7 +701,7 @@ details[open] .skmt-section__chevron {
  * MODAL
  * ================================================================ */
 
-.skmt-modal-overlay {
+.lumia-modal-overlay {
   display: none;
   position: fixed;
   inset: 0;
@@ -711,14 +711,14 @@ details[open] .skmt-section__chevron {
   -webkit-backdrop-filter: blur(4px);
   align-items: center;
   justify-content: center;
-  animation: skmt-modal-fade 0.18s ease;
+  animation: lumia-modal-fade 0.18s ease;
 }
 
-.skmt-modal-overlay.is-open {
+.lumia-modal-overlay.is-open {
   display: flex;
 }
 
-@keyframes skmt-modal-fade {
+@keyframes lumia-modal-fade {
   from {
     opacity: 0;
   }
@@ -727,30 +727,30 @@ details[open] .skmt-section__chevron {
   }
 }
 
-.skmt-modal {
-  background: var(--skmt-surface);
-  border-radius: var(--skmt-radius);
-  border: 1px solid var(--skmt-border);
+.lumia-modal {
+  background: var(--lumia-surface);
+  border-radius: var(--lumia-radius);
+  border: 1px solid var(--lumia-border);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 420px;
   margin: 20px;
-  animation: skmt-modal-slide 0.18s ease;
+  animation: lumia-modal-slide 0.18s ease;
   overflow: hidden;
 }
 
-/* Modale large + corps défilant (formulaires longs). */
-.skmt-modal--lg {
+/* Wide modal + scrolling body (long forms). */
+.lumia-modal--lg {
   max-width: 560px;
 }
-.skmt-modal--lg .skmt-modal__body {
+.lumia-modal--lg .lumia-modal__body {
   max-height: 65vh;
   overflow-y: auto;
 }
 
-@keyframes skmt-modal-slide {
+@keyframes lumia-modal-slide {
   from {
     transform: translateY(-8px) scale(0.98);
     opacity: 0;
@@ -761,115 +761,115 @@ details[open] .skmt-section__chevron {
   }
 }
 
-.skmt-modal__header {
+.lumia-modal__header {
   padding: 20px 20px 0;
 }
 
-.skmt-modal__title {
+.lumia-modal__title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--skmt-text);
+  color: var(--lumia-text);
   margin: 0;
 }
 
-.skmt-modal__body {
+.lumia-modal__body {
   padding: 12px 20px 20px;
 }
 
-.skmt-modal__message {
+.lumia-modal__message {
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   line-height: 1.55;
   margin: 0;
 }
 
-.skmt-modal__footer {
+.lumia-modal__footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 20px;
-  border-top: 1px solid var(--skmt-border);
-  background: var(--skmt-n50);
+  border-top: 1px solid var(--lumia-border);
+  background: var(--lumia-n50);
 }
 
-.skmt-notice {
+.lumia-notice {
   padding: 12px 16px;
-  border-radius: var(--skmt-radius-xs);
+  border-radius: var(--lumia-radius-xs);
   margin-bottom: 20px;
   font-size: 13px;
 }
 
-.skmt-notice--success {
-  background: var(--skmt-success-bg);
-  color: var(--skmt-success);
+.lumia-notice--success {
+  background: var(--lumia-success-bg);
+  color: var(--lumia-success);
   border: 1px solid oklch(0.8 0.08 150 / 0.2);
 }
 
-.skmt-notice--error {
-  background: var(--skmt-danger-bg);
-  color: var(--skmt-danger);
+.lumia-notice--error {
+  background: var(--lumia-danger-bg);
+  color: var(--lumia-danger);
   border: 1px solid oklch(0.8 0.08 20 / 0.2);
 }
 
-.skmt-empty {
+.lumia-empty {
   text-align: center;
   padding: 48px 20px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.skmt-empty .skmt-icon,
-.skmt-empty .skmt-icon {
+.lumia-empty .lumia-icon,
+.lumia-empty .lumia-icon {
   width: 48px;
   height: 48px;
   margin-bottom: 12px;
-  color: var(--skmt-text-muted);
+  color: var(--lumia-text-muted);
 }
 
-.skmt-empty p {
+.lumia-empty p {
   margin-bottom: 16px;
   font-size: 14px;
 }
 
 /* ================================================================
- * SEARCH — champ de recherche réutilisable (wrapper + icône).
- * Neutralise les styles WordPress natifs des <input> pour un rendu
- * cohérent dans tous les modules. Structure :
- *   <div class="skmt-search"><svg…/><input class="skmt-search__input"></div>
- * Modificateur : --sm (compact).
+ * SEARCH — reusable search field (wrapper + icon).
+ * Neutralizes the native WordPress styles of <input> for a consistent
+ * rendering in all the modules. Structure:
+ *   <div class="lumia-search"><svg…/><input class="lumia-search__input"></div>
+ * Modifier: --sm (compact).
  * ================================================================ */
-.skmt-search {
+.lumia-search {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 10px;
   min-height: 34px;
-  border: 1px solid var(--skmt-border);
-  border-radius: var(--skmt-radius-sm);
-  background: var(--skmt-surface);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-surface);
   transition: border-color 0.12s, box-shadow 0.12s;
 }
 
-.skmt-search--sm {
+.lumia-search--sm {
   min-height: 30px;
   padding: 0 8px;
 }
 
-.skmt-search:focus-within {
-  border-color: var(--skmt-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--skmt-accent) 15%, transparent);
+.lumia-search:focus-within {
+  border-color: var(--lumia-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lumia-accent) 15%, transparent);
 }
 
-.skmt-search > svg {
-  color: var(--skmt-n400);
+.lumia-search > svg {
+  color: var(--lumia-n400);
   flex-shrink: 0;
 }
 
-.skmt-admin-wrap .skmt-search__input,
-.skmt-search__input {
+.lumia-admin-wrap .lumia-search__input,
+.lumia-search__input {
   flex: 1 !important;
   min-width: 0 !important;
   width: auto !important;
@@ -882,7 +882,7 @@ details[open] .skmt-section__chevron {
   border: none !important;
   border-radius: 0 !important;
   background: transparent !important;
-  color: var(--skmt-text) !important;
+  color: var(--lumia-text) !important;
   outline: none !important;
   box-shadow: none !important;
   -webkit-appearance: none !important;
@@ -890,11 +890,11 @@ details[open] .skmt-section__chevron {
 }
 
 @media screen and (max-width: 782px) {
-  .skmt-cards {
+  .lumia-cards {
     grid-template-columns: 1fr;
   }
 
-  .skmt-module-grid {
+  .lumia-module-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -902,14 +902,14 @@ details[open] .skmt-section__chevron {
 /* ================================================================
    TOOLTIPS
    ----------------------------------------------------------------
-   Singleton positionné en `fixed` par admin.js (translate3d, comme
-   Popper) : l'élément est hors du flux, donc jamais rogné par un
-   parent en `overflow:hidden` — le cas de toutes nos colonnes
-   scrollables. Le conteneur porte la position, la boîte l'animation,
-   pour que l'une n'écrase pas l'autre.
+   Singleton positioned as `fixed` by admin.js (translate3d, like
+   Popper): the element is out of the flow, so never clipped by an
+   `overflow:hidden` parent — the case of all our scrollable columns.
+   The container carries the position, the box the animation, so that
+   one does not overwrite the other.
    ================================================================ */
 
-.skmt-tooltip {
+.lumia-tooltip {
   position: fixed;
   top: 0;
   left: 0;
@@ -919,14 +919,14 @@ details[open] .skmt-section__chevron {
   will-change: transform;
 }
 
-.skmt-tooltip.is-visible {
+.lumia-tooltip.is-visible {
   visibility: visible;
 }
 
-.skmt-tooltip__box {
+.lumia-tooltip__box {
   position: relative;
-  /* Le singleton vit dans <body>, hors de la portée du reset du plugin :
-     sans cette ligne, max-width ne compterait pas le padding. */
+  /* The singleton lives in <body>, outside the reach of the plugin reset:
+     without this line, max-width would not count the padding. */
   box-sizing: border-box;
   max-width: 260px;
   padding: 5px 8px;
@@ -935,27 +935,27 @@ details[open] .skmt-section__chevron {
   line-height: 1.45;
   text-align: left;
   color: #fff;
-  background: var(--skmt-n900, #111827);
-  border-radius: var(--skmt-radius-sm, 6px);
-  box-shadow: var(--skmt-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
+  background: var(--lumia-n900, #111827);
+  border-radius: var(--lumia-radius-sm, 6px);
+  box-shadow: var(--lumia-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
   opacity: 0;
   transform: scale(0.94);
   transition: opacity 0.12s ease-out, transform 0.12s ease-out;
 }
 
-.skmt-tooltip.is-visible .skmt-tooltip__box {
+.lumia-tooltip.is-visible .lumia-tooltip__box {
   opacity: 1;
   transform: none;
 }
 
-/* Point d'origine de l'animation : la boîte doit sembler sortir de
-   l'élément survolé, pas se réduire vers son propre centre. */
-.skmt-tooltip[data-placement="top"] .skmt-tooltip__box    { transform-origin: bottom center; }
-.skmt-tooltip[data-placement="bottom"] .skmt-tooltip__box { transform-origin: top center; }
-.skmt-tooltip[data-placement="left"] .skmt-tooltip__box   { transform-origin: right center; }
-.skmt-tooltip[data-placement="right"] .skmt-tooltip__box  { transform-origin: left center; }
+/* Animation origin point: the box must seem to come out of the hovered
+   element, not shrink towards its own center. */
+.lumia-tooltip[data-placement="top"] .lumia-tooltip__box    { transform-origin: bottom center; }
+.lumia-tooltip[data-placement="bottom"] .lumia-tooltip__box { transform-origin: top center; }
+.lumia-tooltip[data-placement="left"] .lumia-tooltip__box   { transform-origin: right center; }
+.lumia-tooltip[data-placement="right"] .lumia-tooltip__box  { transform-origin: left center; }
 
-.skmt-tooltip__arrow {
+.lumia-tooltip__arrow {
   position: absolute;
   width: 8px;
   height: 8px;
@@ -963,19 +963,18 @@ details[open] .skmt-section__chevron {
   transform: rotate(45deg);
 }
 
-.skmt-tooltip[data-placement="top"] .skmt-tooltip__arrow    { bottom: -3px; margin-left: -4px; }
-.skmt-tooltip[data-placement="bottom"] .skmt-tooltip__arrow { top: -3px;    margin-left: -4px; }
-.skmt-tooltip[data-placement="left"] .skmt-tooltip__arrow   { right: -3px;  margin-top: -4px; }
-.skmt-tooltip[data-placement="right"] .skmt-tooltip__arrow  { left: -3px;   margin-top: -4px; }
+.lumia-tooltip[data-placement="top"] .lumia-tooltip__arrow    { bottom: -3px; margin-left: -4px; }
+.lumia-tooltip[data-placement="bottom"] .lumia-tooltip__arrow { top: -3px;    margin-left: -4px; }
+.lumia-tooltip[data-placement="left"] .lumia-tooltip__arrow   { right: -3px;  margin-top: -4px; }
+.lumia-tooltip[data-placement="right"] .lumia-tooltip__arrow  { left: -3px;   margin-top: -4px; }
 
 /*
- * Repère d'aide : icône Lucide `info` qui porte une précision en tooltip.
- * Ni pastille dessinée en CSS ni soulignement pointillé sous le libellé :
- * le premier fabrique une fausse icône, le second salit la ligne et ne se
- * lit pas comme un contrôle. Un vrai pictogramme, discret, cliquable au
- * clavier.
+ * Help marker: Lucide `info` icon carrying a clarification in a tooltip.
+ * Neither a dot drawn in CSS nor a dotted underline under the label: the
+ * former fakes an icon, the latter dirties the line and does not read as a
+ * control. A real pictogram, discreet, keyboard-clickable.
  */
-.skmt-tip-info {
+.lumia-tip-info {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -984,7 +983,7 @@ details[open] .skmt-section__chevron {
   padding: 0;
   margin-left: 5px;
   vertical-align: -3px;
-  color: var(--skmt-n400);
+  color: var(--lumia-n400);
   background: none;
   border: 0;
   border-radius: 50%;
@@ -993,72 +992,71 @@ details[open] .skmt-section__chevron {
   transition: color 0.12s;
 }
 
-.skmt-tip-info__i {
+.lumia-tip-info__i {
   width: 14px;
   height: 14px;
   display: block;
 }
 
-.skmt-tip-info:hover,
-.skmt-tip-info:focus-visible {
-  color: var(--skmt-accent);
+.lumia-tip-info:hover,
+.lumia-tip-info:focus-visible {
+  color: var(--lumia-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skmt-tooltip__box {
+  .lumia-tooltip__box {
     transition: none;
     transform: none;
   }
 }
 
 /* ================================================================
- * ONGLETS (sous-onglets d'un écran) — voir admin.js initTabs()
+ * TABS (sub-tabs of a screen) — see admin.js initTabs()
  * ================================================================ */
 
-.skmt-tabs {
+.lumia-tabs {
   display: flex;
   flex-shrink: 0;
   gap: 4px;
   padding: 0 28px;
-  /* Filet en ombre interne plutôt qu'en bordure : le soulignement de
-     l'onglet actif se peint par-dessus sans marge négative, qui ferait
-     apparaître un ascenseur vertical avec overflow-x (l'axe y passe alors
-     lui aussi en auto). */
-  box-shadow: inset 0 -1px 0 var(--skmt-border);
+  /* Inner-shadow rule rather than a border: the active tab's underline paints
+     over it without a negative margin, which would make a vertical scrollbar
+     appear with overflow-x (the y axis then also switches to auto). */
+  box-shadow: inset 0 -1px 0 var(--lumia-border);
   overflow-x: auto;
 }
 
-.skmt-tabs__tab {
+.lumia-tabs__tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 12px 14px;
   font-family: inherit;
   font-size: 13px;
-  color: var(--skmt-text-secondary);
+  color: var(--lumia-text-secondary);
   white-space: nowrap;
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color var(--skmt-transition), border-color var(--skmt-transition);
+  transition: color var(--lumia-transition), border-color var(--lumia-transition);
 }
 
-.skmt-tabs__tab:hover {
-  color: var(--skmt-text);
+.lumia-tabs__tab:hover {
+  color: var(--lumia-text);
 }
 
-.skmt-tabs__tab:focus-visible {
-  outline: 2px solid var(--skmt-accent);
+.lumia-tabs__tab:focus-visible {
+  outline: 2px solid var(--lumia-accent);
   outline-offset: -2px;
 }
 
-.skmt-tabs__tab.is-active {
+.lumia-tabs__tab.is-active {
   font-weight: 500;
-  color: var(--skmt-accent);
-  border-bottom-color: var(--skmt-accent);
+  color: var(--lumia-accent);
+  border-bottom-color: var(--lumia-accent);
 }
 
-.skmt-tabs__panel[hidden] {
+.lumia-tabs__panel[hidden] {
   display: none;
 }
