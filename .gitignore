@@ -8,3 +8,6 @@ dist/
 # Outillage Composer (dev uniquement, jamais distribué)
 vendor/
 .phpcs.cache
+
+# Banc de test Docker : captures et zips générés (dev uniquement)
+tools/e2e/out/

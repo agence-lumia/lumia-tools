@@ -8,6 +8,8 @@
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
 	<exclude-pattern>*/dist/*</exclude-pattern>
 	<exclude-pattern>*/assets/*</exclude-pattern>
+	<!-- Banc de test Docker (mu-plugin d'authentification, graine, capture) : jamais distribué, pas du code du plugin. -->
+	<exclude-pattern>*/tools/e2e/*</exclude-pattern>
 
 	<!-- Options : PHP uniquement, chemins relatifs, parallélisme, couleurs -->
 	<arg name="extensions" value="php"/>
