@@ -13,7 +13,8 @@
  *   settings  saves every module's settings through its own save_settings(), then
  *             the SMTP secrets. A fresh process afterwards, so the content phase
  *             runs with the saved settings (keep_original, SMTP transport...).
- *   content   images, media folders, avatar, menu profile, notice, one failed mail.
+ *   content   images, media folders, avatar, menu profile, a running bulk state with its
+ *             cron event, notice, one failed mail.
  *
  * Usage: wp --user=admin eval-file seed-skmt.php <phase> [minimal]
  */
@@ -301,6 +302,26 @@ if ( 'content' === $e2e_phase ) {
 			'updated_at'    => time(),
 		]
 	);
+
+	// Optimizer left mid-bulk. The images above are already optimized, so the plugin's own
+	// ajax_start() would find nothing to do: write the option shape BulkProcessor::set_state()
+	// stores (autoload off) and schedule the event the way schedule_next() does, with
+	// Module::BATCH_SIZE (5) as its only argument.
+	// The event is a year away so neither WP-Cron nor run_cron_batch() consumes it before a
+	// migration is checked (DISABLE_WP_CRON would also stop the bench's other cron events).
+	update_option(
+		'skmt_module_image_optimizer_bulk_state',
+		[
+			'running'    => true,
+			'total'      => 12,
+			'processed'  => 4,
+			'remaining'  => 8,
+			'updated_at' => time(),
+			'user_id'    => $e2e_admin->ID,
+		],
+		false
+	);
+	wp_schedule_single_event( time() + YEAR_IN_SECONDS, 'skmt_image_optimizer_cron', [ 5 ] );
 
 	Admin::add_persistent_notice( 'e2e_notice', 'Notice E2E : réglages enregistrés.', 'info', $e2e_admin->ID );
 

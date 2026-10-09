@@ -47,7 +47,7 @@ Trois processus wp-cli successifs, car SKMT lit ses réglages au démarrage : `m
 | Zone | Contenu |
 |---|---|
 | `skmt_settings` | `modules` : les 10 modules à `true` ; `global.update_channel = stable` |
-| Image Optimizer | `format_mode=webp`, `quality=82`, `max_width/height=1920`, `keep_original=true`, `svg_roles=[administrator,editor]` ; 3 JPEG importés (`Photo E2E A`, `Photo E2E B`, `Avatar E2E`) → métas `_skmt_*` et dossier `uploads/skmt-originals-<jeton>/` |
+| Image Optimizer | `format_mode=webp`, `quality=82`, `max_width/height=1920`, `keep_original=true`, `svg_roles=[administrator,editor]` ; 3 JPEG importés (`Photo E2E A`, `Photo E2E B`, `Avatar E2E`) → métas `_skmt_*` et dossier `uploads/skmt-originals-<jeton>/` ; option `skmt_module_image_optimizer_bulk_state` en cours (`running=true`, `total=12`, `processed=4`, `remaining=8`, `user_id=1`) et événement cron unique `skmt_image_optimizer_cron` d'argument `[5]`, programmé **un an** plus tard pour que ni WP-Cron ni `run_cron_batch()` ne le consomment avant la vérification d'une migration |
 | Security | `enable_custom_login_url=true`, `custom_login_url=/connexion-e2e`, `rate_limiting=true`, `rate_limit_attempts=3`, whitelist `192.0.2.10` et `198.51.100.7` |
 | Login | `panel_bg_color=#112233`, `logo_width=200`, `btn_bg_color=#ff5500`, `hide_lost_password=true` |
 | White Label | `hide_wp_logo=false`, `footer.left_text`, `profile.hide_language=true` ; user meta `skmt_local_avatar` (admin) ; option `skmt_wl_menu_profiles` : un profil actif (rôle `editor`) dont l'item référence `studio-kyne-mini-tools` |
