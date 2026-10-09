@@ -157,14 +157,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh release list \
+          # Read the list first, then filter in bash: a `grep` that matches
+          # nothing exits 1 and, under pipefail, failed the step on a repository
+          # with no older dev pre-release (first dev release of agence-lumia/lumia-tools).
+          tags=$(gh release list \
             --repo "$GITHUB_REPOSITORY" \
             --limit 100 \
             --json tagName,isPrerelease \
-            | jq -r '.[] | select(.isPrerelease == true) | .tagName' \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$' \
-            | grep -v "^${NEW_TAG}$" \
-            | while IFS= read -r tag; do
-                echo "Deleting old dev pre-release: $tag"
-                gh release delete "$tag" --yes --cleanup-tag || true
-              done
+            --jq '.[] | select(.isPrerelease == true) | .tagName')
+
+          while IFS= read -r tag; do
+            [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$ ]] || continue
+            [[ "$tag" == "$NEW_TAG" ]] && continue
+            echo "Deleting old dev pre-release: $tag"
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done <<< "$tags"
