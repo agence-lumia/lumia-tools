@@ -80,7 +80,10 @@ The migration runs once (a marker, `lumia_migrated_from_skmt`, is set at the end
 ```bash
 wp plugin list --fields=name,status | grep -E "lumia|studio-kyne"   # lumia-tools active, studio-kyne-mini-tools inactive
 wp option get lumia_migrated_from_skmt                              # a timestamp
+wp cache flush                                                      # persistent object cache (Redis) only
 ```
+
+The `wp cache flush` is a precaution for sites with a persistent object cache (Redis in the Dokploy template): the migration already clears the cache of each object it renames, the flush also drops anything another plugin cached from the old values. On a site without one it does nothing harmful.
 
 Then, in wp-admin and in a private window:
 
