@@ -11,3 +11,6 @@ vendor/
 
 # Banc de test Docker : captures et zips générés (dev uniquement)
 tools/e2e/out/
+
+# Outillage de traduction : phar WP-CLI téléchargé à la demande (tools/i18n/wp.sh)
+tools/i18n/.cache/
