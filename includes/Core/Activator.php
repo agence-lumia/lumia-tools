@@ -41,14 +41,16 @@ class Activator {
 		// which never overwrites a `lumia_*` option, would skip them.
 		if ( FromSkmt::needed() ) {
 			if ( ! FromSkmt::run() ) {
+				self::cli_report( false );
 				// Stopped half-way: no defaults either, they would block the
 				// copy when the migration resumes (next activation).
 				return;
 			}
+			self::cli_report( true );
 		} else {
 			// Left by a failed attempt whose data is gone since (SKMT deleted):
 			// nothing to resume, Lumia must not stay on hold.
-			delete_option( FromSkmt::ERROR_OPTION );
+			FromSkmt::clear_error();
 		}
 
 		// Build the defaults, including the initial (inactive) state of each module.
@@ -82,5 +84,30 @@ class Activator {
 				add_option( $option_key, $defaults );
 			}
 		}
+	}
+
+	/**
+	 * Under WP-CLI, says how the migration went: `wp plugin activate` would
+	 * otherwise print "Success" over a migration that stopped half-way.
+	 */
+	private static function cli_report( bool $success ): void {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			return;
+		}
+
+		if ( $success ) {
+			\WP_CLI::log( __( 'Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.', 'lumia-tools' ) );
+			return;
+		}
+
+		/* translators: %s: identifier of the migration step that failed, e.g. post_meta. */
+		$message = sprintf( __( 'The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it.', 'lumia-tools' ), FromSkmt::failed_step() );
+		$detail  = FromSkmt::failure_detail();
+		if ( '' !== $detail ) {
+			/* translators: %s: database error message. */
+			$message .= ' ' . sprintf( __( 'Database error: %s', 'lumia-tools' ), $detail );
+		}
+
+		\WP_CLI::warning( $message );
 	}
 }

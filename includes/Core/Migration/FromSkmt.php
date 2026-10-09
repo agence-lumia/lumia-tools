@@ -20,9 +20,16 @@ use Lumia\Tools\Modules\Smtp\Crypto;
  *
  * Every step checks its own state and can run again: a migration stopped by a
  * failure resumes where it stopped at the next activation, without duplicating
- * or overwriting anything (no `lumia_*` key is ever overwritten). The marker is
- * set last; on failure, the step is recorded in ERROR_OPTION, SKMT stays active
- * and Plugin keeps every module off (see on_hold()).
+ * anything. The marker is set last; on failure, the step is recorded in
+ * ERROR_OPTION (and the database error in ERROR_DETAIL_OPTION), SKMT stays
+ * active and Plugin keeps every module off (see on_hold()).
+ *
+ * Overwriting: a first run never overwrites an existing `lumia_*` option. A
+ * resumed run (ERROR_OPTION set) refreshes the copies from `skmt_*`: Lumia was
+ * on hold since the failed attempt, so nothing of Lumia wrote them, while SKMT,
+ * still the live plugin, may have changed its settings or secrets. Likewise a
+ * `_skmt_*` meta written by SKMT on an object whose meta was already renamed
+ * replaces the `_lumia_*` one instead of duplicating it.
  *
  * Only exact names from the closed lists below are touched: never a LIKE
  * pattern that could catch the keys of another plugin.
@@ -40,13 +47,23 @@ final class FromSkmt {
 	/** Set when a step fails; value: the step name. Autoloaded, see on_hold(). */
 	public const ERROR_OPTION = 'lumia_migration_error';
 
+	/** Database error of the failed step ('' when the failure was not a query). */
+	public const ERROR_DETAIL_OPTION = 'lumia_migration_error_detail';
+
 	/** Set when the migration completes, until an administrator gets the success notice. Autoloaded. */
 	public const NOTICE_OPTION = 'lumia_migration_notice';
 
-	/** Steps, in order. Tables and meta are renamed before SKMT is deactivated. */
+	/**
+	 * Steps, in order. Tables and meta are renamed before SKMT is deactivated.
+	 * `crons` comes before the meta: SKMT's bulk optimizer selects the images
+	 * without `_skmt_optimized`; with that key renamed and its event still
+	 * scheduled, a SKMT left active by a failure would re-encode every
+	 * optimized image and keep the lossy result as the new "original".
+	 */
 	private const STEPS = [
 		'options',
 		'secrets',
+		'crons',
 		'tables',
 		'activity_rows',
 		'post_meta',
@@ -54,7 +71,6 @@ final class FromSkmt {
 		'term_meta',
 		'taxonomy',
 		'originals',
-		'crons',
 		'deactivate',
 	];
 
@@ -122,6 +138,9 @@ final class FromSkmt {
 	/** Activity log filter of the former plugin, see migrate_tables(). */
 	private const LEGACY_RECORD_FILTER = 'skmt_activity_log_record';
 
+	/** True while resuming a failed migration: the copies are refreshed from `skmt_*`. */
+	private static bool $refresh = false;
+
 	/**
 	 * Whether there is something to migrate: SKMT has data and the migration
 	 * has not completed yet.
@@ -159,6 +178,21 @@ final class FromSkmt {
 	}
 
 	/**
+	 * Database error of the failed step, '' if none.
+	 */
+	public static function failure_detail(): string {
+		return (string) get_option( self::ERROR_DETAIL_OPTION, '' );
+	}
+
+	/**
+	 * Forgets a failed attempt.
+	 */
+	public static function clear_error(): void {
+		delete_option( self::ERROR_OPTION );
+		delete_option( self::ERROR_DETAIL_OPTION );
+	}
+
+	/**
 	 * Whether the success notice is still to be shown (autoloaded: no query).
 	 */
 	public static function has_pending_notice(): bool {
@@ -177,6 +211,9 @@ final class FromSkmt {
 		// is reported as "unexpected output". It still reaches the PHP error log.
 		$show_errors = $wpdb->hide_errors();
 
+		// Resuming after a failure: SKMT's current values win (see the class doc).
+		self::$refresh = false !== get_option( self::ERROR_OPTION );
+
 		try {
 			foreach ( self::STEPS as $step ) {
 				// last_error would otherwise still hold an error of an earlier,
@@ -186,13 +223,15 @@ final class FromSkmt {
 				$wpdb->last_error = '';
 
 				if ( ! self::run_step( $step ) ) {
+					$detail = (string) $wpdb->last_error;
 					update_option( self::ERROR_OPTION, $step, true );
+					update_option( self::ERROR_DETAIL_OPTION, $detail, false );
 					return false;
 				}
 			}
 
 			update_option( self::MARKER, time(), false );
-			delete_option( self::ERROR_OPTION );
+			self::clear_error();
 			update_option( self::NOTICE_OPTION, 1, true );
 
 			return true;
@@ -357,6 +396,16 @@ final class FromSkmt {
 
 		$ok = true;
 		foreach ( $keys as $legacy ) {
+			// An object holding both keys: the `_skmt_*` one was written by SKMT after
+			// a failed attempt renamed the first one, it is the current value. The
+			// renamed copy goes, so that the rename below does not duplicate the key.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- core table and column names; exact keys prepared.
+			$wpdb->query( $wpdb->prepare( "DELETE target FROM {$table} AS target INNER JOIN {$table} AS legacy ON legacy.{$id_column} = target.{$id_column} AND legacy.meta_key = %s WHERE target.meta_key = %s", $legacy, self::lumia_name( $legacy ) ) );
+			if ( ! self::db_ok() ) {
+				$ok = false;
+				break;
+			}
+
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- core table name; one exact key per query.
 			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET meta_key = %s WHERE meta_key = %s", self::lumia_name( $legacy ), $legacy ) );
 			if ( ! self::db_ok() ) {
@@ -490,8 +539,9 @@ final class FromSkmt {
 	 * ================================================================ */
 
 	/**
-	 * Copies an option to its `lumia_*` name, with its autoload flag, unless the
-	 * legacy one is absent or the target already exists.
+	 * Copies an option to its `lumia_*` name, with its autoload flag. Skipped when
+	 * the legacy one is absent; when the target exists, skipped on a first run,
+	 * refreshed on a resumed one.
 	 *
 	 * @param callable|null $transform Applied to the value before the copy.
 	 */
@@ -499,7 +549,12 @@ final class FromSkmt {
 		$target = self::lumia_name( $legacy );
 		$value  = get_option( $legacy );
 
-		if ( false === $value || false !== get_option( $target ) ) {
+		if ( false === $value ) {
+			return self::db_ok();
+		}
+
+		$exists = false !== get_option( $target );
+		if ( $exists && ! self::$refresh ) {
 			return self::db_ok();
 		}
 
@@ -510,6 +565,12 @@ final class FromSkmt {
 		$autoload = self::autoload( $legacy );
 		if ( ! self::db_ok() ) {
 			return false;
+		}
+
+		if ( $exists ) {
+			// false also when the value is unchanged: only a database error counts.
+			update_option( $target, $value, $autoload );
+			return self::db_ok();
 		}
 
 		$added = add_option( $target, $value, '', $autoload );

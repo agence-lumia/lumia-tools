@@ -23,6 +23,7 @@ delete_site_option( 'lumia_settings' );
 // State of the migration from Studio Kyne Mini Tools.
 delete_option( \Lumia\Tools\Core\Migration\FromSkmt::MARKER );
 delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_OPTION );
+delete_option( \Lumia\Tools\Core\Migration\FromSkmt::ERROR_DETAIL_OPTION );
 delete_option( \Lumia\Tools\Core\Migration\FromSkmt::NOTICE_OPTION );
 
 // Metadata written by the plugin core (notification center).

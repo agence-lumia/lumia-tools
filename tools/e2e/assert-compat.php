@@ -17,6 +17,9 @@ if ( ! defined( 'WP_CLI' ) ) {
 	exit( 1 );
 }
 
+// wp eval-file includes this file from inside a function: without the global
+// statement, this variable and the one e2e_check() increments would differ.
+global $e2e_failures;
 $e2e_failures = 0;
 
 function e2e_check( bool $ok, string $label ): void {

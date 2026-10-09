@@ -320,8 +320,8 @@ fresh_decrypt_checks() {
 	local out
 	wp eval 'wp_cache_flush();' >/dev/null
 	out="$(wp eval-file /e2e/assert-migration.php decrypt | tr -d '\r')"
-	check "fresh request: SMTP password and Brevo key decrypt (${out})" \
-		"$([ "${out}" = '{"password":"e2e-secret","brevo":"e2e-brevo"}' ] && echo 0 || echo 1)"
+	check "fresh request: SMTP password and Brevo key decrypt to what SKMT last held (${out})" \
+		"$([ "${out}" = match ] && echo 0 || echo 1)"
 }
 
 # option_state <option>: prints "some" if the option exists, "none" otherwise.
@@ -429,7 +429,7 @@ cmd_reactivate_lumia() {
 # key) leaves SKMT active and Lumia on hold; reactivating Lumia then resumes and completes it.
 # Run on a freshly seeded bench without Lumia; ends like install-lumia + assert-migration.
 cmd_assert_partial() {
-	local failures=0 folder page
+	local failures=0 folder page out notice
 
 	folder="$(working_tree_plugin)"
 	if wp plugin is-installed "${folder}" >/dev/null 2>&1; then
@@ -450,20 +450,33 @@ add_filter(
 );
 PHP
 
-	cmd_install_lumia
+	out="$(cmd_install_lumia 2>&1)"
+	echo "${out}"
 
 	echo "Failed migration"
+	check "wp-cli warns about the failed step" "$(grep -q '^Warning: .*post_meta' <<<"${out}" && echo 0 || echo 1)"
 	wp --user=admin eval-file /e2e/assert-migration.php hold post_meta || failures=$((failures + 1))
 	login_checks
 	page="$(curl -s -H 'X-E2E-User: admin' "${SITE_URL}/wp-admin/index.php")"
-	check "admin notice names the failed step" "$(grep -q 'post_meta' <<<"${page}" && echo 0 || echo 1)"
+	# Rendered inline, not swallowed into SKMT's notification drawer: there, the markup
+	# only exists JSON-encoded (id=\"...\"), never with plain quotes.
+	notice="$(grep -o 'id="lumia-migration-notice".*' <<<"${page}" || true)"
+	check "error notice rendered inline on the dashboard" "$([ -n "${notice}" ] && echo 0 || echo 1)"
+	check "the notice names the failed step" "$(grep -q 'post_meta' <<<"${notice}" && echo 0 || echo 1)"
+	check "the notice warns not to delete SKMT yet" "$(grep -q 'Do not delete Studio Kyne Mini Tools' <<<"${notice}" && echo 0 || echo 1)"
+	check "the notice shows the database error" "$(grep -q 'e2e_missing_table' <<<"${notice}" && echo 0 || echo 1)"
 	page="$(http_code '/wp-admin/admin.php?page=lumia-tools' -H 'X-E2E-User: admin')"
 	check "the Lumia admin page is not registered while on hold (got ${page})" "$([ "${page}" != 200 ] && echo 0 || echo 1)"
+
+	echo "SKMT keeps working during the hold"
+	wp --user=admin eval-file /e2e/assert-migration.php hold-writes || failures=$((failures + 1))
 
 	remove_snippets
 	echo "Resume: deactivate and reactivate ${folder}"
 	wp plugin deactivate "${folder}"
-	wp plugin activate "${folder}"
+	out="$(wp plugin activate "${folder}" 2>&1)"
+	echo "${out}"
+	check "wp-cli reports the completed migration" "$(grep -q 'Migration from Studio Kyne Mini Tools complete' <<<"${out}" && echo 0 || echo 1)"
 
 	[ "${failures}" -eq 0 ] || die "assert-partial: ${failures} check(s) failed before the resume"
 	cmd_assert_migration

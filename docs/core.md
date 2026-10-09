@@ -137,7 +137,9 @@ The admin help texts only mention the `LUMIA_*` names. A new public filter, acti
 
 Lümia Tools is Studio Kyne Mini Tools (SKMT) renamed. On the sites that ran SKMT, Lümia is installed next to it and **migrates its data on activation** (`Activator::activate()`, admin or `wp plugin activate`). Condition (`FromSkmt::needed()`): `skmt_settings` exists and the marker `lumia_migrated_from_skmt` does not. Checked on the Docker bench by `tools/e2e/run.sh assert-migration`, `assert-after-uninstall`, `reactivate-lumia` and `assert-partial` (see `tools/e2e/README.md`).
 
-**Migration, then defaults — never the other way round.** `Activator::activate()` calls `FromSkmt::run()` *before* creating `lumia_settings` and the `lumia_module_*` defaults. The copy never overwrites an existing `lumia_*` option: had the defaults been created first, `lumia_settings` would exist with every module off and the site's real settings would be skipped. For the same reason, a migration that fails creates **no** default at all, so that the resumed copy still finds nothing in its way.
+**Migration, then defaults — never the other way round.** `Activator::activate()` calls `FromSkmt::run()` *before* creating `lumia_settings` and the `lumia_module_*` defaults. On a first run the copy never overwrites an existing `lumia_*` option: had the defaults been created first, `lumia_settings` would exist with every module off and the site's real settings would be skipped. For the same reason, a migration that fails creates **no** default at all, so that the resumed copy still finds nothing in its way.
+
+**A resumed run refreshes.** When `lumia_migration_error` is set at the start of `run()`, the copies are refreshed from `skmt_*` (secrets re-encrypted again): Lümia has been on hold since the failed attempt, so none of its code wrote them, whereas SKMT stayed the live plugin and may have changed a setting or a password in the meantime — its values are the current ones.
 
 Steps, in order, each one checking its own state so that a second run completes a partial one without duplicating anything:
 
@@ -145,12 +147,12 @@ Steps, in order, each one checking its own state so that a second run completes 
 |---|---|
 | `options` | `skmt_settings`, `skmt_module_*`, optimizer stats/bulk state/backup token, menu profiles and cache generation, the two schema options: **copied** to `lumia_*` with their autoload flag. In the menu profiles (and the MenuCreator setting), a string equal to `studio-kyne-mini-tools` or starting with `studio-kyne-mini-tools&` becomes `lumia-tools…` (recursive). The originals stay. |
 | `secrets` | `skmt_smtp_password`, `skmt_smtp_brevo_key`: **re-encrypted** (below), then copied. |
+| `crons` | A pending `skmt_image_optimizer_cron` event is scheduled again on `lumia_image_optimizer_cron` with the same arguments and timestamp; every `skmt_*` event is removed. The log purges are rescheduled by their module's `init()`. **Before the meta steps**: SKMT's bulk optimizer selects the images without `_skmt_optimized`; once that key is renamed, a SKMT left active by a failure and still holding its event would re-encode every optimized image (lossy WebP again) and keep the result as the new "original". |
 | `tables` | `{prefix}skmt_activity_log`, `{prefix}skmt_mail_log`: `RENAME TABLE` if the target does not exist; if both exist, the legacy rows are appended to the Lumia table, then the legacy table is dropped. |
 | `activity_rows` | Rows `event = 'skmt_settings'` / `object_type = 'skmt'` rewritten to `lumia_settings` / `lumia`. |
-| `post_meta`, `user_meta`, `term_meta` | **Renamed in place**, one exact key per `UPDATE` (closed lists, never a `LIKE`), meta cache of the objects involved dropped. |
+| `post_meta`, `user_meta`, `term_meta` | **Renamed in place**, one exact key per `UPDATE` (closed lists, never a `LIKE`), meta cache of the objects involved dropped. An object holding both the legacy and the Lümia key (SKMT wrote the legacy one after a failed attempt renamed the first) loses its `_lumia_*` row first: SKMT's later value wins, no duplicate. |
 | `taxonomy` | `skmt_media_folder` renamed to `lumia_media_folder` in `term_taxonomy`; term caches and both taxonomies' caches cleared. |
 | `originals` | `uploads/skmt-originals-{token}` renamed to `lumia-originals-{token}`. A failed `rename()` is **not** a failure: `get_backup_dir()` keeps reading the old folder while the new one does not exist. |
-| `crons` | A pending `skmt_image_optimizer_cron` event is scheduled again on `lumia_image_optimizer_cron` with the same arguments and timestamp; every `skmt_*` event is removed. The log purges are rescheduled by their module's `init()`. |
 | `deactivate` | SKMT deactivated on this site (not silently: its own deactivation routine runs). |
 
 Then the marker (timestamp), `lumia_migration_error` deleted, and `lumia_migration_notice` set: the first administrator to open an admin page gets the persistent notice "Migration from Studio Kyne Mini Tools complete…".
@@ -161,7 +163,7 @@ Then the marker (timestamp), `lumia_migration_error` deleted, and `lumia_migrati
 
 **Re-encryption.** The SMTP secrets are AES-256-GCM with a key `sha256( context . material )`. The context changed with the name (`'skmt-smtp|'` → `'lumia-smtp|'`, `Crypto::CONTEXT` / `LEGACY_CONTEXT`); the material did not: `Compat::constant( 'ENCRYPTION_KEY' )` (`LUMIA_ENCRYPTION_KEY`, else `SKMT_ENCRYPTION_KEY`), else `LOGGED_IN_KEY . LOGGED_IN_SALT`, else `wp_salt( 'logged_in' )`. `Crypto::reencrypt_from_legacy()` decrypts with the old context and encrypts with the new one. A site that fixed its key with `SKMT_ENCRYPTION_KEY` keeps decrypting after the migration and in every later request, because the new key reads the same constant. GCM is authenticated, so an unreadable legacy value (salts regenerated before the migration) is detected: it is copied unchanged — the same state as before, the administrator types the password again.
 
-**Failure.** A step fails when it returns false or leaves `$wpdb->last_error` set (reset before each step, checked after each query: `wpdb` clears it at every query). The step name goes to `lumia_migration_error`, the run stops, SKMT stays active. Database errors are logged, not printed (`hide_errors()`): any output during an activation is reported as "unexpected output". Deactivating then reactivating Lümia resumes the migration.
+**Failure.** A step fails when it returns false or leaves `$wpdb->last_error` set (reset before each step, checked after each query: `wpdb` clears it at every query). The step name goes to `lumia_migration_error` (readable with `wp option get`) and the database error to `lumia_migration_error_detail`; the run stops, SKMT stays active. Under WP-CLI, `Activator` prints a warning naming the step (`wp plugin activate` would otherwise say "Success"), or a line when the migration completes. The admin notice names the step and the error, and warns not to delete SKMT before the migration completes: its `uninstall.php` would erase the data not yet renamed. It is printed on `all_admin_notices`, because SKMT, while active, buffers everything printed on `admin_notices` into its notification drawer. Database errors are logged, not printed (`hide_errors()`): any output during an activation is reported as "unexpected output". Deactivating then reactivating Lümia resumes the migration.
 
 **Hold (`FromSkmt::on_hold()`).** Lümia keeps every module off while SKMT is loaded (both would hook the login URL, SMTP, white label…) **or** while `lumia_migration_error` exists (a module would write `lumia_*` data — a table, default options, a re-optimized image — that the resumed migration must not find). Two traps:
 
@@ -170,7 +172,7 @@ Then the marker (timestamp), `lumia_migration_error` deleted, and `lumia_migrati
 
 A stale error whose data is gone (SKMT deleted after a failed attempt) is cleared by the next activation, since `needed()` is then false.
 
-Out of scope: multisite network logic (the sites are single sites). Lümia's `uninstall.php` deletes the marker and the two state options.
+Out of scope: multisite network logic (the sites are single sites). Lümia's `uninstall.php` deletes the marker and the three state options.
 
 ## Adding a module
 

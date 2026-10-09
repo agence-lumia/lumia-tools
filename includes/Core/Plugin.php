@@ -68,7 +68,9 @@ class Plugin {
 		// plugin's main file runs.
 		if ( FromSkmt::on_hold() ) {
 			add_action( 'init', [ $this, 'load_textdomain' ] );
-			add_action( 'admin_notices', [ $this, 'render_hold_notice' ] );
+			// all_admin_notices, not admin_notices: SKMT, active, buffers every
+			// admin_notices output into its notification drawer.
+			add_action( 'all_admin_notices', [ $this, 'render_hold_notice' ] );
 			return;
 		}
 
@@ -105,16 +107,35 @@ class Plugin {
 		if ( '' !== $step ) {
 			$message = sprintf(
 				/* translators: %s: identifier of the migration step that failed, e.g. post_meta. */
-				esc_html__( 'The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Deactivate then reactivate Lümia Tools to resume it.', 'lumia-tools' ),
+				esc_html__( 'The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it.', 'lumia-tools' ),
 				'<code>' . esc_html( $step ) . '</code>'
 			);
-			wp_admin_notice( $message, [ 'type' => 'error' ] );
+
+			$detail = FromSkmt::failure_detail();
+			if ( '' !== $detail ) {
+				$message .= '<br>' . sprintf(
+					/* translators: %s: database error message. */
+					esc_html__( 'Database error: %s', 'lumia-tools' ),
+					'<code>' . esc_html( $detail ) . '</code>'
+				);
+			}
+
+			wp_admin_notice(
+				$message,
+				[
+					'type' => 'error',
+					'id'   => 'lumia-migration-notice',
+				]
+			);
 			return;
 		}
 
 		wp_admin_notice(
 			esc_html__( 'Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated.', 'lumia-tools' ),
-			[ 'type' => 'warning' ]
+			[
+				'type' => 'warning',
+				'id'   => 'lumia-migration-notice',
+			]
 		);
 	}
 

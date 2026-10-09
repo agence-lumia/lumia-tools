@@ -15,9 +15,13 @@
  *   lumia-compare   the Lumia data still equals out/lumia-snapshot.json (after SKMT's
  *                   uninstall.php, after a reactivation).
  *   hold            a migration stopped by a failure: error recorded, marker absent, SKMT
- *                   left active, Lumia initialized no module.
+ *                   left active, Lumia initialized no module, SKMT's bulk event moved.
+ *   hold-writes     while on hold, writes the way the live SKMT would (a setting, the SMTP
+ *                   password, an _skmt_* meta on an object already migrated), and records
+ *                   them in the snapshot: they must win when the migration resumes.
  *   login-path      prints the custom login path the Security settings ask for.
- *   decrypt         prints the decrypted Lumia SMTP password and Brevo key.
+ *   decrypt         prints "match" when the Lumia SMTP password and Brevo key decrypt to
+ *                   the plain texts of the snapshot, the decrypted values otherwise.
  */
 
 use Lumia\Tools\Core\Activator;
@@ -81,7 +85,30 @@ const E2E_TAXONOMY       = 'skmt_media_folder';
 const E2E_TABLES         = [ 'skmt_activity_log', 'skmt_mail_log' ];
 const E2E_CRONS          = [ 'skmt_smtp_log_purge', 'skmt_activity_log_purge', 'skmt_image_optimizer_cron' ];
 
+// wp eval-file includes this file from inside a function: without the global
+// statement, this variable and the one e2e_check() increments would differ.
+global $e2e_failures;
 $e2e_failures = 0;
+
+/** Plain texts of the SKMT secrets, decrypted with SKMT's own Crypto (SKMT loaded). */
+function e2e_legacy_plains(): array {
+	$out = [];
+	foreach ( array_keys( E2E_SECRETS ) as $name ) {
+		$stored       = get_option( $name );
+		$out[ $name ] = false === $stored ? null : StudioKyne\MiniTools\Modules\Smtp\Crypto::decrypt( (string) $stored );
+	}
+	return $out;
+}
+
+/** Refreshes the option part of the SKMT snapshot from the database. */
+function e2e_snapshot_options( array $snap ): array {
+	foreach ( array_merge( E2E_OPTIONS, array_keys( E2E_SECRETS ) ) as $name ) {
+		$snap['options'][ $name ]  = e2e_raw_option( $name );
+		$snap['autoload'][ $name ] = e2e_autoload( $name );
+	}
+	$snap['secret_plain'] = e2e_legacy_plains();
+	return $snap;
+}
 
 function e2e_check( bool $ok, string $label ): void {
 	global $e2e_failures;
@@ -262,10 +289,7 @@ if ( 'snapshot' === $e2e_phase ) {
 		'options'        => [],
 		'autoload'       => [],
 	];
-	foreach ( array_merge( E2E_OPTIONS, array_keys( E2E_SECRETS ) ) as $name ) {
-		$snap['options'][ $name ]  = e2e_raw_option( $name );
-		$snap['autoload'][ $name ] = e2e_autoload( $name );
-	}
+	$snap = e2e_snapshot_options( $snap );
 	foreach ( [ 'post' => [ $wpdb->postmeta, E2E_POST_META ], 'user' => [ $wpdb->usermeta, E2E_USER_META ], 'term' => [ $wpdb->termmeta, E2E_TERM_META ] ] as $type => [ $table, $keys ] ) {
 		foreach ( $keys as $key ) {
 			$snap['meta'][ $type ][ $key ] = e2e_meta_count( $table, $key );
@@ -310,12 +334,12 @@ if ( 'login-path' === $e2e_phase ) {
 }
 
 if ( 'decrypt' === $e2e_phase ) {
-	echo wp_json_encode(
-		[
-			'password' => Crypto::decrypt( (string) get_option( 'lumia_smtp_password', '' ) ),
-			'brevo'    => Crypto::decrypt( (string) get_option( 'lumia_smtp_brevo_key', '' ) ),
-		]
-	);
+	$snap = e2e_read_json( E2E_SKMT_SNAPSHOT );
+	$got  = [];
+	foreach ( $snap['secret_plain'] as $legacy => $plain ) {
+		$got[ $legacy ] = null === $plain ? null : Crypto::decrypt( (string) get_option( e2e_lumia( $legacy ), '' ) );
+	}
+	echo $got === $snap['secret_plain'] ? 'match' : 'mismatch ' . wp_json_encode( $got ) . ' expected ' . wp_json_encode( $snap['secret_plain'] );
 	return;
 }
 
@@ -375,14 +399,15 @@ if ( 'migration' === $e2e_phase ) {
 	}
 
 	WP_CLI::log( 'Secrets (re-encrypted)' );
-	foreach ( E2E_SECRETS as $legacy => $plain ) {
+	foreach ( array_keys( E2E_SECRETS ) as $legacy ) {
+		$plain  = $snap['secret_plain'][ $legacy ];
 		$target = e2e_lumia( $legacy );
 		if ( null === $snap['options'][ $legacy ] ) {
 			e2e_check( false === get_option( $target ), "{$target} not created (nothing to migrate)" );
 			continue;
 		}
 		$stored = (string) get_option( $target, '' );
-		e2e_check( $plain === Crypto::decrypt( $stored ), "{$target} decrypts to the original secret" );
+		e2e_check( null !== $plain && $plain === Crypto::decrypt( $stored ), "{$target} decrypts to the secret SKMT last held ({$plain})" );
 		e2e_check( $stored !== maybe_unserialize( $snap['options'][ $legacy ] ), "{$target} is a new cipher text (Lumia key), not a copy" );
 		e2e_check( null === Crypto::decrypt( (string) maybe_unserialize( $snap['options'][ $legacy ] ) ), "{$legacy} does not decrypt with the Lumia key (contexts differ)" );
 		e2e_check( e2e_autoloaded( e2e_autoload( $target ) ) === false, "{$target} is not autoloaded" );
@@ -398,6 +423,14 @@ if ( 'migration' === $e2e_phase ) {
 	e2e_check( 0 === e2e_like_count( $wpdb->postmeta, 'meta_key', '_skmt_' ), 'no post meta _skmt_* at all' );
 	e2e_check( 0 === e2e_like_count( $wpdb->usermeta, 'meta_key', 'skmt_' ), 'no user meta skmt_* at all' );
 	e2e_check( 0 === e2e_like_count( $wpdb->termmeta, 'meta_key', 'skmt_' ), 'no term meta skmt_* at all' );
+	foreach ( [ $wpdb->postmeta => [ 'post_id', '_lumia_' ], $wpdb->usermeta => [ 'user_id', 'lumia_' ], $wpdb->termmeta => [ 'term_id', 'lumia_' ] ] as $table => [ $column, $prefix ] ) {
+		$dupes = $wpdb->get_col( $wpdb->prepare( "SELECT CONCAT({$column}, ':', meta_key) FROM {$table} WHERE meta_key LIKE %s GROUP BY {$column}, meta_key HAVING COUNT(*) > 1", $wpdb->esc_like( $prefix ) . '%' ) );
+		e2e_check( [] === $dupes, "{$table}: no object holds a {$prefix}* key twice" . ( $dupes ? ' (' . implode( ', ', $dupes ) . ')' : '' ) );
+	}
+	if ( isset( $snap['hold_meta'] ) ) {
+		$hold = $snap['hold_meta'];
+		e2e_check( (string) $hold['value'] === (string) get_post_meta( (int) $hold['post_id'], e2e_lumia( $hold['key'] ), true ), "attachment {$hold['post_id']}: " . e2e_lumia( $hold['key'] ) . " holds the value SKMT wrote while on hold ({$hold['value']})" );
+	}
 	if ( is_array( $snap['notices'] ) && isset( $snap['notices']['e2e_notice'] ) ) {
 		$notices = get_user_meta( 1, 'lumia_notices', true );
 		e2e_check( is_array( $notices ) && ( $notices['e2e_notice'] ?? null ) === $snap['notices']['e2e_notice'], 'the pending user notice survived as lumia_notices' );
@@ -572,11 +605,8 @@ if ( 'lumia-compare' === $e2e_phase ) {
 	}
 	e2e_check( $before['originals'] === $now['originals'], 'originals folder intact (' . count( $now['originals'] ) . ' files)' );
 	e2e_check( $before['io_cron'] === $now['io_cron'], 'lumia_image_optimizer_cron unchanged' );
-	$secrets = [
-		'lumia_smtp_password'  => 'e2e-secret',
-		'lumia_smtp_brevo_key' => 'e2e-brevo',
-	];
-	foreach ( $secrets as $name => $plain ) {
+	foreach ( e2e_read_json( E2E_SKMT_SNAPSHOT )['secret_plain'] as $legacy => $plain ) {
+		$name = e2e_lumia( $legacy );
 		if ( null !== $before['options'][ $name ] ) {
 			e2e_check( $plain === Crypto::decrypt( (string) get_option( $name, '' ) ), "{$name} still decrypts" );
 		}
@@ -609,11 +639,45 @@ if ( 'hold' === $e2e_phase ) {
 	e2e_check( false === has_action( 'lumia_image_optimizer_cron' ), 'no Lumia module hook present' );
 	e2e_check( e2e_raw_option( 'skmt_settings' ) === e2e_raw_option( 'lumia_settings' ), 'lumia_settings is the copy of skmt_settings, not the Lumia defaults' );
 	e2e_check( 0 < e2e_meta_count( $wpdb->postmeta, '_lumia_optimized' ) && 0 < e2e_meta_count( $wpdb->postmeta, '_skmt_optimized_mime' ), 'partial state: some post meta renamed, the failing key not' );
+	$detail = (string) get_option( 'lumia_migration_error_detail', '' );
+	e2e_check( false !== strpos( $detail, 'e2e_missing_table' ), "the database error is kept next to the step ({$detail})" );
+	$snap = e2e_read_json( E2E_SKMT_SNAPSHOT );
+	e2e_check( [] === e2e_cron_events( 'skmt_image_optimizer_cron' ), 'SKMT bulk event no longer scheduled: the live SKMT cannot re-encode the images whose meta is renamed' );
+	e2e_check( $snap['io_cron'] === e2e_cron_events( 'lumia_image_optimizer_cron' ), 'bulk event already moved to lumia_image_optimizer_cron, same arguments and time' );
 
 	if ( $e2e_failures > 0 ) {
 		WP_CLI::error( "hold: {$e2e_failures} check(s) failed" );
 	}
 	WP_CLI::success( 'hold: Lumia waits, SKMT keeps running.' );
+	return;
+}
+
+if ( 'hold-writes' === $e2e_phase ) {
+	if ( ! defined( 'SKMT_VERSION' ) ) {
+		WP_CLI::error( 'SKMT is not loaded: hold-writes simulates the live SKMT.' );
+	}
+	$snap = e2e_read_json( E2E_SKMT_SNAPSHOT );
+
+	// A setting saved in SKMT: the login URL.
+	$security = get_option( 'skmt_module_security' );
+	$security['authentication']['custom_login_url'] = '/connexion-hold';
+	update_option( 'skmt_module_security', $security );
+
+	// The SMTP password typed again in SKMT (its own Crypto, 'skmt-smtp|' context).
+	update_option( 'skmt_smtp_password', StudioKyne\MiniTools\Modules\Smtp\Crypto::encrypt( 'e2e-hold-secret' ), false );
+
+	// SKMT re-optimizing an image whose meta the failed attempt already renamed.
+	$id = (int) $snap['optimized_post_ids'][0];
+	update_post_meta( $id, '_skmt_optimized', 1234567890 );
+
+	$snap              = e2e_snapshot_options( $snap );
+	$snap['hold_meta'] = [
+		'post_id' => $id,
+		'key'     => '_skmt_optimized',
+		'value'   => '1234567890',
+	];
+	e2e_write_json( E2E_SKMT_SNAPSHOT, $snap );
+	WP_CLI::success( "hold-writes: login URL /connexion-hold, new SMTP password, _skmt_optimized on attachment {$id}." );
 	return;
 }
 
