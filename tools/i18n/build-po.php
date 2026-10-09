@@ -225,10 +225,10 @@ function lumia_i18n_pair_key( array $entry ): string {
 /**
  * Human-readable form of a pair key.
  *
- * @param string $key Pair key.
+ * @param string|int $key Pair key (PHP array keys turn "404" into an int).
  */
-function lumia_i18n_show_key( string $key ): string {
-	return '"' . str_replace( "\x04", '" (context) / "', lumia_i18n_escape( $key ) ) . '"';
+function lumia_i18n_show_key( $key ): string {
+	return '"' . str_replace( "\x04", '" (context) / "', lumia_i18n_escape( (string) $key ) ) . '"';
 }
 
 /**
@@ -287,6 +287,72 @@ function lumia_i18n_read_file( string $path ): string {
 }
 
 /**
+ * Index just after the closing quote of the JSON string opening at $i.
+ *
+ * @param string $raw JSON text.
+ * @param int    $i   Index of the opening quote.
+ */
+function lumia_i18n_json_string_end( string $raw, int $i ): int {
+	$len = strlen( $raw );
+	for ( $i++; $i < $len; $i++ ) {
+		if ( '\\' === $raw[ $i ] ) {
+			++$i;
+		} elseif ( '"' === $raw[ $i ] ) {
+			return $i + 1;
+		}
+	}
+	return $len;
+}
+
+/**
+ * Members of a (syntactically valid) JSON object, in file order, repeated keys
+ * included. json_decode() cannot be used for that: it keeps only the last of
+ * several identical keys, and a silently lost French text is what the
+ * collision rule exists to catch. Keys are compared decoded, so "Save" and
+ * "\u0053ave" are the same key.
+ *
+ * @param string $raw JSON text, already validated by json_decode().
+ * @return list<array{0: string, 1: mixed}> Pairs of decoded key and decoded value.
+ */
+function lumia_i18n_json_members( string $raw ): array {
+	$len     = strlen( $raw );
+	$members = array();
+	$i       = (int) strpos( $raw, '{' ) + 1;
+	while ( $i < $len ) {
+		$i += strspn( $raw, " \t\r\n,", $i );
+		if ( $i >= $len || '}' === $raw[ $i ] ) {
+			break;
+		}
+		$end = lumia_i18n_json_string_end( $raw, $i );
+		$key = (string) json_decode( substr( $raw, $i, $end - $i ) );
+		$i   = $end + strspn( $raw, " \t\r\n", $end ) + 1; // Skip the colon.
+		$i  += strspn( $raw, " \t\r\n", $i );
+
+		$start = $i;
+		$depth = 0;
+		while ( $i < $len ) {
+			$c = $raw[ $i ];
+			if ( '"' === $c ) {
+				$i = lumia_i18n_json_string_end( $raw, $i );
+				continue;
+			}
+			if ( '[' === $c || '{' === $c ) {
+				++$depth;
+			} elseif ( ( ']' === $c || '}' === $c ) && 0 === $depth ) {
+				break;
+			} elseif ( ']' === $c || '}' === $c ) {
+				--$depth;
+			} elseif ( ',' === $c && 0 === $depth ) {
+				break;
+			}
+			++$i;
+		}
+		$members[] = array( $key, json_decode( substr( $raw, $start, $i - $start ), true ) );
+	}
+	return $members;
+}
+
+/**
  * Loads the pair files of a directory.
  *
  * @param string $dir Directory holding *.json files.
@@ -306,21 +372,23 @@ function lumia_i18n_load_pairs( string $dir ): array {
 	foreach ( $files as $file ) {
 		$name = basename( $file );
 		try {
-			$data = json_decode( lumia_i18n_read_file( $file ), true, 512, JSON_THROW_ON_ERROR );
+			$raw  = lumia_i18n_read_file( $file );
+			$data = json_decode( $raw, true, 512, JSON_THROW_ON_ERROR );
 		} catch ( JsonException $e ) {
 			$errors[] = $name . ': invalid JSON (' . $e->getMessage() . ')';
 			continue;
 		}
-		if ( ! is_array( $data ) ) {
+		if ( ! is_array( $data ) || '{' !== ltrim( $raw )[0] ) {
 			$errors[] = $name . ': the top level must be an object';
 			continue;
 		}
-		foreach ( $data as $key => $value ) {
-			// PHP turns numeric-looking JSON keys into integers.
-			$key = (string) $key;
-			$ok  = is_string( $value ) && '' !== trim( $value );
+		// Raw members, not $data: repeated keys inside one file must stay visible. Two
+		// different texts for one key end up as a collision; the same text twice is
+		// harmless and accepted, as it is across files.
+		foreach ( lumia_i18n_json_members( $raw ) as list( $key, $value ) ) {
+			$ok = is_string( $value ) && '' !== trim( $value );
 			if ( is_array( $value ) ) {
-				$ok = 2 === count( $value ) && array_is_list( $value );
+				$ok = 2 === count( $value ) && array( 0, 1 ) === array_keys( $value );
 				foreach ( $value as $form ) {
 					$ok = $ok && is_string( $form ) && '' !== trim( $form );
 				}
@@ -587,8 +655,8 @@ function lumia_i18n_check( string $pot_path, string $po_path, string $mo_path, b
 	$mo   = $use_msgunfmt ? lumia_i18n_read_mo_msgunfmt( $mo_path ) : null;
 	$mo ??= lumia_i18n_read_mo( lumia_i18n_read_file( $mo_path ) );
 
-	$show = static function ( string $key ): string {
-		return lumia_i18n_show_key( str_replace( "\0", '|', $key ) );
+	$show = static function ( $key ): string {
+		return lumia_i18n_show_key( str_replace( "\0", '|', (string) $key ) );
 	};
 	foreach ( $expected as $key => $value ) {
 		if ( ! isset( $mo[ $key ] ) ) {

@@ -85,6 +85,21 @@ if expect_rc "build succeeds" 0 php "$tool" build "$fx/sample.pot" "$tmp/pairs-o
 		&& pass "header Language and Plural-Forms" || fail "header fields missing"
 fi
 
+# 2b. Repeated key inside ONE pair file (json_decode would keep only the last one).
+if expect_rc "same-file duplicate fails" 1 php "$tool" build "$fx/sample.pot" "$fx/pairs-samefile" "$tmp/dup.po"; then
+	expect_out "same-file duplicate names the key" '"button" (context) / "Save" has 2 different translations'
+	expect_out "same-file duplicate names the file" 'dup.json'
+	expect_out "same-file duplicate shows both texts" '"Enregistrer"'
+	expect_out "same-file duplicate shows the other text" '"Sauvegarder"'
+	[ ! -e "$tmp/dup.po" ] && pass "same-file duplicate writes nothing" || fail "same-file duplicate wrote a .po"
+fi
+# The same text repeated in one file is harmless (like the same text in two files).
+mkdir "$tmp/pairs-same"
+printf '{ "button\\u0004Save": "Enregistrer", "button\\u0004Save": "Enregistrer" }\n' >"$tmp/pairs-same/s.json"
+cp "$fx/pairs/a.json" "$fx/pairs/b.json" "$tmp/pairs-same/"
+expect_rc "same-file identical duplicate accepted" 0 php "$tool" build "$fx/sample.pot" "$tmp/pairs-same" "$tmp/same.po" \
+	&& pass "same-file identical duplicate accepted"
+
 # 3. Missing pair: build fails and names the msgid.
 mkdir "$tmp/pairs-short"
 cp "$fx/pairs/a.json" "$tmp/pairs-short/"
