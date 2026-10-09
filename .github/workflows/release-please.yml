@@ -124,25 +124,27 @@ jobs:
 
           mkdir -p dist/package/lumia-tools
           rsync -a ./ dist/package/lumia-tools/ \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.vscode' \
-            --exclude='node_modules' \
-            --exclude='dist' \
-            --exclude='.claude' \
-            --exclude='.mcp.json' \
-            --exclude='.gitignore' \
-            --exclude='vendor' \
-            --exclude='composer.json' \
-            --exclude='composer.lock' \
-            --exclude='phpcs.xml.dist' \
-            --exclude='phpstan.neon.dist' \
-            --exclude='phpstan-baseline.neon' \
-            --exclude='phpcs.baseline.xml' \
-            --exclude='.phpcs.cache' \
-            --exclude='tools' \
-            --exclude='CLAUDE.md' \
-            --exclude='docs'
+            --exclude='/.git' \
+            --exclude='/.github' \
+            --exclude='/.vscode' \
+            --exclude='/node_modules' \
+            --exclude='/dist' \
+            --exclude='/.claude' \
+            --exclude='/.mcp.json' \
+            --exclude='/.gitignore' \
+            --exclude='/vendor' \
+            --exclude='/composer.json' \
+            --exclude='/composer.lock' \
+            --exclude='/phpcs.xml.dist' \
+            --exclude='/phpstan.neon.dist' \
+            --exclude='/phpstan-baseline.neon' \
+            --exclude='/phpcs.baseline.xml' \
+            --exclude='/.phpcs.cache' \
+            --exclude='/tools' \
+            --exclude='/CLAUDE.md' \
+            --exclude='/docs' \
+            --exclude='/.superpowers' \
+            --exclude='/.DS_Store'
           cd dist/package
           zip -r "../lumia-tools-${VERSION}.zip" lumia-tools
 
