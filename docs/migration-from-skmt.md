@@ -2,7 +2,7 @@
 
 Per-site procedure. Lümia Tools is SKMT renamed: it is installed **next to** SKMT (a different folder, `lumia-tools/`), and **migrates the data by itself when it is activated**. Nothing is imported by hand. What the migration does, step by step, and why: [core.md](core.md#migration-from-skmt-coremigrationfromskmt).
 
-Do the sites one at a time. Commands below use WP-CLI from the site's root; every step also exists in wp-admin.
+Do the sites one at a time, in a quiet hour: during the activation, the migration renames tables and meta while other requests (visitors, cron, editors) keep running with SKMT still loaded. Commands below use WP-CLI from the site's root; every step also exists in wp-admin, but **activate with WP-CLI** (section 3).
 
 ## 1. Before
 
@@ -24,9 +24,26 @@ Do the sites one at a time. Commands below use WP-CLI from the site's root; ever
    grep -n "SKMT_" wp-config.php
    ```
 
-   Leave them as they are. They keep working: Lümia reads `LUMIA_*` first and falls back to the `SKMT_*` one. Renaming them is optional and must wait until **after** the migration is checked (section 4). In particular `SKMT_ENCRYPTION_KEY` must keep the same value when it becomes `LUMIA_ENCRYPTION_KEY`, otherwise the stored SMTP password cannot be decrypted any more.
+   Leave them as they are. They keep working: Lümia reads `LUMIA_*` first and falls back to the `SKMT_*` one. Lümia's help texts only name the `LUMIA_*` constants, even on a site that still uses the `SKMT_*` ones: both work, nothing to change. Renaming them is optional and must wait until **after** the migration is checked (section 4). In particular `SKMT_ENCRYPTION_KEY` must keep the same value when it becomes `LUMIA_ENCRYPTION_KEY`, otherwise the stored SMTP password cannot be decrypted any more.
 
-4. Note the current custom login URL (Security module) and whether a test email goes out (SMTP module), to compare in section 4.
+4. **Check the languages.** SKMT was French whatever the settings; Lümia follows WordPress: a site or an administrator whose language is not `fr_FR` gets the English interface.
+
+   ```bash
+   wp option get WPLANG                                     # fr_FR expected
+   for u in $(wp user list --role=administrator --field=user_login); do
+     echo "$u: $(wp user meta get "$u" locale)"             # empty (site language) or fr_FR
+   done
+   ```
+
+   Fix it beforehand if needed (Settings > General > Site Language, or each user's profile > Language).
+
+5. **Find SKMT's folder**, usually `studio-kyne-mini-tools` but sometimes another one (for example `studio-kyne-mini-tools-main`, from a GitHub archive). Use that name wherever this guide says `studio-kyne-mini-tools`; the migration finds the real folder by itself.
+
+   ```bash
+   wp plugin list --fields=name,title,status | grep -i kyne
+   ```
+
+6. Note the current custom login URL (Security module) and whether a test email goes out (SMTP module), to compare in section 4.
 
 ## 2. Install Lümia Tools
 
@@ -41,7 +58,9 @@ Download `lumia-tools-<version>.zip` from the [release](https://github.com/agenc
 wp plugin activate lumia-tools
 ```
 
-or Activate in wp-admin. Under WP-CLI, success is a log line, `Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.`; a failure prints a **warning** naming the step (see "If it fails" below), even though the command may still report the plugin as activated.
+Prefer WP-CLI to the Activate link of wp-admin: on a large media library the migration takes time, and a web request can be cut by a PHP-FPM or proxy timeout that the plugin cannot lift. Success is a log line, `Migration from Studio Kyne Mini Tools complete. You can delete the old plugin.` (translated on a French site); a failure prints a **warning** naming the step (see "If it fails" below), even though the command may still report the plugin as activated.
+
+**If the activation shows a fatal error or times out** (no success line, no warning): do not use SKMT's image optimizer meanwhile (its settings page, its buttons in the Media library, image uploads), and re-run `wp plugin activate lumia-tools` right away. A run killed half-way leaves Lümia **inactive** (WordPress only records an activation once it returns), so nothing holds or freezes SKMT, and SKMT's optimizer would take the images whose meta is already migrated for new ones and re-encode them. `wp option get lumia_migration_error` names the step that was running; the new activation resumes from the copies SKMT holds at that moment.
 
 What the migration does, in this order:
 
@@ -65,16 +84,16 @@ wp option get lumia_migrated_from_skmt                              # a timestam
 
 Then, in wp-admin and in a private window:
 
-1. **Plugin pages**: the LUMIA menu opens; the Modules page shows the same modules enabled as before; each enabled module's screen shows its settings. The green "Migration ... complete" notice appears once.
+1. **Plugin pages**: the Lümia menu opens; the Modules page shows the same modules enabled as before; each enabled module's screen shows its settings. The green "Migration ... complete" notice appears once.
 2. **Login**: the custom login URL still works, and `/wp-login.php` is still blocked (a visitor gets a 404).
 3. **SMTP** (if used): SMTP module > Send a test email. The password does not have to be typed again, and the email arrives.
-4. **Images** (if the Image Optimizer was used): open an optimized image in the Media library, run **Restore original** (available when the Keep original setting was on), check the original is back, then optimize it again.
+4. **Images** (if the Image Optimizer was used): open an optimized image in the Media library, run **Restore original** (available when the **Keep the original** setting was on), check the original is back, then optimize it again.
 5. **Media folders**: the folders and their colors are there, with their images.
 6. **Activity log**: the old entries are listed, and a new one appears when you change a setting.
 
 Only when all of this is right, optionally rename the `SKMT_*` constants of `wp-config.php` to `LUMIA_*` (same values), and check again that the SMTP test still works.
 
-Do not reactivate SKMT afterwards: while it is loaded, Lümia keeps all its modules off.
+Do not reactivate SKMT afterwards: while it is loaded, Lümia keeps all its modules off (and shows "Studio Kyne Mini Tools is still active").
 
 ## 5. Delete SKMT
 
@@ -83,7 +102,7 @@ Only after a successful migration.
 - wp-admin: Plugins > Delete on Studio Kyne Mini Tools. This runs SKMT's `uninstall.php`.
 - WP-CLI: `wp plugin uninstall studio-kyne-mini-tools` (add `--deactivate` if needed). This also runs `uninstall.php`.
 
-SKMT's uninstall only finds the original `skmt_*` options (everything else was renamed at activation), so nothing of Lümia is touched. `wp plugin delete studio-kyne-mini-tools` removes the files **without** running `uninstall.php`: the site works the same, but SKMT's original `skmt_*` options stay in the database as unused rows (harmless; list them with `wp option list --search='skmt_*' --fields=option_name`).
+SKMT's uninstall only finds the original `skmt_*` options (everything else was renamed at activation), so nothing of Lümia is touched. Do **not** use `wp plugin delete studio-kyne-mini-tools`: it removes the files **without** running `uninstall.php`, and SKMT's `skmt_*` options stay in the database (list them with `wp option list --search='skmt_*' --fields=option_name`). They are unused, and Lümia keeps its marker `lumia_migrated_from_skmt` even when it is itself uninstalled, so a later reinstall does not import those old settings again; still, remove SKMT the clean way.
 
 ## If it fails
 
@@ -104,6 +123,10 @@ The activation stops at the first failing step. SKMT stays active and Lümia sta
    wp plugin deactivate lumia-tools && wp plugin activate lumia-tools
    ```
 
-5. **Last resort**: restore the export from section 1 (`wp db import ~/backup-before-lumia-<date>.sql`), put the `skmt-originals-*` folder back if it was renamed, deactivate Lümia Tools, and report the step and the error so it can be fixed before trying again.
+   A failure at the `deactivate` step (SKMT could not be deactivated, for example a fatal error in its own deactivation routine): deactivate SKMT by hand (`wp plugin deactivate studio-kyne-mini-tools`), then deactivate and reactivate Lümia Tools as above.
 
-If Lümia only shows the warning "Studio Kyne Mini Tools is still active", SKMT is still loaded and no migration ran (SKMT had no settings to migrate): deactivate SKMT, which is enough to release the modules of Lümia.
+5. **Last resort**: restore the export from section 1 (`wp db import ~/backup-before-lumia-<date>.sql`), put the `skmt-originals-*` folder back if it was renamed, deactivate Lümia Tools (do not delete it: its uninstallation removes the `lumia_*` tables and meta, which now hold SKMT's renamed data), and report the step and the error so it can be fixed before trying again.
+
+A run killed by a fatal error or a timeout (section 3) shows no notice at all, since Lümia stays inactive: `wp option get lumia_migration_error` names the step, and `wp option get lumia_migration_error_detail` answers that the option does not exist (the step was interrupted, it did not fail). Activate Lümia Tools again.
+
+If Lümia only shows the warning "Studio Kyne Mini Tools is still active", SKMT is loaded: either nothing was migrated (SKMT had no settings), or SKMT was reactivated after a completed migration. In both cases deactivate SKMT, which is enough to release the modules of Lümia.

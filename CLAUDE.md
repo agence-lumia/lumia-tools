@@ -88,10 +88,10 @@ A disposable WordPress + MariaDB + wp-cli bench that installs SKMT as it was bef
 
 ```bash
 tools/e2e/run.sh up                       # start (http://localhost:8089, admin / admin)
-tools/e2e/run.sh seed-skmt                # SKMT 8d4cd85 + data (--minimal, --encryption-key variants)
+tools/e2e/run.sh seed-skmt                # SKMT 8d4cd85 + data (--minimal, --encryption-key, --folder=<name> variants)
 tools/e2e/run.sh capture baseline         # admin text → tools/e2e/out/baseline/
 tools/e2e/run.sh install-lumia            # zip of the working tree, installed and activated
-tools/e2e/run.sh assert-migration         # also: assert-compat, reactivate-lumia, assert-after-uninstall, assert-partial
+tools/e2e/run.sh assert-migration         # also: assert-compat, reactivate-lumia, assert-after-uninstall, assert-partial, assert-interrupted, assert-reinstall
 tools/e2e/run.sh down                     # stop and delete the data
 ```
 
