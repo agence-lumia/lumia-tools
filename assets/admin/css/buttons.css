@@ -69,10 +69,10 @@
 }
 
 /*
- * Boutons-liens : wp-admin colore `a:hover`/`a:focus` en bleu, et cette règle
- * l'emporte sur la couleur posée par `.lumia-btn--*` (l'état ajoute une
- * pseudo-classe). Chaque état doit donc redéclarer la couleur, sinon un
- * `<a class="lumia-btn">` vire au bleu au survol.
+ * Link buttons: wp-admin colors `a:hover`/`a:focus` blue, and this rule wins
+ * over the color set by `.lumia-btn--*` (the state adds a pseudo-class). Each
+ * state must therefore redeclare the color, otherwise an
+ * `<a class="lumia-btn">` turns blue on hover.
  */
 a.lumia-btn:hover,
 a.lumia-btn:focus,

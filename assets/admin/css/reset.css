@@ -1,9 +1,9 @@
 /*
  * Lümia Tools - Reset
  *
- * Toutes les regles sont scopees sous .lumia-admin-wrap : ce fichier ne doit
- * JAMAIS peindre en dehors des pages du plugin. Les tokens vivent dans
- * tokens.css, les overrides du chrome WordPress dans layout.css.
+ * All the rules are scoped under .lumia-admin-wrap: this file must NEVER paint
+ * outside the plugin pages. The tokens live in tokens.css, the overrides of
+ * the WordPress chrome in layout.css.
  */
 
 

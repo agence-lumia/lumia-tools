@@ -6,13 +6,13 @@ defined( 'ABSPATH' ) || exit;
 use Lumia\Tools\Admin\Admin;
 
 /**
- * Classe principale du plugin.
- * Pattern Singleton pour garantir une seule instance.
+ * Main plugin class.
+ * Singleton pattern to guarantee a single instance.
  */
 class Plugin {
 
 	/**
-	 * Instance unique du plugin.
+	 * Unique plugin instance.
 	 */
 	private static ?Plugin $instance = null;
 
@@ -27,12 +27,12 @@ class Plugin {
 	public Settings $settings;
 
 	/**
-	 * Updater GitHub.
+	 * GitHub updater.
 	 */
 	public Updater $updater;
 
 	/**
-	 * Constructeur privé (Singleton).
+	 * Private constructor (Singleton).
 	 */
 	private function __construct() {
 		$this->settings = new Settings();
@@ -43,7 +43,7 @@ class Plugin {
 	}
 
 	/**
-	 * Retourne l'instance unique du plugin.
+	 * Returns the unique plugin instance.
 	 */
 	public static function instance(): Plugin {
 		if ( null === self::$instance ) {
@@ -53,14 +53,14 @@ class Plugin {
 	}
 
 	/**
-	 * Initialise le plugin.
+	 * Initializes the plugin.
 	 */
 	private function init(): void {
-		// Chargement des traductions + enregistrement des modules
-		// au hook init pour éviter le JIT warning de WP 6.7+
+		// Load translations and register the modules on the init hook, to avoid
+		// the just-in-time translation warning of WP 6.7+
 		add_action( 'init', [ $this, 'on_init' ] );
 
-		// Interface admin
+		// Admin interface
 		if ( is_admin() ) {
 			new Admin( $this->modules, $this->settings );
 		}
@@ -70,7 +70,7 @@ class Plugin {
 	}
 
 	/**
-	 * Hook init : traductions, modules, et initialisation.
+	 * Init hook: translations, modules and initialization.
 	 */
 	public function on_init(): void {
 		$this->load_textdomain();
@@ -79,7 +79,7 @@ class Plugin {
 	}
 
 	/**
-	 * Charge le domaine de traduction.
+	 * Loads the translation text domain.
 	 */
 	public function load_textdomain(): void {
 		load_plugin_textdomain(

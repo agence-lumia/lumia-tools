@@ -3,7 +3,7 @@
  * Plugin Name: Lümia Tools
  * Plugin URI:  https://github.com/agence-lumia/lumia-tools
  * Update URI:  https://github.com/agence-lumia/lumia-tools
- * Description: Suite d'outils modulaires pour optimiser et améliorer votre site WordPress.
+ * Description: A modular toolkit to optimize and improve your WordPress site.
  * Version:     1.1.1-dev.1
  * Author:      Agence Lümia
  * Author URI:  https://agence-lumia.com
@@ -15,12 +15,12 @@
  * Requires PHP: 8.0
  */
 
-// Sécurité : empêcher l'accès direct
+// Security: block direct access
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Constantes de base
+// Base constants
 define( 'LUMIA_VERSION', '1.1.1-dev.1' );
 define( 'LUMIA_PLUGIN_FILE', __FILE__ );
 define( 'LUMIA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );

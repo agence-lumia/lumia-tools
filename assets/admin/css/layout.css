@@ -75,12 +75,12 @@
 }
 
 /*
- * Vues « pleine hauteur » : l'entête reste fixe et seul le corps scrolle.
- * Déclencheurs :
- *   - .lumia-module-form  → modules formulaire (Image, Sécurité, Connexion, Marque Blanche)
- *   - .lumia-page__scroll → pages admin (Réglages, Modules)
- *   - .lumia-files        → module Fichiers
- * Même pattern :has() que Base de données (.lumia-db) et Créateur de menu (.lumia-mc-editor).
+ * "Full height" views: the header stays fixed and only the body scrolls.
+ * Triggers:
+ *   - .lumia-module-form  → form modules (Image, Security, Login, White label)
+ *   - .lumia-page__scroll → admin pages (Settings, Modules)
+ *   - .lumia-files        → Files module
+ * Same :has() pattern as Database (.lumia-db) and Menu creator (.lumia-mc-editor).
  */
 .lumia-admin-main:has(.lumia-module-form),
 .lumia-admin-main:has(.lumia-page__scroll),
@@ -161,7 +161,7 @@
   margin-top: 0;
 }
 
-/* Divider à l'intérieur d'un lumia-section__content (annule le margin horizontal) */
+/* Divider inside a lumia-section__content (cancels the horizontal margin) */
 .lumia-divider--inner {
   margin: 8px 0;
 }
@@ -205,10 +205,10 @@
 }
 
 /*
- * Override du chrome wp-admin.
- * Hors @layer volontairement : le CSS non-layered de WordPress battrait
- * n'importe quelle couche. Cantonne ici car layout.css n'est enqueue que
- * sur les pages du plugin (voir Admin::enqueue_assets).
+ * Override of the wp-admin chrome.
+ * Outside @layer on purpose: WordPress's non-layered CSS would beat any
+ * layer. Confined here because layout.css is only enqueued on the plugin
+ * pages (see Admin::enqueue_assets).
  */
 #wpbody-content {
   padding: 0 !important;

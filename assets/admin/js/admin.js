@@ -1,12 +1,18 @@
 /**
  * Lümia Tools - Admin JavaScript
- * Vanilla JS uniquement. Chargé uniquement sur les pages LUMIA.
- * La logique toast/notifications est dans notifications.js (chargé global).
+ * Vanilla JS only. Loaded only on the Lümia pages.
+ * The toast/notifications logic lives in notifications.js (loaded globally).
  */
 (function () {
   "use strict";
 
   var isDirty = false;
+
+  // Translated strings come from PHP: lumiaAdmin.i18n, built in
+  // Admin::localize_admin_script() (see docs/core.md).
+  function t(key) {
+    return (window.lumiaAdmin && lumiaAdmin.i18n && lumiaAdmin.i18n[key]) || "";
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
     initToggles();
@@ -39,7 +45,7 @@
   }
 
   /* ================================================================
-   * VALIDATION FORMULAIRES
+   * FORM VALIDATION
    * ================================================================ */
 
   function initFormValidation() {
@@ -67,8 +73,8 @@
   }
 
   /* ================================================================
-   * MODAL RÉUTILISABLE
-   * Usage : window.lumiaModal.open({ title, message, confirmLabel,
+   * REUSABLE MODAL
+   * Usage: window.lumiaModal.open({ title, message, confirmLabel,
    *         cancelLabel, onConfirm, danger })
    * ================================================================ */
 
@@ -101,8 +107,8 @@
     options = options || {};
     modalTitle.textContent      = options.title   || "";
     modalMessage.textContent    = options.message || "";
-    modalConfirmBtn.textContent = options.confirmLabel || "Confirmer";
-    modalCancelBtn.textContent  = options.cancelLabel  || "Annuler";
+    modalConfirmBtn.textContent = options.confirmLabel || t("confirm");
+    modalCancelBtn.textContent  = options.cancelLabel  || t("cancel");
 
     modalConfirmBtn.className = "lumia-btn lumia-btn--sm " +
       (options.danger ? "lumia-btn--danger" : "lumia-btn--primary");
@@ -132,8 +138,8 @@
   window.lumiaModal = { open: openModal, close: closeModal };
 
   /* ================================================================
-   * DÉCLENCHEURS [data-modal-confirm]
-   * Boutons qui déclenchent la modal avant de soumettre un form.
+   * [data-modal-confirm] TRIGGERS
+   * Buttons that open the modal before submitting a form.
    * ================================================================ */
 
   function initModalTriggers() {
@@ -146,9 +152,9 @@
       var form   = formId ? document.getElementById(formId) : null;
 
       openModal({
-        title:        btn.getAttribute("data-modal-title")   || "Confirmer",
+        title:        btn.getAttribute("data-modal-title")   || t("confirm"),
         message:      btn.getAttribute("data-modal-message") || "",
-        confirmLabel: btn.getAttribute("data-modal-confirm-label") || "Confirmer",
+        confirmLabel: btn.getAttribute("data-modal-confirm-label") || t("confirm"),
         danger:       btn.hasAttribute("data-modal-danger") || btn.classList.contains("lumia-btn--danger"),
         onConfirm: function () {
           if (form) form.submit();
@@ -158,7 +164,7 @@
   }
 
   /* ================================================================
-   * AVERTISSEMENT MODIFICATIONS NON SAUVEGARDÉES
+   * UNSAVED CHANGES WARNING
    * ================================================================ */
 
   function initUnsavedWarning() {
@@ -166,9 +172,8 @@
       ".lumia-form, #lumia-save-settings-form, #lumia-module-form",
     );
 
-    // Seul un champ nommé part à l'enregistrement. Recherche, filtres d'une
-    // liste ou champ de test (journaux, SMTP) n'ont pas de name : les
-    // manipuler ne laisse rien de non sauvegardé.
+    // Only a named field is sent on save. Search, list filters or test fields
+    // (logs, SMTP) have no name: using them leaves nothing unsaved.
     function markDirty(e) {
       if (e.target && e.target.name) isDirty = true;
     }
@@ -176,11 +181,11 @@
     forms.forEach(function (form) {
       form.addEventListener("input", markDirty, { passive: true });
       form.addEventListener("change", markDirty, { passive: true });
-      // Soumettre le form reset l'état dirty
+      // Submitting the form resets the dirty state
       form.addEventListener("submit", function () { isDirty = false; });
     });
 
-    // Intercepte les liens de navigation interne (sidebar, menus WP, etc.)
+    // Intercept internal navigation links (sidebar, WP menus, etc.)
     document.addEventListener("click", function (e) {
       if (!isDirty) return;
       var link = e.target.closest("a[href]");
@@ -189,26 +194,26 @@
       var href = link.getAttribute("href");
       if (!href || href.startsWith("#")) return;
 
-      // Ignorer les déconnexions
+      // Ignore logouts
       if (href.indexOf("action=logout") !== -1) return;
 
-      // Résoudre l'URL absolue pour comparer l'origine
+      // Resolve the absolute URL to compare the origin
       var resolved;
       try {
         resolved = new URL(href, window.location.href);
       } catch (_) {
         return;
       }
-      // Ignorer les liens vers un autre domaine
+      // Ignore links to another domain
       if (resolved.origin !== window.location.origin) return;
 
       e.preventDefault();
       var fullHref = resolved.href;
       openModal({
-        title:        "Modifications non sauvegardées",
-        message:      "Vous avez des modifications non enregistrées. Quitter sans sauvegarder ?",
-        confirmLabel: "Quitter sans sauvegarder",
-        cancelLabel:  "Rester sur la page",
+        title:        t("unsavedTitle"),
+        message:      t("unsavedText"),
+        confirmLabel: t("unsavedLeave"),
+        cancelLabel:  t("unsavedStay"),
         danger:       true,
         onConfirm: function () {
           isDirty = false;
@@ -226,7 +231,7 @@
   }
 
   /* ================================================================
-   * AJAX TOGGLE MODULES
+   * AJAX MODULE TOGGLES
    * ================================================================ */
 
   function initModuleAjaxToggles() {
@@ -250,7 +255,7 @@
       formData.append("module",       moduleId);
       formData.append("lumia_action",  action);
 
-      // Feedback visuel immédiat
+      // Immediate visual feedback
       checkbox.disabled = true;
 
       fetch(lumiaAdmin.ajaxUrl, {
@@ -262,11 +267,11 @@
         .then(function (data) {
           checkbox.disabled = false;
           if (!data.success) {
-            // Revenir à l'état précédent
+            // Revert to the previous state
             checkbox.checked = !checkbox.checked;
             if (typeof window.lumiaShowToast === "function") {
               window.lumiaShowToast(
-                (data.data && data.data.message) || "Erreur",
+                (data.data && data.data.message) || t("error"),
                 "error",
               );
             }
@@ -276,7 +281,7 @@
           var isActive = data.data.active;
           card.classList.toggle("lumia-module-card--active", isActive);
 
-          // Mettre à jour / créer le bouton "Configurer"
+          // Update / create the "Configure" button
           var actions = card.querySelector(".lumia-module-card__actions");
           if (actions) {
             var existingLink = actions.querySelector(".lumia-btn");
@@ -285,7 +290,7 @@
                 var a    = document.createElement("a");
                 a.href   = data.data.configure_url;
                 a.className = "lumia-btn lumia-btn--sm lumia-btn--secondary";
-                a.textContent = "Configurer";
+                a.textContent = t("configure");
                 actions.appendChild(a);
               }
             } else {
@@ -297,7 +302,7 @@
             window.lumiaShowToast(data.data.notice, "success");
           }
 
-          // Recharger la page pour mettre à jour la navigation latérale
+          // Reload the page to update the side navigation
           isDirty = false;
           setTimeout(function () {
             window.location.reload();
@@ -311,11 +316,11 @@
   }
 
   /* ================================================================
-   * ONGLETS — [data-lumia-tabs] + [data-lumia-tab-panel]
-   * Sous-onglets d'un écran, côté client : tous les panneaux restent
-   * dans le DOM (et dans le formulaire, donc postés à l'enregistrement).
-   * Le dernier onglet ouvert est rappelé par sessionStorage : après un
-   * enregistrement, la redirection ramène sur l'écran, pas sur l'onglet.
+   * TABS — [data-lumia-tabs] + [data-lumia-tab-panel]
+   * Client-side sub-tabs of a screen: all the panels stay in the DOM (and
+   * in the form, hence posted on save). The last opened tab is remembered
+   * through sessionStorage: after a save, the redirect brings back to the
+   * screen, not to the tab.
    * ================================================================ */
 
   function initTabs() {
@@ -342,7 +347,7 @@
           panel.hidden = panel.dataset.lumiaTabPanel !== name;
         });
 
-        try { sessionStorage.setItem(key, name); } catch (e) { /* stockage indisponible */ }
+        try { sessionStorage.setItem(key, name); } catch (e) { /* storage unavailable */ }
 
         list.dispatchEvent(new CustomEvent("lumia:tab", { bubbles: true, detail: { group: group, name: name } }));
       }
@@ -352,7 +357,7 @@
         if (tab && list.contains(tab)) activate(tab.dataset.lumiaTab, false);
       });
 
-      // Flèches, Début, Fin : motif « tabs » de l'ARIA Authoring Practices.
+      // Arrows, Home, End: the "tabs" pattern of the ARIA Authoring Practices.
       list.addEventListener("keydown", function (e) {
         var index = tabs.indexOf(document.activeElement);
         if (index < 0) return;
@@ -362,8 +367,8 @@
         activate(tabs[(next + tabs.length) % tabs.length].dataset.lumiaTab, true);
       });
 
-      // Un champ invalide dans un panneau masqué : le navigateur refuse de
-      // soumettre sans pouvoir montrer le champ. On ouvre son onglet.
+      // An invalid field in a hidden panel: the browser refuses to submit
+      // without being able to show the field. Open its tab.
       panels.forEach(function (panel) {
         panel.addEventListener("invalid", function () {
           if (panel.hidden) activate(panel.dataset.lumiaTabPanel, false);
@@ -371,14 +376,14 @@
       });
 
       var initial = null;
-      try { initial = sessionStorage.getItem(key); } catch (e) { /* stockage indisponible */ }
+      try { initial = sessionStorage.getItem(key); } catch (e) { /* storage unavailable */ }
       activate(initial || (list.querySelector("[data-lumia-tab].is-active") || tabs[0]).dataset.lumiaTab, false);
 
       list.lumiaActivate = activate;
     });
   }
 
-  /** Ouvre un onglet par programme : window.lumiaTabs.activate('smtp', 'log'). */
+  /** Opens a tab programmatically: window.lumiaTabs.activate('smtp', 'log'). */
   window.lumiaTabs = {
     activate: function (group, name) {
       var list = document.querySelector('[data-lumia-tabs="' + group + '"]');
@@ -387,29 +392,25 @@
   };
 
   /* ================================================================
-   * UTILITAIRES
+   * UTILITIES
    * ================================================================ */
 
   window.lumiaConfirm = function (message) {
-    return confirm(
-      message ||
-        (window.lumiaAdmin && lumiaAdmin.i18n.confirmAction) ||
-        "Êtes-vous sûr ?",
-    );
+    return confirm(message || t("confirmAction"));
   };
 
   /* ================================================================
-   * MODALS NOMMÉES — lumiaModalOpen / lumiaModalClose
-   * Pour les modals avec HTML persistant (form, etc.).
-   * Complément à lumiaModal.open() qui est programmatique.
-   * Usage : lumiaModalOpen('mon-modal-id')
+   * NAMED MODALS — lumiaModalOpen / lumiaModalClose
+   * For modals with persistent HTML (form, etc.).
+   * Complements lumiaModal.open(), which is programmatic.
+   * Usage: lumiaModalOpen('my-modal-id')
    * ================================================================ */
 
   window.lumiaModalOpen = function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.classList.add("is-open");
-    // Focaliser le premier champ texte si présent
+    // Focus the first text field if present
     var input = el.querySelector("input[type='text'], input[type='number'], textarea");
     if (input) {
       setTimeout(function () {
@@ -424,17 +425,17 @@
     if (el) el.classList.remove("is-open");
   };
 
-  // Délégation globale : click hors du .lumia-modal ou sur .lumia-modal-close
+  // Global delegation: click outside .lumia-modal or on .lumia-modal-close
   document.addEventListener("click", function (e) {
-    // Clic sur l'overlay lui-même (hors de la boîte)
+    // Click on the overlay itself (outside the box)
     if (
       e.target.classList.contains("lumia-modal-overlay") &&
-      e.target.id !== "lumia-modal-overlay" // géré par initModal()
+      e.target.id !== "lumia-modal-overlay" // handled by initModal()
     ) {
       e.target.classList.remove("is-open");
       return;
     }
-    // Bouton de fermeture explicite
+    // Explicit close button
     var closeBtn = e.target.closest && e.target.closest(".lumia-modal-close");
     if (closeBtn) {
       var overlay = closeBtn.closest(".lumia-modal-overlay");
@@ -444,7 +445,7 @@
     }
   });
 
-  // Échap ferme toutes les modals nommées ouvertes (sauf la principale)
+  // Escape closes all the open named modals (except the main one)
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     var open = document.querySelectorAll(
@@ -458,24 +459,24 @@
   /* ================================================================
    * TOOLTIPS
    *
-   * Usage : <button data-lumia-tip="Texte"> — et, si besoin,
-   * data-lumia-tip-placement="top|bottom|left|right" (défaut : top).
-   * Aucune initialisation à faire : tout passe par délégation, donc le
-   * markup rendu en JS après coup (arbre du créateur de menu, listes
-   * rechargées en AJAX) est couvert sans y penser.
+   * Usage: <button data-lumia-tip="Text"> — and, if needed,
+   * data-lumia-tip-placement="top|bottom|left|right" (default: top).
+   * No initialization needed: everything goes through delegation, so markup
+   * rendered in JS afterwards (menu creator tree, lists reloaded through
+   * AJAX) is covered without a second thought.
    *
-   * Le positionnement est en `fixed` + translate3d : un tooltip enfant
-   * d'une colonne en overflow:hidden serait rogné, et un tooltip en
-   * position absolue devrait connaître les décalages de chacun de ses
-   * parents. En contrepartie il faut suivre le défilement — d'où le
-   * recalcul sur scroll/resize, throttlé en requestAnimationFrame.
+   * Positioning is `fixed` + translate3d: a tooltip that is a child of an
+   * overflow:hidden column would be clipped, and an absolutely positioned
+   * tooltip would have to know the offsets of each of its parents. In return
+   * scrolling must be tracked — hence the recalculation on scroll/resize,
+   * throttled with requestAnimationFrame.
    * ================================================================ */
 
   var tipEl      = null;
   var tipBox     = null;
   var tipArrow   = null;
   var tipText    = null;
-  var tipRef     = null;   // élément actuellement décrit
+  var tipRef     = null;   // element currently described
   var tipShowT   = null;
   var tipHideT   = null;
   var tipRaf     = null;
@@ -483,12 +484,12 @@
 
   var TIP_SHOW_DELAY = 140;
   var TIP_HIDE_DELAY = 60;
-  var TIP_MARGIN     = 8;  // marge minimale avec le bord de la fenêtre
-  var TIP_OFFSET     = 8;  // distance entre l'élément et la boîte
+  var TIP_MARGIN     = 8;  // minimum margin with the window edge
+  var TIP_OFFSET     = 8;  // distance between the element and the box
 
   function initTooltips() {
-    // mouseover/mouseout (et non mouseenter/leave) : seuls les premiers
-    // remontent, condition d'une délégation unique sur le document.
+    // mouseover/mouseout (not mouseenter/leave): only the former bubble, which
+    // is the condition for a single delegation on the document.
     document.addEventListener("mouseover", function (e) {
       var el = tipTarget(e.target);
       if (el) tipScheduleShow(el);
@@ -497,13 +498,13 @@
     document.addEventListener("mouseout", function (e) {
       var el = tipTarget(e.target);
       if (!el || el !== tipRef) return;
-      // Passage sur un enfant de la même cible : ce n'est pas une sortie.
+      // Moving onto a child of the same target: not an exit.
       if (e.relatedTarget && el.contains(e.relatedTarget)) return;
       tipScheduleHide();
     });
 
-    // Clavier : même déclencheur au focus, sinon le tooltip n'existe pas
-    // pour qui navigue au Tab — c'est justement ce que `title` fait mal.
+    // Keyboard: same trigger on focus, otherwise the tooltip does not exist
+    // for those who navigate with Tab — which is exactly what `title` does badly.
     document.addEventListener("focusin", function (e) {
       var el = tipTarget(e.target);
       if (el) tipShow(el);
@@ -512,8 +513,8 @@
       if (tipRef && tipTarget(e.target) === tipRef) tipHide();
     });
 
-    // Un clic ouvre en général un panneau ou une modale : garder le
-    // tooltip par-dessus n'a aucun intérêt.
+    // A click usually opens a panel or a modal: keeping the tooltip on top
+    // is pointless.
     document.addEventListener("mousedown", function () { tipHide(); }, true);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") tipHide();
@@ -551,8 +552,8 @@
     if (el === tipRef && tipVisible) { clearTimeout(tipHideT); return; }
     clearTimeout(tipHideT);
     clearTimeout(tipShowT);
-    // Un tooltip déjà ouvert : on enchaîne sans délai, comme un menu dont
-    // les entrées se survolent (réattendre 140 ms donne une UI molle).
+    // A tooltip already open: chain without delay, like a menu whose entries
+    // are hovered (waiting 140 ms again gives a sluggish UI).
     if (tipVisible) { tipShow(el); return; }
     tipShowT = setTimeout(function () { tipShow(el); }, TIP_SHOW_DELAY);
   }
@@ -570,8 +571,8 @@
     clearTimeout(tipShowT);
     clearTimeout(tipHideT);
 
-    // `title` ferait doublon avec notre boîte : on le retire, en le
-    // gardant de côté pour pouvoir le rendre si besoin.
+    // `title` would duplicate our box: remove it, keeping it aside so it can
+    // be given back if needed.
     var native = el.getAttribute("title");
     if (native) {
       el.setAttribute("data-lumia-tip-title", native);
@@ -611,8 +612,8 @@
   function tipPlace() {
     if (!tipVisible || !tipRef) return;
 
-    // L'élément a pu disparaître (re-rendu d'une liste) ou sortir de
-    // l'écran en défilant dans sa colonne : plus rien à décrire.
+    // The element may have disappeared (list re-render) or left the screen by
+    // scrolling in its column: nothing left to describe.
     if (!document.contains(tipRef)) { tipHide(); return; }
     var r = tipRef.getBoundingClientRect();
     if (!r.width && !r.height) { tipHide(); return; }
@@ -624,8 +625,8 @@
     var h = tipEl.offsetHeight;
     var p = tipPlacementOf(tipRef);
 
-    // Bascule sur le côté opposé quand la place manque — et seulement si
-    // l'opposé en offre davantage, pour ne pas osciller.
+    // Flip to the opposite side when room is lacking — and only if the
+    // opposite offers more, to avoid oscillating.
     var space = {
       top:    r.top - TIP_OFFSET - TIP_MARGIN,
       bottom: window.innerHeight - r.bottom - TIP_OFFSET - TIP_MARGIN,
@@ -645,8 +646,8 @@
       left = p === "left" ? r.left - w - TIP_OFFSET : r.right + TIP_OFFSET;
     }
 
-    // Recadrage dans la fenêtre : la boîte glisse, la flèche reste sur
-    // l'élément (sinon elle pointe à côté dans les coins).
+    // Clamp within the window: the box slides, the arrow stays on the
+    // element (otherwise it points next to it in the corners).
     var maxLeft = window.innerWidth - w - TIP_MARGIN;
     var maxTop  = window.innerHeight - h - TIP_MARGIN;
     left = Math.max(TIP_MARGIN, Math.min(left, Math.max(TIP_MARGIN, maxLeft)));
@@ -669,8 +670,8 @@
   }
 
   /**
-   * API publique — utile quand le DOM bouge sous le tooltip (ligne
-   * supprimée, panneau replié) ou pour poser un texte à la volée.
+   * Public API — useful when the DOM moves under the tooltip (row removed,
+   * panel collapsed) or to set a text on the fly.
    */
   window.lumiaTooltip = {
     hide: tipHide,

@@ -1,9 +1,9 @@
 /*
  * Lümia Tools - Design tokens
  *
- * UNIQUEMENT des custom properties sur :root. Aucun selecteur, aucune regle
- * qui peigne quoi que ce soit. C'est le seul fichier CSS du plugin qu'on peut
- * charger sur une page WordPress native (medias, editeur...) sans rien casser.
+ * ONLY custom properties on :root. No selector, no rule that paints anything.
+ * It is the only CSS file of the plugin that can be loaded on a native
+ * WordPress page (media, editor...) without breaking anything.
  */
 
 :root {

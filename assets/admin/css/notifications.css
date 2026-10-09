@@ -1,10 +1,10 @@
 /*
- * Notifications — Toasts LUMIA + Centre de notifications WP
- * Chargé sur tout l'admin WordPress.
+ * Notifications — Lümia toasts + WP notification center
+ * Loaded on the whole WordPress admin.
  */
 
 /* ================================================================
- * TOAST CONTAINER (bas-droite, fixed)
+ * TOAST CONTAINER (bottom-right, fixed)
  * ================================================================ */
 
 #lumia-toast-container {
@@ -51,7 +51,7 @@
   transition-duration: 0.16s;
 }
 
-/* Corps principal */
+/* Main body */
 .lumia-toast__inner {
   display: flex;
   align-items: center;
@@ -59,7 +59,7 @@
   padding: 11px 12px;
 }
 
-/* Pastille colorée */
+/* Colored dot */
 .lumia-toast__dot {
   width: 7px;
   height: 7px;
@@ -76,7 +76,7 @@
   margin: 0;
 }
 
-/* Bouton fermer */
+/* Close button */
 .lumia-toast__close {
   flex-shrink: 0;
   display: flex;
@@ -106,7 +106,7 @@
   display: block;
 }
 
-/* Barre de progression */
+/* Progress bar */
 .lumia-toast__progress-bar {
   height: 2px;
   background: oklch(1 0 0 / 0.07);
@@ -123,7 +123,7 @@
 }
 
 /* ================================================================
- * TOAST — Couleurs par type
+ * TOAST — Colors by type
  * ================================================================ */
 
 .lumia-toast--success .lumia-toast__dot {
@@ -263,7 +263,7 @@
   gap: 8px;
 }
 
-/* État vide */
+/* Empty state */
 .lumia-notif-drawer__empty {
   display: flex;
   flex-direction: column;
@@ -283,7 +283,7 @@
   opacity: 0.3;
 }
 
-/* Item de notification */
+/* Notification item */
 .lumia-notif-item {
   position: relative;
   display: flex;
@@ -367,7 +367,7 @@
   color: #2563eb;
 }
 
-/* Badge source (LUMIA / WP) */
+/* Source badge (LUMIA / WP) */
 .lumia-notif-item__source {
   display: inline-block;
   font-size: 10px;
@@ -390,7 +390,7 @@
   color: #374151;
 }
 
-/* Bouton dismiss (×) — visible au survol de l'item */
+/* Dismiss button (x) — visible on item hover */
 .lumia-notif-item__dismiss {
   position: absolute;
   top: 8px;
@@ -429,7 +429,7 @@
 }
 
 /* ================================================================
- * ADMIN BAR — bouton cloche + badge en overlay
+ * ADMIN BAR — bell button + overlay badge
  * ================================================================ */
 
 #wpadminbar #wp-admin-bar-lumia-notif-center > .ab-item {
@@ -440,7 +440,7 @@
   cursor: pointer;
 }
 
-/* Wrapper relatif pour positionner le badge en overlay */
+/* Relative wrapper to position the overlay badge */
 #wpadminbar .lumia-notif-btn-wrap {
   position: relative !important;
   display: inline-flex !important;
@@ -461,7 +461,7 @@
   display: block !important;
 }
 
-/* Pastille rouge en haut à droite de l'icône : compteur, plafonné à « 9+ » en JS */
+/* Red dot at the top right of the icon: counter, capped at "9+" in JS */
 #wpadminbar .lumia-notif-badge {
   position: absolute !important;
   top: 1px !important;
@@ -494,14 +494,14 @@
   z-index: 1 !important;
 }
 
-/* Masquage forcé quand style inline display:none (inline style < !important CSS) */
+/* Forced hiding when inline style display:none (inline style < !important CSS) */
 #wpadminbar .lumia-notif-badge[style*="display:none"],
 #wpadminbar .lumia-notif-badge[style*="display: none"] {
   display: none !important;
 }
 
 /* ================================================================
- * ADMIN BAR — repère no-index (site non indexable)
+ * ADMIN BAR — no-index marker (non-indexable site)
  * ================================================================ */
 
 #wpadminbar #wp-admin-bar-lumia-noindex > .ab-item {
@@ -546,7 +546,7 @@
   }
 }
 
-/* Admin bar highlight quand drawer ouvert */
+/* Admin bar highlight when the drawer is open */
 #wpadminbar #wp-admin-bar-lumia-notif-center.drawer-open > .ab-item {
   background: rgba(255, 255, 255, 0.08);
 }

@@ -4,19 +4,19 @@ namespace Lumia\Tools\Core;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gère l'enregistrement et le chargement des modules.
+ * Handles module registration and loading.
  */
 class Modules {
 
 	/**
-	 * Liste des modules enregistrés.
+	 * List of registered modules.
 	 *
 	 * @var array<string, array<string, mixed>>
 	 */
 	private array $registered = [];
 
 	/**
-	 * Instances des modules actifs.
+	 * Instances of the active modules.
 	 *
 	 * @var array<string, ModuleInterface>
 	 */
@@ -28,103 +28,103 @@ class Modules {
 	private Settings $settings;
 
 	/**
-	 * Constructeur.
+	 * Constructor.
 	 */
 	public function __construct( Settings $settings ) {
 		$this->settings = $settings;
 	}
 
 	/**
-	 * Enregistre les modules par défaut via filter + hook impératif.
-	 * Doit être appelé au hook init ou plus tard (JIT i18n WP 6.7+).
+	 * Registers the default modules through a filter plus an imperative hook.
+	 * Must be called on the init hook or later (just-in-time i18n of WP 6.7+).
 	 */
 	public function register_default_modules( bool $only_active = false ): void {
 		$defaults = [
 			'image_optimizer' => [
 				'name'        => __( 'Image Optimizer', 'lumia-tools' ),
-				'description' => __( 'Optimisation des images', 'lumia-tools' ),
+				'description' => __( 'Image optimization', 'lumia-tools' ),
 				'menu_label'  => __( 'Image Optimizer', 'lumia-tools' ),
-				'menu_desc'   => __( 'Optimiser les images', 'lumia-tools' ),
+				'menu_desc'   => __( 'Optimize images', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\ImageOptimizer\\Module',
 				'icon'        => 'image',
 			],
 			'security'        => [
-				'name'        => __( 'Sécurité', 'lumia-tools' ),
-				'description' => __( 'Authentification, hardening et logging de sécurité', 'lumia-tools' ),
-				'menu_label'  => __( 'Sécurité', 'lumia-tools' ),
-				'menu_desc'   => __( 'Gérer la sécurité', 'lumia-tools' ),
+				'name'        => __( 'Security', 'lumia-tools' ),
+				'description' => __( 'Authentication, hardening and security logging', 'lumia-tools' ),
+				'menu_label'  => __( 'Security', 'lumia-tools' ),
+				'menu_desc'   => __( 'Manage security', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\Security\\Module',
 				'icon'        => 'shield',
 			],
 			'login'           => [
-				'name'        => __( 'Connexion', 'lumia-tools' ),
-				'description' => __( 'Personnalisez le design et le branding de la page de connexion WordPress.', 'lumia-tools' ),
-				'menu_label'  => __( 'Connexion', 'lumia-tools' ),
-				'menu_desc'   => __( 'Personnaliser la page de connexion', 'lumia-tools' ),
+				'name'        => __( 'Login', 'lumia-tools' ),
+				'description' => __( 'Customize the design and branding of the WordPress login page.', 'lumia-tools' ),
+				'menu_label'  => __( 'Login', 'lumia-tools' ),
+				'menu_desc'   => __( 'Customize the login page', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\Login\\Module',
 				'icon'        => 'log-in',
 			],
 			'files'           => [
-				'name'        => __( 'Fichiers', 'lumia-tools' ),
-				'description' => __( 'Explorateur et gestionnaire de fichiers WordPress.', 'lumia-tools' ),
-				'menu_label'  => __( 'Fichiers', 'lumia-tools' ),
-				'menu_desc'   => __( 'Gérer les fichiers', 'lumia-tools' ),
+				'name'        => __( 'Files', 'lumia-tools' ),
+				'description' => __( 'WordPress file explorer and manager.', 'lumia-tools' ),
+				'menu_label'  => __( 'Files', 'lumia-tools' ),
+				'menu_desc'   => __( 'Manage files', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\Files\\Module',
 				'icon'        => 'folder',
 			],
 			'white_label'     => [
-				'name'        => __( 'Marque Blanche', 'lumia-tools' ),
-				'description' => __( 'Personnalisez l\'interface d\'administration WordPress pour vos clients.', 'lumia-tools' ),
-				'menu_label'  => __( 'Marque Blanche', 'lumia-tools' ),
-				'menu_desc'   => __( 'Personnaliser l\'admin WP', 'lumia-tools' ),
+				'name'        => __( 'White label', 'lumia-tools' ),
+				'description' => __( 'Customize the WordPress admin interface for your clients.', 'lumia-tools' ),
+				'menu_label'  => __( 'White label', 'lumia-tools' ),
+				'menu_desc'   => __( 'Customize the WP admin', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\WhiteLabel\\Module',
 				'icon'        => 'palette',
 			],
 			'menu_creator'    => [
-				'name'        => __( 'Créateur de menu', 'lumia-tools' ),
-				'description' => __( 'Personnalisez la navigation WordPress pour vos rôles et utilisateurs.', 'lumia-tools' ),
-				'menu_label'  => __( 'Créateur de menu', 'lumia-tools' ),
-				'menu_desc'   => __( 'Personnaliser les menus', 'lumia-tools' ),
+				'name'        => __( 'Menu creator', 'lumia-tools' ),
+				'description' => __( 'Customize WordPress navigation for your roles and users.', 'lumia-tools' ),
+				'menu_label'  => __( 'Menu creator', 'lumia-tools' ),
+				'menu_desc'   => __( 'Customize menus', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\MenuCreator\\Module',
 				'icon'        => 'menu',
 			],
 			'database'        => [
-				'name'        => __( 'Base de données', 'lumia-tools' ),
-				'description' => __( 'Explorez, éditez et exportez vos tables WordPress.', 'lumia-tools' ),
-				'menu_label'  => __( 'Base de données', 'lumia-tools' ),
-				'menu_desc'   => __( 'Gérer la base de données', 'lumia-tools' ),
+				'name'        => __( 'Database', 'lumia-tools' ),
+				'description' => __( 'Explore, edit and export your WordPress tables.', 'lumia-tools' ),
+				'menu_label'  => __( 'Database', 'lumia-tools' ),
+				'menu_desc'   => __( 'Manage the database', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\Database\\Module',
 				'icon'        => 'database',
 			],
 			'media'           => [
-				'name'        => __( 'Médias', 'lumia-tools' ),
-				'description' => __( 'Organisez vos médias en dossiers virtuels.', 'lumia-tools' ),
-				'menu_label'  => __( 'Médias', 'lumia-tools' ),
-				'menu_desc'   => __( 'Organiser les médias', 'lumia-tools' ),
+				'name'        => __( 'Media', 'lumia-tools' ),
+				'description' => __( 'Organize your media into virtual folders.', 'lumia-tools' ),
+				'menu_label'  => __( 'Media', 'lumia-tools' ),
+				'menu_desc'   => __( 'Organize media', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\Media\\Module',
 				'icon'        => 'folder-tree',
 			],
 			'activity_log'    => [
-				'name'        => __( 'Journal d\'activité', 'lumia-tools' ),
-				'description' => __( 'Qui a modifié quoi, et quand : connexions, contenus, extensions, utilisateurs et réglages.', 'lumia-tools' ),
-				'menu_label'  => __( 'Journal d\'activité', 'lumia-tools' ),
-				'menu_desc'   => __( 'Consulter l\'historique', 'lumia-tools' ),
+				'name'        => __( 'Activity log', 'lumia-tools' ),
+				'description' => __( 'Who changed what, and when: logins, content, plugins, users and settings.', 'lumia-tools' ),
+				'menu_label'  => __( 'Activity log', 'lumia-tools' ),
+				'menu_desc'   => __( 'View the history', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\ActivityLog\\Module',
 				'icon'        => 'history',
 			],
 			'smtp'            => [
 				'name'        => __( 'SMTP', 'lumia-tools' ),
-				'description' => __( 'Envoi des mails par un serveur SMTP authentifié ou l\'API Brevo, mail de test et journal des mails.', 'lumia-tools' ),
+				'description' => __( 'Send emails through an authenticated SMTP server or the Brevo API, with a test email and an email log.', 'lumia-tools' ),
 				'menu_label'  => __( 'SMTP', 'lumia-tools' ),
-				'menu_desc'   => __( 'Configurer l\'envoi des mails', 'lumia-tools' ),
+				'menu_desc'   => __( 'Configure email sending', 'lumia-tools' ),
 				'class'       => 'Lumia\\Tools\\Modules\\Smtp\\Module',
 				'icon'        => 'mail',
 			],
 		];
 
 		/**
-		 * Permet d'ajouter/surcharger des modules depuis d'autres plugins/thèmes.
-		 * Format : [ 'module_id' => [ 'name' => ..., 'class' => ..., ... ] ]
+		 * Allows adding/overriding modules from other plugins/themes.
+		 * Format: [ 'module_id' => [ 'name' => ..., 'class' => ..., ... ] ]
 		 */
 		$definitions = apply_filters( 'lumia_module_definitions', $defaults );
 
@@ -151,13 +151,13 @@ class Modules {
 		}
 
 		/**
-		 * Hook impératif pour enregistrer des modules via $modules->register(...).
+		 * Imperative hook to register modules through $modules->register(...).
 		 */
 		do_action( 'lumia_register_modules', $this, $only_active );
 	}
 
 	/**
-	 * Normalise une définition de module.
+	 * Normalizes a module definition.
 	 *
 	 * @param array<string, mixed> $args
 	 * @return array<string, mixed>
@@ -186,7 +186,7 @@ class Modules {
 	}
 
 	/**
-	 * Enregistre un module.
+	 * Registers a module.
 	 *
 	 * @param array<string, mixed> $args
 	 */
@@ -205,7 +205,7 @@ class Modules {
 	}
 
 	/**
-	 * Retourne tous les modules enregistrés.
+	 * Returns all the registered modules.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -214,7 +214,7 @@ class Modules {
 	}
 
 	/**
-	 * Retourne un module spécifique.
+	 * Returns a specific module.
 	 *
 	 * @return array<string, mixed>|null
 	 */
@@ -223,18 +223,19 @@ class Modules {
 	}
 
 	/**
-	 * Vérifie si un module est actif.
+	 * Checks whether a module is active.
 	 */
 	public function is_active( string $id ): bool {
 		return (bool) $this->settings->get( "modules.{$id}", false );
 	}
 
 	/**
-	 * Active un module et appelle son hook on_activate().
+	 * Activates a module and calls its on_activate() hook.
 	 *
-	 * L'état déjà atteint est un succès, pas un échec : update_option() renvoie
-	 * false quand la valeur ne change pas, et s'y fier faisait annoncer une
-	 * erreur — sans appeler on_activate() — pour un module déjà actif.
+	 * An already reached state is a success, not a failure: update_option()
+	 * returns false when the value does not change, and relying on it made an
+	 * error show up — without calling on_activate() — for an already active
+	 * module.
 	 */
 	public function activate( string $id ): bool {
 		if ( ! isset( $this->registered[ $id ] ) ) {
@@ -258,9 +259,9 @@ class Modules {
 	}
 
 	/**
-	 * Désactive un module et appelle son hook on_deactivate().
+	 * Deactivates a module and calls its on_deactivate() hook.
 	 *
-	 * Voir activate() : l'état déjà atteint est un succès.
+	 * See activate(): an already reached state is a success.
 	 */
 	public function deactivate( string $id ): bool {
 		if ( ! isset( $this->registered[ $id ] ) ) {
@@ -271,7 +272,7 @@ class Modules {
 			return true;
 		}
 
-		// Utiliser l'instance active si disponible, sinon en créer une temporaire.
+		// Use the active instance when available, otherwise create a temporary one.
 		$instance = $this->active[ $id ] ?? $this->make_instance( $id );
 
 		$result = $this->settings->set( "modules.{$id}", false );
@@ -284,7 +285,7 @@ class Modules {
 	}
 
 	/**
-	 * Instancie et initialise tous les modules actifs.
+	 * Instantiates and initializes all the active modules.
 	 */
 	public function init_active_modules(): void {
 		foreach ( $this->registered as $id => $module ) {
@@ -306,7 +307,7 @@ class Modules {
 	}
 
 	/**
-	 * Retourne les instances des modules actifs.
+	 * Returns the instances of the active modules.
 	 *
 	 * @return array<string, ModuleInterface>
 	 */
@@ -315,18 +316,18 @@ class Modules {
 	}
 
 	/**
-	 * Retourne une instance d'un module enregistré, active ou non.
+	 * Returns an instance of a registered module, active or not.
 	 *
-	 * L'instance active est réutilisée quand elle existe ; sinon une instance
-	 * non initialisée est créée. Permet de lire le schéma de réglages d'un
-	 * module désactivé (import de configuration) sans l'accrocher à WordPress.
+	 * The active instance is reused when it exists; otherwise an uninitialized
+	 * instance is created. Lets the settings schema of a deactivated module be
+	 * read (configuration import) without hooking it into WordPress.
 	 */
 	public function get_instance( string $id ): ?ModuleInterface {
 		return $this->active[ $id ] ?? $this->make_instance( $id );
 	}
 
 	/**
-	 * Crée une instance du module sans l'initialiser (pour les hooks lifecycle).
+	 * Creates a module instance without initializing it (for the lifecycle hooks).
 	 */
 	private function make_instance( string $id ): ?ModuleInterface {
 		$class = $this->registered[ $id ]['class'] ?? '';

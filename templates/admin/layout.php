@@ -1,18 +1,18 @@
 <?php
 /**
- * Template principal de l'interface admin.
+ * Main template of the admin interface.
  */
 
 defined( 'ABSPATH' ) || exit;
 
-$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- lecture de navigation (onglet ou page affichée), aucune action déclenchée.
+$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- navigation read (tab or displayed page), no action triggered.
 ?>
 <div class="lumia-admin-wrap">
 	<div class="lumia-admin-container">
 		<!-- Sidebar -->
 		<?php require LUMIA_TEMPLATES_DIR . 'components/sidebar.php'; ?>
 
-		<!-- Contenu principal -->
+		<!-- Main content -->
 		<main class="lumia-admin-main">
 			<?php
 			switch ( $tab ) {
@@ -26,7 +26,7 @@ $tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // ph
 					include LUMIA_TEMPLATES_DIR . 'admin/settings.php';
 					break;
 				default:
-					// Vérifier si c'est un module actif
+					// Check whether it is an active module
 					if ( strpos( $tab, 'module_' ) === 0 ) {
 						$module_id = substr( $tab, 7 );
 						$module    = $this->modules->get( $module_id );

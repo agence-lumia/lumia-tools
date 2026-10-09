@@ -1,6 +1,6 @@
 <?php
 /**
- * Template des réglages d'un module.
+ * Module settings template.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -23,20 +23,20 @@ $module_settings = $instance->get_settings();
 		</div>
 		<div class="lumia-page__header-actions">
 			<button type="submit" form="lumia-module-form" id="lumia-module-save-btn" class="lumia-btn lumia-btn--primary lumia-btn--sm">
-				<?php echo esc_html__( 'Enregistrer', 'lumia-tools' ); ?>
+				<?php echo esc_html__( 'Save', 'lumia-tools' ); ?>
 			</button>
 		</div>
 	</div>
 
 	<?php
-	// Le module peut fournir son propre template de réglages
+	// The module may provide its own settings template
 	$module_class_name = str_replace( ' ', '', ucwords( str_replace( '_', ' ', $module_id ) ) );
 	$module_template   = LUMIA_PLUGIN_DIR . 'includes/Modules/' . $module_class_name . '/settings-template.php';
 
 	if ( file_exists( $module_template ) ) {
 		include $module_template;
 	} else {
-		// Template générique
+		// Generic template
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="lumia-form">
 			<?php wp_nonce_field( 'lumia_save_settings', 'lumia_nonce' ); ?>
@@ -45,7 +45,7 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-card">
 				<div class="lumia-card__header">
-					<h2 class="lumia-card__title"><?php echo esc_html__( 'Réglages du module', 'lumia-tools' ); ?></h2>
+					<h2 class="lumia-card__title"><?php echo esc_html__( 'Module settings', 'lumia-tools' ); ?></h2>
 				</div>
 				<div class="lumia-card__body">
 					<?php foreach ( $module_settings as $key => $value ) : ?>
@@ -68,7 +68,7 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-form__actions">
 				<button type="submit" class="lumia-btn lumia-btn--primary">
-					<?php echo esc_html__( 'Enregistrer les réglages', 'lumia-tools' ); ?>
+					<?php echo esc_html__( 'Save settings', 'lumia-tools' ); ?>
 				</button>
 			</div>
 		</form>

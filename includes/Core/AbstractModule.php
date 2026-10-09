@@ -4,20 +4,20 @@ namespace Lumia\Tools\Core;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Base commune pour les modules LUMIA.
+ * Common base for the Lümia modules.
  *
- * Fournit : gestion des options, assets admin vides par défaut,
- * hooks de lifecycle et méthodes statiques pour l'install/uninstall.
+ * Provides: option handling, empty admin assets by default, lifecycle
+ * hooks and static methods for install/uninstall.
  */
 abstract class AbstractModule implements ModuleInterface {
 
 	/**
-	 * Identifiant unique du module (ex: "image_optimizer").
+	 * Unique module identifier (e.g. "image_optimizer").
 	 */
 	protected string $id;
 
 	/**
-	 * Constructeur : reçoit l'ID du module depuis le registre.
+	 * Constructor: receives the module ID from the registry.
 	 */
 	public function __construct( string $id ) {
 		$this->id = $id;
@@ -28,24 +28,24 @@ abstract class AbstractModule implements ModuleInterface {
 	 * ================================================================ */
 
 	/**
-	 * Clé d'option WordPress pour ce module.
+	 * WordPress option key for this module.
 	 */
 	protected function get_module_option_key(): string {
 		return 'lumia_module_' . $this->id;
 	}
 
 	/**
-	 * Lit les réglages du module depuis la base, fusionnés avec les defaults.
+	 * Reads the module settings from the database, merged with the defaults.
 	 *
-	 * La fusion est RÉCURSIVE. wp_parse_args() ne fusionne qu'au premier
-	 * niveau : dès qu'une clé existe en base, sa valeur remplace le défaut en
-	 * bloc. Pour les modules à réglages imbriqués (Sécurité, Connexion, Marque
-	 * blanche), toute sous-clé ajoutée dans une version ultérieure serait donc
-	 * absente des installations existantes tant que l'utilisateur n'a pas
-	 * rouvert l'écran et re-sauvegardé — un nouveau réglage dont le défaut vaut
-	 * true arriverait silencieusement à false chez tout le monde.
+	 * The merge is RECURSIVE. wp_parse_args() only merges the first level: as
+	 * soon as a key exists in the database, its value replaces the default as a
+	 * whole. For modules with nested settings (Security, Login, White label),
+	 * any sub-key added in a later version would therefore be missing from
+	 * existing installs until the user reopens the screen and saves again — a
+	 * new setting whose default is true would silently become false for
+	 * everyone.
 	 *
-	 * @param array<string, mixed> $defaults Valeurs par défaut à appliquer.
+	 * @param array<string, mixed> $defaults Default values to apply.
 	 * @return array<string, mixed>
 	 */
 	protected function get_module_settings( array $defaults = [] ): array {
@@ -59,15 +59,15 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Fusionne les réglages stockés par-dessus les valeurs par défaut.
+	 * Merges the stored settings over the default values.
 	 *
-	 * On ne descend que dans les tableaux ASSOCIATIFS : une liste (rôles
-	 * autorisés, IP whitelistées…) doit être remplacée en bloc, jamais fusionnée
-	 * index par index — sinon retirer une entrée serait impossible, la valeur
-	 * par défaut ressurgissant à sa position.
+	 * Only ASSOCIATIVE arrays are descended into: a list (allowed roles,
+	 * whitelisted IPs…) must be replaced as a whole, never merged index by
+	 * index — otherwise removing an entry would be impossible, the default
+	 * value coming back at its position.
 	 *
-	 * @param array<string, mixed> $defaults Valeurs de référence.
-	 * @param array<string, mixed> $stored   Valeurs lues en base.
+	 * @param array<string, mixed> $defaults Reference values.
+	 * @param array<string, mixed> $stored   Values read from the database.
 	 * @return array<string, mixed>
 	 */
 	protected static function merge_defaults( array $defaults, array $stored ): array {
@@ -85,7 +85,7 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Vrai pour un tableau à clés numériques consécutives (ou vide).
+	 * True for an array with consecutive numeric keys (or an empty one).
 	 *
 	 * @param array<mixed> $value
 	 */
@@ -94,7 +94,7 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Sauvegarde les réglages du module en base.
+	 * Saves the module settings to the database.
 	 *
 	 * @param array<string, mixed> $data
 	 */
@@ -103,18 +103,17 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Convertit des réglages STOCKÉS en charge utile de FORMULAIRE.
+	 * Converts STORED settings into a FORM payload.
 	 *
-	 * save_settings() est écrit pour ce que poste l'écran de réglages. Pour la
-	 * plupart des modules, cette forme coïncide avec celle qui est stockée, et
-	 * l'identité suffit. Quand elle diffère — Sécurité stocke sous
-	 * authentication/hardening ce que le formulaire envoie à plat — le module
-	 * surcharge cette méthode.
+	 * save_settings() is written for what the settings screen posts. For most
+	 * modules this shape matches the stored one, and the identity is enough.
+	 * When it differs — Security stores under authentication/hardening what the
+	 * form sends flat — the module overrides this method.
 	 *
-	 * Sert à l'import de configuration : un fichier importé doit emprunter
-	 * exactement le chemin d'assainissement du formulaire, jamais un second.
+	 * Used by the configuration import: an imported file must go through
+	 * exactly the form's sanitization path, never a second one.
 	 *
-	 * @param array<string, mixed> $stored Réglages tels qu'ils sont en base.
+	 * @param array<string, mixed> $stored Settings as they are in the database.
 	 * @return array<string, mixed>
 	 */
 	public function to_form_payload( array $stored ): array {
@@ -122,34 +121,34 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Données du module à joindre à l'export de configuration, EN PLUS de son
-	 * option `lumia_module_{id}`.
+	 * Module data to attach to the configuration export, IN ADDITION to its
+	 * `lumia_module_{id}` option.
 	 *
-	 * Un module qui range une partie de son état dans une option à lui
-	 * (Créateur de menu : les profils sous `lumia_wl_menu_profiles`) doit la
-	 * déclarer ici, sinon elle est absente du JSON d'export et l'utilisateur
-	 * croit avoir sauvegardé une configuration complète.
+	 * A module that keeps part of its state in an option of its own (Menu
+	 * creator: the profiles under `lumia_wl_menu_profiles`) must declare it
+	 * here, otherwise it is missing from the export JSON and the user believes
+	 * they saved a complete configuration.
 	 *
-	 * @return array<string, mixed> Vide = rien à exporter au-delà des réglages.
+	 * @return array<string, mixed> Empty = nothing to export beyond the settings.
 	 */
 	public function get_export_extras(): array {
 		return [];
 	}
 
 	/**
-	 * Réimporte ce qu'a produit get_export_extras().
+	 * Re-imports what get_export_extras() produced.
 	 *
-	 * Même règle que pour les réglages : le contenu du fichier ne doit jamais
-	 * atterrir tel quel en base — il repasse par l'assainisseur du module.
+	 * Same rule as for the settings: the file content must never land in the
+	 * database as is — it goes back through the module's sanitizer.
 	 *
-	 * @param array<string, mixed> $extras Bloc lu dans le fichier importé.
+	 * @param array<string, mixed> $extras Block read from the imported file.
 	 */
 	public function import_extras( array $extras ): void {
-		// Rien par défaut.
+		// Nothing by default.
 	}
 
 	/* ================================================================
-	 * ASSETS (défauts vides)
+	 * ASSETS (empty defaults)
 	 * ================================================================ */
 
 	public function get_admin_css(): array {
@@ -161,12 +160,12 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Handles de scripts déjà enregistrés dont dépend le JS du module.
+	 * Already registered script handles the module's JS depends on.
 	 *
-	 * Permet de réutiliser une bibliothèque tierce partagée (SortableJS…) plutôt
-	 * que d'en renvoyer l'URL depuis get_admin_js() : deux modules qui font ce
-	 * dernier choix produisent deux handles différents pour le même fichier, que
-	 * WordPress ne peut pas dédupliquer.
+	 * Allows reusing a shared third-party library (SortableJS…) rather than
+	 * returning its URL from get_admin_js(): two modules making that latter
+	 * choice produce two different handles for the same file, which WordPress
+	 * cannot deduplicate.
 	 *
 	 * @return string[]
 	 */
@@ -186,34 +185,33 @@ abstract class AbstractModule implements ModuleInterface {
 	 * ================================================================ */
 
 	/**
-	 * Appelé quand le module est activé.
-	 * Surcharger pour créer des tables, programmer des crons, etc.
+	 * Called when the module is activated.
+	 * Override to create tables, schedule crons, etc.
 	 */
 	public function on_activate(): void {}
 
 	/**
-	 * Appelé quand le module est désactivé.
-	 * Surcharger pour nettoyer les crons, etc.
+	 * Called when the module is deactivated.
+	 * Override to clean up crons, etc.
 	 */
 	public function on_deactivate(): void {}
 
 	/* ================================================================
-	 * CAPACITÉ REQUISE
+	 * REQUIRED CAPABILITY
 	 * ================================================================ */
 
 	/**
-	 * Capacité exigée pour ouvrir l'écran du module et appeler ses endpoints.
+	 * Capability required to open the module screen and call its endpoints.
 	 *
-	 * `manage_options` par défaut, comme le reste de l'extension. À surcharger
-	 * par tout module dont le pouvoir dépasse le site courant : sous multisite,
-	 * `manage_options` est une capacité PAR SITE, si bien que l'administrateur
-	 * d'un simple sous-site l'obtient. Un gestionnaire de fichiers ou un
-	 * éditeur SQL lui livrent alors le réseau entier — les fichiers et la base
-	 * sont communs, eux.
+	 * `manage_options` by default, like the rest of the plugin. To be overridden
+	 * by any module whose power goes beyond the current site: under multisite,
+	 * `manage_options` is a PER-SITE capability, so the administrator of a
+	 * mere sub-site gets it. A file manager or an SQL editor would then hand
+	 * them the whole network — the files and the database are shared.
 	 *
-	 * Les écrans concernés surchargent donc vers `manage_network_options`, que
-	 * seul un super-administrateur détient (et que personne ne détient hors
-	 * multisite : d'où le test).
+	 * The screens concerned therefore override it to `manage_network_options`,
+	 * which only a super administrator holds (and which nobody holds outside
+	 * multisite: hence the test).
 	 */
 	public static function get_required_capability(): string {
 		return 'manage_options';
@@ -224,8 +222,8 @@ abstract class AbstractModule implements ModuleInterface {
 	 * ================================================================ */
 
 	/**
-	 * Valeurs par défaut des options du module (créées à l'activation du plugin).
-	 * Retourner [] si les defaults sont gérés à la volée dans get_settings().
+	 * Default values of the module options (created when the plugin is activated).
+	 * Return [] if the defaults are handled on the fly in get_settings().
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -234,17 +232,16 @@ abstract class AbstractModule implements ModuleInterface {
 	}
 
 	/**
-	 * Clés à supprimer lors de la désinstallation.
+	 * Keys to delete on uninstall.
 	 *
-	 * `meta` désigne des post_meta et `user_meta` des métadonnées d'utilisateur :
-	 * ce sont deux tables distinctes, une clé rangée dans la mauvaise n'est
-	 * jamais supprimée.
+	 * `meta` designates post meta and `user_meta` user metadata: they are two
+	 * distinct tables, and a key filed in the wrong one is never deleted.
 	 *
-	 * Toutes les clés sont optionnelles : uninstall.php lit chacune avec `?? []`.
-	 * `post_type` et `taxonomy` déclenchent la suppression des contenus et des
-	 * termes correspondants. `tables` liste des tables propres au module, SANS
-	 * préfixe (supprimées par DROP TABLE), `cron` des hooks de tâches
-	 * planifiées — aussi désinscrits à la désactivation de l'extension.
+	 * All the keys are optional: uninstall.php reads each with `?? []`.
+	 * `post_type` and `taxonomy` trigger the deletion of the matching contents
+	 * and terms. `tables` lists tables owned by the module, WITHOUT a prefix
+	 * (dropped with DROP TABLE), `cron` lists scheduled task hooks — also
+	 * unscheduled when the plugin is deactivated.
 	 *
 	 * @return array{options?: string[], meta?: string[], user_meta?: string[], post_type?: string[], taxonomy?: string[], tables?: string[], cron?: string[]}
 	 */

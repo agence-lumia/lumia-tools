@@ -4,16 +4,16 @@ namespace Lumia\Tools\Core;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gère l'activation du plugin.
+ * Handles plugin activation.
  *
- * Chaque module déclare ses propres defaults via ::get_defaults().
+ * Each module declares its own defaults through ::get_defaults().
  */
 class Activator {
 
 	/**
-	 * Classes des modules intégrés : la SEULE liste, partagée avec
-	 * uninstall.php (qui ne boote pas le plugin et ne peut donc pas passer par
-	 * Modules::register_default_modules()). À compléter à chaque nouveau module.
+	 * Built-in module classes: the ONLY list, shared with uninstall.php (which
+	 * does not boot the plugin and so cannot go through
+	 * Modules::register_default_modules()). Add to it with every new module.
 	 *
 	 * @var array<string, class-string>
 	 */
@@ -31,10 +31,10 @@ class Activator {
 	];
 
 	/**
-	 * Exécuté à l'activation du plugin.
+	 * Runs when the plugin is activated.
 	 */
 	public static function activate(): void {
-		// Construire les defaults en incluant l'état initial de chaque module (inactif).
+		// Build the defaults, including the initial (inactive) state of each module.
 		$modules_defaults = [];
 		foreach ( self::MODULE_CLASSES as $id => $class ) {
 			$modules_defaults[ $id ] = false;
@@ -47,12 +47,12 @@ class Activator {
 			'modules' => $modules_defaults,
 		];
 
-		// Créer l'option globale uniquement si elle n'existe pas encore.
+		// Create the global option only if it does not exist yet.
 		if ( false === get_option( 'lumia_settings' ) ) {
 			add_option( 'lumia_settings', $default_settings );
 		}
 
-		// Laisser chaque module initialiser ses propres options si nécessaire.
+		// Let each module initialize its own options when needed.
 		foreach ( self::MODULE_CLASSES as $id => $class ) {
 			if ( ! class_exists( $class ) ) {
 				continue;

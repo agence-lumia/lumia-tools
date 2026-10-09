@@ -1,6 +1,6 @@
 <?php
 /**
- * Template de la page Modules.
+ * Modules page template.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -11,7 +11,7 @@ $modules = $this->modules->get_all();
 	<div class="lumia-page__header">
 		<div class="lumia-page__header-content">
 			<h1 class="lumia-page__title"><?php echo esc_html__( 'Modules', 'lumia-tools' ); ?></h1>
-			<p class="lumia-page__subtitle"><?php echo esc_html__( 'Activez ou désactivez les modules selon vos besoins.', 'lumia-tools' ); ?></p>
+			<p class="lumia-page__subtitle"><?php echo esc_html__( 'Enable or disable modules as needed.', 'lumia-tools' ); ?></p>
 		</div>
 	</div>
 
@@ -44,7 +44,7 @@ $modules = $this->modules->get_all();
 
 							<?php if ( $is_active ) : ?>
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->get_slug() . '&tab=module_' . $module_id ) ); ?>" class="lumia-btn lumia-btn--sm lumia-btn--secondary">
-									<?php echo esc_html__( 'Configurer', 'lumia-tools' ); ?>
+									<?php echo esc_html__( 'Configure', 'lumia-tools' ); ?>
 								</a>
 							<?php endif; ?>
 						</div>
@@ -54,7 +54,7 @@ $modules = $this->modules->get_all();
 
 			<div class="lumia-page__footer">
 				<button type="submit" class="lumia-btn lumia-btn--primary" style="display:none">
-					<?php echo esc_html__( 'Enregistrer les modules', 'lumia-tools' ); ?>
+					<?php echo esc_html__( 'Save modules', 'lumia-tools' ); ?>
 				</button>
 			</div>
 		</form>

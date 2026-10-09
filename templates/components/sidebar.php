@@ -1,30 +1,30 @@
 <?php
 /**
- * Composant sidebar réutilisable.
+ * Reusable sidebar component.
  */
 
 defined( 'ABSPATH' ) || exit;
 
-$tab     = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- lecture de navigation (onglet ou page affichée), aucune action déclenchée.
+$tab     = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- navigation read (tab or displayed page), no action triggered.
 $modules = $this->modules->get_all();
 
 $core_items = [
 	[
 		'id'    => 'dashboard',
-		'label' => __( 'Vue d\'ensemble', 'lumia-tools' ),
-		'desc'  => __( 'Tableau de bord', 'lumia-tools' ),
+		'label' => __( 'Overview', 'lumia-tools' ),
+		'desc'  => __( 'Dashboard', 'lumia-tools' ),
 		'icon'  => 'layout-dashboard',
 	],
 	[
 		'id'    => 'modules',
 		'label' => __( 'Modules', 'lumia-tools' ),
-		'desc'  => __( 'Gérer les modules', 'lumia-tools' ),
+		'desc'  => __( 'Manage modules', 'lumia-tools' ),
 		'icon'  => 'package',
 	],
 	[
 		'id'    => 'settings',
-		'label' => __( 'Réglages', 'lumia-tools' ),
-		'desc'  => __( 'Configuration globale', 'lumia-tools' ),
+		'label' => __( 'Settings', 'lumia-tools' ),
+		'desc'  => __( 'Global configuration', 'lumia-tools' ),
 		'icon'  => 'settings',
 	],
 ];

@@ -4,40 +4,40 @@ namespace Lumia\Tools\Core;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Autoloader simple PSR-4 pour le plugin.
+ * Simple PSR-4 autoloader for the plugin.
  */
 class Autoloader {
 
 	/**
-	 * Enregistre l'autoloader.
+	 * Registers the autoloader.
 	 */
 	public static function register(): void {
 		spl_autoload_register( [ __CLASS__, 'autoload' ] );
 	}
 
 	/**
-	 * Charge une classe.
+	 * Loads a class.
 	 *
-	 * @param string $class_name Nom complet de la classe.
+	 * @param string $class_name Fully qualified class name.
 	 */
 	public static function autoload( string $class_name ): void {
 		$prefix = 'Lumia\\Tools\\';
 
-		// Vérifier que la classe appartient au namespace du plugin
+		// Make sure the class belongs to the plugin namespace
 		if ( strpos( $class_name, $prefix ) !== 0 ) {
 			return;
 		}
 
-		// Retirer le prefix
+		// Strip the prefix
 		$relative_class = substr( $class_name, strlen( $prefix ) );
 
-		// Base des includes. On privilégie la constante définie par le bootstrap,
-		// mais on retombe sur un chemin calculé depuis ce fichier : lors de la
-		// désinstallation, WordPress ne charge que uninstall.php (pas le bootstrap),
-		// donc LUMIA_INCLUDES_DIR n'est pas définie et l'autoload doit rester fonctionnel.
+		// Includes base. Prefer the constant defined by the bootstrap, but fall back
+		// to a path computed from this file: on uninstall, WordPress only loads
+		// uninstall.php (not the bootstrap), so LUMIA_INCLUDES_DIR is not defined
+		// and the autoloader must keep working.
 		$base = defined( 'LUMIA_INCLUDES_DIR' ) ? LUMIA_INCLUDES_DIR : dirname( __DIR__ ) . '/';
 
-		// Convertir en chemin de fichier
+		// Convert to a file path
 		$file = $base . str_replace( '\\', '/', $relative_class ) . '.php';
 
 		if ( file_exists( $file ) ) {

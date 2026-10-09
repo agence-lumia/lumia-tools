@@ -1,7 +1,7 @@
 /**
  * Lümia Tools - Notifications
- * Toast LUMIA + Centre de notifications WP
- * Chargé sur tout l'admin WordPress.
+ * Lümia toast + WP notification center
+ * Loaded on the whole WordPress admin.
  */
 (function () {
   "use strict";
@@ -18,13 +18,6 @@
     info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
   };
 
-  var TITLES = {
-    success: "Succès",
-    error: "Erreur",
-    warning: "Avertissement",
-    info: "Information",
-  };
-
   var CLOSE_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
@@ -32,6 +25,14 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 
   var notifCount = 0;
+
+  // Translated strings come from PHP: window.lumiaNotifData.i18n, printed by
+  // Admin::render_notification_drawer(). lumiaAdmin is not available here, as
+  // this script runs on the whole WP admin (see docs/core.md).
+  function t(key) {
+    var data = window.lumiaNotifData;
+    return (data && data.i18n && data.i18n[key]) || "";
+  }
 
   /* ================================================================
    * TOAST
@@ -58,7 +59,7 @@
       '<div class="lumia-toast__inner">' +
       '<span class="lumia-toast__dot"></span>' +
       '<p class="lumia-toast__message">' + escapeHtml(message) + "</p>" +
-      '<button class="lumia-toast__close" type="button" aria-label="Fermer">' + CLOSE_SVG + "</button>" +
+      '<button class="lumia-toast__close" type="button" aria-label="' + escapeAttr(t("close")) + '">' + CLOSE_SVG + "</button>" +
       "</div>" +
       '<div class="lumia-toast__progress-bar"><span class="lumia-toast__progress-fill"></span></div>';
 
@@ -72,7 +73,7 @@
     var elapsed = 0;
     var lastTick = Date.now();
 
-    // Entrée animée
+    // Animated entrance
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         toast.classList.add("is-visible");
@@ -120,7 +121,7 @@
 
     closeBtn.addEventListener("click", dismiss);
 
-    // Pause au survol
+    // Pause on hover
     toast.addEventListener("mouseenter", function () {
       if (!paused) cancelAnimationFrame(raf);
     });
@@ -133,7 +134,7 @@
   }
 
   /* ================================================================
-   * CENTRE DE NOTIFICATIONS
+   * NOTIFICATION CENTER
    * ================================================================ */
 
   function initNotificationCenter() {
@@ -147,7 +148,7 @@
 
     if (!drawer) return;
 
-    // Notices LUMIA persistantes en premier, puis notices WP éphémères
+    // Persistent Lümia notices first, then ephemeral WP notices
     var lumiaNotices = (window.lumiaPersistentNotices || []).map(function (n) {
       return { id: n.id, type: n.type || "info", message: n.message, source: "lumia" };
     });
@@ -233,7 +234,7 @@
       body.innerHTML =
         '<div class="lumia-notif-drawer__empty">' +
         BELL_EMPTY_SVG +
-        "<span>Aucune notification</span>" +
+        "<span>" + escapeHtml(t("noNotifications")) + "</span>" +
         "</div>";
       return;
     }
@@ -266,7 +267,7 @@
         content +
         "</div>" +
         "</div>" +
-        '<button class="lumia-notif-item__dismiss" type="button" aria-label="Fermer">' +
+        '<button class="lumia-notif-item__dismiss" type="button" aria-label="' + escapeAttr(t("close")) + '">' +
         CLOSE_SVG +
         "</button>" +
         "</div>";
@@ -311,19 +312,23 @@
       body.innerHTML =
         '<div class="lumia-notif-drawer__empty">' +
         BELL_EMPTY_SVG +
-        "<span>Aucune notification</span>" +
+        "<span>" + escapeHtml(t("noNotifications")) + "</span>" +
         "</div>";
     }
   }
 
   /* ================================================================
-   * UTILITAIRES
+   * UTILITIES
    * ================================================================ */
 
   function escapeHtml(str) {
     var d = document.createElement("div");
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, "&quot;");
   }
 
   function sanitizeClass(str) {
@@ -339,6 +344,6 @@
     initNotificationCenter();
   });
 
-  // API publique pour les modules LUMIA
+  // Public API for the Lümia modules
   window.lumiaShowToast = showToast;
 })();

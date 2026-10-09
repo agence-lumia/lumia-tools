@@ -4,24 +4,24 @@ namespace Lumia\Tools\Core;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Gère les réglages globaux du plugin.
+ * Handles the plugin's global settings.
  */
 class Settings {
 
 	/**
-	 * Clé d'option WordPress.
+	 * WordPress option key.
 	 */
 	private string $option_key = 'lumia_settings';
 
 	/**
-	 * Cache des settings.
+	 * Settings cache.
 	 *
 	 * @var array<string, mixed>|null
 	 */
 	private ?array $settings = null;
 
 	/**
-	 * Récupère tous les settings.
+	 * Gets all the settings.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -34,16 +34,16 @@ class Settings {
 	}
 
 	/**
-	 * Récupère une valeur de setting.
+	 * Gets a setting value.
 	 *
-	 * @param string $key     Clé du setting (peut être imbriquée avec des points).
-	 * @param mixed  $fallback Valeur par défaut.
+	 * @param string $key      Setting key (can be nested with dots).
+	 * @param mixed  $fallback Default value.
 	 * @return mixed
 	 */
 	public function get( string $key, $fallback = null ) {
 		$settings = $this->get_all();
 
-		// Support des clés imbriquées (ex: "modules.image_optimizer")
+		// Nested keys support (e.g. "modules.image_optimizer")
 		$keys  = explode( '.', $key );
 		$value = $settings;
 
@@ -58,15 +58,15 @@ class Settings {
 	}
 
 	/**
-	 * Met à jour une valeur de setting.
+	 * Updates a setting value.
 	 *
-	 * @param string $key   Clé du setting.
-	 * @param mixed  $value Nouvelle valeur.
+	 * @param string $key   Setting key.
+	 * @param mixed  $value New value.
 	 */
 	public function set( string $key, $value ): bool {
 		$settings = $this->get_all();
 
-		// Support des clés imbriquées
+		// Nested keys support
 		$keys   = explode( '.', $key );
 		$target = &$settings;
 
@@ -87,9 +87,9 @@ class Settings {
 	}
 
 	/**
-	 * Met à jour plusieurs settings en une fois.
+	 * Updates several settings at once.
 	 *
-	 * @param array<string, mixed> $data Tableau de settings.
+	 * @param array<string, mixed> $data Settings array.
 	 */
 	public function update( array $data ): bool {
 		$settings       = $this->get_all();
@@ -100,7 +100,7 @@ class Settings {
 	}
 
 	/**
-	 * Fusionne deux tableaux récursivement en remplaçant les valeurs.
+	 * Merges two arrays recursively, replacing values.
 	 *
 	 * @param array<string, mixed> $base
 	 * @param array<string, mixed> $updates

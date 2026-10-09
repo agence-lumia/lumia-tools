@@ -88,8 +88,8 @@
   display: inline-block;
   width: 40px;
   height: 24px;
-  /* Dans une ligne flex, un libellé long écraserait le toggle : sa largeur
-     est fixe, il ne doit jamais servir de variable d'ajustement. */
+  /* In a flex row, a long label would squash the toggle: its width is
+     fixed, it must never serve as an adjustment variable. */
   flex-shrink: 0;
 }
 
@@ -174,12 +174,12 @@ textarea.lumia-input:focus {
   box-shadow: 0 0 0 3px oklch(0.7 0.15 275 / 0.12);
 }
 
-/* Les sous-champs natifs de Chromium gonflent la hauteur (≈ 50px) : on la fige. */
+/* Chromium's native sub-fields inflate the height (≈ 50px): pin it. */
 input[type="date"].lumia-input {
   height: 42px;
 }
 
-/* Icône Lucide « calendar » à la place de l'indicateur natif (Chromium, Safari). */
+/* Lucide "calendar" icon in place of the native indicator (Chromium, Safari). */
 input[type="date"].lumia-input::-webkit-calendar-picker-indicator {
   width: 16px;
   height: 16px;
@@ -353,7 +353,7 @@ input[type="date"].lumia-input::-webkit-datetime-edit {
   color: var(--lumia-text-secondary);
 }
 
-/* La colonne flex étire ses enfants : un badge garderait toute la largeur. */
+/* The flex column stretches its children: a badge would keep the full width. */
 .lumia-card__content .lumia-badge {
   align-self: flex-start;
   margin-top: 4px;
@@ -518,7 +518,7 @@ input[type="date"].lumia-input::-webkit-datetime-edit {
 }
 
 /* ================================================================
- * LABEL VARIANTE DANGER
+ * DANGER LABEL VARIANT
  * ================================================================ */
 
 .lumia-form__label--danger {
@@ -627,7 +627,7 @@ input[type="date"].lumia-input::-webkit-datetime-edit {
 }
 
 /* ================================================================
- * SECTION COLLAPSIBLE (details/summary)
+ * COLLAPSIBLE SECTION (details/summary)
  * ================================================================ */
 
 .lumia-section--collapsible {
@@ -662,7 +662,7 @@ details[open] .lumia-section__chevron {
 }
 
 /* ================================================================
- * TABLEAU INFORMATIONS SERVEUR
+ * SERVER INFORMATION TABLE
  * ================================================================ */
 
 .lumia-server-table {
@@ -741,7 +741,7 @@ details[open] .lumia-section__chevron {
   overflow: hidden;
 }
 
-/* Modale large + corps défilant (formulaires longs). */
+/* Wide modal + scrolling body (long forms). */
 .lumia-modal--lg {
   max-width: 560px;
 }
@@ -835,11 +835,11 @@ details[open] .lumia-section__chevron {
 }
 
 /* ================================================================
- * SEARCH — champ de recherche réutilisable (wrapper + icône).
- * Neutralise les styles WordPress natifs des <input> pour un rendu
- * cohérent dans tous les modules. Structure :
+ * SEARCH — reusable search field (wrapper + icon).
+ * Neutralizes the native WordPress styles of <input> for a consistent
+ * rendering in all the modules. Structure:
  *   <div class="lumia-search"><svg…/><input class="lumia-search__input"></div>
- * Modificateur : --sm (compact).
+ * Modifier: --sm (compact).
  * ================================================================ */
 .lumia-search {
   display: flex;
@@ -902,11 +902,11 @@ details[open] .lumia-section__chevron {
 /* ================================================================
    TOOLTIPS
    ----------------------------------------------------------------
-   Singleton positionné en `fixed` par admin.js (translate3d, comme
-   Popper) : l'élément est hors du flux, donc jamais rogné par un
-   parent en `overflow:hidden` — le cas de toutes nos colonnes
-   scrollables. Le conteneur porte la position, la boîte l'animation,
-   pour que l'une n'écrase pas l'autre.
+   Singleton positioned as `fixed` by admin.js (translate3d, like
+   Popper): the element is out of the flow, so never clipped by an
+   `overflow:hidden` parent — the case of all our scrollable columns.
+   The container carries the position, the box the animation, so that
+   one does not overwrite the other.
    ================================================================ */
 
 .lumia-tooltip {
@@ -925,8 +925,8 @@ details[open] .lumia-section__chevron {
 
 .lumia-tooltip__box {
   position: relative;
-  /* Le singleton vit dans <body>, hors de la portée du reset du plugin :
-     sans cette ligne, max-width ne compterait pas le padding. */
+  /* The singleton lives in <body>, outside the reach of the plugin reset:
+     without this line, max-width would not count the padding. */
   box-sizing: border-box;
   max-width: 260px;
   padding: 5px 8px;
@@ -948,8 +948,8 @@ details[open] .lumia-section__chevron {
   transform: none;
 }
 
-/* Point d'origine de l'animation : la boîte doit sembler sortir de
-   l'élément survolé, pas se réduire vers son propre centre. */
+/* Animation origin point: the box must seem to come out of the hovered
+   element, not shrink towards its own center. */
 .lumia-tooltip[data-placement="top"] .lumia-tooltip__box    { transform-origin: bottom center; }
 .lumia-tooltip[data-placement="bottom"] .lumia-tooltip__box { transform-origin: top center; }
 .lumia-tooltip[data-placement="left"] .lumia-tooltip__box   { transform-origin: right center; }
@@ -969,11 +969,10 @@ details[open] .lumia-section__chevron {
 .lumia-tooltip[data-placement="right"] .lumia-tooltip__arrow  { left: -3px;   margin-top: -4px; }
 
 /*
- * Repère d'aide : icône Lucide `info` qui porte une précision en tooltip.
- * Ni pastille dessinée en CSS ni soulignement pointillé sous le libellé :
- * le premier fabrique une fausse icône, le second salit la ligne et ne se
- * lit pas comme un contrôle. Un vrai pictogramme, discret, cliquable au
- * clavier.
+ * Help marker: Lucide `info` icon carrying a clarification in a tooltip.
+ * Neither a dot drawn in CSS nor a dotted underline under the label: the
+ * former fakes an icon, the latter dirties the line and does not read as a
+ * control. A real pictogram, discreet, keyboard-clickable.
  */
 .lumia-tip-info {
   display: inline-flex;
@@ -1012,7 +1011,7 @@ details[open] .lumia-section__chevron {
 }
 
 /* ================================================================
- * ONGLETS (sous-onglets d'un écran) — voir admin.js initTabs()
+ * TABS (sub-tabs of a screen) — see admin.js initTabs()
  * ================================================================ */
 
 .lumia-tabs {
@@ -1020,10 +1019,9 @@ details[open] .lumia-section__chevron {
   flex-shrink: 0;
   gap: 4px;
   padding: 0 28px;
-  /* Filet en ombre interne plutôt qu'en bordure : le soulignement de
-     l'onglet actif se peint par-dessus sans marge négative, qui ferait
-     apparaître un ascenseur vertical avec overflow-x (l'axe y passe alors
-     lui aussi en auto). */
+  /* Inner-shadow rule rather than a border: the active tab's underline paints
+     over it without a negative margin, which would make a vertical scrollbar
+     appear with overflow-x (the y axis then also switches to auto). */
   box-shadow: inset 0 -1px 0 var(--lumia-border);
   overflow-x: auto;
 }
