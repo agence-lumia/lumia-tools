@@ -4,6 +4,7 @@ Internal plugin documentation, excluded from the release ZIPs. `CLAUDE.md` at th
 
 - [core.md](core.md) — boot sequence, autoloader, settings storage, `AbstractModule` contract, JS strings and translations, forms and AJAX endpoints, icons, notices, updater, tooling (Composer, PHPCS, PHPStan).
 - [design-system.md](design-system.md) — CSS classes, tokens, modals, forms, buttons, tooltips, toasts.
+- [migration-from-skmt.md](migration-from-skmt.md) — per-site procedure to move a site from Studio Kyne Mini Tools to Lümia Tools: backup, install, activation, checks, deletion of the old plugin, recovery after a failed migration.
 
 ## Modules
 

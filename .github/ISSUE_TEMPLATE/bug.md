@@ -1,13 +1,13 @@
 ---
 name: Bug
-about: Un comportement cassé ou inattendu
+about: Broken or unexpected behavior
 title: ""
 labels: bug
 ---
 
-## Constat
+## Finding
 
-<!-- Ce qui se passe, où (module, écran, endpoint), et depuis quand si c'est connu. -->
+<!-- What happens, where (module, screen, endpoint), and since when if known. -->
 
 ## Reproduction
 
@@ -15,13 +15,13 @@ labels: bug
 2.
 3.
 
-## Attendu
+## Expected
 
-<!-- Ce qui devrait se passer. -->
+<!-- What should happen. -->
 
-## Contexte
+## Context
 
-- Version du plugin :
-- WordPress / PHP :
-- Multisite : oui / non
-- Extensions en cause (Bricks, WooCommerce…) :
+- Plugin version:
+- WordPress / PHP:
+- Multisite: yes / no
+- Plugins involved (Bricks, WooCommerce…):

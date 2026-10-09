@@ -1,94 +1,112 @@
 # Lümia Tools
 
-Plugin WordPress modulaire, léger et performant pour optimiser et améliorer votre site.
+A modular, lightweight and fast WordPress plugin to optimize and improve your site. Formerly Studio Kyne Mini Tools: if you are moving a site from that plugin, follow [docs/migration-from-skmt.md](docs/migration-from-skmt.md).
 
-## Fonctionnalités principales
+Requires WordPress 6.9+ and PHP 8.0+. The interface is in English and ships with a French translation (`fr_FR`).
 
-- Architecture modulaire, modules activables à la demande
-- Interface admin custom moderne et rapide
-- Mises à jour via GitHub (canal Stable et Dev)
-- Modules : Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Médias
+## Main features
+
+- Modular architecture: enable only the modules you need
+- Modern, fast custom admin interface
+- Updates through GitHub (Stable and Dev channels)
+- Ten modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP
 
 ## Installation
 
-1. Téléchargez le ZIP depuis les releases GitHub.
-2. Uploadez le ZIP dans Extensions > Ajouter > Téléverser.
-3. Activez le plugin.
-4. Ouvrez le menu LUMIA dans l'admin.
+1. Download `lumia-tools-<version>.zip` from the latest [GitHub release](https://github.com/agence-lumia/lumia-tools/releases) (the asset, not the "Source code" archives).
+2. Upload it in Plugins > Add New > Upload Plugin.
+3. Activate the plugin.
+4. Open the LUMIA menu in the admin.
 
-## Mise à jour
+Coming from Studio Kyne Mini Tools? Activating Lümia Tools migrates your data by itself, but back up first: see [docs/migration-from-skmt.md](docs/migration-from-skmt.md).
 
-Dans Réglages > Mises à jour GitHub :
+## Updates
 
-- Choisissez le canal Stable (main) ou Dev (pre-release).
-- Cliquez sur Vérifier les mises à jour pour forcer un check.
+In Settings > Updates:
+
+- Choose the Stable (main) or Dev (pre-release) channel.
+- Click Check for updates to force a check.
 
 ## Modules
 
 ### Image Optimizer
 
-- Conversion AVIF/WebP (auto)
-- Qualité configurable
-- Redimensionnement
-- Suppression EXIF
-- Alt text auto
-- Optimisation en masse
-- Upload SVG sécurisé (assainissement liste blanche, autorisé par rôle)
+- AVIF/WebP conversion (automatic)
+- Configurable quality
+- Resizing
+- EXIF removal
+- Automatic alt text
+- Bulk optimization
+- Safe SVG upload (allow-list sanitizing, allowed per role)
 
 ### Security
 
-- Limitation des tentatives de connexion (rate limiting)
-- Origine de l'IP configurable : connexion directe (défaut), Cloudflare ou reverse proxy.
-  Les en-têtes de proxy sont envoyés par le client : ne les activer que si le site est
-  réellement derrière ce proxy, sinon le blocage se contourne en changeant d'en-tête.
-- URL de connexion personnalisée.
-  En cas d'oubli du slug, poser `define( 'LUMIA_DISABLE_LOGIN_URL', true );` dans
-  `wp-config.php` réactive `wp-login.php`.
-- Durcissement (anti-énumération des utilisateurs, endpoint REST users)
+- Login attempt limiting (rate limiting)
+- Configurable IP origin: direct connection (default), Cloudflare or reverse proxy.
+  Proxy headers are sent by the client: only enable them if the site really sits behind
+  that proxy, otherwise the block can be bypassed by changing the header.
+- Custom login URL.
+  If you forget the slug, adding `define( 'LUMIA_DISABLE_LOGIN_URL', true );` to
+  `wp-config.php` re-enables `wp-login.php`.
+- Hardening (user enumeration protection, REST users endpoint)
 
 ### White Label
 
-- Nettoyage de la barre d'admin et du footer
-- Épuration de la page de profil (masquage des sections superflues)
-- Avatars locaux (upload via médiathèque, prioritaire sur Gravatar)
-- Profils de menu (stockage/résolution par utilisateur, rôle ou global)
+- Admin bar and footer cleanup
+- Profile page cleanup (hides unneeded sections)
+- Local avatars (uploaded through the media library, take precedence over Gravatar)
+- Menu profiles (stored and resolved per user, role or globally)
 
 ### Menu Creator
 
-- Réorganisation et masquage des entrées du menu wp-admin (drag & drop)
-- Renommage, séparateurs, liens personnalisés, icônes (bibliothèque Lucide)
-- Blocage optionnel de l'accès direct aux pages masquées, liens réservés à certains rôles
-- Import / export des menus (globalement ou menu par menu)
-- Raccourcis clavier : Ctrl/Cmd+S enregistre, Ctrl+Z / Ctrl+Y annulent et rétablissent
-- Signalement des entrées obsolètes (slug absent du menu WordPress courant)
-- Recherche d'icônes en français (« filtre », « panier », « facture »…), accents ignorés
+- Reorder and hide wp-admin menu entries (drag and drop)
+- Rename, separators, custom links, icons (Lucide library)
+- Optional blocking of direct access to hidden pages, links reserved to some roles
+- Menu import / export (globally or menu by menu)
+- Keyboard shortcuts: Ctrl/Cmd+S saves, Ctrl+Z / Ctrl+Y undo and redo
+- Flags obsolete entries (slug missing from the current WordPress menu)
+- Icon search also understands French keywords, accent-insensitive
 
 ### Login
 
-- Personnalisation de la page de connexion (logo, couleurs, panneau latéral)
-- Masquage optionnel : langue, mot de passe oublié, retour au site
+- Login page customization (logo, colors, side panel)
+- Optional hiding of: language switcher, lost password link, back to site link
 
 ### Files
 
-- Gestionnaire de fichiers (liste, renommer, déplacer, supprimer)
-- Upload, zip/dézip, édition et téléchargement, racine `ABSPATH`
-- Éditeur de code avec coloration syntaxique et autocomplétion (CodeMirror livré par
-  WordPress ; respecte le réglage de coloration du profil utilisateur)
+- File manager (list, rename, move, delete)
+- Upload, zip/unzip, edit and download, rooted at `ABSPATH`
+- Code editor with syntax highlighting and autocompletion (CodeMirror shipped by
+  WordPress; follows the syntax highlighting setting of the user profile)
 
 ### Database
 
-- Explorateur/éditeur de tables sur `$wpdb` (données, structure)
-- Édition, insertion et suppression de lignes typées (avec support NULL)
-- Éditeur SQL libre sécurisé (mots-clés interdits, confirmation des écritures, plafond de lignes)
-- Export `.sql` typé, historique des requêtes (local au navigateur)
+- Table explorer/editor on `$wpdb` (data, structure)
+- Typed row editing, insertion and deletion (NULL supported)
+- Safe free-form SQL editor (forbidden keywords, confirmation of writes, row cap)
+- Typed `.sql` export, query history (stored in the browser only)
 
-### Médias
+### Media
 
-- Dossiers virtuels dans la médiathèque : aucun fichier n'est déplacé sur le disque
-- Panneau de dossiers partout où WordPress affiche une médiathèque (page Médias en
-  grille et en liste, éditeur de blocs, personnalisateur, constructeurs de page)
-- Glisser-déposer des médias et des dossiers, appartenance à plusieurs dossiers
-- Dossiers d'un média modifiables depuis sa fiche de détails
+- Virtual folders in the media library: no file is moved on disk
+- Folder panel wherever WordPress shows a media library (grid and list Media page,
+  block editor, Customizer, page builders)
+- Drag and drop of media and folders, membership of several folders
+- Folders of a media item editable from its details panel
+
+### Activity Log
+
+- Who changed what, and when: sign-ins and failed attempts, content, media, users, plugins, themes, options and the plugin's own settings
+- Dedicated table, filterable by date, user and event
+- Configurable retention (days and row ceiling), optional IP anonymization, roles to track
+- CSV export
+
+### SMTP
+
+- Sending through an authenticated SMTP server or the Brevo HTTP API, instead of the host's `mail()`
+- Presets for common providers (Brevo, Mailgun, SendGrid, Postmark, SES, Mailjet, OVHcloud, Gmail, Microsoft 365)
+- Test email with the SMTP transcript, and a log of every email sent (purged on a schedule)
+- The password is encrypted at rest and never part of the settings export. Credentials can instead be defined in `wp-config.php` (`LUMIA_SMTP_USER`, `LUMIA_SMTP_PASSWORD`, `LUMIA_BREVO_API_KEY`, and `LUMIA_ENCRYPTION_KEY` to pin the encryption key)
 
 ## Architecture
 
@@ -102,21 +120,24 @@ lumia-tools/
 ├── templates/
 │   ├── admin/
 │   └── components/
+├── languages/
 └── assets/
     └── admin/
 ```
 
-## Développement
+## Development
 
-### Ajouter un module
+Working rules, conventions and the checks to run before a pull request are in [CLAUDE.md](CLAUDE.md); the technical documentation (core, design system, one page per module) is in [docs/](docs/README.md).
 
-1. Créer un dossier dans includes/Modules/MonModule/
-2. Implémenter ModuleInterface
-3. Enregistrer le module via filtre `lumia_module_definitions`
+### Adding a module
+
+1. Create a folder in `includes/Modules/MyModule/`
+2. Extend `AbstractModule` (implements `ModuleInterface`)
+3. Register the module through the `lumia_module_definitions` filter
 
 ```php
 <?php
-namespace Lumia\Tools\Modules\MonModule;
+namespace Lumia\Tools\Modules\MyModule;
 
 use Lumia\Tools\Core\AbstractModule;
 
@@ -124,63 +145,66 @@ class Module extends AbstractModule {
     public function init(): void {}
     public function get_settings(): array { return ['enabled' => true]; }
     public function save_settings( array $settings ): bool {
-        return update_option( 'lumia_module_mon_module', $settings );
+        return update_option( 'lumia_module_my_module', $settings );
     }
     public function get_admin_css(): array {
-        return [ LUMIA_ASSETS_URL . 'admin/css/modules/mon-module.css' ];
+        return [ LUMIA_ASSETS_URL . 'admin/css/modules/my-module.css' ];
     }
 }
 ```
 
-### Enregistrement extensible des modules
+### Extensible module registration
 
-Le core expose un registre extensible pour éviter de modifier `Core/Modules.php` à chaque nouveau module.
+The core exposes an extensible registry so that `Core/Modules.php` does not have to be edited for every new module.
 
 ```php
 add_filter( 'lumia_module_definitions', function( array $modules ) {
-    $modules['mon_module'] = [
-        'name'        => __( 'Mon module', 'lumia-tools' ),
-        'description' => __( 'Description courte', 'lumia-tools' ),
-        'menu_label'  => __( 'Mon module', 'lumia-tools' ),
-        'menu_desc'   => __( 'Action principale', 'lumia-tools' ),
-        'class'       => 'Lumia\\Tools\\Modules\\MonModule\\Module',
+    $modules['my_module'] = [
+        'name'        => __( 'My module', 'lumia-tools' ),
+        'description' => __( 'Short description', 'lumia-tools' ),
+        'menu_label'  => __( 'My module', 'lumia-tools' ),
+        'menu_desc'   => __( 'Main action', 'lumia-tools' ),
+        'class'       => 'Lumia\\Tools\\Modules\\MyModule\\Module',
         'icon'        => 'package',
     ];
     return $modules;
 } );
 ```
 
-### Recommandation architecture module (simple -> complexe)
+### Module architecture recommendation (simple -> complex)
 
-- Module simple :
-  - `Module.php` (hooks + settings + vue)
-- Module complexe :
+- Simple module:
+  - `Module.php` (hooks + settings + view)
+- Complex module:
   - `Module.php` (orchestration)
-  - `Services/` (métier, API, cron, stockage)
+  - `Services/` (business logic, API, cron, storage)
   - `Admin/` (UI, handlers, rendering)
-  - `Domain/` (DTO, règles, validation)
+  - `Domain/` (DTOs, rules, validation)
 
-Chaque module doit sanitiser ses propres settings dans `save_settings()` (le core n'applique plus de sanitization générique).
+Each module must sanitize its own settings in `save_settings()` (the core no longer applies generic sanitizing).
 
-Points de contrat utiles :
+Useful contract points:
 
-- `get_uninstall_keys()` distingue `options`, `meta` (post meta) et `user_meta`. Une méta
-  d'utilisateur déclarée sous `meta` n'est jamais supprimée : ce sont deux tables.
-- `get_admin_js_deps()` déclare des handles de scripts déjà enregistrés (bibliothèques
-  tierces partagées) plutôt que d'en renvoyer l'URL depuis `get_admin_js()`.
-- `to_form_payload()` convertit des réglages stockés vers la forme attendue par
-  `save_settings()`. Utilisé par l'import de configuration, qui rejoue ainsi
-  l'assainisseur du module au lieu d'écrire le JSON tel quel.
-- Les défauts de `get_defaults()` sont fusionnés récursivement : une sous-clé ajoutée
-  dans une version ultérieure arrive donc avec sa valeur par défaut chez les
-  installations existantes.
+- `get_uninstall_keys()` distinguishes `options`, `meta` (post meta) and `user_meta`. A
+  user meta declared under `meta` is never deleted: they are two different tables.
+- `get_admin_js_deps()` declares handles of already registered scripts (shared
+  third-party libraries) rather than returning their URL from `get_admin_js()`.
+- `to_form_payload()` converts stored settings into the shape `save_settings()`
+  expects. The configuration import uses it, so that it replays the module's own
+  sanitizer instead of writing the JSON as is.
+- The defaults of `get_defaults()` are merged recursively: a sub-key added in a later
+  version therefore reaches existing installs with its default value.
 
-## Releases et versioning
+### Translations
 
-- Stable : releases depuis la branche main
-- Dev : pre-releases auto depuis la branche dev
-- Le ZIP est attaché aux releases (lumia-tools.zip)
+Every string in the code is English (text domain `lumia-tools`); French comes from `languages/lumia-tools-fr_FR.po` / `.mo`. The procedure to add a string is in [CLAUDE.md](CLAUDE.md#translations-text-domain-lumia-tools) and the tooling in [tools/i18n/README.md](tools/i18n/README.md).
 
-## Licence
+## Releases and versioning
+
+- Stable: releases from the main branch
+- Dev: automatic pre-releases from the dev branch
+- The ZIP is attached to each release as `lumia-tools-<version>.zip`
+
+## License
 
 GPL-2.0+

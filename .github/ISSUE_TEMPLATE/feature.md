@@ -1,19 +1,19 @@
 ---
-name: Évolution
-about: Une fonctionnalité ou une amélioration
+name: Feature
+about: A feature or an improvement
 title: ""
 labels: enhancement
 ---
 
-## Constat
+## Finding
 
-<!-- Le manque ou le besoin, tel qu'il se présente aujourd'hui. -->
+<!-- The gap or the need, as it stands today. -->
 
-## Attendu
+## Expected
 
-<!-- Le comportement cible, en termes d'usage. Les points ouverts en fin de liste. -->
+<!-- The target behavior, in terms of usage. Open questions at the end of the list. -->
 
-## Périmètre
+## Scope
 
-- Module(s) concerné(s) :
-- Hors périmètre :
+- Module(s) concerned:
+- Out of scope:

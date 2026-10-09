@@ -62,7 +62,7 @@ The list and the settings share the module form: the filters have **no `name` at
 
 ## Translations
 
-All strings are English in the code (text domain `lumia-tools`); the French texts live in `languages/pairs/activity-log.json`.
+All strings are English in the code (text domain `lumia-tools`); the French texts live in `languages/lumia-tools-fr_FR.po`.
 
 - Event and group labels, detail labels (`detail_lines()`), channels and the tracked WordPress option labels are translated **at display time** (or, for `option_updated`, at write time: the `label` detail stores the label as translated then).
 - The `label: value` joiner is itself a string (`%1$s: %2$s`, `Module::label_value()`): French puts a space before the colon, so the separator cannot be hard-coded.

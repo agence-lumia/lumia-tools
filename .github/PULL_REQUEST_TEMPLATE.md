@@ -1,24 +1,25 @@
-<!-- Titre de la PR : Conventional Commits, ex. `fix(security): …`, `feat(media): …`, `docs: …` -->
+<!-- PR title: Conventional Commits in English, e.g. `fix(security): …`, `feat(media): …`, `docs: …` -->
 
 Closes #
 
-## Quoi
+## What
 
-<!-- Ce que change la PR, en deux ou trois phrases. -->
+<!-- What the PR changes, in two or three sentences. -->
 
-## Pourquoi
+## Why
 
-<!-- Le problème constaté ou le besoin. Si un comportement a cassé, dire ce qui cassait et pourquoi la solution retenue est celle-là. -->
+<!-- The problem found or the need. If a behavior broke, say what broke and why the chosen solution is the right one. -->
 
-## Comment tester
+## How to test
 
-<!-- Étapes de vérification sur l'environnement local, écrans concernés, cas limites vérifiés. -->
+<!-- Verification steps on the local environment, screens concerned, edge cases checked. -->
 
 ## Checklist
 
-- [ ] Branche créée depuis `dev`, PR vers `dev`
-- [ ] Pas de bump de version manuel
-- [ ] `composer check` passe (aucun constat, pas de baseline recréée)
-- [ ] Nouveaux fichiers PHP : garde `defined( 'ABSPATH' ) || exit;`
-- [ ] Icônes : SVG Lucide officiels uniquement
-- [ ] `docs/` mis à jour si un piège ou une décision est né de cette PR
+- [ ] Branch created from `dev`, PR to `dev`
+- [ ] No manual version bump
+- [ ] `composer check` passes (no finding, no baseline recreated)
+- [ ] New PHP files: `defined( 'ABSPATH' ) || exit;` guard
+- [ ] New or changed strings: English source with the `lumia-tools` text domain, `.pot` / `.po` / `.mo` updated (`composer i18n:pot`, `i18n:mo`, `i18n:check`)
+- [ ] Icons: official Lucide SVGs only
+- [ ] `docs/` updated if a pitfall or a decision came out of this PR

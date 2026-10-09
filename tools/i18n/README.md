@@ -2,18 +2,20 @@
 
 Development only: `tools/` is never shipped (anchored `/tools` exclude in the release workflows).
 
-Source strings in the code are English; the French catalogue was built from the
-`.pot` plus one pair file per scope. Each pair maps the English source to the
-**original** French text (typography, non-breaking spaces and all).
+Source strings in the code are English; the French catalogue is
+`languages/lumia-tools-fr_FR.po` (compiled to `.mo`). **The `.po` is the only source
+of the French text**: to add or change a translation, edit it there (workflow in
+`CLAUDE.md` and `docs/core.md`).
 
-`languages/pairs/` was deleted once `lumia-tools-fr_FR.po` was produced: the `.po`
-is now the only source of the French text (find the pairs in the history of the
-`chore/15-rename-lumia` branch if needed). `build` and `composer i18n:po` remain for
-the tests and for rebuilding from a pairs directory.
+History: the `.po` was generated once from the `.pot` plus one pair file per scope,
+each mapping an English source to the **original** French text. `languages/pairs/`
+was deleted afterwards (find it in the history of the `chore/15-rename-lumia`
+branch if needed), and `build-po.php build` was that one-time pairs-to-`.po`
+generator. It is kept only for its tests; no Composer script runs it.
 
-## Pair files
+## Pair files (historical)
 
-`languages/pairs/<scope>.json`:
+Format of `<pairs-dir>/<scope>.json`, as used by `build`:
 
 ```json
 {
@@ -57,12 +59,10 @@ phar once into `tools/i18n/.cache/` (git-ignored), checked against its published
 SHA-512. `composer check` is unaffected.
 
 ```bash
-C='docker run --rm -v "$PWD:/app" -w /app composer:2'
-$C i18n:pot     # languages/lumia-tools.pot (first run downloads the phar)
-$C i18n:po      # .pot + languages/pairs/*.json -> languages/lumia-tools-fr_FR.po
-$C i18n:mo      # languages/*.po -> .mo
-$C i18n:check   # .po covers the .pot, .mo matches the .po
-$C i18n:test    # tools/i18n/test.sh
+docker run --rm -v "$PWD:/app" -w /app composer:2 i18n:pot     # languages/lumia-tools.pot (first run downloads the phar)
+docker run --rm -v "$PWD:/app" -w /app composer:2 i18n:mo      # languages/*.po -> .mo
+docker run --rm -v "$PWD:/app" -w /app composer:2 i18n:check   # .po covers the .pot, .mo matches the .po
+docker run --rm -v "$PWD:/app" -w /app composer:2 i18n:test    # tools/i18n/test.sh
 ```
 
 Equivalent without Composer, with the WP-CLI image:
