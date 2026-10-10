@@ -583,7 +583,9 @@ final class QueueRunner {
 				$metadata = wp_get_attachment_metadata( $id );
 				$name     = is_array( $metadata ) ? (string) ( $metadata['original_image'] ?? $metadata['file'] ?? '' ) : '';
 				if ( '' !== $name && $this->lifecycle->is_excluded_by_name( $name ) ) {
+					// A `failed` item may have kept siblings of an earlier generation.
 					AvifState::set_status( $id, AvifState::EXCLUDED );
+					$this->lifecycle->delete_siblings( $id );
 					continue;
 				}
 
