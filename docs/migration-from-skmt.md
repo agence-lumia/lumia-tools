@@ -90,7 +90,7 @@ Then, in wp-admin and in a private window:
 1. **Plugin pages**: the Lümia Tools menu opens; the Modules page shows the same modules enabled as before; each enabled module's screen shows its settings. The green "Migration ... complete" notice appears once.
 2. **Login**: the custom login URL still works, and `/wp-login.php` is still blocked (a visitor gets a 404).
 3. **SMTP** (if used): SMTP module > Send a test email. The password does not have to be typed again, and the email arrives.
-4. **Images** (if the Image Optimizer was used): open an optimized image in the Media library, run **Restore original** (available when the **Keep the original** setting was on), check the original is back, then optimize it again.
+4. **Images** (if the Image Optimizer was used): the optimized images still display on the site, and `wp lumia images migrate --dry-run` lists them (run in the `wordpress` container, see [modules/image-optimizer.md](modules/image-optimizer.md#migration-of-legacy-media-migrationcommand-urlrewriter)). Their migration to the new layout is a separate, site-by-site step.
 5. **Media folders**: the folders and their colors are there, with their images.
 6. **Activity log**: the old entries are listed, and a new one appears when you change a setting.
 
