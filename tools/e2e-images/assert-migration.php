@@ -347,7 +347,12 @@ if ( 'final' === $phase ) {
 		am_check( $e['main'] === ( $meta['file'] ?? '' ), "{$key}: metadata file " . ( $meta['file'] ?? '' ) );
 		am_check( $e['mime'] === get_post_mime_type( $id ), "{$key}: MIME " . get_post_mime_type( $id ) );
 		am_check( is_file( am_abs( $e['main'] ) ) && $e['mime'] === wp_get_image_mime( am_abs( $e['main'] ) ), "{$key}: main file is a real " . $e['mime'] );
-		am_check( (int) ( $meta['filesize'] ?? 0 ) === (int) @filesize( am_abs( $e['main'] ) ), "{$key}: metadata filesize matches the file" );
+		// An item the queue has encoded since may have had its EXIF stripped losslessly from the
+		// served JPEG files (strip_exif): smaller than recorded, and the metadata is deliberately
+		// not saved again (it would queue the item again).
+		$queued  = 'pending' === $e['status'] && 'image/jpeg' === $e['mime'];
+		$size_ok = static fn( int $recorded, int $actual ): bool => $recorded === $actual || ( $queued && $actual > 0 && $actual < $recorded );
+		am_check( $size_ok( (int) ( $meta['filesize'] ?? 0 ), (int) @filesize( am_abs( $e['main'] ) ) ), "{$key}: metadata filesize matches the file" . ( $queued ? ' (or the EXIF stripped by the queue)' : '' ) );
 		am_check( str_ends_with( (string) get_post_field( 'guid', $id, 'raw' ), '/' . $e['guid'] ), "{$key}: guid " . get_post_field( 'guid', $id, 'raw' ) );
 
 		if ( null === $e['original'] ) {
@@ -364,7 +369,7 @@ if ( 'final' === $phase ) {
 		foreach ( (array) ( $meta['sizes'] ?? [] ) as $name => $size ) {
 			$rel     = $dir . $size['file'];
 			$files[] = $rel;
-			if ( ! is_file( am_abs( $rel ) ) || $e['mime'] !== $size['mime-type'] || $e['mime'] !== wp_get_image_mime( am_abs( $rel ) ) || (int) ( $size['filesize'] ?? 0 ) !== filesize( am_abs( $rel ) ) ) {
+			if ( ! is_file( am_abs( $rel ) ) || $e['mime'] !== $size['mime-type'] || $e['mime'] !== wp_get_image_mime( am_abs( $rel ) ) || ! $size_ok( (int) ( $size['filesize'] ?? 0 ), (int) filesize( am_abs( $rel ) ) ) ) {
 				$bad[] = $name;
 			}
 		}
@@ -386,13 +391,27 @@ if ( 'final' === $phase ) {
 			$legacy_main = $m['legacy'][ $key ][0];
 			am_check( @fileinode( am_abs( $e['main'] . '.avif' ) ) === @fileinode( am_abs( $legacy_main ) ), "{$key}: sibling is a hard link to {$legacy_main}" );
 		} elseif ( false === $e['sibling'] ) {
-			am_check( 0 === $siblings, "{$key}: no sibling (queued for the encoder)" );
+			// Queued for the encoder: the migration's own run triggers the queue (loopback to
+			// PHP-FPM), drained before this phase by assert-migration.sh. Whatever sibling exists
+			// is a fresh encode of the fallback, never a legacy AVIF.
+			$legacy_inodes = array_map( static fn( $rel ) => @fileinode( am_abs( $rel ) ), $m['legacy'][ $key ] ?? [] );
+			$linked        = 0;
+			foreach ( $files as $rel ) {
+				if ( is_file( am_abs( $rel ) . '.avif' ) && in_array( @fileinode( am_abs( $rel ) . '.avif' ), $legacy_inodes, true ) ) {
+					++$linked;
+				}
+			}
+			am_check( 0 === $linked, "{$key}: no sibling is a legacy AVIF ({$siblings} encoded by the queue)" );
 		}
-		if ( null !== $e['status'] ) {
+		if ( 'pending' === $e['status'] ) {
+			// Queued by the migration, then encoded by the queue in PHP-FPM.
+			am_check( in_array( $state['status'], [ 'done', 'partial' ], true ) && $siblings > 0 && 0 === strpos( $state['worker'], 'fpm' ), "{$key}: queued by the migration, AVIF {$state['status']} with {$siblings} sibling(s) by {$state['worker']}" );
+		} elseif ( null !== $e['status'] ) {
 			am_check( $e['status'] === $state['status'], "{$key}: AVIF status {$state['status']}" );
 		} else {
-			// Kept only when the legacy AVIF is at most 90 % of the fallback: done, else queued.
-			am_check( ( 'done' === $state['status'] && count( $files ) === $siblings ) || ( 'pending' === $state['status'] ), "{$key}: AVIF status {$state['status']} with {$siblings} sibling(s)" );
+			// Kept when the legacy AVIF is at most 90 % of the fallback (done, hard links), else
+			// queued and encoded by the queue since (done or partial).
+			am_check( ( 'done' === $state['status'] && count( $files ) === $siblings ) || ( 'partial' === $state['status'] && $siblings > 0 ), "{$key}: AVIF status {$state['status']} with {$siblings} sibling(s)" );
 		}
 		if ( 'done' === $state['status'] ) {
 			$fresh = array_filter( $files, static fn( $rel ) => AvifState::is_fresh( $id, $rel ) );

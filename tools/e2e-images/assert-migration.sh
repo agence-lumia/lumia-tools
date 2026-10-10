@@ -154,6 +154,15 @@ rc=0
 out="$(wpx lumia images migrate 2>&1)" || rc=$?
 echo "${out}" | sed 's/^/    /'
 if [ "${rc}" -eq 0 ] && grep -q 'resuming after step "files_written"' <<<"${out}" && grep -q 'Processed: 11' <<<"${out}"; then pass "the 11 remaining items migrated, the interrupted one resumed"; else fail "full run: exit ${rc}"; fi
+# The run triggered the queue (loopback to PHP-FPM) for the items it queued: wait until it is
+# drained, so that the final checks see a settled state.
+waiting=''
+for _ in $(seq 1 90); do
+	waiting="$(wpx eval '$c = \Lumia\Tools\Modules\ImageOptimizer\AvifState::count_by_status(); echo $c["pending"] + $c["processing"];' 2>/dev/null | tr -d '\r')"
+	[ "${waiting}" = 0 ] && break
+	sleep 2
+done
+if [ "${waiting}" = 0 ]; then pass "the queue drained the migrated items"; else fail "queue not drained after 180 s (${waiting} waiting)"; fi
 "${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" final || FAILURES=$((FAILURES + 1))
 
 echo "== crawl"
