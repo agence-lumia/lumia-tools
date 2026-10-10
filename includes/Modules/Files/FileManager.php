@@ -19,6 +19,8 @@ class FileManager {
 	public function __construct( string $root ) {
 		$real = realpath( $root );
 		if ( false === $real ) {
+			// Not translated: the only caller passes ABSPATH, outside any try/catch.
+			// This is a fatal configuration error for the developer, never a toast.
 			throw new \InvalidArgumentException( 'Root path does not exist: ' . esc_html( $root ) );
 		}
 		$this->root = rtrim( $real, DIRECTORY_SEPARATOR );
@@ -46,11 +48,11 @@ class FileManager {
 		$abs  = realpath( $this->root . DIRECTORY_SEPARATOR . $norm );
 
 		if ( false === $abs ) {
-			throw new \InvalidArgumentException( 'Path does not exist.' );
+			throw new \InvalidArgumentException( __( 'Path does not exist.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		if ( $abs !== $this->root && strpos( $abs, $this->root . DIRECTORY_SEPARATOR ) !== 0 ) {
-			throw new \InvalidArgumentException( 'Path is outside root.' );
+			throw new \InvalidArgumentException( __( 'Path is outside root.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		return $abs;
@@ -64,7 +66,7 @@ class FileManager {
 		$norm = $this->normalize( $rel );
 
 		if ( '' === $norm ) {
-			throw new \InvalidArgumentException( 'Invalid path.' );
+			throw new \InvalidArgumentException( __( 'Invalid path.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$abs = $this->root . DIRECTORY_SEPARATOR . $norm;
@@ -72,7 +74,7 @@ class FileManager {
 		// Check that the parent exists and is inside the root.
 		$parent = realpath( dirname( $abs ) );
 		if ( false === $parent || ( $this->root !== $parent && strpos( $parent, $this->root . DIRECTORY_SEPARATOR ) !== 0 ) ) {
-			throw new \InvalidArgumentException( 'Parent directory is outside root or does not exist.' );
+			throw new \InvalidArgumentException( __( 'Parent directory is outside root or does not exist.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		return $abs;
@@ -108,7 +110,7 @@ class FileManager {
 			return '';
 		}
 		if ( strpos( $abs, $this->root . DIRECTORY_SEPARATOR ) !== 0 ) {
-			throw new \InvalidArgumentException( 'Path is not within root.' );
+			throw new \InvalidArgumentException( __( 'Path is outside root.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		return ltrim( str_replace( '\\', '/', substr( $abs, strlen( $this->root ) ) ), '/' );
 	}
@@ -126,12 +128,12 @@ class FileManager {
 		$abs = $this->resolve( $rel );
 
 		if ( ! is_dir( $abs ) ) {
-			throw new \InvalidArgumentException( 'Not a directory.' );
+			throw new \InvalidArgumentException( __( 'Not a directory.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$entries = scandir( $abs );
 		if ( false === $entries ) {
-			throw new \RuntimeException( 'Cannot open directory.' );
+			throw new \RuntimeException( __( 'Cannot open directory.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$items = [];
@@ -197,17 +199,17 @@ class FileManager {
 	public function rename( string $rel, string $new_name ): bool {
 		$new_name = sanitize_file_name( $new_name );
 		if ( '' === $new_name ) {
-			throw new \InvalidArgumentException( 'Invalid name.' );
+			throw new \InvalidArgumentException( __( 'Invalid name.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$abs     = $this->resolve( $rel );
 		$new_abs = dirname( $abs ) . DIRECTORY_SEPARATOR . $new_name;
 
 		if ( strpos( $new_abs, $this->root ) !== 0 ) {
-			throw new \InvalidArgumentException( 'Invalid path.' );
+			throw new \InvalidArgumentException( __( 'Invalid path.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		if ( file_exists( $new_abs ) ) {
-			throw new \RuntimeException( 'A file with that name already exists.' );
+			throw new \RuntimeException( __( 'A file with that name already exists.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		return rename( $abs, $new_abs );
@@ -218,16 +220,16 @@ class FileManager {
 		$dst_dir = $this->resolve( $dst_rel );
 
 		if ( ! is_dir( $dst_dir ) ) {
-			throw new \InvalidArgumentException( 'Destination is not a directory.' );
+			throw new \InvalidArgumentException( __( 'Destination is not a directory.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		$dst = $dst_dir . DIRECTORY_SEPARATOR . basename( $src );
 
 		if ( strpos( $dst, $this->root ) !== 0 ) {
-			throw new \InvalidArgumentException( 'Invalid destination.' );
+			throw new \InvalidArgumentException( __( 'Invalid destination.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		if ( file_exists( $dst ) ) {
-			throw new \RuntimeException( 'A file with that name already exists at destination.' );
+			throw new \RuntimeException( __( 'A file with that name already exists at destination.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		return rename( $src, $dst );
@@ -236,7 +238,7 @@ class FileManager {
 	public function create_folder( string $rel ): bool {
 		$abs = $this->resolve_new( $rel );
 		if ( file_exists( $abs ) ) {
-			throw new \RuntimeException( 'Already exists.' );
+			throw new \RuntimeException( __( 'A file or folder with that name already exists.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		return wp_mkdir_p( $abs );
 	}
@@ -244,11 +246,11 @@ class FileManager {
 	public function get_content( string $rel ): string {
 		$abs = $this->resolve( $rel );
 		if ( ! is_file( $abs ) ) {
-			throw new \InvalidArgumentException( 'Not a file.' );
+			throw new \InvalidArgumentException( __( 'Not a file.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		$content = file_get_contents( $abs );
 		if ( false === $content ) {
-			throw new \RuntimeException( 'Cannot read file.' );
+			throw new \RuntimeException( __( 'Cannot read file.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		return $content;
 	}
@@ -256,7 +258,7 @@ class FileManager {
 	public function save_content( string $rel, string $content ): bool {
 		$abs = $this->resolve( $rel );
 		if ( ! is_file( $abs ) ) {
-			throw new \InvalidArgumentException( 'Not a file.' );
+			throw new \InvalidArgumentException( __( 'Not a file.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 		if ( ! is_writable( $abs ) ) {
 			/* translators: %s: relative file path */
@@ -395,11 +397,11 @@ class FileManager {
 		$dest = $dir . DIRECTORY_SEPARATOR . $name;
 
 		if ( strpos( $dest, $this->root ) !== 0 ) {
-			throw new \InvalidArgumentException( 'Invalid destination.' );
+			throw new \InvalidArgumentException( __( 'Invalid destination.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		if ( ! move_uploaded_file( $file['tmp_name'], $dest ) ) {
-			throw new \RuntimeException( 'Upload failed.' );
+			throw new \RuntimeException( __( 'Upload failed.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
 		return $this->to_relative( $dest );

@@ -387,15 +387,14 @@ class Module extends AbstractModule {
 				]
 				: $files;
 
-			if ( UPLOAD_ERR_OK !== $file['error'] ) {
-				$errors[] = sanitize_text_field( $file['name'] );
-				continue;
-			}
-
 			try {
+				if ( UPLOAD_ERR_OK !== $file['error'] ) {
+					throw new \RuntimeException( __( 'Upload failed.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- caught just below, returned as JSON, escaped on display by the toast.
+				}
 				$uploaded[] = $this->fm->upload( $dir, $file );
 			} catch ( \Exception $e ) {
-				$errors[] = sanitize_text_field( $file['name'] ) . ': ' . $e->getMessage();
+				/* translators: 1: label, 2: value. */
+				$errors[] = sprintf( __( '%1$s: %2$s', 'lumia-tools' ), sanitize_text_field( $file['name'] ), $e->getMessage() );
 			}
 		}
 
