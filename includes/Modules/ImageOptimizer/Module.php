@@ -137,6 +137,11 @@ class Module extends AbstractModule {
 
 		// Bulk screen: scan, start, stop, status.
 		$this->bulk->register();
+
+		// Migration of the media converted by the former pipeline (wp lumia images migrate).
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			\WP_CLI::add_command( 'lumia images', new MigrationCommand( $this ) );
+		}
 	}
 
 	/* ================================================================
@@ -442,11 +447,12 @@ class Module extends AbstractModule {
 				FileLifecycle::TOMBSTONES_OPTION,
 				FileLifecycle::RECONCILE_CURSOR,
 				DeliveryProbe::OPTION,
+				MigrationCommand::PAIRS_OPTION,
 			],
 			'cron'    => [ FileLifecycle::RECONCILE_HOOK, DeliveryProbe::CRON_HOOK, QueueRunner::CRON_HOOK, QueueRunner::LEGACY_CRON_HOOK ],
 			// The files in lumia-originals/ stay on disk: they are the
 			// client's photos, not plugin data.
-			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META ] ),
+			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META, MigrationCommand::JOURNAL ] ),
 		];
 	}
 

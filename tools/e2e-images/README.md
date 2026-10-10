@@ -29,6 +29,7 @@ can run side by side. Administrator: `admin` / `admin`.
 | `ols` | `litespeedtech/openlitespeed:1.9.3-lsphp85` | http://localhost:8093 | a LiteSpeed host, **approximately** (see Limits) |
 | `nginx-plain` | the `nginx` stack with the template's AVIF location removed from the rendered `nginx.conf` | http://localhost:8095 | an nginx host without the rule |
 | `nginx-novary` | the `nginx` stack with the AVIF location kept but its `add_header Vary` removed | http://localhost:8101 | a host that copied the rule incompletely |
+| `nginx-mig` | the `nginx` stack as it is, own data | http://localhost:8102 | the production sites, for the legacy media migration (`assert-migration.sh`) |
 | `cdn` | the `nginx` stack behind `proxy-cdn` (`cdn/default.conf.template`): a caching proxy that ignores `Vary` and sends `cf-ray` / `cf-cache-status`; the PHP container's loopback goes through it too (origin on 8096) | http://localhost:8094 | a site behind Cloudflare without "Vary for images" |
 | `cdn-noquery` | the same proxy, which never caches a URL with a query string (origin on 8098) | http://localhost:8097 | a zone whose cache skips query strings: the probe bypasses it, the image URLs do not |
 | `cdn-vary` | the same proxy, keeping one cache entry per `Accept` value (origin on 8100) | http://localhost:8099 | a CDN that honours `Vary` |
@@ -45,7 +46,7 @@ can run side by side. Administrator: `admin` / `admin`.
   headers off` removes it to test the "no `mod_headers`" scenario. `run.sh apache-override apache
   nofileinfo` gives `wp-content/uploads` an `AllowOverride` without `FileInfo` (a host where every
   `RewriteEngine` / `Header` / `AddType` line of `.htaccess` answers 500); `fileinfo` restores it.
-- `nginx-plain`, `nginx-novary` and the `cdn*` stacks are compose projects of their own
+- `nginx-plain`, `nginx-novary`, `nginx-mig` and the `cdn*` stacks are compose projects of their own
   (`lumia-img-<stack>`) built from the `nginx` services: ports, loopback target and proxy
   behaviour come from `E2E_NGINX_PORT`, `E2E_SITE_PORT`, `E2E_LOOPBACK_TARGET`, `E2E_CDN_PORT`,
   `E2E_CDN_IGNORE` and `E2E_CDN_SKIP`, set by `run.sh` (the proxy's template is rendered by the
@@ -63,7 +64,7 @@ tools/e2e-images/run.sh install-lumia <stack>            # zip of the working tr
                                                          # (nginx stacks: OPcache reset, it revalidates only every 60 s)
 tools/e2e-images/run.sh wp <stack> <args...>             # WP-CLI under the stack's web PHP (FPM / mod_php / lsphp)
 tools/e2e-images/run.sh wp-cron nginx <args...>          # WP-CLI in the template's cron container (cli image)
-tools/e2e-images/run.sh assert <stack> <script.php>      # `wp --user=admin eval-file` of a PHP assertion script
+tools/e2e-images/run.sh assert <stack> <script.php> [args]  # `wp --user=admin eval-file` of a PHP assertion script ($args)
 tools/e2e-images/run.sh make-avif <stack> 2026/10/x.jpg  # hand-place x.jpg.avif next to a JPEG (no plugin needed)
 tools/e2e-images/run.sh htaccess <apache|ols> on|off     # hand-written spec 9.2 block in uploads/.htaccess
 tools/e2e-images/run.sh curl-matrix <stack> <path|url> [avif|original|none]
@@ -219,6 +220,38 @@ tools/e2e-images/run.sh assert nginx tools/e2e-images/assert-bulk.php
 ```
 
 It checks: the four endpoints, the former fixed-batch cron removed; the nonce and the module capability (an editor is refused); the scan (counts per status, JPEG/PNG without state, a source changed behind WordPress queued again); Start refused and the tab's button disabled while delivery is `none`; Start over seven media items (a GIF, `corrupt.jpg`, a deleted file) drained to exhaustion (`pending` = 0, the corrupt and the deleted one `failed`, the GIF never queued), the bulk state reduced to `{ user_id, started_at }` and the completion notice; a relaunch that takes the `failed` ones again with `attempts` reset; Stop with the queue lock held by a second connection (bulk items back to no state, an upload-origin item and an item being processed left alone); the status endpoint restarting the queue only after a minute without a worker (and only once).
+## Legacy media migration (`assert-migration.sh`)
+
+`wp lumia images migrate` (spec 5, 9.1, 9.3, 9.9) on the `nginx-mig` stack, end to end:
+
+```bash
+tools/e2e-images/assert-migration.sh            # setup, seed, every scenario below
+tools/e2e-images/assert-migration.sh --down     # same, then the stack is deleted
+tools/e2e-images/crawl-check.sh nginx-mig       # alone: every image of the site, Chrome and */*
+```
+
+`seed-legacy.php` (run with `run.sh assert`) recreates, in `uploads/e2e-legacy/`, media items as
+the former module left them (commit 7a606e2: AVIF next to the source, extension replaced, source
+deleted, `original_image` untouched, metadata / attached file / MIME / guid rewritten,
+`_lumia_optimized*` metas): `big-photo` (scaled, original on disk: case 1), `big-lost` (scaled,
+original deleted), `photo`, `alpha` (transparency), `logo` (flat colours), `webp-photo` (WebP),
+`collide` (its name taken since by another upload `collide.jpg`), `backup` (former backup copy
+in `lumia-originals-<token>/`), `seq-a`, `seq-b`, `late` and `late-backup` (review scenarios below). Their URLs go into a page (`/legacy-gallery/`: block image with
+`srcset`, inline `background-image`, a `<link>` to the Bricks CSS file), a Bricks-like serialized
+meta, a Rank Math meta, an escaped JSON meta, an option and `uploads/bricks/css/post-<id>.min.css`.
+It writes `out/mig-manifest.json`. Re-running it replaces everything it seeded.
+
+| Scenario | Asserted |
+|---|---|
+| cron container (`wordpress:cli`) | exit code 1 and the exact refusal message |
+| `--dry-run` | "Would process: 12"; database (posts, postmeta, options without transients) and uploads (path, size, mtime, md5) fingerprints identical |
+| `--limit=1`, `kill -9` once the journal reads `files_written` (`--require` of a file that sleeps on the step action) | one journal at that step, legacy metas and attached file unchanged, the files written on disk, every URL of the page 200 |
+| database step failing on a resumed item | `seq-b` killed at `files_written`, then `--ids=seq-a,seq-b` with a `--require`d hook that blocks seq-b's `_wp_attached_file`: exit 1, seq-a migrated with every fallback and sibling on disk and served, seq-b intact (metas, journal gone, its files removed) |
+| resume at `planned` after a name was taken | `late` (case 2) and `late-backup` (case 1, backup copy) killed at `planned`, other uploads then take `late.jpg` / `late-backup.jpg`: both fail with "name collision with late.jpg (attachment #N)", the other uploads untouched (md5), the items intact; the full run then moves them to `-1` |
+| full run | the interrupted item resumes, the 11 remaining items processed; a backslash in `image_meta` survives; per item: legacy metas and journal gone, attached file / metadata / MIME / guid / sizes / filesizes right, `original_image` kept (case 1) or dropped (missing), siblings hard-linked to the legacy AVIF and recorded fresh (`done`) or none (`pending`: case 1, WebP), legacy files on disk and listed, every old `.avif` / `.webp` URL 200 with its type, every new URL 200 JPEG/PNG for `*/*`; the `collide` family moved to `collide-1`, the other `collide.jpg` untouched; every URL rewritten (content, Bricks meta, Rank Math, escaped JSON, option, Bricks CSS) |
+| `crawl-check.sh` | every `src` / `srcset` / `url()` of the sitemap pages and their stylesheets: 200, AVIF only for Chrome on a `.jpg` / `.png`, its own type for `*/*` |
+| second run | "Processed: 0" |
+| permanent deletion of `photo` | fallbacks, siblings and legacy files gone |
 
 ## Client matrix (`lib.sh`)
 
@@ -268,7 +301,7 @@ limited to 2 CPU here as in production, and an encode takes about 2 of them).
   (`wordpress:php8.5-apache`: Imagick 7.1.1-43; lsphp: 7.1.2-18).
 - The nginx stack has no Redis, no Cache Enabler, no TLS: the matrix runs over plain HTTP on
   `localhost`, `Host: localhost:8091`.
-- Port 8091 / 8092 / 8093 must be free on the host.
+- Port 8091 / 8092 / 8093 (8102 for `nginx-mig`) must be free on the host.
 
 ## OpenLiteSpeed findings (1.9.3, lsphp 8.5)
 
