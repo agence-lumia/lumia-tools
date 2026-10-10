@@ -388,6 +388,16 @@ class Module extends AbstractModule {
 				: $files;
 
 			try {
+				if ( UPLOAD_ERR_INI_SIZE === $file['error'] || UPLOAD_ERR_FORM_SIZE === $file['error'] ) {
+					throw new \RuntimeException(
+						sprintf(
+							/* translators: %s: maximum upload size, e.g. "64 MB". */
+							__( 'The file exceeds the server\'s maximum upload size (%s).', 'lumia-tools' ),
+							// PHP's own limit, the one UPLOAD_ERR_INI_SIZE reports: wp_max_upload_size() can be lower (multisite quota).
+							(string) size_format( wp_convert_hr_to_bytes( (string) ini_get( 'upload_max_filesize' ) ) )
+						)
+					);
+				}
 				if ( UPLOAD_ERR_OK !== $file['error'] ) {
 					throw new \RuntimeException( __( 'Upload failed.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- caught just below, returned as JSON, escaped on display by the toast.
 				}

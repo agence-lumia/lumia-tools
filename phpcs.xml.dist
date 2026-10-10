@@ -10,6 +10,10 @@
 	<exclude-pattern>*/assets/*</exclude-pattern>
 	<!-- Docker bench (authentication mu-plugin, seed, capture): never shipped, not plugin code. -->
 	<exclude-pattern>*/tools/e2e/*</exclude-pattern>
+	<!-- Claude Code folder, including the agent worktrees nested under .claude/worktrees/: a full copy of
+	     the plugin there gave "Duplicate class name" warnings. Relative (anchored at the scanned root),
+	     since a worktree's own absolute path contains /.claude/ and would exclude everything. -->
+	<exclude-pattern type="relative">^\.claude/*</exclude-pattern>
 
 	<!-- Options: PHP only, relative paths, parallelism, colors -->
 	<arg name="extensions" value="php"/>

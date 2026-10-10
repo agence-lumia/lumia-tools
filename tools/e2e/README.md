@@ -31,8 +31,8 @@ tools/e2e/run.sh assert-reinstall      # SKMT supprimé sans son uninstall.php, 
 tools/e2e/run.sh down                  # arrête et supprime les données
 ```
 
-Codes de sortie : 0 succès, 1 échec, 2 usage. Une commande inconnue affiche l'aide et
-sort en 2 : les tâches suivantes y ajoutent leurs commandes dans le `case` final de `run.sh`.
+Codes de sortie : 0 succès, non nul (en général 1) en cas d'échec, 2 usage, 130 sur SIGINT (Ctrl+C), 143 sur SIGTERM.
+Une commande inconnue affiche l'aide et sort en 2 : les tâches suivantes y ajoutent leurs commandes dans le `case` final de `run.sh`.
 
 `seed-skmt` refuse de s'exécuter sur un banc où SKMT est déjà installé : faire `down` puis `up`.
 

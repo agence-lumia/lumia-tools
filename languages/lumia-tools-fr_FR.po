@@ -1770,6 +1770,12 @@ msgstr "Fichier enregistré."
 msgid "No file received."
 msgstr "Aucun fichier reçu."
 
+#. translators: %s: maximum upload size, e.g. "64 MB".
+#: includes/Modules/Files/Module.php:395
+#, php-format
+msgid "The file exceeds the server's maximum upload size (%s)."
+msgstr "Le fichier dépasse la taille maximale d'upload du serveur (%s)."
+
 #. translators: %d: number of files
 #: includes/Modules/Files/Module.php:410
 #, php-format

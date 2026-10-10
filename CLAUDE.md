@@ -28,7 +28,7 @@ Tracking lives **in GitHub issues** (`gh issue list`): always read them before p
 1. **One issue per subject.** Templates in `.github/ISSUE_TEMPLATE/`.
 2. **One branch per issue**, created from `dev`: `feat/<n>-<subject>`, `fix/<n>-<subject>`, `docs/<n>-<subject>`, `chore/<n>-<subject>`.
 3. **Commits are Conventional Commits, in English**: `type(scope): description` — types `feat`, `fix`, `docs`, `style`, `refactor`, `chore`, `ci`; scope = module or area (`security`, `media`, `core`, `i18n`, `lint`…). (Earlier history is in French; from 2.0.0 on, everything new is English.)
-4. **PR to `dev`**, title in Conventional Commits, body from `.github/PULL_REQUEST_TEMPLATE.md`, with `Closes #n`. Read the automatic Copilot review (about 2 min) before merging.
+4. **PR to `dev`**, title in Conventional Commits, body from `.github/PULL_REQUEST_TEMPLATE.md`, with `Closes #n`. The PR is reviewed by an **independent reviewer agent** (read-only, not the author of the PR, given this CLAUDE.md); its blocking findings are fixed before merging. The Copilot review is no longer used (its credits run out quickly).
 5. **Batch the merges locally, then a single push** of `dev`, so that only one pre-release is triggered per batch. `Closes #n` only closes the issue when it reaches `main`: after merging into `dev`, close it by hand with `gh issue close`.
 6. **`composer check` before the PR** (PHPCS + PHPStan). No PHP on the machine: run it through Docker, from the repository root.
    - macOS / Linux: `docker run --rm -v "$PWD:/app" -w /app composer:2 check`

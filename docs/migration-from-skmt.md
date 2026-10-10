@@ -132,10 +132,10 @@ The activation stops at the first failing step. SKMT stays active and Lümia sta
 
 A run killed by a fatal error or a timeout (section 3) shows no notice at all, since Lümia stays inactive: `wp option get lumia_migration_error` names the step, and `wp option get lumia_migration_error_detail` answers that the option does not exist (the step was interrupted, it did not fail). Activate Lümia Tools again.
 
-If the interrupted step is `deactivate`, SKMT's own deactivation routine died (a fatal error), and activating Lümia again would run it and die the same way, as would a plain `wp plugin deactivate studio-kyne-mini-tools`. Deactivate SKMT without loading its code, then activate Lümia Tools again:
+If the interrupted step is `deactivate`, a deactivation routine died (a fatal error): SKMT's own, or a callback that another plugin or the theme hooks on `deactivate_plugin` / `deactivated_plugin`. Activating Lümia again would run it and die the same way, as would a plain `wp plugin deactivate studio-kyne-mini-tools`. Deactivate SKMT without loading any plugin or theme code (mu-plugins still load: if the culprit is one, move it aside first), then activate Lümia Tools again (the `deactivate` step finds SKMT inactive and no longer calls `deactivate_plugins()`, so those hooks do not fire again):
 
 ```bash
-wp plugin deactivate studio-kyne-mini-tools --skip-plugins=studio-kyne-mini-tools
+wp plugin deactivate studio-kyne-mini-tools --skip-plugins --skip-themes
 wp plugin activate lumia-tools
 ```
 
