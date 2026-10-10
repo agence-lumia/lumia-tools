@@ -85,6 +85,14 @@ class Providers {
 				'username'   => '',
 				'hint'       => __( 'Username: the full email address; password: the mailbox password.', 'lumia-tools' ),
 			],
+			'hostinger'  => [
+				'label'      => 'Hostinger',
+				'host'       => 'smtp.hostinger.com',
+				'port'       => 465,
+				'encryption' => 'ssl',
+				'username'   => '',
+				'hint'       => __( 'Username: the full email address; password: the mailbox password. If the web host blocks port 465, use port 587 with STARTTLS.', 'lumia-tools' ),
+			],
 			'gmail'      => [
 				'label'      => 'Gmail / Google Workspace',
 				'host'       => 'smtp.gmail.com',
