@@ -393,7 +393,8 @@ class Module extends AbstractModule {
 						sprintf(
 							/* translators: %s: maximum upload size, e.g. "64 MB". */
 							__( 'The file exceeds the server\'s maximum upload size (%s).', 'lumia-tools' ),
-							(string) size_format( wp_max_upload_size() )
+							// PHP's own limit, the one UPLOAD_ERR_INI_SIZE reports: wp_max_upload_size() can be lower (multisite quota).
+							(string) size_format( wp_convert_hr_to_bytes( (string) ini_get( 'upload_max_filesize' ) ) )
 						)
 					);
 				}
