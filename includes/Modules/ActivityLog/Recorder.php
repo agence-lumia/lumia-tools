@@ -677,6 +677,10 @@ class Recorder {
 
 	/* ================================================================
 	 * FILES — DANGER MODE
+	 *
+	 * A security audit trail: the role exclusion does not apply (as for
+	 * failed logins), otherwise excluding administrators would hide every
+	 * unlock. The group exclusion still does.
 	 * ================================================================ */
 
 	/**
@@ -692,7 +696,8 @@ class Recorder {
 			0,
 			'files',
 			[ 'until' => wp_date( 'Y-m-d H:i', (int) $expires ) ],
-			$user ? $user : null
+			$user ? $user : null,
+			false
 		);
 	}
 
@@ -717,7 +722,8 @@ class Recorder {
 			0,
 			'files',
 			$details,
-			'expired' === $reason ? new \WP_User( 0 ) : null
+			'expired' === $reason ? new \WP_User( 0 ) : null,
+			false
 		);
 	}
 
@@ -726,7 +732,7 @@ class Recorder {
 	 * @param string $operation 'save' or 'upload'.
 	 */
 	public function on_danger_mode_write( $path, $operation ): void {
-		$this->record( 'file_written', 'file', 0, (string) $path, [ 'operation' => (string) $operation ] );
+		$this->record( 'file_written', 'file', 0, (string) $path, [ 'operation' => (string) $operation ], null, false );
 	}
 
 	/* ================================================================

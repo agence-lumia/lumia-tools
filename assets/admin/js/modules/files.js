@@ -82,7 +82,11 @@
 
     clearInterval(fm.dangerTimer);
     fm.dangerTimer = null;
+    var previous = fm.dangerDeadline;
     fm.dangerDeadline = d.active ? Date.now() + (parseInt(d.remaining, 10) || 0) * 1000 : 0;
+    // Every listing re-renders the state: only a new deadline (unlock, or a
+    // restarted hour) re-arms the "minutes left" warning.
+    if (!previous || fm.dangerDeadline > previous + 60000) fm.dangerWarned = false;
 
     applyWriteLock();
     renderEditorLock();
@@ -118,7 +122,6 @@
       box.appendChild(text);
       box.appendChild(lockButton(t("dangerDisableBtn"), "lumia-btn--secondary", disableDanger));
       box.hidden = false;
-      fm.dangerWarned = false;
       tickDanger();
       fm.dangerTimer = setInterval(tickDanger, 15000);
       return;
@@ -191,7 +194,7 @@
 
     if (minutes <= 5 && !fm.dangerWarned) {
       fm.dangerWarned = true;
-      showToast(t("dangerSoon"), "warning");
+      showToast(fmt(t("dangerSoon"), minutes), "warning");
     }
   }
 
@@ -828,6 +831,11 @@
 
     document.addEventListener("keydown", function (e) {
       if (!editorEl || editorEl.style.display === "none") return;
+
+      // Escape in a modal opened over the editor (danger confirmation, unsaved
+      // changes) only closes that modal: admin.js handles it.
+      var overlay = document.getElementById("lumia-modal-overlay");
+      if (e.key === "Escape" && overlay && overlay.classList.contains("is-open")) return;
 
       if (e.key === "Escape") {
         // Escape first closes the autocompletion list: closing it AND leaving

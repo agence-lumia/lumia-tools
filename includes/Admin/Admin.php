@@ -972,6 +972,10 @@ class Admin {
 		// Reset the global settings
 		$this->settings->set( 'global', [ 'update_channel' => 'stable' ] );
 
+		// The danger mode option is among the module options deleted below: lock it
+		// properly first, so the lock is logged and its cron event removed.
+		\Lumia\Tools\Modules\Files\DangerMode::disable();
+
 		// Reset the options of each registered module
 		foreach ( $this->modules->get_all() as $module_id => $module ) {
 			if ( ! empty( $module['class'] ) && class_exists( $module['class'] ) ) {

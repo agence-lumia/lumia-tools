@@ -23,6 +23,11 @@ class Deactivator {
 			}
 		}
 
+		// Files danger mode: its cron event is gone (above), so an unlock left in
+		// place would only be reported as expired whenever someone next opens the
+		// Files screen. Lock it now, while the Activity Log can still record it.
+		\Lumia\Tools\Modules\Files\DangerMode::disable();
+
 		// Image Optimizer, whatever the module state: the AVIF negotiation block of
 		// uploads/.htaccess goes, and so do the generated siblings (an nginx rule outside
 		// WordPress would keep serving them). Nobody would keep either up to date.

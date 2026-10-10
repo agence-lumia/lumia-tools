@@ -374,12 +374,13 @@ class Module extends AbstractModule {
 		$this->check_nonce();
 		$via_danger = $this->check_file_mods( true );
 		$path       = $this->get_post_path();
-		$content    = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by check_nonce(); source file content saved as is, writing restricted to get_required_capability() and blocked by DISALLOW_FILE_EDIT.
+		$content    = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by check_nonce(); source file content saved as is, writing restricted to get_required_capability() and blocked by DISALLOW_FILE_EDIT unless the danger mode is on.
 
 		try {
 			$this->fm->save_content( $path, $content );
 			if ( $via_danger ) {
-				do_action( 'lumia_files_danger_mode_write', $path, 'save' );
+				// Canonical path, as for uploads: the client may send `a//b/./x.php`.
+				do_action( 'lumia_files_danger_mode_write', $this->fm->to_relative( $this->fm->resolve( $path ) ), 'save' );
 			}
 			wp_send_json_success( [ 'message' => __( 'File saved.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
@@ -641,12 +642,13 @@ class Module extends AbstractModule {
 				'dangerEnableBtn'        => __( 'Unlock for one hour', 'lumia-tools' ),
 				'dangerDisableBtn'       => __( 'Lock now', 'lumia-tools' ),
 				'dangerConfirmTitle'     => __( 'Unlock file editing for one hour?', 'lumia-tools' ),
-				'dangerConfirmMessage'   => __( 'DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. The unlock is recorded in the activity log.', 'lumia-tools' ),
+				'dangerConfirmMessage'   => __( 'DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. When the Activity Log module is on, the unlock is recorded there.', 'lumia-tools' ),
 				/* translators: %d: minutes left before file editing locks again. */
 				'dangerRemaining'        => __( '%d min left.', 'lumia-tools' ),
 				/* translators: %d: minutes left before file editing locks again. */
 				'dangerBadge'            => __( 'Danger mode: %d min', 'lumia-tools' ),
-				'dangerSoon'             => __( 'File editing locks again in 5 minutes: save your changes.', 'lumia-tools' ),
+				/* translators: %d: minutes left before file editing locks again. */
+				'dangerSoon'             => __( 'File editing locks again in %d min: save your changes.', 'lumia-tools' ),
 				'dangerExpired'          => __( 'The hour is over: file editing is locked again.', 'lumia-tools' ),
 				'downloadUrl'            => admin_url( 'admin-post.php?action=lumia_files_download' ),
 				'downloadNonce'          => wp_create_nonce( 'lumia_files_download' ),

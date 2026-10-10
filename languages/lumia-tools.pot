@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T21:04:21+00:00\n"
+"POT-Creation-Date: 2026-10-10T21:33:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -208,8 +208,8 @@ msgstr ""
 #: includes/Admin/Admin.php:877
 #: includes/Admin/Admin.php:938
 #: includes/Admin/Admin.php:969
-#: includes/Admin/Admin.php:1008
-#: includes/Admin/Admin.php:1049
+#: includes/Admin/Admin.php:1012
+#: includes/Admin/Admin.php:1053
 #: includes/Modules/ActivityLog/Module.php:191
 #: includes/Modules/ActivityLog/Module.php:223
 #: includes/Modules/Database/Module.php:229
@@ -238,8 +238,8 @@ msgstr ""
 #: includes/Admin/Admin.php:873
 #: includes/Admin/Admin.php:934
 #: includes/Admin/Admin.php:965
-#: includes/Admin/Admin.php:1004
-#: includes/Admin/Admin.php:1045
+#: includes/Admin/Admin.php:1008
+#: includes/Admin/Admin.php:1049
 msgid "Invalid nonce."
 msgstr ""
 
@@ -670,7 +670,7 @@ msgstr ""
 
 #. translators: 1: label, 2: value.
 #: includes/Modules/ActivityLog/Module.php:414
-#: includes/Modules/Files/Module.php:438
+#: includes/Modules/Files/Module.php:439
 #, php-format
 msgid "%1$s: %2$s"
 msgstr ""
@@ -1187,7 +1187,7 @@ msgid "This query modifies the database and cannot be undone. Confirm execution?
 msgstr ""
 
 #: includes/Modules/Database/Module.php:117
-#: includes/Modules/Files/Module.php:615
+#: includes/Modules/Files/Module.php:616
 #: includes/Modules/Files/settings-template.php:59
 #: includes/Modules/Media/Module.php:355
 #: includes/Modules/MenuCreator/Module.php:1345
@@ -1658,12 +1658,12 @@ msgid "Insert row"
 msgstr ""
 
 #. translators: 1: time, e.g. "23:45". 2: display name of the user who turned it on.
-#: includes/Modules/Files/DangerMode.php:193
+#: includes/Modules/Files/DangerMode.php:203
 #, php-format
 msgid "File editing is unlocked until %1$s (turned on by %2$s)."
 msgstr ""
 
-#: includes/Modules/Files/DangerMode.php:195
+#: includes/Modules/Files/DangerMode.php:205
 msgid "an unknown user"
 msgstr ""
 
@@ -1741,12 +1741,12 @@ msgstr ""
 
 #: includes/Modules/Files/FileManager.php:361
 #: includes/Modules/Files/FileManager.php:398
-#: includes/Modules/Files/Module.php:542
+#: includes/Modules/Files/Module.php:543
 msgid "ZipArchive is not available on this server."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:368
-#: includes/Modules/Files/Module.php:555
+#: includes/Modules/Files/Module.php:556
 msgid "Could not create the archive."
 msgstr ""
 
@@ -1767,13 +1767,13 @@ msgid "Archive rejected: symbolic link (%s)."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:490
-#: includes/Modules/Files/Module.php:430
+#: includes/Modules/Files/Module.php:431
 msgid "Upload failed."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:150
-#: includes/Modules/Files/Module.php:393
-#: includes/Modules/Files/Module.php:504
+#: includes/Modules/Files/Module.php:394
+#: includes/Modules/Files/Module.php:505
 msgid "Permission denied."
 msgstr ""
 
@@ -1790,22 +1790,22 @@ msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT)."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:273
-#: includes/Modules/Files/Module.php:616
+#: includes/Modules/Files/Module.php:617
 msgid "Deleted successfully."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:284
-#: includes/Modules/Files/Module.php:620
+#: includes/Modules/Files/Module.php:621
 msgid "Renamed successfully."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:298
-#: includes/Modules/Files/Module.php:621
+#: includes/Modules/Files/Module.php:622
 msgid "Moved successfully."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:313
-#: includes/Modules/Files/Module.php:619
+#: includes/Modules/Files/Module.php:620
 #: includes/Modules/Media/Module.php:360
 msgid "Folder created."
 msgstr ""
@@ -1815,214 +1815,216 @@ msgid "Archive created."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:350
-#: includes/Modules/Files/Module.php:617
+#: includes/Modules/Files/Module.php:618
 msgid "Archive extracted."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:384
-#: includes/Modules/Files/Module.php:622
+#: includes/Modules/Files/Module.php:385
+#: includes/Modules/Files/Module.php:623
 msgid "File saved."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:401
+#: includes/Modules/Files/Module.php:402
 msgid "No file received."
 msgstr ""
 
 #. translators: %s: maximum upload size, e.g. "64 MB".
-#: includes/Modules/Files/Module.php:423
+#: includes/Modules/Files/Module.php:424
 #, php-format
 msgid "The file exceeds the server's maximum upload size (%s)."
 msgstr ""
 
 #. translators: %d: number of files
-#: includes/Modules/Files/Module.php:450
+#: includes/Modules/Files/Module.php:451
 #, php-format
 msgid "%d file uploaded."
 msgid_plural "%d files uploaded."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Modules/Files/Module.php:468
+#: includes/Modules/Files/Module.php:469
 msgid "The danger mode is not available on this site."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:479
+#: includes/Modules/Files/Module.php:480
 msgid "File editing unlocked for one hour."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:491
+#: includes/Modules/Files/Module.php:492
 msgid "File editing locked again."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:512
-#: includes/Modules/Files/Module.php:521
+#: includes/Modules/Files/Module.php:513
+#: includes/Modules/Files/Module.php:522
 msgid "File not found."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:548
+#: includes/Modules/Files/Module.php:549
 msgid "Could not create the temporary file."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:602
+#: includes/Modules/Files/Module.php:603
 msgid "Delete this item(s)? This action cannot be undone."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:603
+#: includes/Modules/Files/Module.php:604
 msgid "This folder is empty."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:604
+#: includes/Modules/Files/Module.php:605
 #: includes/Modules/Files/settings-template.php:82
 msgid "Loading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:605
+#: includes/Modules/Files/Module.php:606
 msgid "Uploading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:606
+#: includes/Modules/Files/Module.php:607
 msgid "New folder name:"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:607
+#: includes/Modules/Files/Module.php:608
 msgid "Network error."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:608
+#: includes/Modules/Files/Module.php:609
 msgid "Upload error."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:609
+#: includes/Modules/Files/Module.php:610
 msgid "Edit"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:610
+#: includes/Modules/Files/Module.php:611
 msgid "Download"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:611
+#: includes/Modules/Files/Module.php:612
 msgid "Copy link"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:612
+#: includes/Modules/Files/Module.php:613
 #: includes/Modules/Files/settings-template.php:121
 #: includes/Modules/Files/settings-template.php:131
 #: includes/Modules/Media/Module.php:354
 msgid "Rename"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:613
+#: includes/Modules/Files/Module.php:614
 #: includes/Modules/Files/settings-template.php:150
 msgid "Move"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:614
+#: includes/Modules/Files/Module.php:615
 msgid "Extract"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:618
+#: includes/Modules/Files/Module.php:619
 msgid "Archive created. Downloading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:623
+#: includes/Modules/Files/Module.php:624
 msgid "Link copied."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:624
+#: includes/Modules/Files/Module.php:625
 msgid "Could not copy."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:625
+#: includes/Modules/Files/Module.php:626
 msgid "folder"
 msgstr ""
 
 #. translators: %s: folder name
-#: includes/Modules/Files/Module.php:627
+#: includes/Modules/Files/Module.php:628
 #, php-format
 msgid "Compressing \"%s\"..."
 msgstr ""
 
 #. translators: %s: name of the downloaded zip file
-#: includes/Modules/Files/Module.php:629
+#: includes/Modules/Files/Module.php:630
 #, php-format
 msgid "\"%s\" downloaded."
 msgstr ""
 
 #. translators: %s: folder name
-#: includes/Modules/Files/Module.php:631
+#: includes/Modules/Files/Module.php:632
 #, php-format
 msgid "Error while compressing \"%s\"."
 msgstr ""
 
 #. translators: %d: number of selected items
-#: includes/Modules/Files/Module.php:633
+#: includes/Modules/Files/Module.php:634
 #, php-format
 msgid "%d selected"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:634
+#: includes/Modules/Files/Module.php:635
 msgctxt "file editor"
 msgid "Unsaved changes"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:635
+#: includes/Modules/Files/Module.php:636
 msgid "Do you want to leave without saving your changes?"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:636
+#: includes/Modules/Files/Module.php:637
 msgctxt "file editor"
 msgid "Leave without saving"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:637
+#: includes/Modules/Files/Module.php:638
 msgid "Stay"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:638
+#: includes/Modules/Files/Module.php:639
 msgid "Danger mode:"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:639
+#: includes/Modules/Files/Module.php:640
 msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT): saving and uploading are blocked."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:640
+#: includes/Modules/Files/Module.php:641
 msgid "File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter): files can only be browsed and downloaded."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:641
+#: includes/Modules/Files/Module.php:642
 msgid "Unlock for one hour"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:642
+#: includes/Modules/Files/Module.php:643
 msgid "Lock now"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:643
+#: includes/Modules/Files/Module.php:644
 msgid "Unlock file editing for one hour?"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:644
-msgid "DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. The unlock is recorded in the activity log."
+#: includes/Modules/Files/Module.php:645
+msgid "DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. When the Activity Log module is on, the unlock is recorded there."
 msgstr ""
 
 #. translators: %d: minutes left before file editing locks again.
-#: includes/Modules/Files/Module.php:646
+#: includes/Modules/Files/Module.php:647
 #, php-format
 msgid "%d min left."
 msgstr ""
 
 #. translators: %d: minutes left before file editing locks again.
-#: includes/Modules/Files/Module.php:648
+#: includes/Modules/Files/Module.php:649
 #, php-format
 msgid "Danger mode: %d min"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:649
-msgid "File editing locks again in 5 minutes: save your changes."
+#. translators: %d: minutes left before file editing locks again.
+#: includes/Modules/Files/Module.php:651
+#, php-format
+msgid "File editing locks again in %d min: save your changes."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:650
+#: includes/Modules/Files/Module.php:652
 msgid "The hour is over: file editing is locked again."
 msgstr ""
 

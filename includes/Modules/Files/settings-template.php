@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 >
 
 	<!-- LOCK / DANGER MODE (rendered by files.js, see Files\DangerMode) -- -->
-	<div class="lumia-notice lumia-files__lock" id="lumia-files-lock" role="status" hidden></div>
+	<div class="lumia-notice lumia-files__lock" id="lumia-files-lock" hidden></div>
 
 	<!-- TOOLBAR ----------------------------------------------------------- -->
 	<div class="lumia-files__toolbar">

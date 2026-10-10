@@ -106,6 +106,11 @@ final class DangerMode {
 	 * @return int Expiry timestamp.
 	 */
 	public static function enable( int $user_id ): int {
+		// A deadline that passed before the cron ran (DISABLE_WP_CRON + a system
+		// cron every few minutes on the Dokploy template) is reported first:
+		// overwriting it would lose the "expired" row between two unlocks.
+		self::state();
+
 		$expires = time() + self::TTL;
 
 		update_option(
@@ -163,6 +168,11 @@ final class DangerMode {
 	 */
 	private static function clear( string $reason ): void {
 		$raw = get_option( self::OPTION );
+
+		// Restarted between the caller's read and this one: not expired anymore.
+		if ( 'expired' === $reason && is_array( $raw ) && (int) ( $raw['expires'] ?? 0 ) > time() ) {
+			return;
+		}
 
 		wp_unschedule_hook( self::CRON_HOOK );
 
