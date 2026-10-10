@@ -550,17 +550,19 @@ final class FileLifecycle {
 	}
 
 	/**
-	 * Imagick in this process can read the uploaded format and write JPEG and PNG.
+	 * Imagick in this process can read the uploaded format and write JPEG and PNG. The format
+	 * list cannot tell: the CLI image's Imagick lists formats it has no codec for (spec 9.1).
+	 * `can_encode_here` is a real decode of JPEG, PNG and AVIF in this process; WebP also
+	 * needs a working WebP codec (a real WebP encode, `imagick_webp`).
 	 */
 	private function can_convert( string $type ): bool {
-		// TODO(task-3-merge): use ImageProcessor::get_capabilities()['can_encode_here'] instead of this format probe.
-		if ( ! class_exists( 'Imagick' ) ) {
+		$caps = $this->module->get_capabilities();
+
+		if ( empty( $caps['can_encode_here'] ) ) {
 			return false;
 		}
 
-		$format = 'image/avif' === $type ? 'AVIF' : 'WEBP';
-
-		return (bool) \Imagick::queryFormats( $format ) && (bool) \Imagick::queryFormats( 'JPEG' ) && (bool) \Imagick::queryFormats( 'PNG' );
+		return 'image/avif' === $type || ! empty( $caps['imagick_webp'] );
 	}
 
 	/**

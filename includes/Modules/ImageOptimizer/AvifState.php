@@ -13,7 +13,8 @@ defined( 'ABSPATH' ) || exit;
  * - `_lumia_avif_origin`    upload | bulk | manual | reconcile
  * - `_lumia_avif_gen`       generation counter, incremented on every enqueue
  * - `_lumia_avif`           detail: `sizes` (per source file, relative to uploads:
- *                           `{bytes, mtime, avif_bytes}`), `error`, `attempts`, `updated`
+ *                           `{bytes, mtime, avif_bytes}`), `error`, `attempts`, `updated`,
+ *                           `worker` (`<SAPI>:<PID>` of the process that last encoded it)
  * - `_lumia_avif_legacy`    legacy paths kept by the migration (never touched here)
  *
  * A `sizes` entry whose `bytes` is null is a known source file that has not been encoded
@@ -45,7 +46,7 @@ final class AvifState {
 	/**
 	 * Full state of a media item. `status` is '' when the item has none.
 	 *
-	 * @return array{status: string, queued_at: int, origin: string, gen: int, sizes: array<string, array{bytes: int|null, mtime: int|null, avif_bytes: int|null}>, error: string, attempts: int, updated: int}
+	 * @return array{status: string, queued_at: int, origin: string, gen: int, sizes: array<string, array{bytes: int|null, mtime: int|null, avif_bytes: int|null}>, error: string, attempts: int, updated: int, worker: string}
 	 */
 	public static function get( int $id ): array {
 		$detail = self::detail( $id );
@@ -59,6 +60,7 @@ final class AvifState {
 			'error'     => $detail['error'],
 			'attempts'  => $detail['attempts'],
 			'updated'   => $detail['updated'],
+			'worker'    => $detail['worker'],
 		];
 	}
 
@@ -93,6 +95,51 @@ final class AvifState {
 		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the cached value is precisely what must be bypassed.
 			$wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s LIMIT 1", $id, self::GEN )
 		);
+	}
+
+	/**
+	 * Current status, read from the database like gen(): a long-running worker must see what
+	 * another request wrote meanwhile (a new enqueue, an exclusion).
+	 */
+	public static function status_now( int $id ): string {
+		global $wpdb;
+
+		return (string) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the cached value is precisely what must be bypassed.
+			$wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s LIMIT 1", $id, self::STATUS )
+		);
+	}
+
+	/**
+	 * Records the process that encodes the item (`<SAPI>:<PID>`): which runtime did the work.
+	 */
+	public static function set_worker( int $id, string $worker ): void {
+		$detail           = self::detail( $id );
+		$detail['worker'] = $worker;
+		self::save_detail( $id, $detail );
+	}
+
+	/**
+	 * Puts every `processing` item back to `pending` (attempts kept). Only for the queue's lock
+	 * holder: no other worker can be encoding, so a `processing` item is the trace of a
+	 * process that died.
+	 *
+	 * @return int Items put back.
+	 */
+	public static function requeue_interrupted(): int {
+		global $wpdb;
+
+		$ids = array_map(
+			'intval',
+			(array) $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- queue read, must see the other processes' writes.
+				$wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s", self::STATUS, self::PROCESSING )
+			)
+		);
+
+		foreach ( $ids as $id ) {
+			update_post_meta( $id, self::STATUS, self::PENDING, self::PROCESSING );
+		}
+
+		return count( $ids );
 	}
 
 	public static function set_status( int $id, string $status, string $error = '' ): void {
@@ -276,7 +323,7 @@ final class AvifState {
 	}
 
 	/**
-	 * @return array{sizes: array<string, array{bytes: int|null, mtime: int|null, avif_bytes: int|null}>, error: string, attempts: int, updated: int}
+	 * @return array{sizes: array<string, array{bytes: int|null, mtime: int|null, avif_bytes: int|null}>, error: string, attempts: int, updated: int, worker: string}
 	 */
 	private static function detail( int $id ): array {
 		$raw = get_post_meta( $id, self::META, true );
@@ -294,11 +341,12 @@ final class AvifState {
 			'error'    => (string) ( $raw['error'] ?? '' ),
 			'attempts' => (int) ( $raw['attempts'] ?? 0 ),
 			'updated'  => (int) ( $raw['updated'] ?? 0 ),
+			'worker'   => (string) ( $raw['worker'] ?? '' ),
 		];
 	}
 
 	/**
-	 * @param array{sizes: array<string, array<string, int|null>>, error: string, attempts: int, updated: int} $detail
+	 * @param array{sizes: array<string, array<string, int|null>>, error: string, attempts: int, updated: int, worker: string} $detail
 	 */
 	private static function save_detail( int $id, array $detail ): void {
 		$detail['updated'] = time();
