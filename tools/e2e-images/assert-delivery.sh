@@ -331,6 +331,20 @@ scenario_nginx() {
 	expect "browser ok: mode back" "$(delivery mode)" nginx
 	expect "browser ok (AJAX answer)" "$(jq -r '.data.result.mode // empty' <<<"${response}" 2>/dev/null || true)" nginx
 
+	# Module switched off then on again from the Lumia modules screen (AJAX toggle): the
+	# deactivation purged every state, and the activation request does not boot the module, so
+	# the queue that answers "served again" is not listening there. on_activate() must queue
+	# the library itself and start a drain.
+	if wait_sibling "${rel}" 60; then pass "before the off/on cycle: sibling present"; else fail "before the off/on cycle: no ${rel}.avif"; fi
+	module deactivate
+	expect "module off: sibling purged" "$(avif_files)" ''
+	expect "module off: state purged" "$(avif_status "${id}")" ''
+	module activate
+	expect "module on again: mode" "$(delivery mode)" nginx
+	expect_match "module on again: media queued again" "$(avif_status "${id}")" '^(pending|processing|done)$'
+	if wait_sibling "${rel}" 60; then pass "module on again: ${rel}.avif generated again"; else fail "module on again: no ${rel}.avif 60 s after the activation"; fi
+	expect_match "module on again: media done" "$(avif_status "${id}")" '^(done|partial)$'
+
 	module deactivate
 	expect "module off: daily check unscheduled" "$(cron_scheduled)" no
 	expect "module off: queue drain unscheduled" "$(wpx eval 'echo wp_next_scheduled( "lumia_image_optimizer_drain" ) ? "yes" : "no";')" no

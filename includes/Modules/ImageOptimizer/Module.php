@@ -411,6 +411,18 @@ class Module extends AbstractModule {
 		$probe = $this->get_delivery_probe();
 		$probe->schedule();
 		$probe->run();
+
+		// The deactivation purged every state. The self-test going back to "served" fires
+		// `lumia_image_optimizer_enqueued` with ID 0, but this request booted the plugin with
+		// the module off: no queue listens to it (init() never ran on this instance). The
+		// library is queued again here, and a drain started in the web runtime. When the test
+		// fails now, the next one that passes (daily check, Retest) runs where the queue listens.
+		if ( DeliveryProbe::is_serving() ) {
+			$queue = new QueueRunner( $this, $this->get_lifecycle(), new ImageProcessor() );
+			if ( $queue->enqueue_all_eligible( 'reconcile' ) > 0 ) {
+				$queue->trigger();
+			}
+		}
 	}
 
 	public function on_deactivate(): void {
