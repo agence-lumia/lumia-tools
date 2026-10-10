@@ -261,51 +261,73 @@ $module_settings = $instance->get_settings();
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="image_optimizer" data-lumia-tab-panel="bulk" hidden>
 
 	<!-- Bulk optimization -->
+	<?php
+	$lumia_bulk    = $instance->get_bulk_snapshot();
+	$lumia_percent = $lumia_bulk['total'] > 0 ? (int) floor( 100 * $lumia_bulk['handled'] / $lumia_bulk['total'] ) : 0;
+	if ( $lumia_bulk['total'] > 0 ) {
+		/* translators: 1: number of images processed, 2: total number of images that went through the queue. */
+		$lumia_message = sprintf( __( '%1$s of %2$s images processed', 'lumia-tools' ), number_format_i18n( $lumia_bulk['handled'] ), number_format_i18n( $lumia_bulk['total'] ) );
+	} else {
+		$lumia_message = __( 'No image has been queued yet.', 'lumia-tools' );
+	}
+	$lumia_tiles = [
+		'pending'    => [ __( 'Pending', 'lumia-tools' ), __( 'Waiting for the queue.', 'lumia-tools' ) ],
+		'processing' => [ __( 'Processing', 'lumia-tools' ), __( 'Being encoded right now.', 'lumia-tools' ) ],
+		'done'       => [ __( 'Done', 'lumia-tools' ), __( 'The AVIF exists for every size.', 'lumia-tools' ) ],
+		'partial'    => [ __( 'Partial', 'lumia-tools' ), __( 'The AVIF exists for some sizes only; the others are served in their original format.', 'lumia-tools' ) ],
+		'skipped'    => [ __( 'Skipped', 'lumia-tools' ), __( 'No AVIF is lighter than the original, or the format cannot be converted (animated images).', 'lumia-tools' ) ],
+		'failed'     => [ __( 'Failed', 'lumia-tools' ), __( 'The AVIF could not be generated. Start tries again.', 'lumia-tools' ) ],
+		'excluded'   => [ __( 'Excluded', 'lumia-tools' ), __( 'Served in their original format: the switch of the media item, or an excluded name suffix.', 'lumia-tools' ) ],
+	];
+	?>
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php echo esc_html__( 'Bulk optimization', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Optimizes the images already in the media library.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Generates the AVIF version of the images already in the media library, in the background: you can leave this page, the queue keeps working.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-bulk" id="lumia-bulk">
 
-				<!-- Initial state: run a scan before showing figures -->
-				<div class="lumia-bulk__scan" id="lumia-bulk-scan-intro">
-					<p class="lumia-bulk__scan-hint">
-						<?php echo esc_html__( 'Scan the media library to find out how many images are left to optimize.', 'lumia-tools' ); ?>
-					</p>
+				<p class="lumia-bulk__unserved" data-lumia-bulk-unserved<?php echo $lumia_bulk['serving'] ? ' hidden' : ''; ?>>
+					<span class="lumia-badge lumia-badge--warning"><?php echo esc_html__( 'Not served', 'lumia-tools' ); ?></span>
+					<?php echo esc_html__( 'The AVIF versions are not served by this server (see the Delivery tab): nothing would be generated.', 'lumia-tools' ); ?>
+				</p>
+
+				<div class="lumia-bulk__progress">
+					<div class="lumia-progress" id="lumia-bulk-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo esc_attr( (string) $lumia_percent ); ?>" aria-label="<?php esc_attr_e( 'Bulk optimization progress', 'lumia-tools' ); ?>">
+						<div class="lumia-progress__bar" style="width: <?php echo esc_attr( (string) $lumia_percent ); ?>%"></div>
+					</div>
+					<span class="lumia-bulk-status__message" id="lumia-bulk-message" aria-live="polite"><?php echo esc_html( $lumia_message ); ?></span>
+				</div>
+
+				<div class="lumia-bulk__tiles">
+					<?php foreach ( $lumia_tiles as $lumia_status => $lumia_tile ) : ?>
+						<div class="lumia-bulk__stat lumia-bulk__stat--<?php echo esc_attr( $lumia_status ); ?>" data-lumia-bulk-status="<?php echo esc_attr( $lumia_status ); ?>" data-lumia-tip="<?php echo esc_attr( $lumia_tile[1] ); ?>">
+							<span class="lumia-bulk__stat-value<?php echo $lumia_bulk['counts'][ $lumia_status ] > 0 ? ' is-nonzero' : ''; ?>"><?php echo esc_html( number_format_i18n( $lumia_bulk['counts'][ $lumia_status ] ) ); ?></span>
+							<span class="lumia-bulk__stat-label"><?php echo esc_html( $lumia_tile[0] ); ?></span>
+						</div>
+					<?php endforeach; ?>
+					<div class="lumia-bulk__stat lumia-bulk__stat--untouched" data-lumia-bulk-untouched data-lumia-tip="<?php esc_attr_e( 'Images with no AVIF yet. Run a scan to count them.', 'lumia-tools' ); ?>">
+						<span class="lumia-bulk__stat-value">&mdash;</span>
+						<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'Not queued yet', 'lumia-tools' ); ?></span>
+					</div>
+				</div>
+
+				<div class="lumia-bulk__actions">
 					<button type="button" id="lumia-bulk-scan" class="lumia-btn lumia-btn--secondary">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-						<?php echo esc_html__( 'Scan the media library', 'lumia-tools' ); ?>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+						<span class="lumia-btn__label"><?php echo esc_html__( 'Scan the media library', 'lumia-tools' ); ?></span>
+					</button>
+					<button type="button" id="lumia-bulk-start" class="lumia-btn lumia-btn--primary"<?php echo ( ! $lumia_bulk['serving'] || $lumia_bulk['active'] ) ? ' disabled' : ''; ?>>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg>
+						<span class="lumia-btn__label"><?php echo esc_html( $lumia_bulk['active'] ? __( 'Optimizing…', 'lumia-tools' ) : __( 'Start optimization', 'lumia-tools' ) ); ?></span>
+					</button>
+					<button type="button" id="lumia-bulk-stop" class="lumia-btn lumia-btn--secondary"<?php echo $lumia_bulk['counts']['pending'] > 0 ? '' : ' disabled'; ?>>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+						<span class="lumia-btn__label"><?php echo esc_html__( 'Stop', 'lumia-tools' ); ?></span>
 					</button>
 				</div>
-
-				<!-- Scan result (revealed by the JS) -->
-				<div class="lumia-bulk__result" id="lumia-bulk-result" style="display: none;">
-					<div class="lumia-bulk__stats">
-						<div class="lumia-bulk__stat">
-							<span class="lumia-bulk__stat-value" id="lumia-bulk-remaining">0</span>
-							<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'images to optimize', 'lumia-tools' ); ?></span>
-						</div>
-						<div class="lumia-bulk__stat" id="lumia-bulk-potential-tile" style="display: none;">
-							<span class="lumia-bulk__stat-value" id="lumia-bulk-potential">—</span>
-							<span class="lumia-bulk__stat-label"><?php echo esc_html__( 'estimated potential savings', 'lumia-tools' ); ?></span>
-						</div>
-					</div>
-					<div class="lumia-bulk__action">
-						<button type="button" id="lumia-bulk-start" class="lumia-btn lumia-btn--primary" disabled>
-							<?php echo esc_html__( 'Start optimization', 'lumia-tools' ); ?>
-						</button>
-					</div>
-				</div>
-
-				<!-- Progress -->
-				<div class="lumia-bulk__progress lumia-bulk-status__progress" style="display: none;">
-					<div class="lumia-progress">
-						<div class="lumia-progress__bar" style="width: 0%"></div>
-					</div>
-					<span class="lumia-bulk-status__message"></span>
-				</div>
+				<p class="lumia-form__help"><?php echo esc_html__( 'Scan first checks every finished image against its file (an image changed by FTP or another tool is queued again), then counts what has no AVIF yet. Start queues those images and the failed ones; Stop takes the waiting ones back out.', 'lumia-tools' ); ?></p>
 			</div>
 		</div>
 	</div>

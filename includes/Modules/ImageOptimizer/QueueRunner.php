@@ -334,8 +334,16 @@ final class QueueRunner {
 
 		// Checked after the release: an item queued while the lock was held (its own drain
 		// gave up) is seen here.
-		if ( $go_on && null !== AvifState::next_pending() ) {
-			$this->trigger();
+		if ( $go_on ) {
+			if ( null !== AvifState::next_pending() ) {
+				$this->trigger();
+			} else {
+				/**
+				 * A drain left the queue empty: no item is waiting any more (the bulk ends its
+				 * run on it).
+				 */
+				do_action( 'lumia_image_optimizer_queue_empty' );
+			}
 		}
 
 		return $processed;
@@ -480,6 +488,31 @@ final class QueueRunner {
 	/* ================================================================
 	 * QUEUE THE LIBRARY
 	 * ================================================================ */
+
+	/**
+	 * Media items that enqueue_all_eligible() would look at for the first time: JPEG / PNG (or
+	 * HEIC) attachments with no state at all. A count: it does not check the files, so an item
+	 * without any source file is counted although it can never be queued.
+	 */
+	public function count_without_state(): int {
+		global $wpdb;
+
+		$mimes = self::ELIGIBLE_MIMES;
+
+		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- live figure for the bulk screen.
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->posts} p
+				LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = %s
+				WHERE p.post_type = 'attachment' AND p.post_mime_type IN ( %s, %s, %s, %s, %s ) AND s.meta_value IS NULL",
+				AvifState::STATUS,
+				$mimes[0],
+				$mimes[1],
+				$mimes[2],
+				$mimes[3],
+				$mimes[4]
+			)
+		);
+	}
 
 	/**
 	 * Queues every media item that should have AVIF siblings and has none in the works: JPEG /

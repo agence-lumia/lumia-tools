@@ -1,6 +1,6 @@
 # ImageOptimizer module
 
-`includes/Modules/ImageOptimizer/` — orchestrator (`Module.php`) on top of `ImageProcessor` (conversion/resizing), `MediaLibrary` (media list integration), `BulkProcessor` (optimization of the whole library in batches through WP-Cron), `UrlRewriter` (URL rewriting after conversion) and `SvgHandler` (secure SVG upload).
+`includes/Modules/ImageOptimizer/` — orchestrator (`Module.php`) on top of `ImageProcessor` (conversion/resizing), `MediaLibrary` (media list integration), `BulkProcessor` (the Bulk tab: puts the library in the AVIF queue and shows its progress), `UrlRewriter` (URL rewriting after conversion) and `SvgHandler` (secure SVG upload).
 
 ## Encoder detection
 
@@ -81,9 +81,20 @@ Header merge Vary Accept
 - **`FilesMatch` with `(\.avif)?`**: the rewritten answer is the `.avif` file, which needs its `Vary` too (checked on Apache 2.4: present on both answers, no `env=` condition needed). `merge` rather than `append`: no duplicate `Accept`.
 - **`<IfModule>` does not prevent every 500.** Without `mod_headers` the block is harmless but sends no `Vary` (test fails, block removed). A host whose `AllowOverride` lacks `FileInfo` answers **500 for every file of the uploads** as soon as the block exists (`RewriteEngine not allowed here`): the test sees the 500 in the same request and removes the block at once.
 
-## Bulk processing (`BulkProcessor`)
+## Bulk (`BulkProcessor`)
 
-`BulkProcessor` persists its state (including the initiating `user_id`) under `{module_option_key}` + `BULK_STATE_SUFFIX` and takes an optional `on_complete_fn(int $user_id)` callback fired once at the end of the processing — the module uses it to leave a persistent notice for that user (it works even though the cron tick has no current user). The current state is passed to the JS through `get_admin_js_data()` under `bulkState` so that the interface resumes the progress display on load. The flow includes a pre-scan step (`ajax_bulk_scan` → `BulkProcessor::ajax_scan()`) before `ajax_bulk_start`.
+The bulk encodes nothing itself: it fills the AVIF queue (origin `bulk`) and the `QueueRunner` drains it, one worker per site, like for an upload. `BulkProcessor` owns the four AJAX endpoints of the Bulk tab (`lumia_image_optimizer_bulk_scan`, `bulk`, `bulk_stop`, `bulk_status`; nonce + `Module::get_required_capability()`):
+
+- **Scan** reconciles the fingerprints first (`FileLifecycle::reconcile()` over the whole library, cursor reset, 20 s budget): a source changed behind WordPress is queued again. Then it counts the media items per status and the JPEG/PNG ones without state (`QueueRunner::count_without_state()`). It queues nothing by itself.
+- **Start** calls `QueueRunner::enqueue_all_eligible( 'bulk' )`: every JPEG/PNG without state **and every `failed` one** (`AvifState::enqueue()` resets `attempts`, which is why a manual relaunch gets three new tries), never an `excluded` one, never a GIF. Refused while `DeliveryProbe::is_serving()` is false (the tab says so and disables the button: nothing would be generated).
+- **Stop** gives back the `pending` items whose origin is `bulk` (status, origin and queue date are deleted: "no state"; the generation counter stays so that it keeps growing). An item queued by an upload, and an item being processed, are left alone. The status is removed with `delete_post_meta( ..., 'pending' )`, i.e. only while it is still `pending`; an item a worker picks in the same instant is processed anyway.
+- **Status** (polled every 3 s by the tab while items are waiting) returns the counts, `active` (pending + processing > 0), `running` (the queue lock is held) and, only when the queue is quiet, `untouched` (the library without state is a heavier query).
+
+The progress is the **distribution of the statuses** (handled = done + partial + skipped + failed + excluded, over all media items with a state): no counter of its own that could drift. The only state kept is the option `lumia_module_image_optimizer_bulk_state` = `{ user_id, started_at }`, there to tell the user who started the run when it is over: `maybe_complete()` runs when a drain leaves the queue empty (action `lumia_image_optimizer_queue_empty`) and when the status endpoint sees no item waiting; it deletes the option **before** calling `notify_bulk_complete()`, so the persistent notice is sent once. A stop deletes the option without a notice. Reading that option bypasses the object cache (`wp_cache_delete`): a drain that started before the run did not see it.
+
+**Restart from the screen** (spec 3, trigger 4). The status endpoint calls `QueueRunner::trigger()` when items are waiting, the AVIF is served, no worker holds the lock and the transient `lumia_image_optimizer_bulk_kick` is absent. The transient lasts 60 s and is refreshed whenever a worker is seen running, set by Start and set by the restart itself: a worker seen less than a minute ago, or a restart that has just happened, is never doubled. The loopback trigger is harmless when a worker exists anyway (the lock lets only one in).
+
+Bench: `tools/e2e-images/assert-bulk.php` (see `tools/e2e-images/README.md`).
 
 ## SVG (`SvgHandler`)
 

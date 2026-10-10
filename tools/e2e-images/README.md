@@ -209,6 +209,17 @@ fast, about 0.6 s for its seven files, real photos take longer):
 The bulk of 20 images (origin `bulk`, a pause as long as each encode) was over within the 30 s of
 the measure; no latency effect is visible at this size.
 
+## Bulk assertions (`assert-bulk.php`)
+
+`BulkProcessor` (spec 3 "Bulk", 9.4, 9.5), driven like an administrator (real login cookies, the AJAX endpoints called over HTTP) while the web runtime drains the queue; needs the module active and the delivery served (stack `nginx`):
+
+```bash
+tools/e2e-images/run.sh install-lumia nginx
+tools/e2e-images/run.sh assert nginx tools/e2e-images/assert-bulk.php
+```
+
+It checks: the four endpoints, the former fixed-batch cron removed; the nonce and the module capability (an editor is refused); the scan (counts per status, JPEG/PNG without state, a source changed behind WordPress queued again); Start refused and the tab's button disabled while delivery is `none`; Start over seven media items (a GIF, `corrupt.jpg`, a deleted file) drained to exhaustion (`pending` = 0, the corrupt and the deleted one `failed`, the GIF never queued), the bulk state reduced to `{ user_id, started_at }` and the completion notice; a relaunch that takes the `failed` ones again with `attempts` reset; Stop with the queue lock held by a second connection (bulk items back to no state, an upload-origin item and an item being processed left alone); the status endpoint restarting the queue only after a minute without a worker (and only once).
+
 ## Client matrix (`lib.sh`)
 
 `curl-matrix` sends these exact `Accept` / `User-Agent` pairs, then `Chrome + ?original`.

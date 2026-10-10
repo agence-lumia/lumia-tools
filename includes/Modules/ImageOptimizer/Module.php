@@ -9,13 +9,10 @@ use Lumia\Tools\Admin\Admin;
 /**
  * Image Optimizer module — orchestrator.
  *
- * Delegates file processing to ImageProcessor,
- * the bulk workflow to BulkProcessor,
- * and the media library UI to MediaLibrary.
+ * Delegates file processing to ImageProcessor, the AVIF queue to QueueRunner, the bulk
+ * screen to BulkProcessor, and the media library UI to MediaLibrary.
  */
 class Module extends AbstractModule {
-
-	private const BATCH_SIZE = 5;
 
 	private const STATS_SUFFIX      = '_stats';
 	private const BULK_STATE_SUFFIX = '_bulk_state';
@@ -110,13 +107,9 @@ class Module extends AbstractModule {
 
 		$this->bulk = new BulkProcessor(
 			$this->get_module_option_key() . self::BULK_STATE_SUFFIX,
-			function ( int $id ): void {
-				$this->begin_deferred_url_rewrites();
-				$this->process_and_update_attachment( $id, true );
-			},
-			fn(): array   => $this->get_stats(),
-			fn( int $user_id ) => $this->notify_bulk_complete( $user_id ),
-			fn() => $this->flush_url_rewrites()
+			$this->get_queue(),
+			$this->get_lifecycle(),
+			fn( int $user_id ) => $this->notify_bulk_complete( $user_id )
 		);
 
 		$this->media_library = new MediaLibrary( $this, $this->processor );
@@ -142,13 +135,8 @@ class Module extends AbstractModule {
 		// when it is permanently deleted.
 		add_action( 'delete_attachment', [ $this, 'delete_kept_files' ] );
 
-		// Bulk AJAX
-		add_action( 'wp_ajax_lumia_image_optimizer_bulk_scan', [ $this, 'ajax_bulk_scan' ] );
-		add_action( 'wp_ajax_lumia_image_optimizer_bulk', [ $this, 'ajax_bulk_start' ] );
-		add_action( 'wp_ajax_lumia_image_optimizer_bulk_status', [ $this, 'ajax_bulk_status' ] );
-
-		// Cron
-		add_action( 'lumia_image_optimizer_cron', [ $this, 'run_cron_batch' ] );
+		// Bulk screen: scan, start, stop, status.
+		$this->bulk->register();
 	}
 
 	/* ================================================================
@@ -356,15 +344,23 @@ class Module extends AbstractModule {
 	 */
 	public function get_admin_js_data(): array {
 		return [
-			'bulkState' => $this->bulk->get_state(),
-			'i18n'      => [
+			'bulk' => $this->bulk->snapshot(),
+			'i18n' => [
 				'bulkScanning'  => __( 'Scanning…', 'lumia-tools' ),
 				'bulkRunning'   => __( 'Optimizing…', 'lumia-tools' ),
-				'bulkProcessed' => __( 'Processed:', 'lumia-tools' ),
-				'bulkRemaining' => __( 'Remaining:', 'lumia-tools' ),
-				'bulkDone'      => __( 'Optimization complete', 'lumia-tools' ),
-				'bulkComplete'  => __( 'All images have been optimized.', 'lumia-tools' ),
-				'bulkRetry'     => __( 'Try again', 'lumia-tools' ),
+				'bulkStopping'  => __( 'Stopping…', 'lumia-tools' ),
+				/* translators: 1: number of images processed, 2: total number of images that went through the queue. */
+				'bulkProgress'  => __( '%1$s of %2$s images processed', 'lumia-tools' ),
+				'bulkEmpty'     => __( 'No image has been queued yet.', 'lumia-tools' ),
+				'bulkComplete'  => __( 'Optimization complete.', 'lumia-tools' ),
+				/* translators: %s: number of images. */
+				'bulkQueued'    => __( '%s images queued.', 'lumia-tools' ),
+				'bulkNothing'   => __( 'No image to queue.', 'lumia-tools' ),
+				/* translators: %s: number of images. */
+				'bulkStopped'   => __( 'Stopped: %s waiting images taken out of the queue.', 'lumia-tools' ),
+				/* translators: %s: number of images. */
+				'bulkRequeued'  => __( '%s images whose file changed were queued again.', 'lumia-tools' ),
+				'bulkUnserved'  => __( 'The AVIF versions are not served by this server (see the Delivery tab): nothing would be generated.', 'lumia-tools' ),
 				'networkError'  => __( 'Network error', 'lumia-tools' ),
 				'mediaRunning'  => __( 'Processing…', 'lumia-tools' ),
 				'mediaError'    => __( 'Error', 'lumia-tools' ),
@@ -382,9 +378,8 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Adds a persistent notice for the user who started the bulk run,
-	 * so they are informed even if the batch finished while they had
-	 * left the page (or through a background cron resumption).
+	 * Adds a persistent notice for the user who started the bulk run, so they are informed
+	 * even if the queue emptied while they had left the page (the worker has no current user).
 	 */
 	private function notify_bulk_complete( int $user_id ): void {
 		if ( ! $user_id ) {
@@ -420,6 +415,7 @@ class Module extends AbstractModule {
 
 	public function on_deactivate(): void {
 		// Remove pending crons: the queue's recurring drain, the former bulk cron, the reconcile.
+		delete_option( $this->get_module_option_key() . self::BULK_STATE_SUFFIX );
 		wp_unschedule_hook( QueueRunner::CRON_HOOK );
 		wp_unschedule_hook( QueueRunner::LEGACY_CRON_HOOK );
 		wp_unschedule_hook( FileLifecycle::RECONCILE_HOOK );
@@ -1236,12 +1232,12 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Savings estimate for the bulk run (used by the settings template).
+	 * Counts per status, for the Bulk tab (settings template).
 	 *
-	 * @return array<string, mixed>
+	 * @return array{counts: array<string, int>, total: int, handled: int, active: bool, running: bool, serving: bool, untouched: int|null}
 	 */
-	public function get_bulk_preview(): array {
-		return $this->bulk->get_preview();
+	public function get_bulk_snapshot(): array {
+		return $this->bulk->snapshot();
 	}
 
 	/* ================================================================
@@ -1360,26 +1356,6 @@ class Module extends AbstractModule {
 		}
 
 		return $metadata;
-	}
-
-	/* ================================================================
-	 * BULK DELEGATION (cron hooks + AJAX)
-	 * ================================================================ */
-
-	public function ajax_bulk_scan(): void {
-		$this->bulk->ajax_scan();
-	}
-
-	public function ajax_bulk_start(): void {
-		$this->bulk->ajax_start( self::BATCH_SIZE );
-	}
-
-	public function ajax_bulk_status(): void {
-		$this->bulk->ajax_status( self::BATCH_SIZE );
-	}
-
-	public function run_cron_batch(): void {
-		$this->bulk->run_batch( self::BATCH_SIZE );
 	}
 
 	/* ================================================================
