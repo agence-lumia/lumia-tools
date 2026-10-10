@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T17:46:37+00:00\n"
+"POT-Creation-Date: 2026-10-10T18:36:19+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -95,7 +95,7 @@ msgid "Cancel"
 msgstr ""
 
 #: includes/Admin/Admin.php:230
-#: includes/Modules/ImageOptimizer/Module.php:366
+#: includes/Modules/ImageOptimizer/Module.php:371
 #: includes/Modules/Media/Module.php:370
 msgid "Error"
 msgstr ""
@@ -215,8 +215,8 @@ msgstr ""
 #: includes/Modules/Database/Module.php:229
 #: includes/Modules/Database/Module.php:888
 #: includes/Modules/ImageOptimizer/BulkProcessor.php:317
-#: includes/Modules/ImageOptimizer/DeliveryProbe.php:613
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:558
+#: includes/Modules/ImageOptimizer/DeliveryProbe.php:697
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:583
 #: includes/Modules/Media/Module.php:424
 #: includes/Modules/MenuCreator/Module.php:956
 #: includes/Modules/MenuCreator/Module.php:977
@@ -228,7 +228,7 @@ msgid "Insufficient permissions."
 msgstr ""
 
 #: includes/Admin/Admin.php:703
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:564
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:589
 msgid "Invalid ID."
 msgstr ""
 
@@ -274,7 +274,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:44
 #: includes/Core/Modules.php:46
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:257
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:264
 msgid "Image Optimizer"
 msgstr ""
 
@@ -638,7 +638,7 @@ msgid "Object ID"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:256
-#: includes/Modules/ImageOptimizer/delivery-status.php:145
+#: includes/Modules/ImageOptimizer/delivery-status.php:151
 msgid "Details"
 msgstr ""
 
@@ -1185,7 +1185,7 @@ msgid "Table deleted"
 msgstr ""
 
 #: includes/Modules/Database/Module.php:128
-#: includes/Modules/ImageOptimizer/Module.php:364
+#: includes/Modules/ImageOptimizer/Module.php:369
 #: includes/Modules/Media/Module.php:371
 msgid "Network error"
 msgstr ""
@@ -1625,7 +1625,7 @@ msgid "Path is outside root."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:71
-#: includes/Modules/Files/FileManager.php:258
+#: includes/Modules/Files/FileManager.php:274
 msgid "Invalid path."
 msgstr ""
 
@@ -1641,80 +1641,80 @@ msgstr ""
 msgid "Cannot open directory."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:251
+#: includes/Modules/Files/FileManager.php:267
 msgid "Invalid name."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:261
+#: includes/Modules/Files/FileManager.php:277
 msgid "A file with that name already exists."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:277
+#: includes/Modules/Files/FileManager.php:293
 msgid "Destination is not a directory."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:283
-#: includes/Modules/Files/FileManager.php:459
+#: includes/Modules/Files/FileManager.php:299
+#: includes/Modules/Files/FileManager.php:486
 msgid "Invalid destination."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:286
+#: includes/Modules/Files/FileManager.php:302
 msgid "A file with that name already exists at destination."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:300
+#: includes/Modules/Files/FileManager.php:316
 msgid "A file or folder with that name already exists."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:308
-#: includes/Modules/Files/FileManager.php:320
+#: includes/Modules/Files/FileManager.php:324
+#: includes/Modules/Files/FileManager.php:336
 msgid "Not a file."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:312
+#: includes/Modules/Files/FileManager.php:328
 msgid "Cannot read file."
 msgstr ""
 
 #. translators: %s: relative file path
-#: includes/Modules/Files/FileManager.php:324
+#: includes/Modules/Files/FileManager.php:340
 #, php-format
 msgid "File is read-only: %s"
 msgstr ""
 
 #. translators: %s: relative file path
-#: includes/Modules/Files/FileManager.php:331
+#: includes/Modules/Files/FileManager.php:347
 #, php-format
 msgid "Write failed: %s"
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:344
-#: includes/Modules/Files/FileManager.php:381
+#: includes/Modules/Files/FileManager.php:361
+#: includes/Modules/Files/FileManager.php:398
 #: includes/Modules/Files/Module.php:472
 msgid "ZipArchive is not available on this server."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:351
+#: includes/Modules/Files/FileManager.php:368
 #: includes/Modules/Files/Module.php:485
 msgid "Could not create the archive."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:389
+#: includes/Modules/Files/FileManager.php:406
 msgid "Could not open the archive."
 msgstr ""
 
 #. translators: %s: archive entry name
-#: includes/Modules/Files/FileManager.php:401
+#: includes/Modules/Files/FileManager.php:418
 #, php-format
 msgid "Archive rejected: entry outside the root (%s)."
 msgstr ""
 
 #. translators: %s: archive entry name
-#: includes/Modules/Files/FileManager.php:409
+#: includes/Modules/Files/FileManager.php:426
 #, php-format
 msgid "Archive rejected: symbolic link (%s)."
 msgstr ""
 
-#: includes/Modules/Files/FileManager.php:463
+#: includes/Modules/Files/FileManager.php:490
 #: includes/Modules/Files/Module.php:402
 msgid "Upload failed."
 msgstr ""
@@ -2001,7 +2001,7 @@ msgid "Create"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/BulkProcessor.php:96
-#: includes/Modules/ImageOptimizer/Module.php:363
+#: includes/Modules/ImageOptimizer/Module.php:368
 #: includes/Modules/ImageOptimizer/settings-template.php:293
 msgid "The AVIF versions are not served by this server (see the Delivery tab): nothing would be generated."
 msgstr ""
@@ -2108,7 +2108,7 @@ msgid "Passed"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/delivery-status.php:69
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:132
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:139
 #: includes/Modules/ImageOptimizer/settings-template.php:279
 #: includes/Modules/Smtp/Module.php:245
 msgid "Failed"
@@ -2118,324 +2118,334 @@ msgstr ""
 msgid "Not run"
 msgstr ""
 
+#: includes/Modules/ImageOptimizer/delivery-status.php:109
+msgid "The daily check does not write these rules again. Run the test below (or save the settings) once the host allows them."
+msgstr ""
+
 #. translators: 1: failed attempts so far, 2: attempts tolerated before AVIF is turned off.
-#: includes/Modules/ImageOptimizer/delivery-status.php:112
+#: includes/Modules/ImageOptimizer/delivery-status.php:118
 #, php-format
 msgid "The last check could not reach the site (%1$d of %2$d attempts): the previous result is kept."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:120
+#: includes/Modules/ImageOptimizer/delivery-status.php:126
 msgid "Web server"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:121
+#: includes/Modules/ImageOptimizer/delivery-status.php:127
 msgid "Unknown"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:124
+#: includes/Modules/ImageOptimizer/delivery-status.php:130
 msgid "CDN"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:125
+#: includes/Modules/ImageOptimizer/delivery-status.php:131
 msgid "None detected"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:128
+#: includes/Modules/ImageOptimizer/delivery-status.php:134
 msgid "Last check"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:134
+#: includes/Modules/ImageOptimizer/delivery-status.php:140
 msgid "Never"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:140
+#: includes/Modules/ImageOptimizer/delivery-status.php:146
 msgid "Check from your browser"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:154
+#: includes/Modules/ImageOptimizer/delivery-status.php:160
 msgid "On nginx, hand this rule over to the host (or add it to the server configuration), then run the test again. The maps go at the http level, the location in the site's server block, before the location that serves the images."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/delivery-status.php:158
+#: includes/Modules/ImageOptimizer/delivery-status.php:164
 msgid "Copy the rule"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/FileLifecycle.php:281
+#. translators: 1: first line of the block, 2: last line of the block.
+#: includes/Modules/ImageOptimizer/DeliveryProbe.php:171
+#, php-format
+msgid "WordPress could not remove its rules from wp-content/uploads/.htaccess (file permissions). Delete the lines from \"%1$s\" to \"%2$s\" in that file by hand. The AVIF versions were deleted, so the rules no longer serve anything."
+msgstr ""
+
+#: includes/Modules/ImageOptimizer/FileLifecycle.php:321
 msgid "Animated image: served as uploaded."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/FileLifecycle.php:385
+#: includes/Modules/ImageOptimizer/FileLifecycle.php:425
 msgid "Kept as uploaded: the conversion of AVIF and WebP uploads is turned off. Incompatible with some email clients."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/FileLifecycle.php:387
+#: includes/Modules/ImageOptimizer/FileLifecycle.php:427
 msgid "Kept as uploaded: this server cannot convert AVIF or WebP images. Incompatible with some email clients."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/FileLifecycle.php:389
+#: includes/Modules/ImageOptimizer/FileLifecycle.php:429
 msgid "Animated image kept as uploaded. Incompatible with some email clients."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/FileLifecycle.php:391
+#: includes/Modules/ImageOptimizer/FileLifecycle.php:431
 msgid "Kept as uploaded: the conversion failed. Incompatible with some email clients."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:69
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:118
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:375
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:76
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:125
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:382
 #: templates/admin/settings.php:272
 msgid "AVIF"
 msgstr ""
 
 #. translators: %d: percentage of weight saved by the AVIF files.
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:117
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:124
 #, php-format
 msgid "AVIF −%d%%"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:121
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:128
 #: includes/Modules/ImageOptimizer/settings-template.php:277
 msgid "The AVIF exists for some sizes only; the others are served in their original format."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:126
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:133
 #: includes/Modules/ImageOptimizer/settings-template.php:274
 msgid "Pending"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:129
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:136
 #: includes/Modules/ImageOptimizer/settings-template.php:275
 msgid "Processing"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:132
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:139
 msgid "The AVIF could not be generated."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:135
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:142
 msgid "Original format"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:135
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:341
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:142
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:348
 msgid "This image is served in its original format."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:138
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:146
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:145
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:153
 msgid "Not applicable"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:138
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:344
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:145
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:351
 msgid "No AVIF is served for this image."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:143
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:150
 msgid "Not generated"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:143
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:150
 msgid "The AVIF has not been generated for this image yet."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:321
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:328
 msgid "Waiting for the AVIF to be generated."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:324
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:331
 msgid "The AVIF is being generated."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:327
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:334
 msgid "The AVIF is served to browsers that support it. Everyone else gets the original format."
 msgstr ""
 
 #. translators: 1: number of files that have an AVIF, 2: number of files of the image.
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:332
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:339
 #, php-format
 msgid "AVIF generated for %1$d of %2$d files only; the others stay in their original format."
 msgstr ""
 
 #. translators: %s: error message.
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:337
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:344
 #, php-format
 msgid "Generation failed: %s"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:338
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:345
 msgid "Generation failed."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:347
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:354
 msgid "AVIF not generated yet."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:370
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:377
 msgid "Main file"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:371
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:378
 msgid "Total (all sizes)"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:374
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:381
 msgid "Fallback"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:376
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:383
 msgid "Saved"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:399
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:406
 msgid "AVIF files are not served on this server (the delivery test did not pass), so visitors receive the original format. See the Delivery tab of the module."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:408
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:415
 msgid "The file name ends with an excluded suffix (see the module settings), so this image always keeps its original format."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:409
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:416
 msgid "Deletes the AVIF files of this image. A visitor who already has the AVIF in their cache keeps it for up to one year."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:413
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:420
 msgid "Serve the original format"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:431
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:438
 msgid "Copy original URL"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:433
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:440
 msgid "Download original"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:437
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:444
 msgid "Regenerate AVIF"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:476
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:483
 msgid "This image is already served in its original format."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:476
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:483
 msgid "The AVIF is already enabled for this image."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:483
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:490
 msgid "The original format is now served for this image."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:487
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:494
 msgid "The file name ends with an excluded suffix (see the module settings)."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:491
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:505
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:498
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:512
 msgid "The AVIF will be generated again."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:501
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:508
 msgid "This image is served in its original format: turn that off first."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:569
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:594
 msgid "Unsupported format."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/MediaLibrary.php:573
+#: includes/Modules/ImageOptimizer/MediaLibrary.php:598
 msgid "Animated images are not supported."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:349
+#: includes/Modules/ImageOptimizer/Module.php:354
 msgid "Scanning…"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:350
+#: includes/Modules/ImageOptimizer/Module.php:355
 #: includes/Modules/ImageOptimizer/settings-template.php:323
 msgid "Optimizing…"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:351
+#: includes/Modules/ImageOptimizer/Module.php:356
 msgid "Stopping…"
 msgstr ""
 
 #. translators: 1: number of images processed, 2: total number of images that went through the queue.
-#: includes/Modules/ImageOptimizer/Module.php:353
+#: includes/Modules/ImageOptimizer/Module.php:358
 #: includes/Modules/ImageOptimizer/settings-template.php:269
 #, php-format
 msgid "%1$s of %2$s images processed"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:354
+#: includes/Modules/ImageOptimizer/Module.php:359
 #: includes/Modules/ImageOptimizer/settings-template.php:271
 msgid "No image has been queued yet."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:355
-msgid "Optimization complete."
-msgstr ""
-
-#. translators: %s: number of images.
-#: includes/Modules/ImageOptimizer/Module.php:357
-#, php-format
-msgid "%s images queued."
-msgstr ""
-
-#: includes/Modules/ImageOptimizer/Module.php:358
-msgid "No image to queue."
-msgstr ""
-
-#. translators: %s: number of images.
 #: includes/Modules/ImageOptimizer/Module.php:360
-#, php-format
-msgid "Stopped: %s waiting images taken out of the queue."
+msgid "Optimization complete."
 msgstr ""
 
 #. translators: %s: number of images.
 #: includes/Modules/ImageOptimizer/Module.php:362
 #, php-format
+msgid "%s images queued."
+msgstr ""
+
+#: includes/Modules/ImageOptimizer/Module.php:363
+msgid "No image to queue."
+msgstr ""
+
+#. translators: %s: number of images.
+#: includes/Modules/ImageOptimizer/Module.php:365
+#, php-format
+msgid "Stopped: %s waiting images taken out of the queue."
+msgstr ""
+
+#. translators: %s: number of images.
+#: includes/Modules/ImageOptimizer/Module.php:367
+#, php-format
 msgid "%s images whose file changed were queued again."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:365
+#: includes/Modules/ImageOptimizer/Module.php:370
 msgid "Processing…"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:367
+#: includes/Modules/ImageOptimizer/Module.php:372
 msgid "Original URL copied."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:368
+#: includes/Modules/ImageOptimizer/Module.php:373
 msgid "Copy failed: copy the URL by hand."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:370
+#: includes/Modules/ImageOptimizer/Module.php:375
 msgid "Checking…"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:371
+#: includes/Modules/ImageOptimizer/Module.php:376
 msgid "Testing…"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:372
+#: includes/Modules/ImageOptimizer/Module.php:377
 msgid "Could not be run"
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:373
+#: includes/Modules/ImageOptimizer/Module.php:378
 msgid "Rule copied."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:374
+#: includes/Modules/ImageOptimizer/Module.php:379
 msgid "Copy failed: select the rule and copy it by hand."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/Module.php:390
+#: includes/Modules/ImageOptimizer/Module.php:395
 msgid "Bulk image optimization complete."
 msgstr ""
 
-#: includes/Modules/ImageOptimizer/QueueRunner.php:97
+#: includes/Modules/ImageOptimizer/QueueRunner.php:100
 msgid "Every five minutes"
 msgstr ""
 

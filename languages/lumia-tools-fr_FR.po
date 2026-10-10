@@ -2085,6 +2085,16 @@ msgstr "Votre navigateur a reçu la mauvaise version de l'image de test, probabl
 msgid "WordPress could not write wp-content/uploads/.htaccess (file permissions)."
 msgstr "WordPress n'a pas pu écrire wp-content/uploads/.htaccess (permissions des fichiers)."
 
+#: includes/Modules/ImageOptimizer/delivery-status.php:109
+msgid "The daily check does not write these rules again. Run the test below (or save the settings) once the host allows them."
+msgstr "La vérification quotidienne ne réécrit pas ces règles. Relancez le test ci-dessous (ou enregistrez les réglages) une fois que l'hébergeur les autorise."
+
+#. translators: 1: first line of the block, 2: last line of the block.
+#: includes/Modules/ImageOptimizer/DeliveryProbe.php:171
+#, php-format
+msgid "WordPress could not remove its rules from wp-content/uploads/.htaccess (file permissions). Delete the lines from \"%1$s\" to \"%2$s\" in that file by hand. The AVIF versions were deleted, so the rules no longer serve anything."
+msgstr "WordPress n'a pas pu retirer ses règles de wp-content/uploads/.htaccess (permissions des fichiers). Supprimez à la main les lignes de « %1$s » à « %2$s » dans ce fichier. Les versions AVIF ont été supprimées : ces règles ne servent donc plus rien."
+
 #: includes/Modules/ImageOptimizer/delivery-status.php:45
 msgid "The test images could not be created in wp-content/uploads/lumia-tools/ (file permissions)."
 msgstr "Les images de test n'ont pas pu être créées dans wp-content/uploads/lumia-tools/ (permissions des fichiers)."
