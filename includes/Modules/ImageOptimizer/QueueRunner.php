@@ -53,6 +53,9 @@ final class QueueRunner {
 	 */
 	private const ELIGIBLE_MIMES = [ 'image/jpeg', 'image/pjpeg', 'image/png', 'image/heic', 'image/heif' ];
 
+	/** Origins whose items are paced (a pause as long as the encode): the whole library at once. */
+	private const PACED_ORIGINS = [ 'bulk', 'reconcile' ];
+
 	/** Command-line runtimes: they never encode (spec 9.1), they only trigger the loopback. */
 	private const CLI_SAPIS = [ 'cli', 'phpdbg' ];
 
@@ -323,8 +326,10 @@ final class QueueRunner {
 				$this->process_one( $id );
 				++$processed;
 
-				// A bulk leaves the visitors half of the CPU: pause as long as the image took.
-				if ( 'bulk' === (string) get_post_meta( $id, AvifState::ORIGIN, true ) ) {
+				// A bulk, or the library queued again after a purge (delivery back, module
+				// reactivated), leaves the visitors half of the CPU: pause as long as the image
+				// took. Uploads and manual regenerations are not paced.
+				if ( in_array( (string) get_post_meta( $id, AvifState::ORIGIN, true ), self::PACED_ORIGINS, true ) ) {
 					usleep( (int) ( ( microtime( true ) - $began ) * 1000000 ) );
 				}
 			}
