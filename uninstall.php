@@ -40,6 +40,12 @@ foreach ( $module_classes as $id => $class ) {
 		continue;
 	}
 
+	// Files a module created outside its options (Image Optimizer: uploads/.htaccess block,
+	// AVIF siblings, probe folder). Before the options and metas go: it reads them.
+	if ( method_exists( $class, 'uninstall_files' ) ) {
+		$class::uninstall_files();
+	}
+
 	$keys = $class::get_uninstall_keys();
 
 	foreach ( $keys['options'] ?? [] as $option_key ) {
@@ -63,8 +69,9 @@ foreach ( $module_classes as $id => $class ) {
 		$GLOBALS['wpdb']->query( "DROP TABLE IF EXISTS `{$table}`" );
 	}
 
+	// Every event of the hook, whatever its arguments (see Deactivator).
 	foreach ( $keys['cron'] ?? [] as $hook ) {
-		wp_clear_scheduled_hook( $hook );
+		wp_unschedule_hook( $hook );
 	}
 
 	// User metadata: delete_post_meta_by_key() does not touch it, it lives in

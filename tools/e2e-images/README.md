@@ -253,6 +253,27 @@ It writes `out/mig-manifest.json`. Re-running it replaces everything it seeded.
 | second run | "Processed: 0" |
 | permanent deletion of `photo` | fallbacks, siblings and legacy files gone |
 
+## Deactivation and uninstall (`assert-uninstall.sh`)
+
+`Core\Deactivator`, `uninstall.php` and `Module::uninstall_files()` (spec 6, 9.4, 9.11), on a
+running stack with the plugin installed (the module is switched on by the script):
+
+```bash
+tools/e2e-images/assert-uninstall.sh nginx
+```
+
+Three phases of `assert-uninstall.php`: `seed` (a media item with fake siblings, the main one
+hard-linked to a legacy AVIF as the migration leaves it, an excluded item, the former pipeline's
+metas and options, a kept original in `lumia-originals-<token>/`, the `uploads/.htaccess` block,
+an event for each module hook, two of them with arguments); after `wp plugin deactivate`,
+`deactivated` (no generated sibling of any item that had a state, the legacy file intact, the
+excluded status kept, no block, no event, module data kept), then the item gets its siblings,
+state, block and events back without the plugin loaded; after `wp plugin uninstall`,
+`uninstalled` (no sibling, no block but the rest of `.htaccess` kept, no `uploads/lumia-tools/`,
+no option, meta or event of the module; the legacy file and the kept original still on disk).
+The working tree is installed again at the end, **module off** (the uninstall deleted
+`lumia_settings`): run it last, or switch the module on again before another suite.
+
 ## Client matrix (`lib.sh`)
 
 `curl-matrix` sends these exact `Accept` / `User-Agent` pairs, then `Chrome + ?original`.

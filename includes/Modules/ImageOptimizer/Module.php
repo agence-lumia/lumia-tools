@@ -429,8 +429,45 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * STATIC: INSTALL / UNINSTALL
+	 * STATIC: DEACTIVATION / UNINSTALL
 	 * ================================================================ */
+
+	/**
+	 * Deletes every generated AVIF sibling and resets the state metas, without a booted module:
+	 * plugin deactivation (Core\Deactivator) and uninstall call it whatever the module state.
+	 * An excluded item keeps its status. The legacy files a migrated item kept on disk
+	 * (`_lumia_avif_legacy`) are not siblings: they stay.
+	 *
+	 * @return int Siblings deleted.
+	 */
+	public static function purge_generated_siblings(): int {
+		return ( new FileLifecycle( new self( 'image_optimizer' ) ) )->purge_all();
+	}
+
+	/**
+	 * Files to remove on uninstall (uninstall.php, before the options and metas are deleted:
+	 * the purge reads the state metas): the uploads/.htaccess block, every generated sibling,
+	 * and the probe folder uploads/lumia-tools/. Left on disk: the legacy files of migrated
+	 * items and the lumia-originals-* folder, the client's images.
+	 */
+	public static function uninstall_files(): void {
+		DeliveryProbe::reset();
+		self::purge_generated_siblings();
+
+		$dir = DeliveryProbe::dir();
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+
+		$names = scandir( $dir );
+		foreach ( is_array( $names ) ? $names : [] as $name ) {
+			$path = $dir . '/' . $name;
+			if ( '.' !== $name && '..' !== $name && ( is_file( $path ) || is_link( $path ) ) ) {
+				wp_delete_file( $path );
+			}
+		}
+		rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- the plugin's own folder, emptied above.
+	}
 
 	public static function get_uninstall_keys(): array {
 		return [
@@ -445,9 +482,14 @@ class Module extends AbstractModule {
 				MigrationCommand::PAIRS_OPTION,
 			],
 			'cron'    => [ FileLifecycle::RECONCILE_HOOK, DeliveryProbe::CRON_HOOK, QueueRunner::CRON_HOOK, QueueRunner::LEGACY_CRON_HOOK ],
-			// The files in lumia-originals/ stay on disk: they are the
-			// client's photos, not plugin data.
-			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META, MigrationCommand::JOURNAL ] ),
+			// The files in lumia-originals/ and the legacy files of migrated items stay on
+			// disk (uninstall_files()): they are the client's photos, not plugin data.
+			'meta'    => array_merge(
+				AvifState::STATE_KEYS,
+				[ AvifState::LEGACY, MigrationCommand::JOURNAL ],
+				self::OPTIMIZATION_META,
+				[ '_lumia_backup_file', self::FALLBACK_META ]
+			),
 		];
 	}
 
