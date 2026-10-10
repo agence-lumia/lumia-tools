@@ -153,6 +153,20 @@ tools/e2e-images/assert-delivery.sh all --down     # every stack in turn, each o
 | `cdn-vary` | mode `nginx` behind CDN `cloudflare`, proven by a cache `HIT` on a repeated variant; client matrix conform through the proxy |
 | `nginx-novary` | `none` (`no_vary`); a sibling served without Vary is deleted by the retest, then the JPEG for every client |
 
+## Media library assertions (`assert-media.php`)
+
+`MediaLibrary` (spec 4, 9.12): the AVIF column (label per status, weight saved on the served
+sizes), the details panel for every status, the "serve the original format" toggle and the
+regenerate action (real admin-ajax calls with login cookies, from inside the PHP container), the
+list and attachment screens, and `?original` against a real AVIF sibling. Needs the module active
+with delivery proven, hence a stack where the self-test says "served" (`cdn-vary`, or `nginx`).
+Nothing is encoded by the plugin: siblings are fake files, except the `?original` one.
+
+```bash
+tools/e2e-images/run.sh install-lumia cdn-vary
+tools/e2e-images/run.sh assert cdn-vary tools/e2e-images/assert-media.php
+```
+
 ## Client matrix (`lib.sh`)
 
 `curl-matrix` sends these exact `Accept` / `User-Agent` pairs, then `Chrome + ?original`.

@@ -353,30 +353,14 @@ class Module extends AbstractModule {
 				'networkError'  => __( 'Network error', 'lumia-tools' ),
 				'mediaRunning'  => __( 'Processing…', 'lumia-tools' ),
 				'mediaError'    => __( 'Error', 'lumia-tools' ),
-				'cancel'        => __( 'Cancel', 'lumia-tools' ),
-				'format'        => __( 'Target format', 'lumia-tools' ),
+				'mediaCopied'   => __( 'Original URL copied.', 'lumia-tools' ),
+				'mediaCopyFail' => __( 'Copy failed: copy the URL by hand.', 'lumia-tools' ),
 				'delivery'      => [
 					'checking'   => __( 'Checking…', 'lumia-tools' ),
 					'retesting'  => __( 'Testing…', 'lumia-tools' ),
 					'unverified' => __( 'Could not be run', 'lumia-tools' ),
 					'copied'     => __( 'Rule copied.', 'lumia-tools' ),
 					'copyFailed' => __( 'Copy failed: select the rule and copy it by hand.', 'lumia-tools' ),
-				],
-				'reoptimize'    => [
-					'title'    => __( 'Re-optimize this image?', 'lumia-tools' ),
-					'backup'   => __( 'The image is reprocessed from the kept original, using the current settings.', 'lumia-tools' ),
-					'noBackup' => __( 'No original was kept: the image is recompressed from its current version, and the quality drops a little with each pass.', 'lumia-tools' ),
-					'confirm'  => __( 'Re-optimize', 'lumia-tools' ),
-				],
-				'convert'       => [
-					'title'   => __( 'Convert image', 'lumia-tools' ),
-					'message' => __( 'The file and its thumbnails change extension; URLs already inserted in the site are rewritten.', 'lumia-tools' ),
-					'confirm' => __( 'Convert', 'lumia-tools' ),
-				],
-				'restore'       => [
-					'title'   => __( 'Restore the original?', 'lumia-tools' ),
-					'message' => __( 'The optimized versions are deleted, the thumbnails are regenerated from the original and the site URLs are rewritten to point to it.', 'lumia-tools' ),
-					'confirm' => __( 'Restore', 'lumia-tools' ),
 				],
 			],
 		];

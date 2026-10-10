@@ -432,61 +432,68 @@
    * as is instead of recomputing sizes and buttons in JS.
    * ================================================================ */
 
-  var MODAL_ID = "lumia-io-modal";
-  var FORMAT_LABELS = { webp: "WebP", avif: "AVIF" };
-
   function initMediaActions() {
+    if (typeof lumiaAdmin === "undefined") return;
+
     document.addEventListener("click", function (event) {
       var button = event.target.closest("[data-lumia-io-action]");
-      if (!button || typeof lumiaAdmin === "undefined") return;
+      if (!button) return;
 
       var panel = button.closest(".lumia-media-optimizer");
       if (!panel) return;
 
       var action = button.getAttribute("data-lumia-io-action");
-      var i18n = lumiaAdmin.i18n || {};
-      var run = function (extra) {
-        runAction(panel, button, action, extra);
-      };
-
-      if (action === "reoptimize") {
-        var hasBackup = button.getAttribute("data-has-backup") === "1";
-        confirmAction({
-          title: i18n.reoptimize.title,
-          message: hasBackup ? i18n.reoptimize.backup : i18n.reoptimize.noBackup,
-          confirm: i18n.reoptimize.confirm,
-          onConfirm: run,
-        });
-      } else if (action === "convert") {
-        confirmAction({
-          title: i18n.convert.title,
-          message: i18n.convert.message,
-          confirm: i18n.convert.confirm,
-          formats: (button.getAttribute("data-formats") || "").split(",").filter(Boolean),
-          onConfirm: run,
-        });
-      } else if (action === "restore") {
-        confirmAction({
-          title: i18n.restore.title,
-          message: i18n.restore.message,
-          confirm: i18n.restore.confirm,
-          danger: true,
-          onConfirm: run,
-        });
-      } else {
-        run({});
+      if (action === "copy-url") {
+        copyText(button.getAttribute("data-url") || "", panel).then(
+          function () {
+            toast(lumiaAdmin.i18n.mediaCopied, "success");
+          },
+          function () {
+            toast(lumiaAdmin.i18n.mediaCopyFail, "error");
+          }
+        );
+      } else if (action === "regenerate") {
+        runAction(panel, button, "regenerate", {});
       }
     });
+
+    // Capture phase: the media modal's Backbone view listens to `change` on its fields to
+    // save them (save-attachment-compat); this switch is not one of them.
+    document.addEventListener(
+      "change",
+      function (event) {
+        var toggle = event.target.closest && event.target.closest("[data-lumia-io-toggle]");
+        if (!toggle) return;
+
+        var panel = toggle.closest(".lumia-media-optimizer");
+        if (!panel) return;
+
+        event.stopPropagation();
+        runAction(panel, toggle, "toggle_original", { enabled: toggle.checked ? "1" : "0" });
+      },
+      true
+    );
   }
 
-  function runAction(panel, button, action, extra) {
+  function runAction(panel, control, action, extra) {
     var attachmentId = panel.getAttribute("data-attachment");
-    var buttons = panel.querySelectorAll("[data-lumia-io-action]");
-    buttons.forEach(function (b) {
-      b.disabled = true;
+
+    // Only the controls that were enabled come back enabled (a name-excluded image keeps
+    // its switch disabled).
+    var disabled = [];
+    panel.querySelectorAll("[data-lumia-io-action], [data-lumia-io-toggle]").forEach(function (el) {
+      if (!el.disabled) {
+        el.disabled = true;
+        disabled.push(el);
+      }
     });
-    var label = button.textContent;
-    button.textContent = lumiaAdmin.i18n.mediaRunning;
+    panel.querySelectorAll("a.lumia-btn").forEach(function (link) {
+      link.setAttribute("aria-disabled", "true");
+    });
+
+    var isButton = control.tagName === "BUTTON";
+    var original = isButton ? control.innerHTML : "";
+    if (isButton) control.textContent = lumiaAdmin.i18n.mediaRunning;
 
     var formData = new FormData();
     formData.append("action", "lumia_image_optimizer_media_" + action);
@@ -512,81 +519,57 @@
         panel.outerHTML = data.data.html;
         toast(data.data.message, data.data.type);
 
-        // Media library grid: the Backbone model keeps the old URL
-        // (and the old panel) until it is reloaded.
+        // Media library grid: the Backbone model keeps the old panel
+        // until it is reloaded.
         if (window.wp && wp.media && typeof wp.media.attachment === "function") {
           wp.media.attachment(attachmentId).fetch();
         }
       })
       .catch(function (err) {
-        buttons.forEach(function (b) {
-          b.disabled = false;
+        disabled.forEach(function (el) {
+          el.disabled = false;
         });
-        button.textContent = label;
+        panel.querySelectorAll("a.lumia-btn").forEach(function (link) {
+          link.removeAttribute("aria-disabled");
+        });
+        if (isButton) control.innerHTML = original;
+        if (control.type === "checkbox") control.checked = !control.checked;
         toast(err.message || lumiaAdmin.i18n.mediaError, "error");
       });
   }
 
-  // Named design-system modal, created once in <body>: the media screens
-  // do not have the #lumia-modal-overlay singleton of the plugin pages.
-  function confirmAction(options) {
-    var modal = document.getElementById(MODAL_ID);
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.id = MODAL_ID;
-      modal.className = "lumia-modal-overlay";
-      modal.setAttribute("role", "dialog");
-      modal.setAttribute("aria-modal", "true");
-      modal.setAttribute("aria-labelledby", MODAL_ID + "-title");
-      modal.innerHTML =
-        '<div class="lumia-modal">' +
-        '<div class="lumia-modal__header"><h3 id="' + MODAL_ID + '-title" class="lumia-modal__title"></h3></div>' +
-        '<div class="lumia-modal__body">' +
-        '<p class="lumia-io-modal__message"></p>' +
-        '<div class="lumia-form__group lumia-io-modal__format">' +
-        '<label class="lumia-form__label" for="' + MODAL_ID + '-format"></label>' +
-        '<select class="lumia-select" id="' + MODAL_ID + '-format"></select>' +
-        "</div></div>" +
-        '<div class="lumia-modal__footer">' +
-        '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal-close"></button>' +
-        '<button type="button" class="lumia-btn lumia-btn--sm lumia-io-modal__confirm"></button>' +
-        "</div></div>";
-      document.body.appendChild(modal);
-
-      modal.querySelector(".lumia-modal-close").textContent = lumiaAdmin.i18n.cancel;
-      modal.querySelector(".lumia-form__label").textContent = lumiaAdmin.i18n.format;
-      modal.querySelector(".lumia-io-modal__confirm").addEventListener("click", function () {
-        window.lumiaModalClose(MODAL_ID);
-        if (typeof modal.onConfirm === "function") modal.onConfirm();
+  // Copies a text: Clipboard API where the page is secure, a temporary field otherwise
+  // (kept inside the panel so that the media modal's focus trap does not reject it).
+  function copyText(text, container) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return legacyCopy(text, container);
       });
     }
+    return legacyCopy(text, container);
+  }
 
-    var formats = options.formats || [];
-    var select = modal.querySelector("select");
-    select.innerHTML = "";
-    formats.forEach(function (format) {
-      var option = document.createElement("option");
-      option.value = format;
-      option.textContent = FORMAT_LABELS[format] || format;
-      select.appendChild(option);
+  function legacyCopy(text, container) {
+    return new Promise(function (resolve, reject) {
+      var field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.position = "absolute";
+      field.style.left = "-9999px";
+      container.appendChild(field);
+      field.select();
+
+      var ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+      container.removeChild(field);
+
+      if (ok) resolve();
+      else reject(new Error("copy"));
     });
-    modal.querySelector(".lumia-io-modal__format").style.display = formats.length ? "" : "none";
-
-    modal.querySelector(".lumia-modal__title").textContent = options.title;
-    modal.querySelector(".lumia-io-modal__message").textContent = options.message;
-
-    var confirmBtn = modal.querySelector(".lumia-io-modal__confirm");
-    confirmBtn.textContent = options.confirm;
-    confirmBtn.className =
-      "lumia-btn lumia-btn--sm lumia-io-modal__confirm " +
-      (options.danger ? "lumia-btn--danger" : "lumia-btn--primary");
-
-    modal.onConfirm = function () {
-      options.onConfirm(formats.length ? { format: select.value } : {});
-    };
-
-    window.lumiaModalOpen(MODAL_ID);
-    confirmBtn.focus();
   }
 
   // The toast container only exists on the plugin pages.

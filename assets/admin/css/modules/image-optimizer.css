@@ -229,3 +229,81 @@
   line-height: 1.6;
   white-space: pre;
 }
+
+/* ================================================================
+ * MEDIA LIBRARY — details panel (attachment form and media modal)
+ * ================================================================ */
+.lumia-media-optimizer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--lumia-text);
+}
+
+.lumia-media-optimizer__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.lumia-media-optimizer__weights {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.lumia-media-optimizer__weights th,
+.lumia-media-optimizer__weights td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--lumia-border);
+  text-align: right;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.lumia-media-optimizer__weights thead th {
+  color: var(--lumia-text-secondary);
+}
+
+.lumia-media-optimizer__weights th:first-child {
+  padding-left: 0;
+  text-align: left;
+  font-weight: 500;
+}
+
+.lumia-media-optimizer__warning {
+  margin: 0;
+}
+
+/* The switch sits in a narrow column (media modal sidebar): the text wraps, the control stays. */
+.lumia-media-optimizer__toggle {
+  align-items: flex-start;
+  padding: 4px 0;
+  border-top: 1px solid var(--lumia-border);
+  padding-top: 12px;
+}
+
+.lumia-media-optimizer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* reset.css (border-box) is not loaded on the native media screens. */
+.lumia-media-optimizer .lumia-btn {
+  box-sizing: border-box;
+}
+
+.lumia-media-optimizer .lumia-btn .lumia-icon {
+  width: 16px !important;
+  height: 16px !important;
+  color: currentColor;
+}
+
+.lumia-media-optimizer a.lumia-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}

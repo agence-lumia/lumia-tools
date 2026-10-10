@@ -4,10 +4,31 @@ namespace Lumia\Tools\Modules\ImageOptimizer;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * WordPress media library UI integration for the Image Optimizer:
- * Format column, attachment details panel and its AJAX actions.
+ * WordPress media library UI integration for the Image Optimizer (spec 4, 9.5, 9.12, 9.13):
+ * the AVIF status column, the details panel of a media item and its two AJAX actions.
+ *
+ * The JPEG/PNG WordPress produces stays the served file; the panel only reports the state of
+ * its `.avif` siblings and lets the user serve the original format for one image, regenerate
+ * the AVIF, or get the URL of the original (`?original`, which skips the negotiation).
+ *
+ * @phpstan-type State array{status: string, queued_at: int, origin: string, gen: int, sizes: array<string, array{bytes: int|null, mtime: int|null, avif_bytes: int|null}>, error: string, attempts: int, updated: int}
  */
 class MediaLibrary {
+
+	/** Formats that get AVIF siblings. */
+	private const SOURCE_MIMES = [ 'image/jpeg', 'image/png' ];
+
+	/** Formats an uploaded file can keep when it is not converted (spec 9.13). */
+	private const MODERN_MIMES = [ 'image/avif', 'image/webp' ];
+
+	/**
+	 * Lucide icon bodies (lucide-static v1.34.0, fetched as is).
+	 */
+	private const ICONS = [
+		'copy'       => '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+		'download'   => '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+		'refresh-cw' => '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+	];
 
 	private Module $module;
 	private ImageProcessor $processor;
@@ -26,9 +47,8 @@ class MediaLibrary {
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 		add_filter( 'attachment_fields_to_edit', [ $this, 'add_optimizer_fields' ], 10, 2 );
 
-		foreach ( [ 'optimize', 'reoptimize', 'convert', 'regenerate', 'restore' ] as $action ) {
-			add_action( 'wp_ajax_lumia_image_optimizer_media_' . $action, [ $this, 'ajax_' . $action ] );
-		}
+		add_action( 'wp_ajax_lumia_image_optimizer_media_toggle_original', [ $this, 'ajax_toggle_original' ] );
+		add_action( 'wp_ajax_lumia_image_optimizer_media_regenerate', [ $this, 'ajax_regenerate' ] );
 	}
 
 	/* ================================================================
@@ -36,7 +56,7 @@ class MediaLibrary {
 	 * ================================================================ */
 
 	/**
-	 * Adds a "Format" column to the media list.
+	 * Adds the "AVIF" column to the media list, right after the title.
 	 *
 	 * @param array<string, string> $columns
 	 * @return array<string, string>
@@ -46,39 +66,117 @@ class MediaLibrary {
 		foreach ( $columns as $key => $value ) {
 			$result[ $key ] = $value;
 			if ( 'title' === $key ) {
-				$result['lumia_format'] = __( 'Format', 'lumia-tools' );
+				$result['lumia_avif'] = __( 'AVIF', 'lumia-tools' );
 			}
 		}
 		return $result;
 	}
 
 	/**
-	 * Displays the format badge in the column.
+	 * Displays the AVIF status badge in the column.
 	 */
 	public function render_column( string $column, int $post_id ): void {
-		if ( 'lumia_format' !== $column ) {
+		if ( 'lumia_avif' !== $column ) {
 			return;
 		}
 
-		$mime = get_post_mime_type( $post_id );
+		$mime = (string) get_post_mime_type( $post_id );
 
-		if ( ! is_string( $mime ) || strpos( $mime, 'image/' ) !== 0 ) {
+		if ( strpos( $mime, 'image/' ) !== 0 ) {
 			echo '<span class="lumia-badge lumia-badge--inactive">—</span>';
 			return;
 		}
 
-		if ( strpos( $mime, 'avif' ) !== false ) {
-			$format = 'avif';
-		} elseif ( strpos( $mime, 'webp' ) !== false ) {
-			$format = 'webp';
-		} else {
-			$format = str_replace( 'image/', '', $mime );
+		[ $label, $variant, $tip ] = $this->badge( $mime, AvifState::get( $post_id ) );
+
+		echo '<span class="lumia-badge lumia-badge--' . esc_attr( $variant ) . '"';
+		if ( '' !== $tip ) {
+			// Both attributes: `title` is the fallback where the tooltip script is absent.
+			echo ' data-lumia-tip="' . esc_attr( $tip ) . '" title="' . esc_attr( $tip ) . '"';
+		}
+		echo '>' . esc_html( $label ) . '</span>';
+	}
+
+	/**
+	 * Label, badge variant and tooltip of a media item's AVIF state.
+	 *
+	 * @param State $state
+	 * @return array{0: string, 1: string, 2: string}
+	 */
+	private function badge( string $mime, array $state ): array {
+		$status = $state['status'];
+		$error  = $state['error'];
+
+		switch ( $status ) {
+			case AvifState::DONE:
+			case AvifState::PARTIAL:
+				$served  = $this->served_totals( $state['sizes'] );
+				$percent = $this->percent( $served['source'], $served['avif'] );
+				$label   = $percent > 0
+					/* translators: %d: percentage of weight saved by the AVIF files. */
+					? sprintf( __( 'AVIF −%d%%', 'lumia-tools' ), $percent )
+					: __( 'AVIF', 'lumia-tools' );
+
+				if ( AvifState::PARTIAL === $status ) {
+					return [ $label, 'info', __( 'The AVIF exists for some sizes only; the others are served in their original format.', 'lumia-tools' ) ];
+				}
+				return [ $label, 'success', '' ];
+
+			case AvifState::PENDING:
+				return [ __( 'Pending', 'lumia-tools' ), 'info', '' ];
+
+			case AvifState::PROCESSING:
+				return [ __( 'Processing', 'lumia-tools' ), 'info', '' ];
+
+			case AvifState::FAILED:
+				return [ __( 'Failed', 'lumia-tools' ), 'danger', '' !== $error ? $error : __( 'The AVIF could not be generated.', 'lumia-tools' ) ];
+
+			case AvifState::EXCLUDED:
+				return [ __( 'Original format', 'lumia-tools' ), 'inactive', __( 'This image is served in its original format.', 'lumia-tools' ) ];
+
+			case AvifState::SKIPPED:
+				return [ __( 'Not applicable', 'lumia-tools' ), 'inactive', '' !== $error ? $error : __( 'No AVIF is served for this image.', 'lumia-tools' ) ];
 		}
 
-		$label = strtoupper( $format );
-		$class = in_array( $format, [ 'avif', 'webp' ], true ) ? 'lumia-badge--success' : 'lumia-badge--inactive';
+		// No state: a JPEG/PNG the queue has not seen yet, or a format that never gets an AVIF.
+		if ( in_array( $mime, self::SOURCE_MIMES, true ) ) {
+			return [ __( 'Not generated', 'lumia-tools' ), 'inactive', __( 'The AVIF has not been generated for this image yet.', 'lumia-tools' ) ];
+		}
 
-		echo '<span class="lumia-badge ' . esc_attr( $class ) . '">' . esc_html( $label ) . '</span>';
+		return [ __( 'Not applicable', 'lumia-tools' ), 'inactive', '' ];
+	}
+
+	/**
+	 * Sums over the sizes that have an AVIF sibling ("served" sizes): the fallback weight of
+	 * those files and the weight of their AVIF.
+	 *
+	 * @param array<string, array{bytes: int|null, mtime: int|null, avif_bytes: int|null}> $sizes
+	 * @return array{files: int, source: int, avif: int}
+	 */
+	private function served_totals( array $sizes ): array {
+		$totals = [
+			'files'  => 0,
+			'source' => 0,
+			'avif'   => 0,
+		];
+
+		foreach ( $sizes as $entry ) {
+			if ( null === $entry['avif_bytes'] || null === $entry['bytes'] ) {
+				continue;
+			}
+			++$totals['files'];
+			$totals['source'] += $entry['bytes'];
+			$totals['avif']   += $entry['avif_bytes'];
+		}
+
+		return $totals;
+	}
+
+	/**
+	 * Weight saved, in percent: 1 - AVIF / source.
+	 */
+	private function percent( int $source, int $avif ): int {
+		return $source > 0 ? (int) round( 100 * ( 1 - $avif / $source ) ) : 0;
 	}
 
 	/* ================================================================
@@ -105,13 +203,14 @@ class MediaLibrary {
 			return;
 		}
 
-		// Design system for the panel's buttons, modal and toasts:
+		// Design system for the panel's buttons, toggle and toasts:
 		// tokens + components only, like the Media module (reset.css and
 		// layout.css have no business on a native WordPress screen).
 		wp_enqueue_style( 'lumia-tokens-css', LUMIA_ASSETS_URL . 'admin/css/tokens.css', [], LUMIA_VERSION );
 		wp_enqueue_style( 'lumia-components-css', LUMIA_ASSETS_URL . 'admin/css/components.css', [ 'lumia-tokens-css' ], LUMIA_VERSION );
 		wp_enqueue_style( 'lumia-buttons-css', LUMIA_ASSETS_URL . 'admin/css/buttons.css', [ 'lumia-components-css' ], LUMIA_VERSION );
 		wp_enqueue_style( 'lumia-notifications-css', LUMIA_ASSETS_URL . 'admin/css/notifications.css', [], LUMIA_VERSION );
+		wp_enqueue_style( 'lumia-image-optimizer-media-css', LUMIA_ASSETS_URL . 'admin/css/modules/image-optimizer.css', [ 'lumia-components-css' ], LUMIA_VERSION );
 		wp_enqueue_script( 'lumia-admin-js', LUMIA_ASSETS_URL . 'admin/js/admin.js', [], LUMIA_VERSION, true );
 		wp_enqueue_script( 'lumia-notifications-js', LUMIA_ASSETS_URL . 'admin/js/notifications.js', [], LUMIA_VERSION, true );
 
@@ -165,186 +264,288 @@ class MediaLibrary {
 	}
 
 	/**
-	 * Complete panel of a media item (statistics + actions), '' if it does not
-	 * apply. Returned as is by each AJAX action: the JS replaces the panel
-	 * instead of recomputing the display.
+	 * Complete panel of a media item (state, weights, actions), '' if it does not apply.
+	 * Returned as is by each AJAX action: the JS replaces the panel instead of recomputing
+	 * the display.
 	 */
 	public function render_panel( int $attachment_id ): string {
-		$mime = (string) get_post_mime_type( $attachment_id );
+		$mime  = (string) get_post_mime_type( $attachment_id );
+		$state = AvifState::get( $attachment_id );
 
-		if ( '' === $mime || ! $this->processor->is_supported_mime( $mime ) ) {
+		// An uploaded AVIF / WebP left as is (animated, conversion off): only the reason.
+		if ( in_array( $mime, self::MODERN_MIMES, true ) ) {
+			if ( AvifState::SKIPPED !== $state['status'] ) {
+				return '';
+			}
+
+			return $this->wrap( $attachment_id, $this->status_block( $mime, $state, 0 ) );
+		}
+
+		if ( ! in_array( $mime, self::SOURCE_MIMES, true ) ) {
 			return '';
 		}
 
-		$file = (string) get_attached_file( $attachment_id );
-		if ( '' === $file || ! file_exists( $file ) ) {
+		$status   = $state['status'];
+		$excluded = AvifState::EXCLUDED === $status;
+
+		// An animated PNG is served as uploaded: nothing to switch or regenerate.
+		if ( AvifState::SKIPPED === $status && 'image/png' === $mime && $this->processor->is_animated( (string) get_attached_file( $attachment_id ), $mime ) ) {
+			return $this->wrap( $attachment_id, $this->status_block( $mime, $state, 0 ) );
+		}
+
+		$files = count( $this->module->get_lifecycle()->source_files( $attachment_id ) );
+		$html  = $this->status_block( $mime, $state, $files )
+			. $this->weights_block( $attachment_id, $state )
+			. ( DeliveryProbe::is_serving() ? '' : $this->not_served_notice() )
+			. $this->toggle_block( $attachment_id, $excluded, $excluded && $this->is_name_excluded( $attachment_id ) )
+			. $this->actions_block( $attachment_id, ! in_array( $status, [ AvifState::PENDING, AvifState::PROCESSING, AvifState::EXCLUDED ], true ) );
+
+		return $this->wrap( $attachment_id, $html );
+	}
+
+	private function wrap( int $attachment_id, string $html ): string {
+		return '<div class="lumia-media-optimizer" data-attachment="' . esc_attr( (string) $attachment_id ) . '">' . $html . '</div>';
+	}
+
+	/**
+	 * Badge and one sentence about the state.
+	 *
+	 * @param State $state
+	 */
+	private function status_block( string $mime, array $state, int $files ): string {
+		[ $label, $variant ] = $this->badge( $mime, $state );
+		$error               = $state['error'];
+
+		switch ( $state['status'] ) {
+			case AvifState::PENDING:
+				$text = __( 'Waiting for the AVIF to be generated.', 'lumia-tools' );
+				break;
+			case AvifState::PROCESSING:
+				$text = __( 'The AVIF is being generated.', 'lumia-tools' );
+				break;
+			case AvifState::DONE:
+				$text = __( 'The AVIF is served to browsers that support it. Everyone else gets the original format.', 'lumia-tools' );
+				break;
+			case AvifState::PARTIAL:
+				$served = $this->served_totals( $state['sizes'] );
+				/* translators: 1: number of files that have an AVIF, 2: number of files of the image. */
+				$text = sprintf( __( 'AVIF generated for %1$d of %2$d files only; the others stay in their original format.', 'lumia-tools' ), $served['files'], max( $files, $served['files'] ) );
+				break;
+			case AvifState::FAILED:
+				$text = '' !== $error
+					/* translators: %s: error message. */
+					? sprintf( __( 'Generation failed: %s', 'lumia-tools' ), $error )
+					: __( 'Generation failed.', 'lumia-tools' );
+				break;
+			case AvifState::EXCLUDED:
+				$text = __( 'This image is served in its original format.', 'lumia-tools' );
+				break;
+			case AvifState::SKIPPED:
+				$text = '' !== $error ? $error : __( 'No AVIF is served for this image.', 'lumia-tools' );
+				break;
+			default:
+				$text = __( 'AVIF not generated yet.', 'lumia-tools' );
+		}
+
+		return '<p class="lumia-media-optimizer__status"><span class="lumia-badge lumia-badge--' . esc_attr( $variant ) . '">' . esc_html( $label ) . '</span> <span>' . esc_html( $text ) . '</span></p>';
+	}
+
+	/**
+	 * Fallback / AVIF weights of the main file and of every served size.
+	 *
+	 * @param State $state
+	 */
+	private function weights_block( int $attachment_id, array $state ): string {
+		if ( ! in_array( $state['status'], [ AvifState::DONE, AvifState::PARTIAL ], true ) ) {
 			return '';
 		}
 
-		$is_animated  = $this->processor->is_animated( $file, $mime );
-		$is_optimized = $this->module->is_already_optimized( $attachment_id );
-
-		$original_bytes       = (int) get_post_meta( $attachment_id, '_lumia_original_bytes', true );
-		$optimized_bytes      = (int) get_post_meta( $attachment_id, '_lumia_optimized_bytes', true );
-		$bytes_saved          = (int) get_post_meta( $attachment_id, '_lumia_bytes_saved', true );
-		$main_original_bytes  = (int) get_post_meta( $attachment_id, '_lumia_main_original_bytes', true );
-		$main_optimized_bytes = (int) get_post_meta( $attachment_id, '_lumia_main_optimized_bytes', true );
-		$main_bytes_saved     = (int) get_post_meta( $attachment_id, '_lumia_main_bytes_saved', true );
-		$current_size         = (int) filesize( $file );
-
-		// Fallbacks for media items optimized before the main-file detail was added.
-		if ( $is_optimized && 0 === $main_optimized_bytes ) {
-			$main_optimized_bytes = $current_size;
-		}
-		if ( $is_optimized && 0 === $main_original_bytes && $main_optimized_bytes > 0 ) {
-			$main_original_bytes = max( $main_optimized_bytes + $main_bytes_saved, $main_optimized_bytes );
-		}
-		if ( $is_optimized && 0 === $main_bytes_saved && $main_original_bytes > 0 && $main_optimized_bytes > 0 ) {
-			$main_bytes_saved = max( $main_original_bytes - $main_optimized_bytes, 0 );
+		$served = $this->served_totals( $state['sizes'] );
+		if ( 0 === $served['files'] ) {
+			return '';
 		}
 
-		if ( $is_optimized ) {
-			$details = '<p style="margin-bottom:4px;"><strong>' . esc_html__( 'Main file', 'lumia-tools' ) . '</strong></p>'
-				. $this->render_sizes( $main_bytes_saved, $main_original_bytes, $main_optimized_bytes )
-				. '<p style="margin:10px 0 4px;"><strong>' . esc_html__( 'Total (main + thumbnails)', 'lumia-tools' ) . '</strong></p>'
-				. $this->render_sizes( $bytes_saved, $original_bytes, $optimized_bytes );
-		} else {
-			// Estimate based on the average ratio obtained on the media library.
-			$stats     = $this->module->get_stats();
-			$avg_ratio = empty( $stats['original_bytes'] ) ? 0.0 : (float) $stats['bytes_saved'] / max( 1.0, (float) $stats['original_bytes'] );
+		$main = $state['sizes'][ AvifState::rel( (string) get_attached_file( $attachment_id ) ) ] ?? null;
 
-			$details = '<p>' . esc_html__( 'Potential savings:', 'lumia-tools' ) . ' <strong>' . esc_html( (string) size_format( (int) floor( $current_size * $avg_ratio ), 2 ) ) . '</strong></p>'
-				. '<p>' . esc_html__( 'Current size:', 'lumia-tools' ) . ' <strong>' . esc_html( (string) size_format( $current_size, 2 ) ) . '</strong></p>';
+		$rows = $this->weights_row( __( 'Main file', 'lumia-tools' ), $main['bytes'] ?? null, $main['avif_bytes'] ?? null )
+			. $this->weights_row( __( 'Total (all sizes)', 'lumia-tools' ), $served['source'], $served['avif'] );
+
+		return '<table class="lumia-media-optimizer__weights"><thead><tr><th></th>'
+			. '<th>' . esc_html__( 'Fallback', 'lumia-tools' ) . '</th>'
+			. '<th>' . esc_html__( 'AVIF', 'lumia-tools' ) . '</th>'
+			. '<th>' . esc_html__( 'Saved', 'lumia-tools' ) . '</th></tr></thead><tbody>' . $rows . '</tbody></table>';
+	}
+
+	private function weights_row( string $label, ?int $source, ?int $avif ): string {
+		$dash = '—';
+
+		if ( null === $source || null === $avif ) {
+			return '<tr><th scope="row">' . esc_html( $label ) . '</th><td>' . esc_html( null === $source ? $dash : (string) size_format( $source, 1 ) ) . '</td><td>' . esc_html( $dash ) . '</td><td>' . esc_html( $dash ) . '</td></tr>';
 		}
 
-		if ( $is_animated ) {
-			$actions = '<p>' . esc_html__( 'Animated image: automatic optimization is disabled.', 'lumia-tools' ) . '</p>';
-		} else {
-			$actions = $this->render_actions( $attachment_id, $is_optimized, $file );
-		}
+		$percent = $this->percent( $source, $avif );
 
-		return '<div class="lumia-media-optimizer" data-attachment="' . esc_attr( (string) $attachment_id ) . '">'
-			. $details
-			. '<div class="lumia-media-optimizer__actions" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">' . $actions . '</div>'
+		return '<tr><th scope="row">' . esc_html( $label ) . '</th>'
+			. '<td>' . esc_html( (string) size_format( $source, 1 ) ) . '</td>'
+			. '<td>' . esc_html( (string) size_format( $avif, 1 ) ) . '</td>'
+			. '<td>' . esc_html( $percent > 0 ? '−' . $percent . '%' : $dash ) . '</td></tr>';
+	}
+
+	/**
+	 * Reminder shown when the delivery self-test does not allow serving the AVIF.
+	 */
+	private function not_served_notice(): string {
+		return '<p class="lumia-form__help lumia-media-optimizer__warning">'
+			. esc_html__( 'AVIF files are not served on this server (the delivery test did not pass), so visitors receive the original format. See the Delivery tab of the module.', 'lumia-tools' )
+			. '</p>';
+	}
+
+	/**
+	 * The "Serve the original format" switch, with the cache caveat of spec 9.12.
+	 */
+	private function toggle_block( int $attachment_id, bool $excluded, bool $by_name ): string {
+		$help = $by_name
+			? __( 'The file name ends with an excluded suffix (see the module settings), so this image always keeps its original format.', 'lumia-tools' )
+			: __( 'Deletes the AVIF files of this image. A visitor who already has the AVIF in their cache keeps it for up to one year.', 'lumia-tools' );
+		$id   = 'lumia-io-original-' . $attachment_id;
+
+		return '<div class="lumia-option lumia-media-optimizer__toggle">'
+			. '<div class="lumia-option__content"><label class="lumia-option__label" for="' . esc_attr( $id ) . '">' . esc_html__( 'Serve the original format', 'lumia-tools' ) . '</label>'
+			. '<p class="lumia-option__desc">' . esc_html( $help ) . '</p></div>'
+			. '<div class="lumia-option__control"><label class="lumia-toggle">'
+			. '<input type="checkbox" id="' . esc_attr( $id ) . '" data-lumia-io-toggle' . ( $excluded ? ' checked' : '' ) . ( $by_name ? ' disabled' : '' ) . '>'
+			. '<span class="lumia-toggle__slider"></span></label></div>'
 			. '</div>';
 	}
 
 	/**
-	 * Three lines: saved / before / after.
+	 * Copy / download the original, regenerate.
 	 */
-	private function render_sizes( int $saved, int $before, int $after ): string {
-		return '<p>' . esc_html__( 'Savings achieved:', 'lumia-tools' ) . ' <strong>' . esc_html( (string) size_format( $saved, 2 ) ) . '</strong></p>'
-			. '<p>' . esc_html__( 'Size before:', 'lumia-tools' ) . ' <strong>' . esc_html( (string) size_format( $before, 2 ) ) . '</strong></p>'
-			. '<p>' . esc_html__( 'Size after:', 'lumia-tools' ) . ' <strong>' . esc_html( (string) size_format( $after, 2 ) ) . '</strong></p>';
+	private function actions_block( int $attachment_id, bool $can_regenerate ): string {
+		$url = wp_get_attachment_url( $attachment_id );
+
+		$buttons = '';
+		if ( $url ) {
+			$original = $url . '?original';
+			$buttons .= '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" data-lumia-io-action="copy-url" data-url="' . esc_attr( $original ) . '">'
+				. $this->icon( 'copy' ) . esc_html__( 'Copy original URL', 'lumia-tools' ) . '</button>';
+			$buttons .= '<a class="lumia-btn lumia-btn--sm lumia-btn--secondary" href="' . esc_url( $original ) . '" download>'
+				. $this->icon( 'download' ) . esc_html__( 'Download original', 'lumia-tools' ) . '</a>';
+		}
+		if ( $can_regenerate ) {
+			$buttons .= '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" data-lumia-io-action="regenerate">'
+				. $this->icon( 'refresh-cw' ) . esc_html__( 'Regenerate AVIF', 'lumia-tools' ) . '</button>';
+		}
+
+		return '<div class="lumia-media-optimizer__actions">' . $buttons . '</div>';
+	}
+
+	private function icon( string $name ): string {
+		return '<svg class="lumia-icon lumia-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . self::ICONS[ $name ] . '</svg>';
 	}
 
 	/**
-	 * Action buttons of the panel. Each button carries the AJAX action it
-	 * triggers; the JS handles the confirmations.
+	 * True when the file name carries an excluded suffix: the lifecycle excludes the item
+	 * again at every metadata save, so the switch cannot turn the AVIF back on.
 	 */
-	private function render_actions( int $attachment_id, bool $is_optimized, string $file ): string {
-		$has_backup = '' !== $this->module->get_backup_path( $attachment_id );
+	private function is_name_excluded( int $attachment_id ): bool {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+		$metadata = is_array( $metadata ) ? $metadata : [];
 
-		// Offered formats: those the server can encode, except the current one.
-		$cap     = $this->processor->get_capabilities();
-		$current = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
-		$formats = array_values(
-			array_filter(
-				[ 'webp', 'avif' ],
-				static fn( string $format ): bool => ! empty( $cap[ $format ] ) && $format !== $current
-			)
-		);
-
-		$buttons = [];
-		if ( $is_optimized ) {
-			$buttons[] = $this->action_button( 'reoptimize', __( 'Re-optimize', 'lumia-tools' ), [ 'data-has-backup' => $has_backup ? '1' : '0' ] );
-		} else {
-			$buttons[] = $this->action_button( 'optimize', __( 'Optimize this image', 'lumia-tools' ), [], 'primary' );
-		}
-		if ( $formats ) {
-			$buttons[] = $this->action_button( 'convert', __( 'Convert…', 'lumia-tools' ), [ 'data-formats' => implode( ',', $formats ) ] );
-		}
-		$buttons[] = $this->action_button( 'regenerate', __( 'Regenerate thumbnails', 'lumia-tools' ) );
-		if ( $has_backup ) {
-			$buttons[] = $this->action_button( 'restore', __( 'Restore original', 'lumia-tools' ), [], 'danger' );
-		}
-
-		return implode( '', $buttons );
-	}
-
-	/**
-	 * @param array<string, string> $attributes
-	 */
-	private function action_button( string $action, string $label, array $attributes = [], string $variant = 'secondary' ): string {
-		$html = '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--' . esc_attr( $variant ) . '" data-lumia-io-action="' . esc_attr( $action ) . '"';
-		foreach ( $attributes as $name => $value ) {
-			$html .= ' ' . esc_attr( $name ) . '="' . esc_attr( $value ) . '"';
-		}
-
-		return $html . '>' . esc_html( $label ) . '</button>';
+		return $this->module->get_lifecycle()->is_excluded_by_name( (string) ( $metadata['original_image'] ?? $metadata['file'] ?? '' ) );
 	}
 
 	/* ================================================================
 	 * AJAX: ACTIONS ON A MEDIA ITEM
 	 * ================================================================ */
 
-	public function ajax_optimize(): void {
+	/**
+	 * Serve the original format (`excluded`) or let the AVIF come back (`pending`). The
+	 * `enabled` field says which; without it, the current state is flipped.
+	 */
+	public function ajax_toggle_original(): void {
 		$attachment_id = $this->get_request_attachment();
+		$excluded      = AvifState::EXCLUDED === AvifState::get( $attachment_id )['status'];
 
-		if ( ! $this->module->is_already_optimized( $attachment_id ) ) {
-			$this->module->process_and_update_attachment( $attachment_id, true );
-		}
-
-		$this->send_panel( $attachment_id, __( 'Image optimized.', 'lumia-tools' ) );
-	}
-
-	public function ajax_reoptimize(): void {
-		$attachment_id = $this->get_request_attachment();
-
-		$this->send_result( $attachment_id, $this->module->reprocess_attachment( $attachment_id ), __( 'Image re-optimized.', 'lumia-tools' ) );
-	}
-
-	public function ajax_convert(): void {
-		$attachment_id = $this->get_request_attachment();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by get_request_attachment().
-		$format = isset( $_POST['format'] ) ? sanitize_key( wp_unslash( $_POST['format'] ) ) : '';
+		$enabled = isset( $_POST['enabled'] ) ? '1' === sanitize_text_field( wp_unslash( $_POST['enabled'] ) ) : ! $excluded;
 
-		// '' would mean "settings" for reprocess_attachment(): here, an
-		// explicit format is required.
-		if ( ! in_array( $format, [ 'webp', 'avif' ], true ) ) {
-			wp_send_json_error( __( 'Invalid format.', 'lumia-tools' ) );
-		}
-
-		$error = $this->module->reprocess_attachment( $attachment_id, $format );
-		if ( $error ) {
-			wp_send_json_error( $error->get_error_message() );
-		}
-
-		// convert() only keeps a converted file if it is lighter.
-		$extension = strtolower( pathinfo( (string) get_attached_file( $attachment_id ), PATHINFO_EXTENSION ) );
-		if ( $extension !== $format ) {
+		if ( $enabled === $excluded ) {
 			$this->send_panel(
 				$attachment_id,
-				/* translators: %s: requested format (WEBP, AVIF). */
-				sprintf( __( 'Converting to %s did not make the image lighter: the current format is kept.', 'lumia-tools' ), strtoupper( $format ) ),
-				'warning'
+				$excluded ? __( 'This image is already served in its original format.', 'lumia-tools' ) : __( 'The AVIF is already enabled for this image.', 'lumia-tools' ),
+				'info'
 			);
 		}
 
-		/* translators: %s: resulting format (WEBP, AVIF). */
-		$this->send_panel( $attachment_id, sprintf( __( 'Image converted to %s.', 'lumia-tools' ), strtoupper( $format ) ) );
+		if ( $enabled ) {
+			$this->exclude( $attachment_id );
+			$this->send_panel( $attachment_id, __( 'The original format is now served for this image.', 'lumia-tools' ) );
+		}
+
+		if ( $this->is_name_excluded( $attachment_id ) ) {
+			wp_send_json_error( __( 'The file name ends with an excluded suffix (see the module settings).', 'lumia-tools' ) );
+		}
+
+		$this->queue( $attachment_id );
+		$this->send_panel( $attachment_id, __( 'The AVIF will be generated again.', 'lumia-tools' ) );
 	}
 
+	/**
+	 * Deletes the AVIF files and queues the media item again (not an excluded one).
+	 */
 	public function ajax_regenerate(): void {
 		$attachment_id = $this->get_request_attachment();
 
-		$this->send_result( $attachment_id, $this->module->regenerate_thumbnails( $attachment_id ), __( 'Thumbnails regenerated.', 'lumia-tools' ) );
+		if ( AvifState::EXCLUDED === AvifState::get( $attachment_id )['status'] ) {
+			wp_send_json_error( __( 'This image is served in its original format: turn that off first.', 'lumia-tools' ) );
+		}
+
+		$this->queue( $attachment_id );
+		$this->send_panel( $attachment_id, __( 'The AVIF will be generated again.', 'lumia-tools' ) );
 	}
 
-	public function ajax_restore(): void {
-		$attachment_id = $this->get_request_attachment();
+	/**
+	 * `excluded`: the generation moves first (an encode in flight discards its result), then
+	 * the siblings go, and the recorded fingerprints with them.
+	 */
+	private function exclude( int $attachment_id ): void {
+		AvifState::set_status( $attachment_id, AvifState::EXCLUDED );
+		update_post_meta( $attachment_id, AvifState::GEN, AvifState::gen( $attachment_id ) + 1 );
 
-		$this->send_result( $attachment_id, $this->module->restore_original( $attachment_id ), __( 'Original restored.', 'lumia-tools' ) );
+		$this->reset_files( $attachment_id );
+	}
+
+	/**
+	 * `pending` (origin `manual`, new generation), siblings deleted and fingerprints cleared:
+	 * the queue skips a file whose recorded result is still fresh, so nothing is kept, and a
+	 * stale AVIF is never served while the new one is encoded. The queue listens to the
+	 * `lumia_image_optimizer_enqueued` action.
+	 */
+	private function queue( int $attachment_id ): void {
+		AvifState::enqueue( $attachment_id, 'manual' );
+		$this->reset_files( $attachment_id );
+
+		/** This action is documented in includes/Modules/ImageOptimizer/FileLifecycle.php. */
+		do_action( 'lumia_image_optimizer_enqueued', $attachment_id );
+	}
+
+	/**
+	 * Deletes the siblings and records every source file as not encoded yet.
+	 */
+	private function reset_files( int $attachment_id ): void {
+		$lifecycle = $this->module->get_lifecycle();
+		$lifecycle->delete_siblings( $attachment_id );
+
+		$unencoded = [];
+		foreach ( $lifecycle->source_files( $attachment_id ) as $path ) {
+			$unencoded[ AvifState::rel( $path ) ] = [
+				'bytes'      => null,
+				'mtime'      => null,
+				'avif_bytes' => null,
+			];
+		}
+		AvifState::replace_sizes( $attachment_id, $unencoded );
 	}
 
 	/**
@@ -364,30 +565,20 @@ class MediaLibrary {
 		}
 
 		$mime = (string) get_post_mime_type( $attachment_id );
-		if ( '' === $mime || ! $this->processor->is_supported_mime( $mime ) ) {
+		if ( ! in_array( $mime, self::SOURCE_MIMES, true ) ) {
 			wp_send_json_error( __( 'Unsupported format.', 'lumia-tools' ) );
 		}
 
-		$file = (string) get_attached_file( $attachment_id );
-		if ( '' === $file || ! file_exists( $file ) ) {
-			wp_send_json_error( __( 'File not found.', 'lumia-tools' ) );
-		}
-
-		if ( $this->processor->is_animated( $file, $mime ) ) {
+		if ( 'image/png' === $mime && $this->processor->is_animated( (string) get_attached_file( $attachment_id ), $mime ) ) {
 			wp_send_json_error( __( 'Animated images are not supported.', 'lumia-tools' ) );
 		}
 
 		return $attachment_id;
 	}
 
-	private function send_result( int $attachment_id, ?\WP_Error $error, string $message ): void {
-		if ( $error ) {
-			wp_send_json_error( $error->get_error_message() );
-		}
-
-		$this->send_panel( $attachment_id, $message );
-	}
-
+	/**
+	 * @return never
+	 */
 	private function send_panel( int $attachment_id, string $message, string $type = 'success' ): void {
 		wp_send_json_success(
 			[
