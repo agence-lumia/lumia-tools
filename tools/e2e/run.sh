@@ -2,7 +2,7 @@
 #
 # Docker bench for the Lumia rename end-to-end checks. See README.md.
 # Needs only bash, docker (with compose), git, rsync and zip. Exit code: 0 on
-# success, 1 on any failure, 2 on bad usage.
+# success, 1 on any failure, 2 on bad usage, 130 on SIGINT, 143 on SIGTERM.
 
 set -euo pipefail
 
