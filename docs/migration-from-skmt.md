@@ -126,10 +126,17 @@ The activation stops at the first failing step. SKMT stays active and Lümia sta
    wp plugin deactivate lumia-tools && wp plugin activate lumia-tools
    ```
 
-   A failure at the `deactivate` step (SKMT could not be deactivated, for example a fatal error in its own deactivation routine): deactivate SKMT by hand (`wp plugin deactivate studio-kyne-mini-tools`), then deactivate and reactivate Lümia Tools as above.
+   A failure at the `deactivate` step (SKMT is still listed as active afterwards, for example because the `active_plugins` option could not be written): deactivate SKMT by hand (`wp plugin deactivate studio-kyne-mini-tools`), then deactivate and reactivate Lümia Tools as above.
 
 5. **Last resort**: restore the export from section 1 (`wp db import ~/backup-before-lumia-<date>.sql`), put the `skmt-originals-*` folder back if it was renamed, deactivate Lümia Tools (do not delete it: its uninstallation removes the `lumia_*` tables and meta, which now hold SKMT's renamed data), and report the step and the error so it can be fixed before trying again.
 
 A run killed by a fatal error or a timeout (section 3) shows no notice at all, since Lümia stays inactive: `wp option get lumia_migration_error` names the step, and `wp option get lumia_migration_error_detail` answers that the option does not exist (the step was interrupted, it did not fail). Activate Lümia Tools again.
+
+If the interrupted step is `deactivate`, SKMT's own deactivation routine died (a fatal error), and activating Lümia again would run it and die the same way, as would a plain `wp plugin deactivate studio-kyne-mini-tools`. Deactivate SKMT without loading its code, then activate Lümia Tools again:
+
+```bash
+wp plugin deactivate studio-kyne-mini-tools --skip-plugins=studio-kyne-mini-tools
+wp plugin activate lumia-tools
+```
 
 If Lümia only shows the warning "Studio Kyne Mini Tools is still active", SKMT is loaded: either nothing was migrated (SKMT had no settings), or SKMT was reactivated after a completed migration. In both cases deactivate SKMT, which is enough to release the modules of Lümia.
