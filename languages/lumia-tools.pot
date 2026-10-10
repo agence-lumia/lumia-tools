@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Lümia Tools 2.0.1-dev.1\n"
+"Project-Id-Version: Lümia Tools 2.0.1-dev.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/lumia-tools\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T09:25:21+00:00\n"
+"POT-Creation-Date: 2026-10-10T09:30:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -658,7 +658,7 @@ msgstr ""
 
 #. translators: 1: label, 2: value.
 #: includes/Modules/ActivityLog/Module.php:414
-#: includes/Modules/Files/Module.php:397
+#: includes/Modules/Files/Module.php:406
 #, php-format
 msgid "%1$s: %2$s"
 msgstr ""
@@ -1146,7 +1146,7 @@ msgid "This query modifies the database and cannot be undone. Confirm execution?
 msgstr ""
 
 #: includes/Modules/Database/Module.php:117
-#: includes/Modules/Files/Module.php:535
+#: includes/Modules/Files/Module.php:544
 #: includes/Modules/Files/settings-template.php:56
 #: includes/Modules/Media/Module.php:355
 #: includes/Modules/MenuCreator/Module.php:1345
@@ -1690,12 +1690,12 @@ msgstr ""
 
 #: includes/Modules/Files/FileManager.php:285
 #: includes/Modules/Files/FileManager.php:322
-#: includes/Modules/Files/Module.php:462
+#: includes/Modules/Files/Module.php:471
 msgid "ZipArchive is not available on this server."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:292
-#: includes/Modules/Files/Module.php:475
+#: includes/Modules/Files/Module.php:484
 msgid "Could not create the archive."
 msgstr ""
 
@@ -1716,13 +1716,13 @@ msgid "Archive rejected: symbolic link (%s)."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:404
-#: includes/Modules/Files/Module.php:392
+#: includes/Modules/Files/Module.php:401
 msgid "Upload failed."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:147
 #: includes/Modules/Files/Module.php:365
-#: includes/Modules/Files/Module.php:424
+#: includes/Modules/Files/Module.php:433
 msgid "Permission denied."
 msgstr ""
 
@@ -1731,22 +1731,22 @@ msgid "File modification is disabled on this site (DISALLOW_FILE_EDIT, DISALLOW_
 msgstr ""
 
 #: includes/Modules/Files/Module.php:248
-#: includes/Modules/Files/Module.php:536
+#: includes/Modules/Files/Module.php:545
 msgid "Deleted successfully."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:259
-#: includes/Modules/Files/Module.php:540
+#: includes/Modules/Files/Module.php:549
 msgid "Renamed successfully."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:273
-#: includes/Modules/Files/Module.php:541
+#: includes/Modules/Files/Module.php:550
 msgid "Moved successfully."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:288
-#: includes/Modules/Files/Module.php:539
+#: includes/Modules/Files/Module.php:548
 #: includes/Modules/Media/Module.php:360
 msgid "Folder created."
 msgstr ""
@@ -1756,12 +1756,12 @@ msgid "Archive created."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:325
-#: includes/Modules/Files/Module.php:537
+#: includes/Modules/Files/Module.php:546
 msgid "Archive extracted."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:356
-#: includes/Modules/Files/Module.php:542
+#: includes/Modules/Files/Module.php:551
 msgid "File saved."
 msgstr ""
 
@@ -1769,137 +1769,143 @@ msgstr ""
 msgid "No file received."
 msgstr ""
 
+#. translators: %s: maximum upload size, e.g. "64 MB".
+#: includes/Modules/Files/Module.php:395
+#, php-format
+msgid "The file exceeds the server's maximum upload size (%s)."
+msgstr ""
+
 #. translators: %d: number of files
-#: includes/Modules/Files/Module.php:409
+#: includes/Modules/Files/Module.php:418
 #, php-format
 msgid "%d file uploaded."
 msgid_plural "%d files uploaded."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Modules/Files/Module.php:432
 #: includes/Modules/Files/Module.php:441
+#: includes/Modules/Files/Module.php:450
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:373
 #: includes/Modules/ImageOptimizer/Module.php:769
 msgid "File not found."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:468
+#: includes/Modules/Files/Module.php:477
 msgid "Could not create the temporary file."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:522
+#: includes/Modules/Files/Module.php:531
 msgid "Delete this item(s)? This action cannot be undone."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:523
+#: includes/Modules/Files/Module.php:532
 msgid "This folder is empty."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:524
+#: includes/Modules/Files/Module.php:533
 #: includes/Modules/Files/settings-template.php:79
 msgid "Loading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:525
+#: includes/Modules/Files/Module.php:534
 msgid "Uploading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:526
+#: includes/Modules/Files/Module.php:535
 msgid "New folder name:"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:527
+#: includes/Modules/Files/Module.php:536
 msgid "Network error."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:528
+#: includes/Modules/Files/Module.php:537
 msgid "Upload error."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:529
+#: includes/Modules/Files/Module.php:538
 msgid "Edit"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:530
+#: includes/Modules/Files/Module.php:539
 msgid "Download"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:531
+#: includes/Modules/Files/Module.php:540
 msgid "Copy link"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:532
+#: includes/Modules/Files/Module.php:541
 #: includes/Modules/Files/settings-template.php:117
 #: includes/Modules/Files/settings-template.php:127
 #: includes/Modules/Media/Module.php:354
 msgid "Rename"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:533
+#: includes/Modules/Files/Module.php:542
 #: includes/Modules/Files/settings-template.php:146
 msgid "Move"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:534
+#: includes/Modules/Files/Module.php:543
 msgid "Extract"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:538
+#: includes/Modules/Files/Module.php:547
 msgid "Archive created. Downloading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:543
+#: includes/Modules/Files/Module.php:552
 msgid "Link copied."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:544
+#: includes/Modules/Files/Module.php:553
 msgid "Could not copy."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:545
+#: includes/Modules/Files/Module.php:554
 msgid "folder"
 msgstr ""
 
 #. translators: %s: folder name
-#: includes/Modules/Files/Module.php:547
+#: includes/Modules/Files/Module.php:556
 #, php-format
 msgid "Compressing \"%s\"..."
 msgstr ""
 
 #. translators: %s: name of the downloaded zip file
-#: includes/Modules/Files/Module.php:549
+#: includes/Modules/Files/Module.php:558
 #, php-format
 msgid "\"%s\" downloaded."
 msgstr ""
 
 #. translators: %s: folder name
-#: includes/Modules/Files/Module.php:551
+#: includes/Modules/Files/Module.php:560
 #, php-format
 msgid "Error while compressing \"%s\"."
 msgstr ""
 
 #. translators: %d: number of selected items
-#: includes/Modules/Files/Module.php:553
+#: includes/Modules/Files/Module.php:562
 #, php-format
 msgid "%d selected"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:554
+#: includes/Modules/Files/Module.php:563
 msgctxt "file editor"
 msgid "Unsaved changes"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:555
+#: includes/Modules/Files/Module.php:564
 msgid "Do you want to leave without saving your changes?"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:556
+#: includes/Modules/Files/Module.php:565
 msgctxt "file editor"
 msgid "Leave without saving"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:557
+#: includes/Modules/Files/Module.php:566
 msgid "Stay"
 msgstr ""
 

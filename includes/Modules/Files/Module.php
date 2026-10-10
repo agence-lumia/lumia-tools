@@ -388,6 +388,15 @@ class Module extends AbstractModule {
 				: $files;
 
 			try {
+				if ( UPLOAD_ERR_INI_SIZE === $file['error'] || UPLOAD_ERR_FORM_SIZE === $file['error'] ) {
+					throw new \RuntimeException(
+						sprintf(
+							/* translators: %s: maximum upload size, e.g. "64 MB". */
+							__( 'The file exceeds the server\'s maximum upload size (%s).', 'lumia-tools' ),
+							(string) size_format( wp_max_upload_size() )
+						)
+					);
+				}
 				if ( UPLOAD_ERR_OK !== $file['error'] ) {
 					throw new \RuntimeException( __( 'Upload failed.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- caught just below, returned as JSON, escaped on display by the toast.
 				}
