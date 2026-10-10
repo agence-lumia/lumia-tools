@@ -246,7 +246,9 @@ final class MigrationCommand {
 	 * @return array<string, mixed>|null
 	 */
 	private function prepare( int $id ): ?array {
-		$journal = $this->journal( $id );
+		// Per item: a failure must never reach the files of the previous one.
+		$this->written = [];
+		$journal       = $this->journal( $id );
 
 		if ( null === $journal ) {
 			$plan = $this->plan( $id );
@@ -273,13 +275,17 @@ final class MigrationCommand {
 		}
 
 		if ( self::STEP_PLANNED === $journal['step'] || ! $this->files_present( $journal ) ) {
-			$this->written = [];
+			$resumed = self::STEP_FILES === $journal['step'];
 			try {
+				$this->check_targets( $id, $journal );
 				$journal = self::CASE_ORIGINAL === $journal['case']
 					? $this->write_from_original( $id, $journal )
 					: $this->write_decoded( $id, $journal );
 			} catch ( \Throwable $e ) {
-				$this->discard( $id, $journal );
+				// A run killed during its database step may have left the metas half written.
+				if ( ! $resumed || $this->restore( $id, $journal ) ) {
+					$this->discard( $id, $journal );
+				}
 				$this->fail( $id, $e->getMessage() );
 				return null;
 			}
@@ -296,8 +302,9 @@ final class MigrationCommand {
 		try {
 			$this->write_metas( $id, $journal );
 		} catch ( \Throwable $e ) {
-			$this->restore( $id, $journal );
-			$this->discard( $id, $journal );
+			if ( $this->restore( $id, $journal ) ) {
+				$this->discard( $id, $journal );
+			}
 			$this->fail( $id, $e->getMessage() );
 			return null;
 		}
@@ -513,6 +520,7 @@ final class MigrationCommand {
 
 		$journal = [
 			'v'            => 1,
+			'id'           => $id,
 			'step'         => self::STEP_PLANNED,
 			'started'      => time(),
 			'main'         => $main,
@@ -532,7 +540,7 @@ final class MigrationCommand {
 			$ext   = pathinfo( $source['source'], PATHINFO_EXTENSION );
 			$taken = $this->family_files( $this->abs( $dir ), $name, $ext, $journal['own'] );
 			if ( $taken ) {
-				return sprintf( 'name collision with %s: rename or delete it, then run again', implode( ', ', $taken ) );
+				return sprintf( 'name collision with %s: rename or delete it, then run again', $this->describe( $dir, $taken, $id ) );
 			}
 
 			return array_merge(
@@ -777,7 +785,7 @@ final class MigrationCommand {
 		$this->remove_generated( $journal );
 		$taken = $this->family_files( $this->abs( $dir ), $name, $ext, (array) $journal['own'] );
 		if ( $taken ) {
-			throw new \RuntimeException( sprintf( 'name collision with %s', implode( ', ', $taken ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- WP-CLI message, never HTML.
+			throw new \RuntimeException( sprintf( 'name collision with %s', $this->describe( $dir, $taken, $id ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- WP-CLI message, never HTML.
 		}
 
 		$before = $this->state( $journal );
@@ -1135,6 +1143,90 @@ final class MigrationCommand {
 	}
 
 	/**
+	 * Before any file is written (first run or resume): a file this item is about to write
+	 * that another attachment already uses is a collision, and the item fails without
+	 * touching anything. Hours can pass between a killed run and its resume, and an upload may
+	 * have taken a name the journal had reserved: renaming over it, or deleting it on a
+	 * failure, would break that other media item.
+	 *
+	 * @param array<string, mixed> $journal
+	 */
+	private function check_targets( int $id, array $journal ): void {
+		$dir     = (string) $journal['dir'];
+		$targets = [];
+
+		if ( self::CASE_ORIGINAL === $journal['case'] ) {
+			$source = (string) $journal['source'];
+			if ( '' !== $journal['copy_from'] ) {
+				$targets[] = $source;
+			}
+			foreach ( $this->family_files( $this->abs( $dir ), pathinfo( $source, PATHINFO_FILENAME ), pathinfo( $source, PATHINFO_EXTENSION ), (array) $journal['own'] ) as $file ) {
+				$targets[] = $dir . $file;
+			}
+		} else {
+			foreach ( (array) $journal['files'] as $fallback ) {
+				$targets[] = (string) $fallback;
+			}
+		}
+
+		$taken = [];
+		foreach ( $targets as $rel ) {
+			if ( is_file( $this->abs( $rel ) ) && 0 !== $this->owner( $rel, $id ) ) {
+				$taken[] = wp_basename( $rel );
+			}
+		}
+		if ( $taken ) {
+			throw new \RuntimeException( sprintf( 'name collision with %s: run again to pick a free name', $this->describe( $dir, $taken, $id ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- WP-CLI message, never HTML.
+		}
+	}
+
+	/**
+	 * The attachment (other than `$id`) whose main file, size or original is this path (an
+	 * `.avif` sibling counts as its source), 0 when none.
+	 */
+	private function owner( string $rel, int $id ): int {
+		global $wpdb;
+
+		$rel  = (string) preg_replace( '/(\.(?:jpe?g|png))\.avif$/i', '$1', $rel );
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off check before writing over a file.
+			$wpdb->prepare(
+				"SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta}
+				WHERE post_id <> %d AND ( ( meta_key = '_wp_attached_file' AND meta_value = %s ) OR ( meta_key = '_wp_attachment_metadata' AND meta_value LIKE %s ) )",
+				$id,
+				$rel,
+				'%' . $wpdb->esc_like( wp_basename( $rel ) . '"' ) . '%'
+			)
+		);
+
+		foreach ( (array) $rows as $row ) {
+			if ( '_wp_attached_file' === $row->meta_key ) {
+				return (int) $row->post_id;
+			}
+			$metadata = maybe_unserialize( (string) $row->meta_value );
+			if ( is_array( $metadata ) && in_array( $rel, $this->own_files( $metadata ), true ) ) {
+				return (int) $row->post_id;
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * `photo.jpg (attachment #12), photo-300x225.jpg (orphan)`.
+	 *
+	 * @param string[] $files Basenames in `$dir`.
+	 */
+	private function describe( string $dir, array $files, int $id ): string {
+		$parts = [];
+		foreach ( $files as $file ) {
+			$owner   = $this->owner( $dir . $file, $id );
+			$parts[] = sprintf( '%s (%s)', $file, $owner > 0 ? 'attachment #' . $owner : 'orphan' );
+		}
+
+		return implode( ', ', $parts );
+	}
+
+	/**
 	 * A failed item: the files this migration wrote go, the journal too. The legacy files,
 	 * the metadata and the URLs are as they were.
 	 *
@@ -1168,7 +1260,7 @@ final class MigrationCommand {
 		$files = $this->family_files( $this->abs( $dir ), pathinfo( $source, PATHINFO_FILENAME ), pathinfo( $source, PATHINFO_EXTENSION ), (array) $journal['own'] );
 		foreach ( $files as $file ) {
 			$path = $this->abs( $dir . $file );
-			if ( (int) filemtime( $path ) >= (int) $journal['started'] - 1 ) {
+			if ( (int) filemtime( $path ) >= (int) $journal['started'] - 1 && 0 === $this->owner( $dir . $file, (int) ( $journal['id'] ?? 0 ) ) ) {
 				wp_delete_file( $path );
 			}
 		}
@@ -1203,27 +1295,41 @@ final class MigrationCommand {
 		$known = is_array( $known ) ? $known : [];
 		update_post_meta( $id, AvifState::LEGACY, array_values( array_unique( array_merge( $known, (array) $journal['legacy'] ) ) ) );
 
+		global $wpdb;
+
 		wp_cache_delete( $id, 'post_meta' );
 		$metadata = get_post_meta( $id, '_wp_attachment_metadata', true );
+		$post     = $wpdb->get_row( $wpdb->prepare( "SELECT post_mime_type, guid FROM {$wpdb->posts} WHERE ID = %d", $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- read back, past the cache.
 		if ( (string) get_post_meta( $id, '_wp_attached_file', true ) !== (string) $after['attached_file']
-			|| ! is_array( $metadata ) || ( $metadata['file'] ?? '' ) !== $after['metadata']['file'] ) {
+			|| ! is_array( $metadata ) || ( $metadata['file'] ?? '' ) !== $after['metadata']['file']
+			|| ! $post || (string) $post->post_mime_type !== (string) $after['mime'] || (string) $post->guid !== (string) $after['guid'] ) {
 			throw new \RuntimeException( 'the database write could not be verified' ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- WP-CLI message, never HTML.
 		}
 	}
 
 	/**
-	 * Puts back the state recorded before the migration (a failed database step).
+	 * Puts back the state recorded before the migration (a failed database step). False when
+	 * it could not: the files and the journal must then stay (the metas may point to the new
+	 * files), and the next run resumes.
 	 *
 	 * @param array<string, mixed> $journal
 	 */
-	private function restore( int $id, array $journal ): void {
+	private function restore( int $id, array $journal ): bool {
 		$before = $this->state( $journal );
 		if ( ! $before ) {
-			return;
+			\WP_CLI::warning( sprintf( '#%d: no state recorded before the migration; files and journal kept, run again.', $id ) );
+			return false;
 		}
 
-		$this->apply_state( $id, $before );
+		try {
+			$this->apply_state( $id, $before );
+		} catch ( \Throwable $e ) {
+			\WP_CLI::warning( sprintf( '#%d: the state before the migration could not be put back (%s); files and journal kept, run again.', $id, $e->getMessage() ) );
+			return false;
+		}
 		delete_post_meta( $id, AvifState::LEGACY );
+
+		return true;
 	}
 
 	/**
@@ -1233,7 +1339,7 @@ final class MigrationCommand {
 		global $wpdb;
 
 		update_post_meta( $id, '_wp_attached_file', (string) $state['attached_file'] );
-		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- wp_update_post() never rewrites the guid, and fires every save hook; the cache is cleaned below.
+		$updated = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- wp_update_post() never rewrites the guid, and fires every save hook; the cache is cleaned below.
 			$wpdb->posts,
 			[
 				'post_mime_type' => (string) $state['mime'],
@@ -1242,7 +1348,11 @@ final class MigrationCommand {
 			[ 'ID' => $id ]
 		);
 		clean_post_cache( $id );
-		wp_update_attachment_metadata( $id, (array) $state['metadata'] );
+		if ( false === $updated ) {
+			throw new \RuntimeException( sprintf( 'could not update the MIME type and guid: %s', $wpdb->last_error ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- WP-CLI message, never HTML.
+		}
+		// Slashed: update_post_meta() unslashes, a backslash in image_meta (caption, copyright) would be lost.
+		wp_update_attachment_metadata( $id, wp_slash( (array) $state['metadata'] ) );
 	}
 
 	/**
@@ -1290,7 +1400,8 @@ final class MigrationCommand {
 	 * @param array<string, mixed> $journal
 	 */
 	private function save_journal( int $id, array $journal ): bool {
-		update_post_meta( $id, self::JOURNAL, $journal );
+		// update_post_meta() unslashes: a backslash in the metadata (image_meta) would be lost.
+		update_post_meta( $id, self::JOURNAL, wp_slash( $journal ) );
 
 		return $this->journal( $id ) === $journal;
 	}

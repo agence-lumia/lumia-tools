@@ -27,6 +27,10 @@
  *                the fallback family must move to `collide-1`
  *   backup       photo-gps.jpg with the former backup copy in `lumia-originals-<token>/`
  *                (`_lumia_backup_file`): regenerated from it (case 1)
+ *   seq-a, seq-b photo-gps.jpg (case 2): a database step failing on a resumed seq-b must not
+ *                touch seq-a's files
+ *   late         photo-gps.jpg (case 2), late-backup (case 1 from a backup copy): killed at
+ *                "planned", their reserved names then taken by other uploads
  *
  * Writes `out/mig-manifest.json` (IDs, page, paths) for assert-migration.php.
  */
@@ -216,6 +220,11 @@ seed_legacy( $ids['big-lost'], 'avif', false );
 
 $ids['photo'] = seed_import( 'photo-p3.jpg', 'photo.jpg' );
 seed_legacy( $ids['photo'] );
+// A backslash in image_meta (a Windows path in a copyright, an escaped quote): the journal
+// and the metadata must keep it (update_post_meta() unslashes).
+$photo_meta                             = wp_get_attachment_metadata( $ids['photo'] );
+$photo_meta['image_meta']['copyright'] = 'C:\\Studio\\photo "x"';
+update_post_meta( $ids['photo'], '_wp_attachment_metadata', wp_slash( $photo_meta ) );
 
 $ids['alpha'] = seed_import( 'visual-alpha.png', 'alpha.png' );
 seed_legacy( $ids['alpha'] );
@@ -246,6 +255,19 @@ wp_mkdir_p( $base . '/lumia-originals-' . $token . '/' . SEED_SUBDIR );
 copy( get_attached_file( $ids['backup'] ), $base . '/lumia-originals-' . $token . '/' . $backup_rel );
 seed_legacy( $ids['backup'] );
 update_post_meta( $ids['backup'], '_lumia_backup_file', $backup_rel );
+
+// Review scenarios (assert-migration.sh): seq-a / seq-b (a failed database step on a resumed
+// item must not touch the previous item), late / late-backup (a name taken between a killed
+// run and its resume).
+foreach ( [ 'seq-a', 'seq-b', 'late' ] as $key ) {
+	$ids[ $key ] = seed_import( 'photo-gps.jpg', $key . '.jpg' );
+	seed_legacy( $ids[ $key ] );
+}
+$ids['late-backup'] = seed_import( 'photo-gps.jpg', 'late-backup.jpg' );
+$late_backup_rel    = SEED_SUBDIR . '/late-backup.jpg';
+copy( get_attached_file( $ids['late-backup'] ), $base . '/lumia-originals-' . $token . '/' . $late_backup_rel );
+seed_legacy( $ids['late-backup'] );
+update_post_meta( $ids['late-backup'], '_lumia_backup_file', $late_backup_rel );
 
 // --- URLs in the database and in Bricks' CSS ------------------------------------------------
 
@@ -342,6 +364,7 @@ $manifest = [
 	'urls'     => $urls,
 	'extra'    => [ $photo_medium, $photo_large, $big_medium ],
 	'backup'   => 'lumia-originals-' . $token . '/' . $backup_rel,
+	'backup_late' => 'lumia-originals-' . $token . '/' . $late_backup_rel,
 	'legacy'   => [],
 	'baseurl'  => $baseurl,
 	'seeded'   => time(),

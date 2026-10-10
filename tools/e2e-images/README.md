@@ -169,8 +169,8 @@ the former module left them (commit 7a606e2: AVIF next to the source, extension 
 deleted, `original_image` untouched, metadata / attached file / MIME / guid rewritten,
 `_lumia_optimized*` metas): `big-photo` (scaled, original on disk: case 1), `big-lost` (scaled,
 original deleted), `photo`, `alpha` (transparency), `logo` (flat colours), `webp-photo` (WebP),
-`collide` (its name taken since by another upload `collide.jpg`) and `backup` (former backup copy
-in `lumia-originals-<token>/`). Their URLs go into a page (`/legacy-gallery/`: block image with
+`collide` (its name taken since by another upload `collide.jpg`), `backup` (former backup copy
+in `lumia-originals-<token>/`), `seq-a`, `seq-b`, `late` and `late-backup` (review scenarios below). Their URLs go into a page (`/legacy-gallery/`: block image with
 `srcset`, inline `background-image`, a `<link>` to the Bricks CSS file), a Bricks-like serialized
 meta, a Rank Math meta, an escaped JSON meta, an option and `uploads/bricks/css/post-<id>.min.css`.
 It writes `out/mig-manifest.json`. Re-running it replaces everything it seeded.
@@ -178,9 +178,11 @@ It writes `out/mig-manifest.json`. Re-running it replaces everything it seeded.
 | Scenario | Asserted |
 |---|---|
 | cron container (`wordpress:cli`) | exit code 1 and the exact refusal message |
-| `--dry-run` | "Would process: 8"; database (posts, postmeta, options without transients) and uploads (path, size, mtime, md5) fingerprints identical |
+| `--dry-run` | "Would process: 12"; database (posts, postmeta, options without transients) and uploads (path, size, mtime, md5) fingerprints identical |
 | `--limit=1`, `kill -9` once the journal reads `files_written` (`--require` of a file that sleeps on the step action) | one journal at that step, legacy metas and attached file unchanged, the files written on disk, every URL of the page 200 |
-| full run | the interrupted item resumes, 8 processed; per item: legacy metas and journal gone, attached file / metadata / MIME / guid / sizes / filesizes right, `original_image` kept (case 1) or dropped (missing), siblings hard-linked to the legacy AVIF and recorded fresh (`done`) or none (`pending`: case 1, WebP), legacy files on disk and listed, every old `.avif` / `.webp` URL 200 with its type, every new URL 200 JPEG/PNG for `*/*`; the `collide` family moved to `collide-1`, the other `collide.jpg` untouched; every URL rewritten (content, Bricks meta, Rank Math, escaped JSON, option, Bricks CSS) |
+| database step failing on a resumed item | `seq-b` killed at `files_written`, then `--ids=seq-a,seq-b` with a `--require`d hook that blocks seq-b's `_wp_attached_file`: exit 1, seq-a migrated with every fallback and sibling on disk and served, seq-b intact (metas, journal gone, its files removed) |
+| resume at `planned` after a name was taken | `late` (case 2) and `late-backup` (case 1, backup copy) killed at `planned`, other uploads then take `late.jpg` / `late-backup.jpg`: both fail with "name collision with late.jpg (attachment #N)", the other uploads untouched (md5), the items intact; the full run then moves them to `-1` |
+| full run | the interrupted item resumes, the 11 remaining items processed; a backslash in `image_meta` survives; per item: legacy metas and journal gone, attached file / metadata / MIME / guid / sizes / filesizes right, `original_image` kept (case 1) or dropped (missing), siblings hard-linked to the legacy AVIF and recorded fresh (`done`) or none (`pending`: case 1, WebP), legacy files on disk and listed, every old `.avif` / `.webp` URL 200 with its type, every new URL 200 JPEG/PNG for `*/*`; the `collide` family moved to `collide-1`, the other `collide.jpg` untouched; every URL rewritten (content, Bricks meta, Rank Math, escaped JSON, option, Bricks CSS) |
 | `crawl-check.sh` | every `src` / `srcset` / `url()` of the sitemap pages and their stylesheets: 200, AVIF only for Chrome on a `.jpg` / `.png`, its own type for `*/*` |
 | second run | "Processed: 0" |
 | permanent deletion of `photo` | fallbacks, siblings and legacy files gone |

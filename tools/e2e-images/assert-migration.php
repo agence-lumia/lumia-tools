@@ -139,7 +139,40 @@ if ( 'snapshot' === $phase ) {
 	return;
 }
 
-$legacy_keys = [ 'big-photo', 'big-lost', 'photo', 'alpha', 'logo', 'webp-photo', 'collide', 'backup' ];
+$legacy_keys = [ 'big-photo', 'big-lost', 'photo', 'alpha', 'logo', 'webp-photo', 'collide', 'backup', 'seq-a', 'seq-b', 'late', 'late-backup' ];
+
+/**
+ * md5 of every file of the attachments that took the reserved names (take-names phase).
+ */
+function am_taken_files(): array {
+	$taken = json_decode( (string) @file_get_contents( '/bench/out/mig-taken.json' ), true );
+	$now   = [];
+	foreach ( (array) ( $taken['ids'] ?? [] ) as $id ) {
+		$meta  = wp_get_attachment_metadata( (int) $id );
+		$files = [ (string) get_post_meta( (int) $id, '_wp_attached_file', true ) ];
+		foreach ( (array) ( $meta['sizes'] ?? [] ) as $size ) {
+			$files[] = dirname( $files[0] ) . '/' . $size['file'];
+		}
+		foreach ( $files as $rel ) {
+			$now[ $rel ] = is_file( am_abs( $rel ) ) ? md5_file( am_abs( $rel ) ) : 'missing';
+		}
+	}
+	return [ (array) ( $taken['files'] ?? [] ), $now ];
+}
+
+/**
+ * The item is exactly as the former pipeline left it, nothing written for it.
+ */
+function am_intact( string $key, array $m ): void {
+	$id = (int) $m['ids'][ $key ];
+	am_check( (bool) am_legacy_metas( $id ), "{$key}: legacy metas still there" );
+	am_check( '' === get_post_meta( $id, '_lumia_migration', true ), "{$key}: no journal left" );
+	am_check( $m['legacy'][ $key ][0] === get_post_meta( $id, '_wp_attached_file', true ) && 'image/avif' === get_post_mime_type( $id ), "{$key}: attached file and MIME unchanged (" . get_post_meta( $id, '_wp_attached_file', true ) . ')' );
+	$meta = wp_get_attachment_metadata( $id );
+	am_check( $m['legacy'][ $key ][0] === ( $meta['file'] ?? '' ), "{$key}: metadata unchanged" );
+	$gone = array_filter( $m['legacy'][ $key ], static fn( $rel ) => ! is_file( am_abs( $rel ) ) );
+	am_check( ! $gone, "{$key}: legacy files on disk" );
+}
 
 // ================================================================== interrupted
 if ( 'interrupted' === $phase ) {
@@ -194,6 +227,95 @@ if ( 'interrupted' === $phase ) {
 	exit( $am_failures > 0 ? 1 : 0 );
 }
 
+// ================================================================== metas-failure
+// seq-b resumed at files_written, its database step forced to fail, seq-a migrated just
+// before it in the same run: seq-a's files must all survive seq-b's cleanup.
+if ( 'metas-failure' === $phase ) {
+	WP_CLI::log( 'A database step failing on a resumed item' );
+
+	$id   = (int) $m['ids']['seq-a'];
+	$meta = wp_get_attachment_metadata( $id );
+	am_check( ! am_legacy_metas( $id ) && 'e2e-legacy/seq-a.jpg' === get_post_meta( $id, '_wp_attached_file', true ), 'seq-a: migrated in the same run' );
+	$files = [ $meta['file'] ];
+	foreach ( (array) $meta['sizes'] as $size ) {
+		$files[] = 'e2e-legacy/' . $size['file'];
+	}
+	$missing = [];
+	foreach ( $files as $rel ) {
+		foreach ( [ $rel, $rel . '.avif' ] as $file ) {
+			if ( ! is_file( am_abs( $file ) ) ) {
+				$missing[] = $file;
+			} else {
+				[ $status ] = am_get( am_url( $file ) );
+				if ( 200 !== $status ) {
+					$missing[] = "{$file} ({$status})";
+				}
+			}
+		}
+	}
+	am_check( ! $missing, 'seq-a: every fallback and sibling still on disk and served (' . ( 2 * count( $files ) ) . ')' . ( $missing ? ': missing ' . implode( ', ', $missing ) : '' ) );
+
+	am_intact( 'seq-b', $m );
+	$left = glob( am_abs( 'e2e-legacy/seq-b*.jpg' ) ) ?: [];
+	$left = array_merge( $left, glob( am_abs( 'e2e-legacy/seq-b*.jpg.avif' ) ) ?: [] );
+	am_check( ! $left, 'seq-b: the files it wrote were removed' . ( $left ? ' (left: ' . implode( ', ', array_map( 'basename', $left ) ) . ')' : '' ) );
+
+	exit( $am_failures > 0 ? 1 : 0 );
+}
+
+// ================================================================== take-names
+// late and late-backup were killed at "planned": other uploads now take their reserved names.
+if ( 'take-names' === $phase ) {
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+
+	foreach ( [ 'late', 'late-backup' ] as $key ) {
+		$journal = get_post_meta( (int) $m['ids'][ $key ], '_lumia_migration', true );
+		am_check( is_array( $journal ) && 'planned' === $journal['step'], "{$key}: journal at planned (" . ( is_array( $journal ) ? $journal['step'] : 'none' ) . ')' );
+	}
+
+	add_filter(
+		'upload_dir',
+		static function ( array $u ): array {
+			$u['subdir'] = '/e2e-legacy';
+			$u['path']   = $u['basedir'] . '/e2e-legacy';
+			$u['url']    = $u['baseurl'] . '/e2e-legacy';
+			return $u;
+		}
+	);
+	$ids = [];
+	foreach ( [ 'late.jpg', 'late-backup.jpg' ] as $name ) {
+		$tmp = wp_tempnam( $name );
+		copy( '/bench/out/fixtures/photo-p3.jpg', $tmp );
+		$id = media_handle_sideload( [ 'name' => $name, 'tmp_name' => $tmp ], 0 );
+		if ( is_wp_error( $id ) ) {
+			WP_CLI::error( $id->get_error_message() );
+		}
+		update_post_meta( (int) $id, '_lumia_e2e_seed', 1 ); // Removed by the next seed.
+		am_check( 'e2e-legacy/' . $name === get_post_meta( (int) $id, '_wp_attached_file', true ), "another upload took {$name} (#{$id})" );
+		$ids[] = (int) $id;
+	}
+	file_put_contents( '/bench/out/mig-taken.json', wp_json_encode( [ 'ids' => $ids, 'files' => [] ] ) );
+	[ , $now ] = am_taken_files();
+	file_put_contents( '/bench/out/mig-taken.json', wp_json_encode( [ 'ids' => $ids, 'files' => $now ] ) );
+	WP_CLI::log( 'ids ' . implode( ',', $ids ) );
+
+	exit( $am_failures > 0 ? 1 : 0 );
+}
+
+// ================================================================== taken-check
+if ( 'taken-check' === $phase ) {
+	WP_CLI::log( 'Resume at "planned" after the names were taken' );
+	[ $before, $now ] = am_taken_files();
+	am_check( count( $before ) >= 8 && $before === $now, 'the other uploads are untouched (' . count( $now ) . ' files, same md5)' );
+	am_intact( 'late', $m );
+	am_intact( 'late-backup', $m );
+	am_check( ! is_file( am_abs( 'e2e-legacy/late-1.jpg' ) ) && ! is_file( am_abs( 'e2e-legacy/late-backup-1.jpg' ) ), 'nothing written under another name yet' );
+
+	exit( $am_failures > 0 ? 1 : 0 );
+}
+
 // ================================================================== final
 if ( 'final' === $phase ) {
 	$serving = class_exists( '\Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe' ) && \Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe::is_serving();
@@ -208,6 +330,10 @@ if ( 'final' === $phase ) {
 		'webp-photo' => [ 'guid' => 'webp-photo.jpg', 'main' => 'e2e-legacy/webp-photo.jpg', 'mime' => 'image/jpeg', 'status' => 'pending', 'sibling' => false, 'original' => null ],
 		'collide'    => [ 'guid' => 'collide-1.jpg', 'main' => 'e2e-legacy/collide-1.jpg', 'mime' => 'image/jpeg', 'status' => 'done', 'sibling' => true, 'original' => null ],
 		'backup'     => [ 'guid' => 'backup.jpg', 'main' => 'e2e-legacy/backup.jpg', 'mime' => 'image/jpeg', 'status' => 'pending', 'sibling' => false, 'original' => null ],
+		'seq-a'      => [ 'guid' => 'seq-a.jpg', 'main' => 'e2e-legacy/seq-a.jpg', 'mime' => 'image/jpeg', 'status' => 'done', 'sibling' => true, 'original' => null ],
+		'seq-b'      => [ 'guid' => 'seq-b.jpg', 'main' => 'e2e-legacy/seq-b.jpg', 'mime' => 'image/jpeg', 'status' => 'done', 'sibling' => true, 'original' => null ],
+		'late'       => [ 'guid' => 'late-1.jpg', 'main' => 'e2e-legacy/late-1.jpg', 'mime' => 'image/jpeg', 'status' => 'done', 'sibling' => true, 'original' => null ],
+		'late-backup' => [ 'guid' => 'late-backup-1.jpg', 'main' => 'e2e-legacy/late-backup-1.jpg', 'mime' => 'image/jpeg', 'status' => 'pending', 'sibling' => false, 'original' => null ],
 	];
 
 	foreach ( $expect as $key => $e ) {
@@ -282,6 +408,9 @@ if ( 'final' === $phase ) {
 		if ( 'backup' === $key ) {
 			am_check( in_array( $m['backup'], $listed, true ), 'backup: the former backup copy is listed (leaves with the item)' );
 		}
+		if ( 'late-backup' === $key ) {
+			am_check( in_array( $m['backup_late'], $listed, true ), 'late-backup: the former backup copy is listed (leaves with the item)' );
+		}
 
 		// The old URLs still answer, with their own type.
 		$bad = [];
@@ -316,6 +445,15 @@ if ( 'final' === $phase ) {
 			}
 		}
 		am_check( ! $rewritten, "{$killed['key']}: resumed at the database step, its " . count( $killed['files'] ) . ' files not written again' . ( $rewritten ? ' (rewritten: ' . implode( ', ', $rewritten ) . ')' : '' ) );
+	}
+
+	$photo_meta = wp_get_attachment_metadata( (int) $m['ids']['photo'] );
+	am_check( 'C:\\Studio\\photo "x"' === ( $photo_meta['image_meta']['copyright'] ?? '' ), 'photo: a backslash in image_meta survives the journal and the metadata write (' . ( $photo_meta['image_meta']['copyright'] ?? '' ) . ')' );
+
+	// The uploads that took late.jpg / late-backup.jpg are still untouched after the full run.
+	if ( is_file( '/bench/out/mig-taken.json' ) ) {
+		[ $before, $now ] = am_taken_files();
+		am_check( $before && $before === $now, 'late.jpg / late-backup.jpg (other uploads) untouched after the full run' );
 	}
 
 	// The upload that took the name collide.jpg is untouched.

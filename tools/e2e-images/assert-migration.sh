@@ -12,7 +12,9 @@
 # 2. the cron container (wordpress:cli, Imagick without codecs) refuses, with the message;
 # 3. --dry-run writes nothing (database and uploads fingerprints identical);
 # 4. --limit=1 killed (kill -9) once its journal reaches "files_written": every URL still
-#    answers, the item resumes;
+#    answers, the item resumes; a database step failing on a resumed item (seq-b) leaves the
+#    item migrated just before it (seq-a) intact; items killed at "planned" whose reserved
+#    names other uploads then took (late, late-backup) fail without touching those uploads;
 # 5. full run, assertions (assert-migration.php final), crawl of the site (crawl-check.sh);
 # 6. a second run processes nothing; permanent deletion takes the legacy files along.
 #
@@ -37,8 +39,45 @@ fail() {
 
 wpx() { "${RUN}" wp "${STACK}" "$@"; }
 
-journal_step() {
-	wpx eval 'global $wpdb; $v = $wpdb->get_var( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = \"_lumia_migration\" LIMIT 1" ); $j = maybe_unserialize( (string) $v ); echo is_array( $j ) ? $j["step"] : "";' 2>/dev/null | tr -d '\r' || true
+journal_step() { # journal_step <attachment id>
+	wpx eval '$j = get_post_meta( '"$1"', "_lumia_migration", true ); echo is_array( $j ) ? $j["step"] : "";' 2>/dev/null | tr -d '\r' || true
+}
+
+seeded_id() { # seeded_id <key of the manifest>
+	wpx eval 'echo json_decode( file_get_contents( "/bench/out/mig-manifest.json" ), true )["ids"]["'"$1"'"];' 2>/dev/null | tr -d '\r'
+}
+
+# kill_at <step> <id> <migrate args...>: runs the migration, holds it right after <id>'s journal
+# records <step> (a --require'd hook sleeps there), then kill -9.
+kill_at() {
+	local at="$1" id="$2" bg step=''
+	shift 2
+	cat >"${OUT}/mig-pause.php" <<PHP
+<?php
+WP_CLI::add_wp_hook(
+	'lumia_image_optimizer_migration_step',
+	static function ( \$id, \$step ) {
+		if ( ${id} === (int) \$id && '${at}' === \$step ) {
+			sleep( 300 );
+		}
+	},
+	10,
+	2
+);
+PHP
+	chmod 644 "${OUT}/mig-pause.php"
+	wpx --require=/bench/out/mig-pause.php lumia images migrate "$@" >"${OUT}/mig-killed.log" 2>&1 &
+	bg=$!
+	for _ in $(seq 1 120); do
+		step="$(journal_step "${id}")"
+		[ "${step}" = "${at}" ] && break
+		kill -0 "${bg}" 2>/dev/null || break # the run ended (or never started)
+		sleep 1
+	done
+	docker exec "${PHP_CONTAINER}" pkill -9 -f 'mig-pause.php' || true
+	wait "${bg}" 2>/dev/null || true
+	sed 's/^/    /' "${OUT}/mig-killed.log"
+	if [ "${step}" = "${at}" ]; then pass "#${id}: journal at ${at}, process killed (kill -9)"; else fail "#${id}: journal never reached ${at} (last: '${step}')"; fi
 }
 
 echo "== setup (${STACK})"
@@ -67,51 +106,54 @@ rc=0
 out="$(wpx lumia images migrate --dry-run 2>&1)" || rc=$?
 echo "${out}" | sed 's/^/    /'
 "${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" snapshot mig-after >/dev/null
-if [ "${rc}" -eq 0 ] && grep -q 'Would process: 8' <<<"${out}"; then pass "dry run: 8 items planned"; else fail "dry run: exit ${rc}"; fi
+if [ "${rc}" -eq 0 ] && grep -q 'Would process: 12' <<<"${out}"; then pass "dry run: 12 items planned"; else fail "dry run: exit ${rc}"; fi
 if cmp -s "${OUT}/mig-before.json" "${OUT}/mig-after.json"; then pass "dry run: database and uploads unchanged"; else fail "dry run changed something: $(cat "${OUT}/mig-before.json") vs $(cat "${OUT}/mig-after.json")"; fi
 
 echo "== --limit=1 killed at files_written, then resumed"
-rm -f "${OUT}/mig-interrupted.json"
-# Holds the process right after the step is recorded, so that the kill lands there.
-cat >"${OUT}/mig-pause.php" <<'PHP'
+rm -f "${OUT}/mig-interrupted.json" "${OUT}/mig-taken.json"
+kill_at files_written "$(seeded_id big-photo)" --limit=1
+"${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" interrupted || FAILURES=$((FAILURES + 1))
+
+echo "== a database step failing on a resumed item leaves the previous item alone"
+SEQ_A="$(seeded_id seq-a)"
+SEQ_B="$(seeded_id seq-b)"
+kill_at files_written "${SEQ_B}" --ids="${SEQ_B}"
+# seq-b's attached file cannot be written: its database step fails after seq-a's succeeded.
+cat >"${OUT}/mig-fail-metas.php" <<PHP
 <?php
 WP_CLI::add_wp_hook(
-	'lumia_image_optimizer_migration_step',
-	static function ( $id, $step ) {
-		if ( 'files_written' === $step ) {
-			sleep( 300 );
-		}
+	'update_post_metadata',
+	static function ( \$check, \$object_id, \$key ) {
+		return ${SEQ_B} === (int) \$object_id && '_wp_attached_file' === \$key ? false : \$check;
 	},
 	10,
-	2
+	3
 );
 PHP
-chmod 644 "${OUT}/mig-pause.php"
-wpx --require=/bench/out/mig-pause.php lumia images migrate --limit=1 >"${OUT}/mig-killed.log" 2>&1 &
-bg=$!
-step=''
-for _ in $(seq 1 120); do
-	step="$(journal_step)"
-	[ "${step}" = files_written ] && break
-	kill -0 "${bg}" 2>/dev/null || break # the run ended (or never started)
-	sleep 1
-done
-if [ "${step}" = files_written ]; then
-	docker exec "${PHP_CONTAINER}" pkill -9 -f 'mig-pause.php' || true
-	pass "journal at files_written, process killed (kill -9)"
-else
-	fail "journal never reached files_written (last: '${step}')"
-	docker exec "${PHP_CONTAINER}" pkill -9 -f 'mig-pause.php' || true
-fi
-wait "${bg}" 2>/dev/null || true
-sed 's/^/    /' "${OUT}/mig-killed.log"
-"${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" interrupted || FAILURES=$((FAILURES + 1))
+chmod 644 "${OUT}/mig-fail-metas.php"
+rc=0
+out="$(wpx --require=/bench/out/mig-fail-metas.php lumia images migrate --ids="${SEQ_A},${SEQ_B}" 2>&1)" || rc=$?
+echo "${out}" | sed 's/^/    /'
+if [ "${rc}" -ne 0 ] && grep -q 'Processed: 1' <<<"${out}" && grep -q 'Failed: 1' <<<"${out}" && grep -q "#${SEQ_B}: the database write could not be verified" <<<"${out}"; then pass "seq-a migrated, seq-b failed (exit ${rc})"; else fail "seq-a / seq-b run: exit ${rc}"; fi
+"${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" metas-failure || FAILURES=$((FAILURES + 1))
+
+echo "== resume at planned after other uploads took the reserved names"
+LATE="$(seeded_id late)"
+LATE_BK="$(seeded_id late-backup)"
+kill_at planned "${LATE}" --ids="${LATE}"
+kill_at planned "${LATE_BK}" --ids="${LATE_BK}"
+"${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" take-names || FAILURES=$((FAILURES + 1))
+rc=0
+out="$(wpx lumia images migrate --ids="${LATE},${LATE_BK}" 2>&1)" || rc=$?
+echo "${out}" | sed 's/^/    /'
+if [ "${rc}" -ne 0 ] && grep -q 'Failed: 2' <<<"${out}" && grep -qE "#${LATE}: name collision with late.jpg \(attachment #[0-9]+\)" <<<"${out}" && grep -qE "#${LATE_BK}: name collision with late-backup.jpg \(attachment #[0-9]+\)" <<<"${out}"; then pass "both items fail on the collision, naming the owner (exit ${rc})"; else fail "late / late-backup run: exit ${rc}"; fi
+"${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" taken-check || FAILURES=$((FAILURES + 1))
 
 echo "== full run"
 rc=0
 out="$(wpx lumia images migrate 2>&1)" || rc=$?
 echo "${out}" | sed 's/^/    /'
-if [ "${rc}" -eq 0 ] && grep -q 'resuming after step "files_written"' <<<"${out}" && grep -q 'Processed: 8' <<<"${out}"; then pass "8 items migrated, the interrupted one resumed"; else fail "full run: exit ${rc}"; fi
+if [ "${rc}" -eq 0 ] && grep -q 'resuming after step "files_written"' <<<"${out}" && grep -q 'Processed: 11' <<<"${out}"; then pass "the 11 remaining items migrated, the interrupted one resumed"; else fail "full run: exit ${rc}"; fi
 "${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" final || FAILURES=$((FAILURES + 1))
 
 echo "== crawl"
