@@ -8,6 +8,11 @@
 #   apache : wordpress:php8.5-apache (mod_php, .htaccess)                -> http://localhost:8092
 #   ols    : OpenLiteSpeed + lsphp 8.5 (.htaccess via its rewrite engine) -> http://localhost:8093
 #
+# Variants of the nginx stack (same services, other compose project, run.sh sets the ports):
+#   nginx-plain : the template's nginx.conf WITHOUT the AVIF rule             -> http://localhost:8095
+#   cdn         : the nginx stack behind `proxy-cdn`, a caching proxy that
+#                 ignores Vary and sends Cloudflare-like headers              -> http://localhost:8094
+#
 # Each stack gets a "loopback" sidecar (alpine/socat sharing the PHP container's network
 # namespace): inside the container, http://localhost:<port> reaches the web server, exactly
 # like a production container reaching itself through its public domain. The plugin's
@@ -105,7 +110,7 @@ services:
       snippets-nginx:
         condition: service_completed_successfully
     ports:
-      - "8091:80"
+      - "${E2E_NGINX_PORT:-8091}:80"
     volumes:
       - wp_data:/var/www/html:ro
       - ${RENDERED_DIR:-./out/nginx-rendered}/files/nginx.conf:/etc/nginx/conf.d/default.conf:ro
@@ -127,8 +132,26 @@ services:
     network_mode: "service:wp-nginx"
     depends_on:
       - web-nginx
-    command: ["TCP-LISTEN:8091,fork,reuseaddr", "TCP:web-nginx:80"]
+    # The site's port inside the PHP container: the web server itself, or the caching proxy
+    # of the `cdn` variant (E2E_LOOPBACK_TARGET).
+    command: ["TCP-LISTEN:${E2E_SITE_PORT:-8091},fork,reuseaddr", "TCP:${E2E_LOOPBACK_TARGET:-web-nginx:80}"]
     restart: unless-stopped
+
+  # `cdn` variant: a caching reverse proxy in front of web-nginx that behaves like a CDN which
+  # ignores Vary (cdn/nginx.conf): the first variant cached for an image URL is served to every
+  # client. It adds `cf-ray` / `cf-cache-status`, so the plugin sees "Cloudflare".
+  proxy-cdn:
+    image: nginx:1-alpine
+    profiles: [cdn]
+    depends_on:
+      web-nginx:
+        condition: service_healthy
+    ports:
+      - "8094:80"
+    volumes:
+      - ./cdn/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    tmpfs:
+      - /var/cache/bench-cdn
 
   # The template's cron container: same image, same volume, WP-CLI as www-data (82).
   # Kept idle; run.sh `wp-cron nginx <args>` runs commands in it. The bench uses it to

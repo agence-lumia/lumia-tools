@@ -188,3 +188,44 @@
     width: 100%;
   }
 }
+
+/* ================================================================
+ * DELIVERY TAB — self-test result and nginx rule
+ * ================================================================ */
+.lumia-delivery__reason {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--lumia-text);
+}
+
+.lumia-delivery__table {
+  margin-bottom: 4px;
+}
+
+.lumia-delivery__detail {
+  font-size: 12px;
+  color: var(--lumia-text-secondary);
+  word-break: break-word;
+}
+
+.lumia-delivery__snippet {
+  margin-top: 16px;
+}
+
+.lumia-delivery__code {
+  margin: 8px 0 12px;
+  padding: 12px 16px;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  background: var(--lumia-n50);
+  color: var(--lumia-text);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}

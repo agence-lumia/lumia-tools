@@ -73,6 +73,7 @@ class Module extends AbstractModule {
 	private MediaLibrary $media_library;
 	private SvgHandler $svg;
 	private ?FileLifecycle $lifecycle = null;
+	private ?DeliveryProbe $delivery  = null;
 
 	/**
 	 * Active module settings (in-memory cache).
@@ -127,6 +128,9 @@ class Module extends AbstractModule {
 		// AVIF siblings: queueing on metadata changes, deletion, names, WordPress image settings.
 		$this->get_lifecycle()->register();
 
+		// Delivery self-test: daily check, Retest button, browser check.
+		$this->get_delivery_probe()->register();
+
 		// Automatic alt text
 		add_action( 'add_attachment', [ $this, 'generate_alt_text' ] );
 
@@ -157,6 +161,32 @@ class Module extends AbstractModule {
 		}
 
 		return $this->lifecycle;
+	}
+
+	/**
+	 * The delivery self-test (created on first use, like the lifecycle). A CDN that mixes the
+	 * variants up has every generated sibling deleted, through the lifecycle's purge.
+	 */
+	public function get_delivery_probe(): DeliveryProbe {
+		if ( null === $this->delivery ) {
+			$this->delivery = new DeliveryProbe(
+				function (): void {
+					$this->get_lifecycle()->purge_all();
+				}
+			);
+		}
+
+		return $this->delivery;
+	}
+
+	/**
+	 * Module state, read from the global settings: save_settings() also runs for an inactive
+	 * module (settings import).
+	 */
+	private function is_module_active(): bool {
+		$settings = get_option( 'lumia_settings', [] );
+
+		return is_array( $settings ) && ! empty( $settings['modules'][ $this->id ] );
 	}
 
 	/**
@@ -241,7 +271,15 @@ class Module extends AbstractModule {
 
 		$this->settings = $sanitized;
 
-		return $this->save_module_settings( $sanitized );
+		$saved = $this->save_module_settings( $sanitized );
+
+		// Delivery tested again on every save (spec 1): the result also says whether the
+		// AVIF can be generated.
+		if ( $this->is_module_active() ) {
+			$this->get_delivery_probe()->run();
+		}
+
+		return $saved;
 	}
 
 	/**
@@ -317,6 +355,13 @@ class Module extends AbstractModule {
 				'mediaError'    => __( 'Error', 'lumia-tools' ),
 				'cancel'        => __( 'Cancel', 'lumia-tools' ),
 				'format'        => __( 'Target format', 'lumia-tools' ),
+				'delivery'      => [
+					'checking'   => __( 'Checking…', 'lumia-tools' ),
+					'retesting'  => __( 'Testing…', 'lumia-tools' ),
+					'unverified' => __( 'Could not be run', 'lumia-tools' ),
+					'copied'     => __( 'Rule copied.', 'lumia-tools' ),
+					'copyFailed' => __( 'Copy failed: select the rule and copy it by hand.', 'lumia-tools' ),
+				],
 				'reoptimize'    => [
 					'title'    => __( 'Re-optimize this image?', 'lumia-tools' ),
 					'backup'   => __( 'The image is reprocessed from the kept original, using the current settings.', 'lumia-tools' ),
@@ -367,6 +412,11 @@ class Module extends AbstractModule {
 		if ( ! wp_next_scheduled( FileLifecycle::RECONCILE_HOOK ) ) {
 			wp_schedule_single_event( time(), FileLifecycle::RECONCILE_HOOK );
 		}
+
+		// Nothing is generated before delivery is proven: tested right away, then daily.
+		$probe = $this->get_delivery_probe();
+		$probe->schedule();
+		$probe->run();
 	}
 
 	public function on_deactivate(): void {
@@ -376,6 +426,9 @@ class Module extends AbstractModule {
 			wp_unschedule_event( $timestamp, 'lumia_image_optimizer_cron' );
 		}
 		wp_unschedule_hook( FileLifecycle::RECONCILE_HOOK );
+
+		// uploads/.htaccess block, daily check and verdict.
+		DeliveryProbe::reset();
 
 		// The server would keep serving the AVIF siblings with nobody to keep them up to
 		// date: they go (the bulk regenerates them after a reactivation).
@@ -395,8 +448,9 @@ class Module extends AbstractModule {
 				'lumia_module_image_optimizer' . self::BACKUP_TOKEN_SUFFIX,
 				FileLifecycle::TOMBSTONES_OPTION,
 				FileLifecycle::RECONCILE_CURSOR,
+				DeliveryProbe::OPTION,
 			],
-			'cron'    => [ FileLifecycle::RECONCILE_HOOK ],
+			'cron'    => [ FileLifecycle::RECONCILE_HOOK, DeliveryProbe::CRON_HOOK ],
 			// The files in lumia-originals/ stay on disk: they are the
 			// client's photos, not plugin data.
 			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META ] ),

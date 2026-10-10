@@ -42,8 +42,10 @@ CLIENTS=(
 # --- Single-request helpers --------------------------------------------------
 
 # headers_of <url> <accept> <user-agent>: response headers (CRLF stripped), body discarded.
+# Empty (status 0) when the server cannot be reached: under `set -eo pipefail`, a failing curl
+# would otherwise end the calling script silently in the middle of a matrix.
 headers_of() {
-	curl -s -o /dev/null -D - --max-time 30 -A "$3" -H "Accept: $2" "$1" | tr -d '\r'
+	curl -s -o /dev/null -D - --max-time 30 -A "$3" -H "Accept: $2" "$1" | tr -d '\r' || true
 }
 
 # header_value <name> <headers>: value of the last occurrence of a header (case-insensitive).
@@ -164,7 +166,7 @@ latency_probe() {
 	end=$((SECONDS + seconds))
 	times=''
 	while [ "${SECONDS}" -lt "${end}" ]; do
-		times+="$(curl -s -o /dev/null --max-time 60 -w '%{time_total}' "${url}") "
+		times+="$(curl -s -o /dev/null --max-time 60 -w '%{time_total}' "${url}" || true) "
 		times+=$'\n'
 		sleep 0.2
 	done

@@ -26,7 +26,46 @@ The JPEG/PNG WordPress produces stays the served file; `file.ext.avif` is writte
 - **Diff, not wipe.** Each queueing compares the recorded file list with the new one: siblings of vanished files go, only new files and files whose fingerprint changed are re-encoded. `wp media regenerate` deletes with `unlink()` (no `wp_delete_file` filter): the fingerprints catch it. A non-scaled main file is not rewritten by a regeneration, so its AVIF stays valid.
 - **Names.** `_wp_check_existing_file_names()` only matches sub-size patterns (`name-WxH.ext`, `-scaled`, `-rotated`), never the exact name. A taken name (an `.avif` of the family on disk, or an entry of the registry of deleted names, option `lumia_module_image_optimizer_tombstones`) is therefore declared through `pre_wp_unique_filename_file_list` as a virtual `base-scaled.ext`: WordPress then applies its own numeric suffix (`photo-1.jpg`).
 - **Uploaded AVIF / WebP** (`convert_modern_uploads`): converted in `wp_handle_upload` to PNG (alpha used or at most 256 colors) or progressive JPEG q90, ICC kept. Imagick reports a progressive JPEG as interlace `6` on read; the bench checks the SOF2 marker instead.
-- **Deactivation** deletes every generated sibling (`purge_all()`); a manual exclusion is kept. Plugin deactivation does not call the module's `on_deactivate()`.
+- **Deactivation** deletes every generated sibling (`purge_all()`); a manual exclusion is kept. Plugin deactivation does not call the module's `on_deactivate()` (it only removes the `.htaccess` block, see the delivery self-test).
+
+## Delivery self-test (`DeliveryProbe`, `HtaccessWriter`)
+
+No AVIF is generated until a test proves the delivery (`DeliveryProbe::is_serving()`, read by the queue). The result lives in the option `lumia_module_image_optimizer_delivery` (`mode` nginx | htaccess | none, `server_mode`, `cdn`, `reason`, `detail`, `checked_at`, `failures`, `server`, `browser`). It runs on module activation, on every settings save (active module only: the settings import also calls `save_settings()`), from the Delivery tab ("Retest", AJAX `lumia_image_optimizer_delivery_retest`) and daily (`lumia_image_optimizer_delivery_check`). Going from `none` to served fires `lumia_image_optimizer_enqueued` with ID 0. Bench: `tools/e2e-images/assert-delivery.sh`.
+
+- **The probe does not depend on the encoder.** `uploads/lumia-tools/probe.png`, its sibling `probe.png.avif` and `probe-plain.png` (no sibling) are embedded in the class (base64; the AVIF was encoded once by the production image). The test requests them through the site's public URL (loopback), each request twice in alternating order (AVIF Accept first, then plain first) on one URL per run (`?lumia_probe=<token>`): a cache that ignores `Vary` hands the first variant it stored to the next client, whichever came first. Expected: AVIF for `image/avif`, PNG for `image/png,image/*` and for `?original`, `Vary: Accept` on all three, 200 PNG for the file without a sibling.
+- **`Vary` is required on the PNG answer too**, not only on the AVIF one. OpenLiteSpeed (which reports `LiteSpeed`, like LiteSpeed Enterprise) never sends a header from `.htaccess`, and caches the rewrite target per URL regardless of `Accept`: without the `Vary` requirement and the alternating order, an Outlook-type client sometimes got the AVIF there.
+- **OpenLiteSpeed keeps applying a removed `.htaccess`** in the workers that had loaded it: after the block was removed, AVIF clients were still rewritten, and every client then got the AVIF at that URL (measured: 15/16 `*/*` requests). Only a missing sibling stops it. So when a test fails with the block in place, the probe's sibling is deleted, and on LiteSpeed every generated sibling too (`FileLifecycle::purge_all()`).
+- **The block is never left without a successful test** (spec 9.2). It is written before the test on Apache / LiteSpeed (`SERVER_SOFTWARE`, or mod_php's `apache_get_modules()`), and removed when the test fails. WP-CLI and a system cron have no `SERVER_SOFTWARE`: the last web server seen is kept in the result (and survives a deactivation) for them.
+- **Failures.** Wrong type, missing `Vary` or HTTP 500: `none` at once. An AVIF served where the PNG was expected (`leak`), a recognized CDN (Cloudflare, Fastly, Sucuri, Hostinger CDN, by their headers) that mixes the variants up (`cdn_vary`), or a cache that is not recognized (`Via`, `X-Cache`: `cdn_unknown`): `none` **and every generated sibling deleted**, the JPEG/PNG must be guaranteed (the CDN cache itself has to be purged by the user: the screen says so). Unreachable (network error, timeout, 4xx, 502/503, an HTML answer): the previous verdict is kept up to 3 consecutive failures, except right after the block was written (removed at once).
+- **Browser check.** The loopback may go around a CDN (internal resolution). The Delivery tab fetches the probe from the administrator's browser (`Accept: image/avif,*/*`, then `*/*`, `cache: 'default'` so that an intermediate cache answers) when the server-side test passed, and posts the types to `lumia_image_optimizer_delivery_browser`. It is only a veto: a wrong answer forces `none` and deletes the siblings until a browser check passes again; the server-side runs keep the veto.
+
+### `.htaccess` block (Apache, LiteSpeed)
+
+```apache
+# BEGIN Lumia Tools AVIF
+<IfModule mod_mime.c>
+AddType image/avif .avif
+</IfModule>
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteOptions Inherit
+RewriteCond %{QUERY_STRING} !(^|&)original(=|&|$)
+RewriteCond %{HTTP_ACCEPT} image/avif
+RewriteCond %{REQUEST_FILENAME}.avif -f
+RewriteRule ^(.+\.(?:jpe?g|png))$ $1.avif [NC,T=image/avif,L]
+</IfModule>
+<IfModule mod_headers.c>
+<FilesMatch "\.(?i:jpe?g|png)(\.avif)?$">
+Header merge Vary Accept
+</FilesMatch>
+</IfModule>
+# END Lumia Tools AVIF
+```
+
+- In `wp-content/uploads/.htaccess` only, appended after the other lines (kept), written through a temporary file and `rename()`; the file is deleted when nothing else is left in it. Removed on module and plugin deactivation (`DeliveryProbe::reset()`, also called by `Core\Deactivator`).
+- **`RewriteOptions Inherit`**: an `.htaccess` that turns the rewrite engine on stops WordPress's root rules from applying below it. Without it, a missing file of the uploads gets Apache's 404 (`charset=iso-8859-1`) instead of WordPress's.
+- **`FilesMatch` with `(\.avif)?`**: the rewritten answer is the `.avif` file, which needs its `Vary` too (checked on Apache 2.4: present on both answers, no `env=` condition needed). `merge` rather than `append`: no duplicate `Accept`.
+- **`<IfModule>` does not prevent every 500.** Without `mod_headers` the block is harmless but sends no `Vary` (test fails, block removed). A host whose `AllowOverride` lacks `FileInfo` answers **500 for every file of the uploads** as soon as the block exists (`RewriteEngine not allowed here`): the test sees the 500 in the same request and removes the block at once.
 
 ## Bulk processing (`BulkProcessor`)
 

@@ -12,7 +12,7 @@ bench (`tools/e2e/mu-plugins/e2e-auth.php`, `X-E2E-User` header): **it must neve
 bench**; `run.sh` refuses to build a zip that contains `tools/` or that file. The images are
 generated (`fixtures/make-fixtures.php`), never taken from a client.
 
-Requirements: bash, docker (with compose), curl, rsync, zip, unzip. The `nginx` stack also needs
+Requirements: bash, docker (with compose), curl, rsync, zip, unzip (and jq for `assert-delivery.sh`). The `nginx` stack also needs
 the Dokploy template repository next to this one (`TEMPLATE_DIR`, default
 `../../../wp-dokploy-template`, on the branch that carries the AVIF rule) and Python >= 3.11 to
 render it (otherwise `python:3.12-alpine` is used through Docker). No PHP on the host.
@@ -27,6 +27,8 @@ can run side by side. Administrator: `admin` / `admin`.
 | `nginx` | `nginx:1-alpine` with the template's **rendered** `nginx.conf` (`ci/render-payload.py`), `wordpress:7-php8.5-fpm-alpine` (limits 2 CPU / 1536M, the template's `uploads.ini`, `opcache.ini`, `fpm-performance.conf`), MariaDB 12, plus the template's `cron` container (`wordpress:cli-2-php8.5`) | http://localhost:8091 | the production sites |
 | `apache` | `wordpress:php8.5-apache` (Apache 2.4, mod_php, `AllowOverride All`), `mod_headers` enabled | http://localhost:8092 | a shared host on Apache |
 | `ols` | `litespeedtech/openlitespeed:1.9.3-lsphp85` | http://localhost:8093 | a LiteSpeed host, **approximately** (see Limits) |
+| `nginx-plain` | the `nginx` stack with the template's AVIF location removed from the rendered `nginx.conf` | http://localhost:8095 | an nginx host without the rule |
+| `cdn` | the `nginx` stack behind `proxy-cdn` (`cdn/nginx.conf`): a caching proxy that ignores `Vary` and sends `cf-ray` / `cf-cache-status`; the PHP container's loopback goes through it too (origin on 8096) | http://localhost:8094 | a site behind Cloudflare without "Vary for images" |
 
 - The nginx snippets `init.sh` writes in production (`nginx-servername.conf` = `server_name localhost;`,
   `nginx-security.conf`, `nginx-redirects.conf`) are stubs in `nginx/`, copied into the webroot
@@ -35,7 +37,12 @@ can run side by side. Administrator: `admin` / `admin`.
   `http://localhost:<port>` also works **from inside** the PHP container, like a production
   container reaching itself through its public domain: the plugin's delivery self-test needs it.
 - `apache`: the official image has no `mod_headers`. It is enabled here; `run.sh apache-mod apache
-  headers off` removes it to test the "no `mod_headers`" scenario.
+  headers off` removes it to test the "no `mod_headers`" scenario. `run.sh apache-override apache
+  nofileinfo` gives `wp-content/uploads` an `AllowOverride` without `FileInfo` (a host where every
+  `RewriteEngine` / `Header` / `AddType` line of `.htaccess` answers 500); `fileinfo` restores it.
+- `nginx-plain` and `cdn` are compose projects of their own (`lumia-img-nginx-plain`,
+  `lumia-img-cdn`) built from the `nginx` services: ports and loopback target come from
+  `E2E_NGINX_PORT`, `E2E_SITE_PORT` and `E2E_LOOPBACK_TARGET`, set by `run.sh`.
 - The image tags are the closest available ones: there is no `wordpress:7-php8.5-apache` pair, so
   `php8.5-apache` ships its own (newer) WordPress, and its Imagick is 7.1.1-43 (production: 7.1.2-30).
 
@@ -44,6 +51,7 @@ can run side by side. Administrator: `admin` / `admin`.
 ```bash
 tools/e2e-images/run.sh up <nginx|apache|ols>            # start + install WordPress (idempotent)
 tools/e2e-images/run.sh import-fixtures <stack>          # generate the synthetic images, import them as media
+tools/e2e-images/run.sh fixtures <stack>                 # only generate them (out/fixtures/)
 tools/e2e-images/run.sh install-lumia <stack>            # zip of the working tree (release excludes), installed and activated
 tools/e2e-images/run.sh wp <stack> <args...>             # WP-CLI under the stack's web PHP (FPM / mod_php / lsphp)
 tools/e2e-images/run.sh wp-cron nginx <args...>          # WP-CLI in the template's cron container (cli image)
@@ -53,6 +61,7 @@ tools/e2e-images/run.sh htaccess <apache|ols> on|off     # hand-written spec 9.2
 tools/e2e-images/run.sh curl-matrix <stack> <path|url> [avif|original|none]
 tools/e2e-images/run.sh latency <stack> <path|url> <seconds>   # median / p95 / max of a page over a duration
 tools/e2e-images/run.sh apache-mod apache headers on|off
+tools/e2e-images/run.sh apache-override apache fileinfo|nofileinfo
 tools/e2e-images/run.sh down <stack>                     # stop and delete the data (images are kept)
 ```
 
@@ -116,6 +125,25 @@ tools/e2e-images/run.sh wp-cron nginx eval "$(tail -n +2 tools/e2e-images/assert
 The second script runs in the template's `cron` container (`wp eval` takes code without the opening
 tag): `can_encode_here` must be false there. It also checks that the capabilities cache of the two
 runtimes does not collide.
+
+## Delivery self-test assertions (`assert-delivery.sh`)
+
+`DeliveryProbe` / `HtaccessWriter` (spec 1, 9.2, 9.10), driven like an administrator: real login
+cookies, the module activated through the admin AJAX toggle (the probe runs in the web runtime,
+where `SERVER_SOFTWARE` is known), uploads through `async-upload.php`.
+
+```bash
+tools/e2e-images/assert-delivery.sh nginx          # one stack (started and installed if needed)
+tools/e2e-images/assert-delivery.sh all --down     # every stack in turn, each one stopped after its run
+```
+
+| Stack | Asserted |
+|---|---|
+| `nginx` | mode `nginx`, daily check scheduled, Retest answers `{mode, cdn, reason, checked_at}` (and refuses a missing nonce), Delivery tab without the nginx rule, client matrix conform on an uploaded media (sibling placed with `make-avif`: the queue does not encode yet), browser check veto (`none`, siblings deleted) and its lifting |
+| `nginx-plain` | mode `none` (`no_rule`), the nginx rule shown in the Delivery tab, no `.avif` after an upload, the JPEG for every client |
+| `apache` | `# keep-me` kept above the exact block, mode `htaccess`, matrix conform, WordPress's 404 for a missing upload (`RewriteOptions Inherit`); `mod_headers` off: `none` (`no_vary`), block removed, the JPEG for every client; `AllowOverride` without `FileInfo`: `none` (`server_error`), block removed, no 500 left; module and plugin deactivation remove the block |
+| `ols` | the self-test fails (`none`), the block is removed; with a hand-placed sibling and AVIF clients priming the workers, a retest deletes the siblings (probe and media) and every client gets the PNG |
+| `cdn` | cold proxy: Chrome first, then Outlook gets the cached AVIF; the self-test says `none`, CDN `cloudflare` (`cdn_vary`), and the generated `.avif` are deleted |
 
 ## Client matrix (`lib.sh`)
 
@@ -192,6 +220,11 @@ why a green `ols` run proves nothing about LiteSpeed Enterprise.
 4. The root WordPress `.htaccess` (permalinks) is bound to the vhost context and read at start:
    `run.sh up ols` restarts the server after the permalink flush, otherwise `/hello-world/` is 404.
 5. The OLS image's Imagick lists AVIF but cannot encode it (see Limits): use `make-avif`.
+6. **A removed `.htaccess` keeps applying** in the workers that had loaded it: after the plugin
+   removed its block (failed self-test), AVIF clients were still rewritten and, once primed, the
+   AVIF went to every client (15/16 `*/*` requests), for minutes. Deleting the `.avif` sibling
+   stops it at once: the plugin deletes the probe's sibling, and on LiteSpeed every generated one,
+   whenever a test fails with its block in place.
 
 LiteSpeed Enterprise has its own `.htaccess` engine (Apache `Header` support, change detection):
 what happens there can only be established by the self-test on a real host.

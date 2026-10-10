@@ -17,6 +17,7 @@ $module_settings = $instance->get_settings();
 
 	<div class="lumia-tabs" role="tablist" data-lumia-tabs="image_optimizer" aria-label="<?php esc_attr_e( 'Image Optimizer sections', 'lumia-tools' ); ?>">
 		<button type="button" class="lumia-tabs__tab is-active" role="tab" data-lumia-tab="settings"><?php esc_html_e( 'Settings', 'lumia-tools' ); ?></button>
+		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="delivery"><?php esc_html_e( 'Delivery', 'lumia-tools' ); ?></button>
 		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="svg"><?php esc_html_e( 'SVG', 'lumia-tools' ); ?></button>
 		<button type="button" class="lumia-tabs__tab" role="tab" data-lumia-tab="bulk"><?php esc_html_e( 'Bulk optimization', 'lumia-tools' ); ?></button>
 	</div>
@@ -177,6 +178,28 @@ $module_settings = $instance->get_settings();
 						<span class="lumia-toggle__slider"></span>
 					</label>
 				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+
+	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="image_optimizer" data-lumia-tab-panel="delivery" hidden>
+
+	<!-- Delivery self-test -->
+	<div class="lumia-section">
+		<div class="lumia-section__header">
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'Delivery', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'The AVIF version is only generated once a test proves that the web server serves it to the browsers that accept it, and the JPEG or PNG to everyone else (email clients, social networks, feeds). The test runs on activation, on every save, every day, and from your browser when this tab opens.', 'lumia-tools' ); ?></p>
+		</div>
+		<div class="lumia-section__content">
+			<div id="lumia-delivery-status">
+				<?php echo \Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe::render_status(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in delivery-status.php. ?>
+			</div>
+			<div class="lumia-form__actions">
+				<button type="button" id="lumia-delivery-retest" class="lumia-btn lumia-btn--secondary">
+					<svg class="lumia-icon lumia-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+					<?php echo esc_html__( 'Retest', 'lumia-tools' ); ?>
+				</button>
 			</div>
 		</div>
 	</div>

@@ -9,7 +9,157 @@
     initBulkOptimization();
     initMediaActions();
     initSvgRolesToggle();
+    initDelivery();
   });
+
+  // Delivery tab: Retest button, copy of the nginx rule, and the check from the
+  // administrator's browser (spec 9.10).
+  function initDelivery() {
+    const container = document.getElementById("lumia-delivery-status");
+    if (!container || typeof lumiaAdmin === "undefined") return;
+
+    const retestBtn = document.getElementById("lumia-delivery-retest");
+    const i18n = (lumiaAdmin.i18n && lumiaAdmin.i18n.delivery) || {};
+    let browserChecked = false;
+
+    function post(action, fields) {
+      const formData = new FormData();
+      formData.append("action", action);
+      formData.append("nonce", lumiaAdmin.nonce);
+      Object.keys(fields || {}).forEach(function (key) {
+        formData.append(key, fields[key]);
+      });
+      return fetch(lumiaAdmin.ajaxUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      }).then(function (response) {
+        return response.json();
+      });
+    }
+
+    // Replaces the status block with the one the server rendered. False on an error answer.
+    function render(data) {
+      if (data && data.success && data.data && typeof data.data.html === "string") {
+        container.innerHTML = data.data.html;
+        return true;
+      }
+      return false;
+    }
+
+    function probe(url, accept) {
+      // cache: "default" on purpose: a CDN or proxy between the browser and the server must
+      // answer as it does for visitors (no-store would go around the browser cache only, but
+      // also send no-cache upstream).
+      return fetch(url, { headers: { Accept: accept }, cache: "default", credentials: "omit" }).then(
+        function (response) {
+          const type = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+          return { status: response.status, type: type };
+        }
+      );
+    }
+
+    // The server tests itself through a loopback request that may go around a CDN; the
+    // browser goes through it like a visitor. Only run when the server-side test passed:
+    // the browser can then only veto.
+    function browserCheck() {
+      const box = container.querySelector(".lumia-delivery");
+      if (!box || box.getAttribute("data-server-ok") !== "1") return;
+
+      const url = box.getAttribute("data-probe-url");
+      const cell = container.querySelector("[data-lumia-delivery-browser]");
+      if (cell) cell.textContent = i18n.checking || "";
+
+      let avif = null;
+      probe(url, "image/avif,*/*")
+        .then(function (result) {
+          avif = result;
+          return probe(url, "*/*");
+        })
+        .then(function (plain) {
+          return post("lumia_image_optimizer_delivery_browser", {
+            avif_status: avif.status,
+            avif_type: avif.type,
+            plain_status: plain.status,
+            plain_type: plain.type,
+          });
+        })
+        .then(function (data) {
+          if (!render(data) && cell) cell.textContent = i18n.unverified || "";
+        })
+        .catch(function () {
+          if (cell) cell.textContent = i18n.unverified || "";
+        });
+    }
+
+    function browserCheckOnce() {
+      if (browserChecked) return;
+      browserChecked = true;
+      browserCheck();
+    }
+
+    document.addEventListener("lumia:tab", function (event) {
+      const detail = event.detail || {};
+      if (detail.group === "image_optimizer" && detail.name === "delivery") browserCheckOnce();
+    });
+    const panel = container.closest("[data-lumia-tab-panel]");
+    if (panel && !panel.hidden) browserCheckOnce();
+
+    if (retestBtn) {
+      retestBtn.addEventListener("click", function () {
+        const label = retestBtn.innerHTML;
+        retestBtn.disabled = true;
+        retestBtn.textContent = i18n.retesting || "";
+
+        post("lumia_image_optimizer_delivery_retest", {})
+          .then(function (data) {
+            if (!render(data)) {
+              toast((data && data.data) || lumiaAdmin.i18n.networkError, "error");
+              return;
+            }
+            browserCheck();
+          })
+          .catch(function (err) {
+            toast(err.message || lumiaAdmin.i18n.networkError, "error");
+          })
+          .finally(function () {
+            retestBtn.disabled = false;
+            retestBtn.innerHTML = label;
+          });
+      });
+    }
+
+    // "Copy the rule" (the block is re-rendered: delegation).
+    container.addEventListener("click", function (event) {
+      const button = event.target.closest("[data-lumia-copy]");
+      if (!button) return;
+      const source = container.querySelector(button.getAttribute("data-lumia-copy"));
+      if (!source) return;
+      const text = source.textContent;
+
+      function fallback() {
+        const range = document.createRange();
+        range.selectNodeContents(source);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        try {
+          document.execCommand("copy");
+          toast(i18n.copied, "success");
+        } catch (e) {
+          toast(i18n.copyFailed, "error");
+        }
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          toast(i18n.copied, "success");
+        }, fallback);
+      } else {
+        fallback();
+      }
+    });
+  }
 
   // Greys out the role picker when SVG upload is disabled.
   function initSvgRolesToggle() {

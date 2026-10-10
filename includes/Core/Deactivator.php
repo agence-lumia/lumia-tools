@@ -20,5 +20,9 @@ class Deactivator {
 				wp_clear_scheduled_hook( $hook );
 			}
 		}
+
+		// Image Optimizer: the AVIF negotiation block of uploads/.htaccess goes, whatever the
+		// module state: the web server would otherwise keep serving siblings nobody maintains.
+		\Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe::reset();
 	}
 }

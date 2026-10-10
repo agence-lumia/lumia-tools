@@ -30,12 +30,14 @@ usage() {
 	cat >&2 <<'USAGE'
 usage: run.sh <command> [args]
 
-  up <stack>                      start a stack and install WordPress (stack: nginx | apache | ols)
+  up <stack>                      start a stack and install WordPress
+                                  (stack: nginx | nginx-plain | cdn | apache | ols)
   down <stack>                    stop it and delete its data
   wp <stack> <args...>            WP-CLI under the stack's PHP-FPM / mod_php / lsphp (the web runtime)
-  wp-cron nginx <args...>         WP-CLI in the template's cron container (wordpress:cli image)
+  wp-cron <nginx-stack> <args...> WP-CLI in the template's cron container (wordpress:cli image)
   install-lumia <stack>           zip of the working tree, installed and activated
   import-fixtures <stack>         generate the synthetic images and import them as media
+  fixtures <stack>                only generate them (out/fixtures/), nothing imported
   make-avif <stack> <path> [q]    hand-place <path>.avif next to a JPEG/PNG under wp-content/uploads
   htaccess <apache|ols> on|off    put / remove the spec 9.2 .htaccess block in wp-content/uploads
   assert <stack> <script.php>     run a PHP assertion script with `wp eval-file` (as admin)
@@ -44,6 +46,9 @@ usage: run.sh <command> [args]
   latency <stack> <url> <seconds> median response time of a page over a duration
   apache-mod apache <module> on|off
                                   enable or disable an Apache module (a2enmod / a2dismod) and reload
+  apache-override apache fileinfo|nofileinfo
+                                  AllowOverride of wp-content/uploads with or without FileInfo
+                                  (nofileinfo: a host that forbids RewriteEngine, Header, AddType)
 
 Set BRICKS_ZIP=<path> to install and activate the Bricks theme on `up`.
 USAGE
@@ -63,6 +68,7 @@ trap 'exit 143' TERM
 
 STACK=''
 PORT=''
+PROFILES=()      # compose profiles of the stack
 SITE_URL=''
 PHP_SERVICE=''   # container that runs PHP for the web (and for WP-CLI)
 WP_PATH=''
@@ -71,9 +77,24 @@ PHP_BIN='php'
 
 use_stack() {
 	STACK="${1:-}"
+	PROFILES=("${STACK}")
 	case "${STACK}" in
-		nginx)
-			PORT=8091
+		nginx | nginx-plain | cdn)
+			# nginx-plain: the template without its AVIF rule (a third-party nginx host).
+			# cdn: the template behind a caching proxy that ignores Vary (port 8094); the
+			# loopback of the PHP container goes through the proxy too, as a production
+			# container would through a CDN in front of its domain.
+			case "${STACK}" in
+				nginx) PORT=8091 ;;
+				nginx-plain) PORT=8095 ;;
+				cdn) PORT=8094 ;;
+			esac
+			PROFILES=(nginx)
+			export E2E_NGINX_PORT="${PORT}" E2E_SITE_PORT="${PORT}" E2E_LOOPBACK_TARGET=web-nginx:80
+			if [ "${STACK}" = cdn ]; then
+				PROFILES=(nginx cdn)
+				export E2E_NGINX_PORT=8096 E2E_LOOPBACK_TARGET=proxy-cdn:80
+			fi
 			PHP_SERVICE=wp-nginx
 			WP_PATH=/var/www/html
 			WP_USER=www-data
@@ -94,14 +115,24 @@ use_stack() {
 			PHP_BIN=/usr/local/lsws/lsphp85/bin/php
 			export E2E_DISABLE_WP_CRON=false
 			;;
-		*) echo "unknown stack '${STACK}' (nginx | apache | ols)" >&2; exit 2 ;;
+		*) echo "unknown stack '${STACK}' (nginx | nginx-plain | cdn | apache | ols)" >&2; exit 2 ;;
 	esac
 	SITE_URL="http://localhost:${PORT}"
-	export RENDERED_DIR="${OUT_DIR}/nginx-rendered"
+	# One rendering per stack: the variants run side by side and must not share (or delete)
+	# each other's mounted files.
+	export RENDERED_DIR="${OUT_DIR}/${STACK}-rendered"
+}
+
+is_nginx_stack() {
+	[ "${PHP_SERVICE}" = wp-nginx ]
 }
 
 dc() {
-	docker compose -f "${E2E_DIR}/docker-compose.yml" -p "lumia-img-${STACK}" --profile "${STACK}" "$@"
+	local profile args=()
+	for profile in "${PROFILES[@]}"; do
+		args+=(--profile "${profile}")
+	done
+	docker compose -f "${E2E_DIR}/docker-compose.yml" -p "lumia-img-${STACK}" "${args[@]}" "$@"
 }
 
 prepare_out_dir() {
@@ -178,6 +209,27 @@ render_template() {
 	[ -s "${rendered}/files/nginx.conf" ] || die "the template did not render ${rendered}/files/nginx.conf"
 	grep -q 'lumia_avif_suffix' "${rendered}/files/nginx.conf" \
 		|| die "the rendered nginx.conf has no AVIF negotiation (\$lumia_avif_suffix): is ${TEMPLATE_DIR} on the feat/avif-negotiation branch?"
+
+	if [ "${STACK}" = nginx-plain ]; then
+		strip_avif_rule "${rendered}/files/nginx.conf"
+	fi
+}
+
+# strip_avif_rule <nginx.conf>: removes the AVIF location (JPEG/PNG of the uploads), as on an
+# nginx host that never received the template's rule. The maps stay (unused, harmless): the
+# JPEG/PNG then fall into the generic image location (no Vary, immutable).
+strip_avif_rule() {
+	local conf="$1" tmp
+	tmp="$(mktemp "${TMP_ROOT}/nginx-plain.XXXXXX")"
+	awk '
+		index($0, "location ~* ^/wp-content/uploads/.+") && index($0, "jpe?g|png") { skip = 1 }
+		skip && /^    }$/ { skip = 0; next }
+		!skip
+	' "${conf}" >"${tmp}"
+	if grep -qE '^[[:space:]]*try_files .*lumia_avif_suffix' "${tmp}" || ! grep -qF '(jpg|jpeg|png|gif|ico|svg|webp|avif)$' "${tmp}"; then
+		die "nginx-plain: could not remove the AVIF location from ${conf}"
+	fi
+	cat "${tmp}" >"${conf}"
 }
 
 # --- up / down ---------------------------------------------------------------------
@@ -218,7 +270,7 @@ cmd_up() {
 	prepare_out_dir
 	ensure_wp_phar
 
-	if [ "${STACK}" = nginx ]; then
+	if is_nginx_stack; then
 		render_template
 	fi
 
@@ -239,7 +291,7 @@ cmd_up() {
 	fi
 	# Pretty permalinks, as on a real site. Apache and OpenLiteSpeed need the root .htaccess
 	# (hard flush); nginx routes through try_files and has no use for it.
-	if [ "${STACK}" = nginx ]; then
+	if is_nginx_stack; then
 		wp rewrite structure '/%postname%/' >/dev/null
 	else
 		wp rewrite structure '/%postname%/' --hard >/dev/null
@@ -286,7 +338,7 @@ cmd_wp() {
 
 cmd_wp_cron() {
 	use_stack "${1:-}"
-	[ "${STACK}" = nginx ] || die "wp-cron: only the nginx stack has the template's cron container"
+	is_nginx_stack || die "wp-cron: only the nginx stacks have the template's cron container"
 	shift
 	dc exec -T cron-nginx wp --path=/var/www/html "$@"
 }
@@ -353,6 +405,12 @@ ensure_fixtures() {
 	fi
 }
 
+cmd_fixtures() {
+	use_stack "${1:-}"
+	prepare_out_dir
+	ensure_fixtures
+}
+
 cmd_import_fixtures() {
 	use_stack "${1:-}"
 	prepare_out_dir
@@ -408,7 +466,7 @@ cmd_make_avif() {
 # in wp-content/uploads/.htaccess, until the plugin writes it itself.
 cmd_htaccess() {
 	use_stack "${1:-}"
-	[ "${STACK}" != nginx ] || die "htaccess: nginx does not read .htaccess"
+	! is_nginx_stack || die "htaccess: nginx does not read .htaccess"
 	local state="${2:-}"
 	case "${state}" in
 		on) wp eval 'file_put_contents( wp_upload_dir()["basedir"] . "/.htaccess", file_get_contents( "/bench/htaccess/avif-block.htaccess" ) );' ;;
@@ -475,6 +533,24 @@ cmd_apache_mod() {
 	dc exec -T "${PHP_SERVICE}" apache2ctl graceful
 }
 
+# apache-override apache fileinfo|nofileinfo: `nofileinfo` gives wp-content/uploads the
+# AllowOverride of a host that forbids FileInfo directives: every RewriteEngine / Header /
+# AddType line of uploads/.htaccess then answers 500 (the plugin must remove its block).
+cmd_apache_override() {
+	use_stack "${1:-}"
+	[ "${STACK}" = apache ] || die "apache-override: apache stack only"
+	local conf=/etc/apache2/conf-enabled/zz-bench-uploads-override.conf
+	case "${2:-}" in
+		fileinfo) dc exec -T "${PHP_SERVICE}" rm -f "${conf}" ;;
+		nofileinfo)
+			dc exec -T "${PHP_SERVICE}" sh -c "printf '%s\n' '<Directory ${WP_PATH}/wp-content/uploads>' '    AllowOverride AuthConfig Indexes Limit Options' '</Directory>' >'${conf}'"
+			;;
+		*) usage ;;
+	esac
+	dc exec -T "${PHP_SERVICE}" apache2ctl graceful
+	sleep 1
+}
+
 # --- Dispatch --------------------------------------------------------------------------
 
 [ "$#" -ge 1 ] || usage
@@ -488,11 +564,13 @@ case "${command}" in
 	wp-cron) cmd_wp_cron "$@" ;;
 	install-lumia) cmd_install_lumia "$@" ;;
 	import-fixtures) cmd_import_fixtures "$@" ;;
+	fixtures) cmd_fixtures "$@" ;;
 	make-avif) cmd_make_avif "$@" ;;
 	htaccess) cmd_htaccess "$@" ;;
 	assert) cmd_assert "$@" ;;
 	curl-matrix) cmd_curl_matrix "$@" ;;
 	latency) cmd_latency "$@" ;;
 	apache-mod) cmd_apache_mod "$@" ;;
+	apache-override) cmd_apache_override "$@" ;;
 	*) usage ;;
 esac
