@@ -422,6 +422,16 @@ cmd_install_lumia() {
 	chmod 644 "${OUT_DIR}/${zip_name}"
 
 	wp plugin install "/bench/out/${zip_name}" --force --activate
+
+	# The template's OPcache revalidates files every 60 s: PHP-FPM would keep running the
+	# previous build for up to a minute after the install. Reset through a throwaway script
+	# (an FPM reload would re-read config files whose bind mounts `up` may have replaced).
+	if is_nginx_stack; then
+		local reset="lumia-bench-opcache-reset-$$.php"
+		dc exec -T -u "${WP_USER}" "${PHP_SERVICE}" sh -c "printf '%s' '<?php echo opcache_reset() ? \"reset\" : \"no\";' >'${WP_PATH}/${reset}'"
+		curl -s --max-time 30 "${SITE_URL}/${reset}?t=$$${RANDOM}" >/dev/null || true
+		dc exec -T -u "${WP_USER}" "${PHP_SERVICE}" rm -f "${WP_PATH}/${reset}"
+	fi
 }
 
 # ensure_fixtures: generate the synthetic images into out/fixtures/ once (inside the stack's PHP).

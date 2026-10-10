@@ -231,6 +231,8 @@ if ( ! current_user_can( 'manage_options' ) ) {
 }
 ```
 
+**One documented exception:** the Image Optimizer's queue drain, `wp_ajax_nopriv_lumia_image_optimizer_drain` (and its logged-in twin). It is the site calling itself (HTTP loopback, no user, no cookie), so it carries no nonce and checks no capability; it is authenticated by a short-lived HMAC token instead (`QueueRunner::token()`, keyed on `wp_salt( 'nonce' )`, five-minute windows), accepts no other input and can only drain what is already queued. See [modules/image-optimizer.md](modules/image-optimizer.md#background-queue-queuerunner).
+
 Any request data goes through `sanitize_text_field( wp_unslash( $_POST[...] ) )` (or the sanitizer suited to the type) before use; responses go through `wp_send_json_success()` / `wp_send_json_error()`. The nonce is created once via `wp_create_nonce( 'lumia_admin_nonce' )` and shared between modules (`window.lumiaNotifData.nonce` / `window.lumiaAdmin`).
 
 ## Icons

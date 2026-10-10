@@ -6,7 +6,8 @@
 # the responses the clients get are checked.
 #
 #   nginx        template rule present        -> mode nginx, client matrix conform
-#   nginx-plain  template without the rule     -> mode none, snippet shown, nothing generated
+#   nginx-plain  template without the rule     -> mode none, snippet shown, upload queued but
+#                                                 nothing generated (even on a drain request)
 #   apache       .htaccess block               -> mode htaccess, other lines kept, matrix conform;
 #                mod_headers off / no FileInfo -> block removed, no 500 left; deactivation removes it
 #   ols          OpenLiteSpeed                 -> self-test fails, block removed, mode none,
@@ -216,6 +217,18 @@ uploaded() {
 
 attached_file() { wpx eval "echo get_post_meta( $1, '_wp_attached_file', true );"; }
 
+avif_status() { wpx eval "echo get_post_meta( $1, '_lumia_avif_status', true );"; }
+
+# wait_sibling <path under uploads> <seconds>: until <path>.avif exists.
+wait_sibling() {
+	local end=$((SECONDS + $2))
+	while [ "${SECONDS}" -lt "${end}" ]; do
+		[ "$(wpx eval "echo file_exists( wp_upload_dir()['basedir'] . '/$1.avif' ) ? 'yes' : 'no';")" = yes ] && return 0
+		sleep 1
+	done
+	return 1
+}
+
 status_code() { # status_code <url> [accept]: HTTP status for a plain client
 	status_of "$(headers_of "$1" "${2:-*/*}" 'curl/8.7.1')"
 }
@@ -304,8 +317,8 @@ scenario_nginx() {
 	uploaded "${id}" || return 0
 	rel="$(attached_file "${id}")"
 	url="${SITE}/wp-content/uploads/${rel}"
-	# The queue (task 5) does not encode yet: the sibling of a processed media is placed by hand.
-	"${RUN}" make-avif nginx "${rel}" >/dev/null
+	# The queue encodes the upload in the background (PHP-FPM, after the response).
+	if wait_sibling "${rel}" 30; then pass "queue: ${rel}.avif generated after the upload"; else fail "queue: no ${rel}.avif 30 s after the upload"; fi
 	check_matrix "processed media" "${url}"
 
 	# Browser check (spec 9.10): an intermediate cache that serves the AVIF to `*/*` forces none
@@ -320,6 +333,7 @@ scenario_nginx() {
 
 	module deactivate
 	expect "module off: daily check unscheduled" "$(cron_scheduled)" no
+	expect "module off: queue drain unscheduled" "$(wpx eval 'echo wp_next_scheduled( "lumia_image_optimizer_drain" ) ? "yes" : "no";')" no
 	finish_stack
 }
 
@@ -341,8 +355,13 @@ scenario_nginx_plain() {
 
 	id="$(upload photo-p3.jpg)"
 	uploaded "${id}" || return 0
+	# Queued like anywhere else, never processed while the AVIF is not served: neither after
+	# the upload, nor by a drain request carrying a valid token (the loopback's).
+	expect "upload queued (waits for the delivery)" "$(avif_status "${id}")" pending
+	wpx eval '$r = wp_remote_post( admin_url( "admin-ajax.php" ), [ "timeout" => 30, "body" => [ "action" => "lumia_image_optimizer_drain", "token" => Lumia\Tools\Modules\ImageOptimizer\QueueRunner::token() ] ] ); echo wp_remote_retrieve_response_code( $r );' >/dev/null
 	sleep 5
-	expect "no .avif generated after the upload" "$(avif_files)" ''
+	expect "no .avif generated after the upload and a drain request" "$(avif_files)" ''
+	expect "still pending" "$(avif_status "${id}")" pending
 	check_everyone_gets "uploaded media" "${SITE}/wp-content/uploads/$(attached_file "${id}")" image/jpeg
 	finish_stack
 }

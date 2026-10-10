@@ -74,6 +74,7 @@ class Module extends AbstractModule {
 	private SvgHandler $svg;
 	private ?FileLifecycle $lifecycle = null;
 	private ?DeliveryProbe $delivery  = null;
+	private ?QueueRunner $queue       = null;
 
 	/**
 	 * Active module settings (in-memory cache).
@@ -131,6 +132,9 @@ class Module extends AbstractModule {
 		// Delivery self-test: daily check, Retest button, browser check.
 		$this->get_delivery_probe()->register();
 
+		// AVIF encoding in the background: after the response, by loopback, or by cron.
+		$this->get_queue()->register();
+
 		// Automatic alt text
 		add_action( 'add_attachment', [ $this, 'generate_alt_text' ] );
 
@@ -177,6 +181,17 @@ class Module extends AbstractModule {
 		}
 
 		return $this->delivery;
+	}
+
+	/**
+	 * The background AVIF queue (created on first use, after init() has built the processor).
+	 */
+	public function get_queue(): QueueRunner {
+		if ( null === $this->queue ) {
+			$this->queue = new QueueRunner( $this, $this->get_lifecycle(), $this->processor );
+		}
+
+		return $this->queue;
 	}
 
 	/**
@@ -404,11 +419,9 @@ class Module extends AbstractModule {
 	}
 
 	public function on_deactivate(): void {
-		// Remove pending crons.
-		$timestamp = wp_next_scheduled( 'lumia_image_optimizer_cron' );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'lumia_image_optimizer_cron' );
-		}
+		// Remove pending crons: the queue's recurring drain, the former bulk cron, the reconcile.
+		wp_unschedule_hook( QueueRunner::CRON_HOOK );
+		wp_unschedule_hook( QueueRunner::LEGACY_CRON_HOOK );
 		wp_unschedule_hook( FileLifecycle::RECONCILE_HOOK );
 
 		// uploads/.htaccess block, daily check and verdict.
@@ -434,7 +447,7 @@ class Module extends AbstractModule {
 				FileLifecycle::RECONCILE_CURSOR,
 				DeliveryProbe::OPTION,
 			],
-			'cron'    => [ FileLifecycle::RECONCILE_HOOK, DeliveryProbe::CRON_HOOK ],
+			'cron'    => [ FileLifecycle::RECONCILE_HOOK, DeliveryProbe::CRON_HOOK, QueueRunner::CRON_HOOK, QueueRunner::LEGACY_CRON_HOOK ],
 			// The files in lumia-originals/ stay on disk: they are the
 			// client's photos, not plugin data.
 			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META ] ),

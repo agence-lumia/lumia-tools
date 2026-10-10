@@ -185,6 +185,17 @@ services:
           memory: 512M
           cpus: "0.5"
 
+  # The cron container reaches the site the same way: the queue's cron and WP-CLI only
+  # trigger the drain, through an HTTP loopback (spec 9.1).
+  loopback-cron-nginx:
+    image: alpine/socat
+    profiles: [nginx]
+    network_mode: "service:cron-nginx"
+    depends_on:
+      - web-nginx
+    command: ["TCP-LISTEN:${E2E_SITE_PORT:-8091},fork,reuseaddr", "TCP:${E2E_LOOPBACK_TARGET:-web-nginx:80}"]
+    restart: unless-stopped
+
   # --------------------------------------------------------------- apache
   # mod_headers is NOT enabled in the official image: enabled here (E2E_APACHE_MODS), and
   # switchable with `run.sh apache-mod apache headers off` for the "no mod_headers" scenario.
