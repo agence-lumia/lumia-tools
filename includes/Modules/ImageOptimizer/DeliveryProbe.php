@@ -28,9 +28,12 @@ defined( 'ABSPATH' ) || exit;
  * block in uploads/.htaccess), or `none`:
  *
  * - incorrect delivery (wrong type, no Vary, HTTP 500) -> `none` at once, block removed;
- * - an AVIF served where the JPEG/PNG was expected, or a CDN that does not keep the variants
- *   apart -> `none` and every generated sibling deleted: the JPEG/PNG must be guaranteed;
- * - a CDN that is not recognized -> `none` (it cannot be trusted with Vary);
+ * - every generated sibling is also deleted when it may still reach a client that cannot
+ *   display it: an AVIF served where the JPEG/PNG was expected, an AVIF served without Vary
+ *   by a rule outside the plugin, or any incorrect delivery behind a CDN;
+ * - a CDN that is not recognized -> `none` (it cannot be trusted with Vary); a recognized one
+ *   must prove it keeps the variants apart: a repeated variant answered from its cache
+ *   (`cf-cache-status` / `X-Cache` HIT) with the right type, otherwise `none` (`cdn_unproven`);
  * - unreachable (network error, timeout, 4xx) -> previous result kept up to 3 consecutive
  *   failures, except right after the block was written (removed at once).
  *
@@ -137,7 +140,7 @@ final class DeliveryProbe {
 	 * - `server_mode` what the server-side test alone allows (the browser check may veto it)
 	 * - `cdn`         '' | cloudflare | fastly | sucuri | hostinger | unknown
 	 * - `reason`      pending | ok | no_rule | no_vary | leak | server_error | unreachable |
-	 *                 cdn_unknown | cdn_vary | browser | write_failed | probe_files
+	 *                 cdn_unknown | cdn_vary | cdn_unproven | browser | write_failed | probe_files
 	 * - `detail`      technical detail of the last check (not translated)
 	 * - `checked_at`  timestamp of the last server-side check (0: never)
 	 * - `failures`    consecutive unreachable checks
@@ -245,7 +248,14 @@ final class DeliveryProbe {
 		}
 
 		if ( 'pass' !== $check['status'] ) {
-			$purge = $check['purge'];
+			// The siblings go whenever they may still reach a client that cannot display them
+			// (spec 1 keeps them only when the server does not serve them): an AVIF served to
+			// the wrong client, an AVIF served without Vary by a rule outside the plugin (no
+			// block of ours to remove: it keeps serving them), or any incorrect delivery with a
+			// CDN in front (its cache may already mix the variants up).
+			$purge = $check['purge']
+				|| ( 'no_vary' === $check['reason'] && ! $tested_with_block )
+				|| ( 'incorrect' === $check['status'] && '' !== $check['cdn'] );
 
 			if ( $tested_with_block ) {
 				// The block is never left in place without a successful test (spec 9.2).
@@ -327,22 +337,25 @@ final class DeliveryProbe {
 		$original = add_query_arg( 'original', '1', $probe );
 		$witness  = add_query_arg( 'lumia_probe', $token, $this->url( 'probe-plain.png' ) );
 
-		// url, Accept, expected type, Vary required.
+		// url, Accept, expected type, Vary required, same variant already requested in this run
+		// (a cache that keeps the variants apart answers it from its cache).
 		$plan = [
-			[ $probe, self::ACCEPT_AVIF, 'image/avif', true ],
-			[ $probe, self::ACCEPT_PLAIN, 'image/png', true ],
-			[ $original, self::ACCEPT_AVIF, 'image/png', true ],
-			[ $witness, self::ACCEPT_AVIF, 'image/png', false ],
-			[ $probe, self::ACCEPT_PLAIN, 'image/png', true ],
-			[ $probe, self::ACCEPT_AVIF, 'image/avif', true ],
-			[ $original, self::ACCEPT_AVIF, 'image/png', true ],
+			[ $probe, self::ACCEPT_AVIF, 'image/avif', true, false ],
+			[ $probe, self::ACCEPT_PLAIN, 'image/png', true, false ],
+			[ $original, self::ACCEPT_AVIF, 'image/png', true, false ],
+			[ $witness, self::ACCEPT_AVIF, 'image/png', false, false ],
+			[ $probe, self::ACCEPT_PLAIN, 'image/png', true, true ],
+			[ $probe, self::ACCEPT_AVIF, 'image/avif', true, true ],
+			[ $original, self::ACCEPT_AVIF, 'image/png', true, true ],
 		];
 
-		$failures = [];
-		$cdn      = '';
-		$details  = [];
+		$failures   = [];
+		$cdn        = '';
+		$details    = [];
+		$caches     = [];
+		$cache_used = false;
 
-		foreach ( $plan as [ $url, $accept, $expected, $vary_required ] ) {
+		foreach ( $plan as [ $url, $accept, $expected, $vary_required, $repeat ] ) {
 			$response = wp_remote_get(
 				$url,
 				[
@@ -366,8 +379,11 @@ final class DeliveryProbe {
 			$type      = strtolower( trim( explode( ';', $this->header( $response, 'content-type' ) )[0] ) );
 			$vary      = $this->header( $response, 'vary' );
 			$body      = (string) wp_remote_retrieve_body( $response );
-			$line      = sprintf( '%s -> %d %s, Vary: %s', $label, $code, '' === $type ? '-' : $type, '' === $vary ? '-' : $vary );
+			$cache     = $this->cache_status( $response );
+			$line      = sprintf( '%s -> %d %s, Vary: %s', $label, $code, '' === $type ? '-' : $type, '' === $vary ? '-' : $vary )
+				. ( '' === $cache ? '' : ', cache: ' . $cache );
 			$details[] = $line;
+			$caches[]  = '' === $cache ? '-' : $cache;
 
 			if ( 500 === $code ) {
 				return $this->outcome( 'incorrect', 'server_error', $line, $cdn );
@@ -386,6 +402,12 @@ final class DeliveryProbe {
 			}
 			if ( $vary_required && ! preg_match( '/(^|,)\s*accept\s*(,|$)/i', $vary ) ) {
 				$failures['no_vary'] ??= $line;
+			}
+
+			// The types are checked on every answer: a hit on a repeated variant proves the
+			// cache served the right one.
+			if ( $repeat && preg_match( '/\bHIT\b/i', $cache ) ) {
+				$cache_used = true;
 			}
 		}
 
@@ -408,7 +430,36 @@ final class DeliveryProbe {
 			}
 		}
 
+		if ( '' !== $cdn && ! $cache_used ) {
+			// A recognized CDN that never answered a repeated variant from its cache: these
+			// probe URLs (with a query string) may bypass it while the plain image URLs that
+			// visitors and mail clients fetch are cached with Vary ignored. Not proven, so off
+			// (spec 1: Cloudflare only with proof; 9.10: cache status read).
+			return $this->outcome( 'incorrect', 'cdn_unproven', 'cache status per request: ' . implode( ' ', $caches ) . ' | ' . $detail, $cdn );
+		}
+
+		if ( '' !== $cdn ) {
+			$detail = 'cache status per request: ' . implode( ' ', $caches ) . ' | ' . $detail;
+		}
+
 		return $this->outcome( 'pass', 'ok', $detail, $cdn );
+	}
+
+	/**
+	 * Cache status a CDN reports for a response ('' when none): Cloudflare's
+	 * `cf-cache-status`, the `X-Cache` of Fastly and others, Sucuri's and Hostinger's.
+	 *
+	 * @param array<string, mixed> $response
+	 */
+	private function cache_status( array $response ): string {
+		foreach ( [ 'cf-cache-status', 'x-cache', 'x-sucuri-cache', 'x-hcdn-cache-status', 'x-cache-status' ] as $name ) {
+			$value = trim( $this->header( $response, $name ) );
+			if ( '' !== $value ) {
+				return strtoupper( substr( $value, 0, 40 ) );
+			}
+		}
+
+		return '';
 	}
 
 	/**

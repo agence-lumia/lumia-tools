@@ -28,7 +28,10 @@ can run side by side. Administrator: `admin` / `admin`.
 | `apache` | `wordpress:php8.5-apache` (Apache 2.4, mod_php, `AllowOverride All`), `mod_headers` enabled | http://localhost:8092 | a shared host on Apache |
 | `ols` | `litespeedtech/openlitespeed:1.9.3-lsphp85` | http://localhost:8093 | a LiteSpeed host, **approximately** (see Limits) |
 | `nginx-plain` | the `nginx` stack with the template's AVIF location removed from the rendered `nginx.conf` | http://localhost:8095 | an nginx host without the rule |
-| `cdn` | the `nginx` stack behind `proxy-cdn` (`cdn/nginx.conf`): a caching proxy that ignores `Vary` and sends `cf-ray` / `cf-cache-status`; the PHP container's loopback goes through it too (origin on 8096) | http://localhost:8094 | a site behind Cloudflare without "Vary for images" |
+| `nginx-novary` | the `nginx` stack with the AVIF location kept but its `add_header Vary` removed | http://localhost:8101 | a host that copied the rule incompletely |
+| `cdn` | the `nginx` stack behind `proxy-cdn` (`cdn/default.conf.template`): a caching proxy that ignores `Vary` and sends `cf-ray` / `cf-cache-status`; the PHP container's loopback goes through it too (origin on 8096) | http://localhost:8094 | a site behind Cloudflare without "Vary for images" |
+| `cdn-noquery` | the same proxy, which never caches a URL with a query string (origin on 8098) | http://localhost:8097 | a zone whose cache skips query strings: the probe bypasses it, the image URLs do not |
+| `cdn-vary` | the same proxy, keeping one cache entry per `Accept` value (origin on 8100) | http://localhost:8099 | a CDN that honours `Vary` |
 
 - The nginx snippets `init.sh` writes in production (`nginx-servername.conf` = `server_name localhost;`,
   `nginx-security.conf`, `nginx-redirects.conf`) are stubs in `nginx/`, copied into the webroot
@@ -40,9 +43,11 @@ can run side by side. Administrator: `admin` / `admin`.
   headers off` removes it to test the "no `mod_headers`" scenario. `run.sh apache-override apache
   nofileinfo` gives `wp-content/uploads` an `AllowOverride` without `FileInfo` (a host where every
   `RewriteEngine` / `Header` / `AddType` line of `.htaccess` answers 500); `fileinfo` restores it.
-- `nginx-plain` and `cdn` are compose projects of their own (`lumia-img-nginx-plain`,
-  `lumia-img-cdn`) built from the `nginx` services: ports and loopback target come from
-  `E2E_NGINX_PORT`, `E2E_SITE_PORT` and `E2E_LOOPBACK_TARGET`, set by `run.sh`.
+- `nginx-plain`, `nginx-novary` and the `cdn*` stacks are compose projects of their own
+  (`lumia-img-<stack>`) built from the `nginx` services: ports, loopback target and proxy
+  behaviour come from `E2E_NGINX_PORT`, `E2E_SITE_PORT`, `E2E_LOOPBACK_TARGET`, `E2E_CDN_PORT`,
+  `E2E_CDN_IGNORE` and `E2E_CDN_SKIP`, set by `run.sh` (the proxy's template is rendered by the
+  nginx image's envsubst, limited to `CDN_*`).
 - The image tags are the closest available ones: there is no `wordpress:7-php8.5-apache` pair, so
   `php8.5-apache` ships its own (newer) WordPress, and its Imagick is 7.1.1-43 (production: 7.1.2-30).
 
@@ -144,6 +149,9 @@ tools/e2e-images/assert-delivery.sh all --down     # every stack in turn, each o
 | `apache` | `# keep-me` kept above the exact block, mode `htaccess`, matrix conform, WordPress's 404 for a missing upload (`RewriteOptions Inherit`); `mod_headers` off: `none` (`no_vary`), block removed, the JPEG for every client; `AllowOverride` without `FileInfo`: `none` (`server_error`), block removed, no 500 left; module and plugin deactivation remove the block |
 | `ols` | the self-test fails (`none`), the block is removed; with a hand-placed sibling and AVIF clients priming the workers, a retest deletes the siblings (probe and media) and every client gets the PNG |
 | `cdn` | cold proxy: Chrome first, then Outlook gets the cached AVIF; the self-test says `none`, CDN `cloudflare` (`cdn_vary`), and the generated `.avif` are deleted |
+| `cdn-noquery` | `none` (`cdn_unproven`, cache status `BYPASS` recorded) although types and Vary are right; on the plain image URL Chrome then Outlook gets the cached AVIF; a retest deletes the `.avif` |
+| `cdn-vary` | mode `nginx` behind CDN `cloudflare`, proven by a cache `HIT` on a repeated variant; client matrix conform through the proxy |
+| `nginx-novary` | `none` (`no_vary`); a sibling served without Vary is deleted by the retest, then the JPEG for every client |
 
 ## Client matrix (`lib.sh`)
 

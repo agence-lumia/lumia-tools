@@ -12,8 +12,12 @@
 #   ols          OpenLiteSpeed                 -> self-test fails, block removed, mode none,
 #                                                 the JPEG/PNG for every client
 #   cdn          proxy ignoring Vary (cf-ray)  -> mode none, generated .avif deleted
+#   cdn-noquery  same, never caching a URL with a query string (the probe's)
+#                                              -> mode none (cdn_unproven), .avif deleted
+#   cdn-vary     proxy keeping one entry per Accept value -> mode nginx, proven by cache hits
+#   nginx-novary the template rule without its Vary -> mode none (no_vary), .avif deleted
 #
-# usage: assert-delivery.sh <nginx|nginx-plain|apache|ols|cdn|all> [--down]
+# usage: assert-delivery.sh <nginx|nginx-plain|nginx-novary|apache|ols|cdn|cdn-noquery|cdn-vary|all> [--down]
 #   --down  stop and delete each stack after its run (`all` runs the stacks one by one)
 # Needs what run.sh needs, plus jq. Exit code: 0 when every assertion passed, 1 otherwise,
 # 2 on bad usage.
@@ -120,6 +124,9 @@ setup() {
 		ols) SITE=http://localhost:8093 ;;
 		cdn) SITE=http://localhost:8094 ;;
 		nginx-plain) SITE=http://localhost:8095 ;;
+		cdn-noquery) SITE=http://localhost:8097 ;;
+		cdn-vary) SITE=http://localhost:8099 ;;
+		nginx-novary) SITE=http://localhost:8101 ;;
 		*) usage ;;
 	esac
 	echo "== ${STACK} (${SITE})"
@@ -216,10 +223,10 @@ status_code() { # status_code <url> [accept]: HTTP status for a plain client
 # everyone_gets <url> <type>: every client of the matrix (and Chrome with ?original) receives
 # <type>. No Vary requirement: this is the fallback when no negotiation is in place.
 everyone_gets() {
-	local url="$1" type="$2" row name accept ua avif n=0 sep='?'
+	local url="$1" type="$2" row name accept ua n=0 sep="?"
 	[[ "${url}" == *\?* ]] && sep='&'
 	for row in "${CLIENTS[@]}"; do
-		IFS='|' read -r name accept ua avif <<<"${row}"
+		IFS="|" read -r name accept ua _ <<<"${row}"
 		assert_type "${url}" "${accept}" "${ua}" "${type}" 2>/dev/null || {
 			n=$((n + 1))
 			echo "        ${name}: not ${type}" >&2
@@ -468,6 +475,78 @@ scenario_cdn() {
 	finish_stack
 }
 
+scenario_nginx_novary() {
+	local id rel url
+	setup nginx-novary
+
+	module activate
+	expect "activation: mode" "$(delivery mode)" none
+	expect "activation: reason" "$(delivery reason)" no_vary
+
+	# A sibling generated while the rule still had its Vary (placed by hand): the host rule keeps
+	# serving it without Vary, so any shared cache could hand it to Outlook. It must go.
+	id="$(upload photo-p3.jpg)"
+	uploaded "${id}" || return 0
+	rel="$(attached_file "${id}")"
+	url="${SITE}/wp-content/uploads/${rel}"
+	"${RUN}" make-avif nginx-novary "${rel}" >/dev/null
+	expect "sibling served without Vary before the retest" "$(header_value Content-Type "$(headers_of "${url}" "${CHROME_ACCEPT}" "${CHROME_UA}")")" image/avif
+
+	retest >/dev/null
+	expect "retest: mode" "$(delivery mode)" none
+	expect "retest: reason" "$(delivery reason)" no_vary
+	expect "retest: generated .avif deleted" "$(avif_files)" ''
+	check_everyone_gets "after the retest" "${url}" image/jpeg
+	finish_stack
+}
+
+scenario_cdn_noquery() {
+	local id rel url first second
+	setup cdn-noquery
+
+	module activate
+	expect "activation: mode" "$(delivery mode)" none
+	expect "activation: CDN" "$(delivery cdn)" cloudflare
+	expect "activation: reason" "$(delivery reason)" cdn_unproven
+	expect_match "activation: cache status recorded (probe URLs bypass the cache)" "$(delivery detail)" 'cache status per request: BYPASS'
+
+	id="$(upload photo-p3.jpg)"
+	uploaded "${id}" || return 0
+	rel="$(attached_file "${id}")"
+	url="${SITE}/wp-content/uploads/${rel}"
+	"${RUN}" make-avif cdn-noquery "${rel}" >/dev/null
+
+	# The hazard the probe could not see: the plain image URL is cached with Vary ignored.
+	first="$(header_value Content-Type "$(headers_of "${url}" "${CHROME_ACCEPT}" "${CHROME_UA}")")"
+	second="$(header_value Content-Type "$(headers_of "${url}" '*/*' 'Microsoft Office/16.0 (Windows NT 10.0; Microsoft Outlook 16.0.17928; Pro)')")"
+	expect "plain URL: Chrome first" "${first}" image/avif
+	expect "plain URL: then Outlook gets the cached AVIF" "${second}" image/avif
+
+	retest >/dev/null
+	expect "retest: mode" "$(delivery mode)" none
+	expect "retest: reason" "$(delivery reason)" cdn_unproven
+	expect "retest: generated .avif deleted" "$(avif_files)" ''
+	finish_stack
+}
+
+scenario_cdn_vary() {
+	local id rel
+	setup cdn-vary
+
+	module activate
+	expect "activation: mode" "$(delivery mode)" nginx
+	expect "activation: CDN" "$(delivery cdn)" cloudflare
+	expect "activation: reason" "$(delivery reason)" ok
+	expect_match "activation: proven by cache hits on repeated variants" "$(delivery detail)" 'cache status per request: [A-Z-]+ [A-Z-]+ [A-Z-]+ [A-Z-]+ HIT'
+
+	id="$(upload photo-p3.jpg)"
+	uploaded "${id}" || return 0
+	rel="$(attached_file "${id}")"
+	"${RUN}" make-avif cdn-vary "${rel}" >/dev/null
+	check_matrix "processed media through the proxy" "${SITE}/wp-content/uploads/${rel}"
+	finish_stack
+}
+
 # --- Main -----------------------------------------------------------------------------
 
 [ "$#" -ge 1 ] || usage
@@ -491,12 +570,18 @@ case "${target}" in
 	apache) scenario_apache ;;
 	ols) scenario_ols ;;
 	cdn) scenario_cdn ;;
+	cdn-noquery) scenario_cdn_noquery ;;
+	cdn-vary) scenario_cdn_vary ;;
+	nginx-novary) scenario_nginx_novary ;;
 	all)
 		scenario_nginx
 		scenario_nginx_plain
 		scenario_apache
 		scenario_ols
 		scenario_cdn
+		scenario_cdn_noquery
+		scenario_cdn_vary
+		scenario_nginx_novary
 		;;
 	*) usage ;;
 esac

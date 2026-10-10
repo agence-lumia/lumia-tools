@@ -30,8 +30,8 @@ usage() {
 	cat >&2 <<'USAGE'
 usage: run.sh <command> [args]
 
-  up <stack>                      start a stack and install WordPress
-                                  (stack: nginx | nginx-plain | cdn | apache | ols)
+  up <stack>                      start a stack and install WordPress (stack: nginx | nginx-plain |
+                                  nginx-novary | cdn | cdn-noquery | cdn-vary | apache | ols)
   down <stack>                    stop it and delete its data
   wp <stack> <args...>            WP-CLI under the stack's PHP-FPM / mod_php / lsphp (the web runtime)
   wp-cron <nginx-stack> <args...> WP-CLI in the template's cron container (wordpress:cli image)
@@ -79,21 +79,33 @@ use_stack() {
 	STACK="${1:-}"
 	PROFILES=("${STACK}")
 	case "${STACK}" in
-		nginx | nginx-plain | cdn)
+		nginx | nginx-plain | nginx-novary | cdn | cdn-noquery | cdn-vary)
 			# nginx-plain: the template without its AVIF rule (a third-party nginx host).
-			# cdn: the template behind a caching proxy that ignores Vary (port 8094); the
+			# nginx-novary: the rule without its `add_header Vary`.
+			# cdn*: the template behind a caching proxy (cdn/default.conf.template); the
 			# loopback of the PHP container goes through the proxy too, as a production
-			# container would through a CDN in front of its domain.
+			# container would through a CDN in front of its domain. cdn ignores Vary,
+			# cdn-noquery also never caches a URL with a query string, cdn-vary keeps Vary.
+			local origin=''
 			case "${STACK}" in
 				nginx) PORT=8091 ;;
 				nginx-plain) PORT=8095 ;;
-				cdn) PORT=8094 ;;
+				nginx-novary) PORT=8101 ;;
+				cdn) PORT=8094 origin=8096 ;;
+				cdn-noquery) PORT=8097 origin=8098 ;;
+				cdn-vary) PORT=8099 origin=8100 ;;
 			esac
 			PROFILES=(nginx)
 			export E2E_NGINX_PORT="${PORT}" E2E_SITE_PORT="${PORT}" E2E_LOOPBACK_TARGET=web-nginx:80
-			if [ "${STACK}" = cdn ]; then
+			if [ -n "${origin}" ]; then
 				PROFILES=(nginx cdn)
-				export E2E_NGINX_PORT=8096 E2E_LOOPBACK_TARGET=proxy-cdn:80
+				export E2E_NGINX_PORT="${origin}" E2E_LOOPBACK_TARGET=proxy-cdn:80 E2E_CDN_PORT="${PORT}"
+				export E2E_CDN_IGNORE='Vary Cache-Control Expires Set-Cookie' E2E_CDN_SKIP=0
+				# shellcheck disable=SC2016 # $args: an nginx variable, for the proxy's template.
+				case "${STACK}" in
+					cdn-noquery) export E2E_CDN_SKIP='$args' ;;
+					cdn-vary) export E2E_CDN_IGNORE='Cache-Control Expires Set-Cookie' ;;
+				esac
 			fi
 			PHP_SERVICE=wp-nginx
 			WP_PATH=/var/www/html
@@ -115,7 +127,7 @@ use_stack() {
 			PHP_BIN=/usr/local/lsws/lsphp85/bin/php
 			export E2E_DISABLE_WP_CRON=false
 			;;
-		*) echo "unknown stack '${STACK}' (nginx | nginx-plain | cdn | apache | ols)" >&2; exit 2 ;;
+		*) echo "unknown stack '${STACK}' (nginx | nginx-plain | nginx-novary | cdn | cdn-noquery | cdn-vary | apache | ols)" >&2; exit 2 ;;
 	esac
 	SITE_URL="http://localhost:${PORT}"
 	# One rendering per stack: the variants run side by side and must not share (or delete)
@@ -210,9 +222,27 @@ render_template() {
 	grep -q 'lumia_avif_suffix' "${rendered}/files/nginx.conf" \
 		|| die "the rendered nginx.conf has no AVIF negotiation (\$lumia_avif_suffix): is ${TEMPLATE_DIR} on the feat/avif-negotiation branch?"
 
-	if [ "${STACK}" = nginx-plain ]; then
-		strip_avif_rule "${rendered}/files/nginx.conf"
+	case "${STACK}" in
+		nginx-plain) strip_avif_rule "${rendered}/files/nginx.conf" ;;
+		nginx-novary) strip_avif_vary "${rendered}/files/nginx.conf" ;;
+	esac
+}
+
+# strip_avif_vary <nginx.conf>: keeps the AVIF location but drops its `add_header Vary`, as a
+# host that copied the rule incompletely: the AVIF is negotiated without Vary.
+strip_avif_vary() {
+	local conf="$1" tmp
+	tmp="$(mktemp "${TMP_ROOT}/nginx-novary.XXXXXX")"
+	awk '
+		index($0, "location ~* ^/wp-content/uploads/.+") && index($0, "jpe?g|png") { inside = 1 }
+		inside && index($0, "add_header Vary") { next }
+		inside && /^    }$/ { inside = 0 }
+		{ print }
+	' "${conf}" >"${tmp}"
+	if ! grep -qE '^[[:space:]]*try_files .*lumia_avif_suffix' "${tmp}" || [ "$(grep -c 'add_header Vary' "${tmp}")" -ge "$(grep -c 'add_header Vary' "${conf}")" ]; then
+		die "nginx-novary: could not remove the Vary header from the AVIF location in ${conf}"
 	fi
+	cat "${tmp}" >"${conf}"
 }
 
 # strip_avif_rule <nginx.conf>: removes the AVIF location (JPEG/PNG of the uploads), as on an

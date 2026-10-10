@@ -1,7 +1,12 @@
-# Bench only (`cdn` stack): a caching reverse proxy in front of the template's nginx that
-# behaves like a CDN which ignores `Vary` (Cloudflare without a "Vary for images" rule): the
-# first response cached for an image URL is served to every client, whatever its Accept
-# header. It sends `cf-ray` and `cf-cache-status`, so the plugin's self-test sees "Cloudflare".
+# Bench only (`cdn`, `cdn-noquery`, `cdn-vary` stacks): a caching reverse proxy in front of the
+# template's nginx, seen by the plugin as Cloudflare (`cf-ray`, `cf-cache-status`). Rendered by
+# the nginx image's envsubst at start (only these two variables are replaced):
+#   CDN_IGNORE  response headers the cache ignores. With `Vary` (cdn, cdn-noquery): the first
+#               response cached for an image URL goes to every client, as on Cloudflare
+#               without "Vary for images". Without it (cdn-vary): one entry per Accept value.
+#   CDN_SKIP    `0` caches every image URL; `$args` (cdn-noquery) never caches a URL with a
+#               query string, like a zone whose cache ignores those: the self-test's URLs
+#               then bypass the cache while the plain image URLs are cached.
 proxy_cache_path /var/cache/bench-cdn keys_zone=bench_cdn:10m max_size=100m inactive=1h use_temp_path=off;
 
 server {
@@ -22,7 +27,9 @@ server {
         proxy_pass http://web-nginx:80;
         proxy_cache bench_cdn;
         proxy_cache_valid 200 1h;
-        proxy_ignore_headers Vary Cache-Control Expires Set-Cookie;
+        proxy_ignore_headers ${CDN_IGNORE};
+        proxy_cache_bypass ${CDN_SKIP};
+        proxy_no_cache ${CDN_SKIP};
         add_header cf-ray "bench-$request_id" always;
         add_header cf-cache-status $upstream_cache_status always;
     }
