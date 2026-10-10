@@ -53,6 +53,9 @@ final class MigrationCommand {
 	/** Flat colours: the lossless PNG weighs at most this many times the JPEG q90 (see is_flat()). */
 	private const FLAT_PNG_RATIO = 2.0;
 
+	/** Absolute cap of the flat test, on the full-size image (see is_flat()). */
+	private const FLAT_PNG_CAP = 3.0;
+
 	/** Files of the former pipeline. */
 	private const LEGACY_PATTERN = '/\.(?:avif|webp)$/i';
 
@@ -654,12 +657,45 @@ final class MigrationCommand {
 	 * 1.45 to 1.76, smooth illustration 2.75 to 3.16, photos 4.3 to 5.4. A wrong PNG would
 	 * cost every client without AVIF several times the bytes of a JPEG; a wrong JPEG on a logo
 	 * only adds slight ringing to an image that already went through a lossy AVIF.
+	 *
+	 * The reduced copy only stands for the real file: a large image that passes it must also
+	 * pass an absolute cap on the full-size image (PNG at most FLAT_PNG_CAP times the JPEG q90),
+	 * or it gets a JPEG. A product photo on a white background is the case in point: the white
+	 * dominates the small copy, the fallback is the full-size file.
 	 */
 	private function is_flat( \Imagick $image ): bool {
+		[ $png, $jpeg ] = $this->png_jpeg_bytes( $image, 512 );
+		if ( $jpeg <= 0 || $png > self::FLAT_PNG_RATIO * $jpeg ) {
+			return false;
+		}
+
+		if ( $image->getImageWidth() <= 512 && $image->getImageHeight() <= 512 ) {
+			return true; // Measured on the real size already.
+		}
+
+		return $this->within_png_cap( $image );
+	}
+
+	/**
+	 * The full-size lossless PNG weighs at most FLAT_PNG_CAP times the full-size JPEG q90.
+	 */
+	private function within_png_cap( \Imagick $image ): bool {
+		[ $png, $jpeg ] = $this->png_jpeg_bytes( $image, 0 );
+
+		return $jpeg > 0 && $png <= self::FLAT_PNG_CAP * $jpeg;
+	}
+
+	/**
+	 * Bytes of the image as a lossless PNG (compression level 9) and as a JPEG q90, on a copy
+	 * reduced to `$max` px at most (0: full size).
+	 *
+	 * @return array{0: int, 1: int}
+	 */
+	private function png_jpeg_bytes( \Imagick $image, int $max ): array {
 		$copy = clone $image;
 		try {
-			if ( $copy->getImageWidth() > 512 || $copy->getImageHeight() > 512 ) {
-				$copy->thumbnailImage( 512, 512, true );
+			if ( $max > 0 && ( $copy->getImageWidth() > $max || $copy->getImageHeight() > $max ) ) {
+				$copy->thumbnailImage( $max, $max, true );
 			}
 			$copy->setImageDepth( 8 );
 
@@ -671,9 +707,8 @@ final class MigrationCommand {
 
 			$copy->setImageFormat( 'jpeg' );
 			$copy->setImageCompressionQuality( 90 );
-			$jpeg_bytes = strlen( (string) $copy->getImageBlob() );
 
-			return $jpeg_bytes > 0 && $png_bytes <= self::FLAT_PNG_RATIO * $jpeg_bytes;
+			return [ $png_bytes, strlen( (string) $copy->getImageBlob() ) ];
 		} finally {
 			$copy->clear();
 		}

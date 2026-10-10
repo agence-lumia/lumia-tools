@@ -94,6 +94,9 @@ wpx eval '
 	echo "delivery: " . $r["mode"] . " (" . $r["reason"] . ")\n";' | tr -d '\r'
 "${RUN}" assert "${STACK}" "${E2E_DIR}/seed-legacy.php"
 
+echo "== fallback format: flat logo PNG, product photo on white JPEG"
+"${RUN}" assert "${STACK}" "${E2E_DIR}/assert-migration.php" formats || FAILURES=$((FAILURES + 1))
+
 echo "== the cron container refuses (spec 9.1)"
 rc=0
 out="$("${RUN}" wp-cron "${STACK}" lumia images migrate 2>&1)" || rc=$?

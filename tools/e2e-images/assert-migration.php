@@ -9,12 +9,15 @@
  *       after a run killed (kill -9) at the "files_written" step of one item
  *   run.sh assert <stack> tools/e2e-images/assert-migration.php final
  *       after the complete migration
+ *   run.sh assert <stack> tools/e2e-images/assert-migration.php formats
+ *       fallback format of legacy AVIF made on the fly (flat logo PNG, product photo JPEG)
  *   run.sh assert <stack> tools/e2e-images/assert-migration.php delete
  *       permanent deletion of a migrated item takes its legacy files with it
  *
  * Exit code 1 when a check fails.
  */
 
+use Lumia\Tools\Core\Plugin;
 use Lumia\Tools\Modules\ImageOptimizer\AvifState;
 
 if ( ! defined( 'WP_CLI' ) ) {
@@ -516,6 +519,60 @@ if ( 'final' === $phase ) {
 	exit( $am_failures > 0 ? 1 : 0 );
 }
 
+// ================================================================== formats
+// Fallback format of case 2 (no original): a legacy AVIF decoded to PNG or JPEG. A flat logo
+// must stay PNG; a product photo on a white background must get a JPEG, and the full-size cap
+// alone must refuse its PNG. Legacy AVIF made here (q50, as the former pipeline), in a folder
+// removed at the end.
+if ( 'formats' === $phase ) {
+	$dir = 'e2e-formats';
+	wp_mkdir_p( am_abs( $dir ) );
+
+	$legacy = static function ( Imagick $image, string $name ) use ( $dir ): string {
+		$image->setImageFormat( 'avif' );
+		$image->setOption( 'heic:speed', '9' );
+		$image->writeImage( am_abs( $dir . '/' . $name ) );
+		$image->clear();
+		return $dir . '/' . $name;
+	};
+
+	// Packshot: a 1200 px textured product (gradient + grain) on a 2560 px white canvas.
+	$canvas  = new Imagick();
+	$canvas->newImage( 2560, 2560, 'white' );
+	$product = new Imagick();
+	$product->newPseudoImage( 1200, 1200, 'gradient:#d9c8b0-#8a6f52' );
+	$grain = new Imagick();
+	$grain->newPseudoImage( 1200, 1200, 'xc:gray50' );
+	$grain->addNoiseImage( Imagick::NOISE_GAUSSIAN );
+	$grain->addNoiseImage( Imagick::NOISE_GAUSSIAN );
+	$product->compositeImage( $grain, Imagick::COMPOSITE_OVERLAY, 0, 0 );
+	$canvas->compositeImage( $product, Imagick::COMPOSITE_OVER, 680, 680 );
+	$packshot = $legacy( $canvas, 'packshot.avif' );
+
+	$logo = $legacy( new Imagick( '/bench/out/fixtures/logo-flat.png' ), 'logo.avif' );
+
+	$command = new \Lumia\Tools\Modules\ImageOptimizer\MigrationCommand( Plugin::instance()->modules->get_active_instances()['image_optimizer'] );
+	$format  = new ReflectionMethod( $command, 'fallback_format' );
+	$cap     = new ReflectionMethod( $command, 'within_png_cap' );
+	
+	$decoded = new Imagick( am_abs( $packshot ) );
+	am_check( 'jpeg' === $format->invoke( $command, $packshot ), 'product photo on white: JPEG fallback' );
+	am_check( false === $cap->invoke( $command, $decoded ), 'product photo on white: refused by the full-size cap (PNG above 3x the JPEG q90)' );
+	$decoded->clear();
+
+	$decoded = new Imagick( am_abs( $logo ) );
+	am_check( $decoded->getImageColors() > 256, 'flat logo: the lossy legacy AVIF decodes to more than 256 colors (' . $decoded->getImageColors() . ')' );
+	$decoded->clear();
+	am_check( 'png' === $format->invoke( $command, $logo ), 'flat logo (29 colours): PNG fallback' );
+
+	foreach ( [ $packshot, $logo ] as $rel ) {
+		@unlink( am_abs( $rel ) ); // phpcs:ignore
+	}
+	@rmdir( am_abs( $dir ) ); // phpcs:ignore
+
+	exit( $am_failures > 0 ? 1 : 0 );
+}
+
 // ================================================================== delete
 if ( 'delete' === $phase ) {
 	$id    = (int) $m['ids']['photo'];
@@ -542,4 +599,4 @@ if ( 'delete' === $phase ) {
 	exit( $am_failures > 0 ? 1 : 0 );
 }
 
-WP_CLI::error( 'usage: assert-migration.php snapshot <name> | interrupted | final | delete' );
+WP_CLI::error( 'usage: assert-migration.php snapshot <name> | interrupted | metas-failure | take-names | taken-check | final | formats | delete' );
