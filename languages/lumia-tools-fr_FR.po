@@ -1617,6 +1617,71 @@ msgstr "Supprimer définitivement"
 msgid "Insert row"
 msgstr "Insérer la ligne"
 
+#: includes/Modules/Files/FileManager.php:51
+msgid "Path does not exist."
+msgstr "Ce chemin n'existe pas."
+
+#: includes/Modules/Files/FileManager.php:55
+#: includes/Modules/Files/FileManager.php:113
+msgid "Path is outside root."
+msgstr "Ce chemin est hors de la racine."
+
+#: includes/Modules/Files/FileManager.php:69
+#: includes/Modules/Files/FileManager.php:209
+msgid "Invalid path."
+msgstr "Chemin invalide."
+
+#: includes/Modules/Files/FileManager.php:77
+msgid "Parent directory is outside root or does not exist."
+msgstr "Le dossier parent est hors de la racine ou n'existe pas."
+
+#: includes/Modules/Files/FileManager.php:131
+msgid "Not a directory."
+msgstr "Ce n'est pas un dossier."
+
+#: includes/Modules/Files/FileManager.php:136
+msgid "Cannot open directory."
+msgstr "Impossible d'ouvrir le dossier."
+
+#: includes/Modules/Files/FileManager.php:202
+msgid "Invalid name."
+msgstr "Nom invalide."
+
+#: includes/Modules/Files/FileManager.php:212
+msgid "A file with that name already exists."
+msgstr "Un fichier portant ce nom existe déjà."
+
+#: includes/Modules/Files/FileManager.php:223
+msgid "Destination is not a directory."
+msgstr "La destination n'est pas un dossier."
+
+#: includes/Modules/Files/FileManager.php:229
+#: includes/Modules/Files/FileManager.php:400
+msgid "Invalid destination."
+msgstr "Destination invalide."
+
+#: includes/Modules/Files/FileManager.php:232
+msgid "A file with that name already exists at destination."
+msgstr "Un fichier portant ce nom existe déjà dans la destination."
+
+#: includes/Modules/Files/FileManager.php:241
+msgid "A file or folder with that name already exists."
+msgstr "Un fichier ou un dossier portant ce nom existe déjà."
+
+#: includes/Modules/Files/FileManager.php:249
+#: includes/Modules/Files/FileManager.php:261
+msgid "Not a file."
+msgstr "Ce n'est pas un fichier."
+
+#: includes/Modules/Files/FileManager.php:253
+msgid "Cannot read file."
+msgstr "Impossible de lire le fichier."
+
+#: includes/Modules/Files/FileManager.php:404
+#: includes/Modules/Files/Module.php:392
+msgid "Upload failed."
+msgstr "Échec de l'upload."
+
 #. translators: %s: relative file path
 #: includes/Modules/Files/FileManager.php:263
 #, php-format
