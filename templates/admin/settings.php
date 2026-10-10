@@ -17,12 +17,23 @@ $auto_update_on  = in_array( plugin_basename( LUMIA_PLUGIN_FILE ), (array) get_s
 
 // Image capabilities: the same detection as the Image Optimizer module (real
 // trial encoding, cached), rather than queryFormats()/gd_info() which
-// sometimes announce a format with no real encoding delegate.
-$image_caps = ( new \Lumia\Tools\Modules\ImageOptimizer\ImageProcessor( [] ) )->get_capabilities();
-$can_avif   = ! empty( $image_caps['avif'] );
-$can_webp   = ! empty( $image_caps['webp'] );
+// sometimes announce a format with no real encoding delegate. AVIF counts as
+// supported only when its queue can encode here (Imagick, this PHP runtime).
+$image_caps = ( new \Lumia\Tools\Modules\ImageOptimizer\ImageProcessor() )->get_capabilities();
+$can_avif   = ! empty( $image_caps['can_encode_here'] );
 $has_editor = 'none' !== $image_caps['editor'];
 $editor     = $has_editor ? ucfirst( $image_caps['editor'] ) : __( 'None', 'lumia-tools' );
+
+// How the AVIF versions reach the browsers: the Image Optimizer's last delivery self-test.
+$avif_delivery       = \Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe::result();
+$avif_delivery_modes = [
+	'nginx'    => [ 'lumia-badge--success', __( 'Served by the web server', 'lumia-tools' ) ],
+	'htaccess' => [ 'lumia-badge--success', __( 'Served by the .htaccess rules', 'lumia-tools' ) ],
+	'none'     => 'pending' === $avif_delivery['reason']
+		? [ 'lumia-badge--neutral', __( 'Not tested yet', 'lumia-tools' ) ]
+		: [ 'lumia-badge--warning', __( 'Not served', 'lumia-tools' ) ],
+];
+$avif_delivery_badge = $avif_delivery_modes[ $avif_delivery['mode'] ] ?? $avif_delivery_modes['none'];
 
 // Server info
 $php_version     = PHP_VERSION;
@@ -262,8 +273,8 @@ $wp_memory_limit = defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : __( 'N/A', '
 						<td><span class="lumia-badge <?php echo $can_avif ? 'lumia-badge--success' : 'lumia-badge--inactive'; ?>"><?php echo $can_avif ? esc_html__( 'Supported', 'lumia-tools' ) : esc_html__( 'Not supported', 'lumia-tools' ); ?></span></td>
 					</tr>
 					<tr>
-						<td class="lumia-server-table__label"><?php echo esc_html__( 'WebP', 'lumia-tools' ); ?></td>
-						<td><span class="lumia-badge <?php echo $can_webp ? 'lumia-badge--success' : 'lumia-badge--inactive'; ?>"><?php echo $can_webp ? esc_html__( 'Supported', 'lumia-tools' ) : esc_html__( 'Not supported', 'lumia-tools' ); ?></span></td>
+						<td class="lumia-server-table__label"><?php echo esc_html__( 'AVIF delivery', 'lumia-tools' ); ?></td>
+						<td><span class="lumia-badge <?php echo esc_attr( $avif_delivery_badge[0] ); ?>"><?php echo esc_html( $avif_delivery_badge[1] ); ?></span></td>
 					</tr>
 					<?php if ( $ssl_version ) : ?>
 					<tr>
