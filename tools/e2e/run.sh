@@ -444,7 +444,7 @@ cmd_assert_after_uninstall() {
 # reactivate-lumia: a deactivation then reactivation does not replay the migration and
 # keeps a setting changed since.
 cmd_reactivate_lumia() {
-	local failures=0 folder before after
+	local failures=0 folder before after events
 	# shellcheck disable=SC2016 # PHP code: the single quotes are on purpose.
 	local read_attempts='$s = get_option( "lumia_module_security" ); echo (int) $s["authentication"]["rate_limit_attempts"];'
 	# shellcheck disable=SC2016
@@ -463,6 +463,9 @@ cmd_reactivate_lumia() {
 	echo "Reactivation"
 	after="$(wp eval "${read_attempts}" | tr -d '\r')"
 	check "a setting changed after the migration is kept (rate_limit_attempts ${before} -> 9, now ${after})" "$([ "${after}" = 9 ] && echo 0 || echo 1)"
+	# shellcheck disable=SC2016 # PHP code: the single quotes are on purpose.
+	events="$(wp eval '$n = 0; foreach ( (array) _get_cron_array() as $hooks ) { $n += count( (array) ( $hooks["lumia_image_optimizer_cron"] ?? [] ) ); } echo $n;' | tr -d '\r')"
+	check "the deactivation unscheduled lumia_image_optimizer_cron, arguments included (${events} left)" "$([ "${events}" = 0 ] && echo 0 || echo 1)"
 	wp --user=admin eval-file /e2e/assert-migration.php lumia-compare lumia_module_security || failures=$((failures + 1))
 
 	# Leave the bench as it was.

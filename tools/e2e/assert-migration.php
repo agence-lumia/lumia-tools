@@ -469,7 +469,14 @@ if ( 'migration' === $e2e_phase ) {
 		if ( in_array( $legacy, E2E_SLUG_OPTIONS, true ) ) {
 			$expected = e2e_rewrite_slugs( $expected );
 		}
-		e2e_check( null !== $current && serialize( $expected ) === serialize( maybe_unserialize( $current ) ), "{$target} equals {$legacy}" . ( in_array( $legacy, E2E_SLUG_OPTIONS, true ) ? ' (slug rewritten)' : '' ) );
+		// The copy is exact, but the active Image Optimizer then migrates its settings to
+		// schema v2 on its first read (quality reset to 70 once, max_dimension, removed keys).
+		$copy      = maybe_unserialize( (string) $current );
+		$schema_v2 = 'skmt_module_image_optimizer' === $legacy && is_array( $expected ) && is_array( $copy ) && isset( $copy['settings_version'] );
+		if ( $schema_v2 ) {
+			$expected = Plugin::instance()->modules->get_instance( 'image_optimizer' )->to_form_payload( $expected );
+		}
+		e2e_check( null !== $current && serialize( $expected ) === serialize( maybe_unserialize( $current ) ), "{$target} equals {$legacy}" . ( in_array( $legacy, E2E_SLUG_OPTIONS, true ) ? ' (slug rewritten)' : '' ) . ( $schema_v2 ? ' (then settings schema v2)' : '' ) );
 		e2e_check( e2e_autoloaded( $snap['autoload'][ $legacy ] ) === e2e_autoloaded( e2e_autoload( $target ) ), "{$target} keeps the autoload flag of {$legacy}" );
 	}
 
@@ -681,7 +688,9 @@ if ( 'lumia-compare' === $e2e_phase ) {
 		e2e_check( $state['count'] === $rows['count'] && $state['digest'] === $rows['digest'], "{$table}: the {$state['count']} rows are intact" );
 	}
 	e2e_check( $before['originals'] === $now['originals'], 'originals folder intact (' . count( $now['originals'] ) . ' files)' );
-	e2e_check( $before['io_cron'] === $now['io_cron'], 'lumia_image_optimizer_cron unchanged' );
+	// A plugin deactivation (reactivate-lumia) unschedules it with its arguments: the former
+	// bulk event has no handler any more (Core\Deactivator, wp_unschedule_hook()).
+	e2e_check( $before['io_cron'] === $now['io_cron'] || [] === $now['io_cron'], 'lumia_image_optimizer_cron unchanged, or gone after a plugin deactivation' );
 	foreach ( e2e_read_json( E2E_SKMT_SNAPSHOT )['secret_plain'] as $legacy => $plain ) {
 		$name = e2e_lumia( $legacy );
 		if ( null !== $before['options'][ $name ] ) {
