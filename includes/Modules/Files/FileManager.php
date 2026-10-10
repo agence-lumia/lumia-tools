@@ -3,6 +3,8 @@ namespace Lumia\Tools\Modules\Files;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Modules\ImageOptimizer\FileLifecycle;
+
 // File manager: direct PHP calls are intended. WP_Filesystem may go through
 // FTP/SSH, under a different user than PHP: displayed permissions (is_writable)
 // and actual operations would diverge. See docs/modules/files.md.
@@ -185,7 +187,54 @@ class FileManager {
 		if ( is_dir( $abs ) ) {
 			return $this->delete_dir( $abs );
 		}
-		return unlink( $abs );
+		$sibling = $this->avif_sibling( $abs );
+		if ( ! unlink( $abs ) ) {
+			return false;
+		}
+		if ( '' !== $sibling ) {
+			unlink( $sibling );
+		}
+		return true;
+	}
+
+	/**
+	 * The `.avif` sibling the Image Optimizer serves in place of a JPEG/PNG of the uploads
+	 * folder ('' when there is none): it follows the file it stands for, otherwise a deleted
+	 * or renamed image would keep being served under its old URL, or a new file with that
+	 * name would show the old picture.
+	 */
+	private function avif_sibling( string $abs ): string {
+		if ( ! preg_match( '/\.(?:jpe?g|png)$/i', $abs ) || '' === $this->uploads_path( $abs ) ) {
+			return '';
+		}
+
+		$sibling = FileLifecycle::sibling( $abs );
+
+		return is_file( $sibling ) ? $sibling : '';
+	}
+
+	/**
+	 * Moves the sibling of a renamed or moved file (deleted when the new name is not a
+	 * JPEG/PNG of the uploads folder any more).
+	 */
+	private function follow_avif_sibling( string $sibling, string $new_abs ): void {
+		if ( '' === $sibling ) {
+			return;
+		}
+		if ( preg_match( '/\.(?:jpe?g|png)$/i', $new_abs ) && '' !== $this->uploads_path( $new_abs ) ) {
+			rename( $sibling, FileLifecycle::sibling( $new_abs ) );
+			return;
+		}
+		unlink( $sibling );
+	}
+
+	/**
+	 * $abs when it lies under the uploads folder, '' otherwise.
+	 */
+	private function uploads_path( string $abs ): string {
+		$uploads = realpath( wp_upload_dir()['basedir'] );
+
+		return false !== $uploads && strpos( $abs, $uploads . DIRECTORY_SEPARATOR ) === 0 ? $abs : '';
 	}
 
 	private function delete_dir( string $dir ): bool {
@@ -212,7 +261,12 @@ class FileManager {
 			throw new \RuntimeException( __( 'A file with that name already exists.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
-		return rename( $abs, $new_abs );
+		$sibling = is_file( $abs ) ? $this->avif_sibling( $abs ) : '';
+		if ( ! rename( $abs, $new_abs ) ) {
+			return false;
+		}
+		$this->follow_avif_sibling( $sibling, $new_abs );
+		return true;
 	}
 
 	public function move( string $src_rel, string $dst_rel ): bool {
@@ -232,7 +286,12 @@ class FileManager {
 			throw new \RuntimeException( __( 'A file with that name already exists at destination.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
 
-		return rename( $src, $dst );
+		$sibling = is_file( $src ) ? $this->avif_sibling( $src ) : '';
+		if ( ! rename( $src, $dst ) ) {
+			return false;
+		}
+		$this->follow_avif_sibling( $sibling, $dst );
+		return true;
 	}
 
 	public function create_folder( string $rel ): bool {

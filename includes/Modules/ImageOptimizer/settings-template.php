@@ -29,13 +29,13 @@ $module_settings = $instance->get_settings();
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php echo esc_html__( 'Behavior', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Configure how images are processed on upload.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'The JPEG or PNG made by WordPress stays the image file, at the same URL. An AVIF version is generated next to it in the background and served to the browsers that accept it.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_optimize_on_upload" class="lumia-option__label"><?php echo esc_html__( 'Optimize on upload', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Automatically resizes, compresses and converts images.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Queues every new JPEG or PNG for its AVIF version, right after the upload.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<label class="lumia-toggle">
@@ -51,23 +51,18 @@ $module_settings = $instance->get_settings();
 
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_format_mode" class="lumia-option__label"><?php echo esc_html__( 'Output format', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( '“Auto” picks AVIF if the server can encode it, otherwise WebP. A format chosen explicitly but not supported converts nothing at all: there is no fallback.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Automatic image conversion format.', 'lumia-tools' ); ?></p>
+					<label for="lumia_convert_modern_uploads" class="lumia-option__label"><?php echo esc_html__( 'Convert AVIF and WebP uploads', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Some email clients cannot display AVIF or WebP. Animated images are always kept as uploaded.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<p class="lumia-option__desc"><?php echo esc_html__( 'Turns an uploaded AVIF or WebP into a PNG (transparency, flat colors) or a JPEG that every client can read; its AVIF version then follows as for any other image.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
-					<select id="lumia_format_mode"
-							name="lumia_module_settings[format_mode]"
-							class="lumia-select lumia-select--sm">
-						<option value="auto" <?php selected( $module_settings['format_mode'], 'auto' ); ?>>
-							<?php echo esc_html__( 'Auto', 'lumia-tools' ); ?>
-						</option>
-						<option value="avif" <?php selected( $module_settings['format_mode'], 'avif' ); ?>>
-							<?php echo esc_html__( 'AVIF', 'lumia-tools' ); ?>
-						</option>
-						<option value="webp" <?php selected( $module_settings['format_mode'], 'webp' ); ?>>
-							<?php echo esc_html__( 'WebP', 'lumia-tools' ); ?>
-						</option>
-					</select>
+					<label class="lumia-toggle">
+						<input type="checkbox"
+								id="lumia_convert_modern_uploads"
+								name="lumia_module_settings[convert_modern_uploads]"
+								value="1"
+								<?php checked( $module_settings['convert_modern_uploads'], true ); ?>>
+						<span class="lumia-toggle__slider"></span>
+					</label>
 				</div>
 			</div>
 		</div>
@@ -79,40 +74,64 @@ $module_settings = $instance->get_settings();
 	<div class="lumia-section">
 		<div class="lumia-section__header">
 			<h2 class="lumia-section__title"><?php echo esc_html__( 'Quality and dimensions', 'lumia-tools' ); ?></h2>
-			<p class="lumia-section__desc"><?php echo esc_html__( 'Adjust the compression quality and the maximum dimensions.', 'lumia-tools' ); ?></p>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Adjust the AVIF encoding and the maximum dimension of the uploads.', 'lumia-tools' ); ?></p>
+		</div>
+		<div class="lumia-section__content">
+			<div class="lumia-form__row">
+				<div class="lumia-form__group">
+					<label for="lumia_quality" class="lumia-form__label"><?php echo esc_html__( 'AVIF quality (1-100)', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( '70 recommended: sharper than the JPEG made by WordPress, for about 30% fewer bytes.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<input type="number"
+							id="lumia_quality"
+							name="lumia_module_settings[quality]"
+							class="lumia-input lumia-input--sm"
+							value="<?php echo esc_attr( $module_settings['quality'] ); ?>"
+							min="1"
+							max="100">
+				</div>
+
+				<div class="lumia-form__group">
+					<label for="lumia_speed" class="lumia-form__label"><?php echo esc_html__( 'Encoding speed', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Fast takes less CPU time per image, for heavier files: about 5% for photos, a lot more for PNG images. Balanced is recommended.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<select id="lumia_speed"
+							name="lumia_module_settings[speed]"
+							class="lumia-select lumia-select--sm">
+						<option value="balanced" <?php selected( $module_settings['speed'], 'balanced' ); ?>>
+							<?php echo esc_html__( 'Balanced', 'lumia-tools' ); ?>
+						</option>
+						<option value="fast" <?php selected( $module_settings['speed'], 'fast' ); ?>>
+							<?php echo esc_html__( 'Fast', 'lumia-tools' ); ?>
+						</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="lumia-form__group">
+				<label for="lumia_max_dimension" class="lumia-form__label"><?php echo esc_html__( 'Maximum dimension (px)', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'WordPress scales down larger uploads to this width or height (the original is kept aside). 0 turns the limit off.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+				<input type="number"
+						id="lumia_max_dimension"
+						name="lumia_module_settings[max_dimension]"
+						class="lumia-input lumia-input--sm"
+						value="<?php echo esc_attr( $module_settings['max_dimension'] ); ?>"
+						min="0">
+			</div>
+		</div>
+	</div>
+
+	<div class="lumia-divider"></div>
+
+	<!-- Exclusions -->
+	<div class="lumia-section">
+		<div class="lumia-section__header">
+			<h2 class="lumia-section__title"><?php echo esc_html__( 'Exclusions', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php echo esc_html__( 'Images that keep their original format only.', 'lumia-tools' ); ?></p>
 		</div>
 		<div class="lumia-section__content">
 			<div class="lumia-form__group">
-				<label for="lumia_quality" class="lumia-form__label"><?php echo esc_html__( 'Compression quality (1-100)', 'lumia-tools' ); ?></label>
-				<input type="number"
-						id="lumia_quality"
-						name="lumia_module_settings[quality]"
-						class="lumia-input lumia-input--sm"
-						value="<?php echo esc_attr( $module_settings['quality'] ); ?>"
-						min="1"
-						max="100">
-			</div>
-
-			<div class="lumia-form__row">
-				<div class="lumia-form__group">
-					<label for="lumia_max_width" class="lumia-form__label"><?php echo esc_html__( 'Max width (px)', 'lumia-tools' ); ?></label>
-					<input type="number"
-							id="lumia_max_width"
-							name="lumia_module_settings[max_width]"
-							class="lumia-input"
-							value="<?php echo esc_attr( $module_settings['max_width'] ); ?>"
-							min="100">
-				</div>
-
-				<div class="lumia-form__group">
-					<label for="lumia_max_height" class="lumia-form__label"><?php echo esc_html__( 'Max height (px)', 'lumia-tools' ); ?></label>
-					<input type="number"
-							id="lumia_max_height"
-							name="lumia_module_settings[max_height]"
-							class="lumia-input"
-							value="<?php echo esc_attr( $module_settings['max_height'] ); ?>"
-							min="100">
-				</div>
+				<label for="lumia_exclude_suffixes" class="lumia-form__label"><?php echo esc_html__( 'Excluded name suffixes', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Case-insensitive, before the extension: with -noopt, logo-noopt.png and logo-noopt-2.png get no AVIF version. Separate suffixes with commas.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+				<input type="text"
+						id="lumia_exclude_suffixes"
+						name="lumia_module_settings[exclude_suffixes]"
+						class="lumia-input"
+						value="<?php echo esc_attr( implode( ', ', (array) $module_settings['exclude_suffixes'] ) ); ?>">
 			</div>
 		</div>
 	</div>
@@ -128,7 +147,7 @@ $module_settings = $instance->get_settings();
 		<div class="lumia-section__content">
 			<div class="lumia-option">
 				<div class="lumia-option__content">
-					<label for="lumia_strip_exif" class="lumia-option__label"><?php echo esc_html__( 'Remove EXIF metadata', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Irreversible, and the cleanup takes the whole block with it, copyright notice and color profile included. Leave it enabled unless the site publishes author-credited photos.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+					<label for="lumia_strip_exif" class="lumia-option__label"><?php echo esc_html__( 'Remove EXIF metadata', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Irreversible: the copyright notice goes with the rest. The color profile is kept. Leave it enabled unless the site publishes author-credited photos.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 					<p class="lumia-option__desc"><?php echo esc_html__( 'Removes GPS data, camera details, etc.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
@@ -155,23 +174,6 @@ $module_settings = $instance->get_settings();
 								name="lumia_module_settings[generate_alt]"
 								value="1"
 								<?php checked( $module_settings['generate_alt'], true ); ?>>
-						<span class="lumia-toggle__slider"></span>
-					</label>
-				</div>
-			</div>
-
-			<div class="lumia-option">
-				<div class="lumia-option__content">
-					<label for="lumia_keep_original" class="lumia-option__label"><?php echo esc_html__( 'Keep the original', 'lumia-tools' ); ?><?php echo $this->render_help_tip( __( 'Doubles the disk space used by the media library. Keep it on until the conversion has been validated on the site, then turn it off.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-					<p class="lumia-option__desc"><?php echo esc_html__( 'Keeps an untouched copy of the source file, so the image can be restored or re-optimized without loss from its details screen.', 'lumia-tools' ); ?></p>
-				</div>
-				<div class="lumia-option__control">
-					<label class="lumia-toggle">
-						<input type="checkbox"
-								id="lumia_keep_original"
-								name="lumia_module_settings[keep_original]"
-								value="1"
-								<?php checked( $module_settings['keep_original'], true ); ?>>
 						<span class="lumia-toggle__slider"></span>
 					</label>
 				</div>
