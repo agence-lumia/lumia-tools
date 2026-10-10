@@ -14,7 +14,7 @@
 
 use Lumia\Tools\Modules\ImageOptimizer\ImageProcessor;
 
-$caps = ( new ImageProcessor( array() ) )->get_capabilities();
+$caps = ( new ImageProcessor() )->get_capabilities();
 
 $checks = array(
 	'SAPI is cli'                                => 'cli' === PHP_SAPI,

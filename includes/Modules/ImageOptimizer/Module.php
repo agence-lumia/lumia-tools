@@ -9,11 +9,14 @@ use Lumia\Tools\Admin\Admin;
 /**
  * Image Optimizer module — orchestrator.
  *
- * Delegates file processing to ImageProcessor, the AVIF queue to QueueRunner, the bulk
- * screen to BulkProcessor, and the media library UI to MediaLibrary.
+ * Delegates the AVIF siblings' lifecycle to FileLifecycle, their encoding to the background
+ * queue (QueueRunner, AvifEncoder), the delivery self-test to DeliveryProbe, the bulk screen to
+ * BulkProcessor, the media library UI to MediaLibrary and the legacy media migration to
+ * MigrationCommand. ImageProcessor only detects the server capabilities.
  */
 class Module extends AbstractModule {
 
+	/** Global counters of the former in-place pipeline: only deleted on uninstall. */
 	private const STATS_SUFFIX      = '_stats';
 	private const BULK_STATE_SUFFIX = '_bulk_state';
 
@@ -30,7 +33,11 @@ class Module extends AbstractModule {
 		'fast'     => 9,
 	];
 
-	/** Folder (under uploads) holding the untouched originals, suffixed with a token: see get_backup_dir(). */
+	/**
+	 * Folder (under uploads) where the former pipeline kept the untouched originals, suffixed
+	 * with a token: see get_backup_dir(). Read by the legacy migration (a backup copy is the
+	 * best source for a fallback) and by Core\Migration\FromSkmt (folder rename).
+	 */
 	public const BACKUP_DIR           = 'lumia-originals';
 	private const BACKUP_TOKEN_SUFFIX = '_backup_token';
 
@@ -42,13 +49,13 @@ class Module extends AbstractModule {
 	public const LEGACY_BACKUP_DIR = 'skmt-originals';
 
 	/**
-	 * Meta: source files left next to the converted ones (keep_original),
-	 * paths relative to the uploads folder. Absent from the WordPress metadata,
-	 * they would not leave with the media item without this list.
+	 * Meta of the former pipeline: source files left next to the converted ones
+	 * (keep_original), paths relative to the uploads folder. Absent from the WordPress
+	 * metadata, they would not leave with a media item not migrated yet without this list.
 	 */
 	private const FALLBACK_META = '_lumia_fallback_files';
 
-	/** Metas describing a media item's optimization (cleared on restore). */
+	/** Metas the former pipeline wrote on a converted media item (removed by the migration). */
 	private const OPTIMIZATION_META = [
 		'_lumia_optimized',
 		'_lumia_original_bytes',
@@ -80,18 +87,6 @@ class Module extends AbstractModule {
 	 */
 	private array $settings = [];
 
-	/**
-	 * URL pairs waiting to be rewritten during a bulk batch: they are
-	 * collected, then handed to UrlRewriter in a single call (one query
-	 * per table for the whole batch, instead of one per image).
-	 *
-	 * @var array<string, string>
-	 */
-	private array $pending_url_pairs = [];
-
-	/** True between begin_deferred_url_rewrites() and flush_url_rewrites(). */
-	private bool $defer_url_rewrites = false;
-
 	/* ================================================================
 	 * INITIALIZATION
 	 * ================================================================ */
@@ -103,7 +98,7 @@ class Module extends AbstractModule {
 		$this->settings = $this->get_settings();
 
 		// Sub-objects
-		$this->processor = new ImageProcessor( $this->settings );
+		$this->processor = new ImageProcessor();
 
 		$this->bulk = new BulkProcessor(
 			$this->get_module_option_key() . self::BULK_STATE_SUFFIX,
@@ -131,8 +126,8 @@ class Module extends AbstractModule {
 		// Automatic alt text
 		add_action( 'add_attachment', [ $this, 'generate_alt_text' ] );
 
-		// The kept original and the fallback files follow the media item
-		// when it is permanently deleted.
+		// A media item not migrated yet (former pipeline): its kept original and fallback
+		// files follow it when it is permanently deleted.
 		add_action( 'delete_attachment', [ $this, 'delete_kept_files' ] );
 
 		// Bulk screen: scan, start, stop, status.
@@ -457,245 +452,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * UPLOAD HOOK
-	 * ================================================================ */
-
-	/**
-	 * Hook wp_generate_attachment_metadata: optimizes + converts the original and the thumbnails.
-	 *
-	 * Single optimization point on upload: it runs after the thumbnails are
-	 * generated and measures the real size of the original file. Do NOT
-	 * pre-optimize the file in wp_handle_upload — otherwise the "before" measure
-	 * is taken on an already compressed file and the displayed saving is zero (the
-	 * image is still marked "optimized").
-	 *
-	 * @param array<string, mixed> $metadata
-	 * @return array<string, mixed>
-	 */
-	public function optimize_attachment_sizes( array $metadata, int $attachment_id ): array {
-		if ( ! $this->settings['optimize_on_upload'] ) {
-			return $metadata;
-		}
-
-		// wp_generate_attachment_metadata is not only used for uploads:
-		// a thumbnail regeneration tool replays it on media items already
-		// inserted in pages. So we rewrite here too; on a real
-		// upload the sweep simply finds nothing.
-		return $this->process_attachment_metadata( $metadata, $attachment_id, false );
-	}
-
-	/* ================================================================
-	 * PROCESSING AN ATTACHMENT
-	 * ================================================================ */
-
-	/**
-	 * Public entry point: processes an attachment and updates its WP metadata.
-	 * Used by MediaLibrary (single) and BulkProcessor (batch).
-	 */
-	public function process_and_update_attachment( int $attachment_id, bool $force = true ): void {
-		$metadata = wp_get_attachment_metadata( $attachment_id );
-
-		if ( $metadata ) {
-			$metadata = $this->process_attachment_metadata( $metadata, $attachment_id, $force );
-			wp_update_attachment_metadata( $attachment_id, $metadata );
-		}
-
-		$this->generate_alt_text( $attachment_id );
-	}
-
-	/**
-	 * Processes every size of an attachment (optimization + conversion).
-	 *
-	 * @param bool $force Ignore the "already optimized" flag.
-	 * @param array<string, mixed> $metadata
-	 * @return array<string, mixed>
-	 */
-	public function process_attachment_metadata( array $metadata, int $attachment_id, bool $force ): array {
-		$mime_type = $this->processor->get_mime_type( '', $attachment_id );
-
-		if ( empty( $mime_type ) || ! $this->processor->is_supported_mime( $mime_type ) ) {
-			return $metadata;
-		}
-
-		$attached_file = get_attached_file( $attachment_id );
-
-		if ( $this->processor->is_animated( (string) $attached_file, $mime_type ) ) {
-			return $metadata;
-		}
-
-		if ( ! $force && $this->is_already_optimized( $attachment_id ) ) {
-			return $metadata;
-		}
-
-		if ( empty( $metadata['file'] ) ) {
-			return $metadata;
-		}
-
-		$upload_dir = wp_upload_dir();
-		$base_path  = trailingslashit( $upload_dir['basedir'] );
-		$subdir     = dirname( $metadata['file'] );
-		$sizes_path = trailingslashit( $base_path . $subdir );
-		$rel_dir    = ( '.' === $subdir || '' === $subdir ) ? '' : trailingslashit( str_replace( '\\', '/', $subdir ) );
-
-		$main_before = 0;
-		$main_after  = 0;
-
-		// --- Thumbnails ---
-		$sizes        = $this->process_sizes( $metadata, $mime_type, $sizes_path, $rel_dir );
-		$total_before = $sizes['before'];
-		$total_after  = $sizes['after'];
-		$size_updates = $sizes['updates'];
-		$url_pairs    = $sizes['url_pairs']; // old path relative to uploads => new one (see UrlRewriter)
-
-		// --- Original file ---
-		$original_file      = $base_path . $metadata['file'];
-		$original_converted = false;
-		$original_new_file  = '';
-
-		if ( file_exists( $original_file ) ) {
-			// Backup BEFORE optimize(): it is what recompresses and
-			// resizes in place. An already optimized media item has no original
-			// left to save — we would only copy a degraded version.
-			if ( ! $this->is_already_optimized( $attachment_id ) ) {
-				$this->backup_original( $attachment_id, $original_file, str_replace( '\\', '/', $metadata['file'] ) );
-			}
-
-			$before        = (int) filesize( $original_file );
-			$main_before   = $before;
-			$total_before += $before;
-
-			$this->processor->optimize( $original_file );
-			$converted  = $this->processor->convert( $original_file, $mime_type, $attachment_id );
-			$final_file = false !== $converted ? $converted : $original_file;
-
-			$after        = file_exists( $final_file ) ? (int) filesize( $final_file ) : $before;
-			$main_after   = $after;
-			$total_after += $after;
-
-			if ( $converted && $converted !== $original_file ) {
-				$original_converted = true;
-				$original_new_file  = $converted;
-				$this->update_attachment_database_refs( $attachment_id, $original_file, $converted );
-				$url_pairs[ str_replace( '\\', '/', $metadata['file'] ) ] = $rel_dir . basename( $converted );
-			}
-		}
-
-		// With keep_original, convert() leaves the source next to the converted file.
-		// The keys of $url_pairs are precisely the old paths.
-		$this->record_fallbacks( $attachment_id, array_keys( $url_pairs ), $base_path );
-
-		// A renamed file is a broken link wherever its URL has already been
-		// inserted: we rewrite within the same processing. In a bulk run, the
-		// pairs are accumulated and rewritten in one go by flush.
-		if ( $url_pairs ) {
-			if ( $this->defer_url_rewrites ) {
-				$this->pending_url_pairs += $url_pairs;
-			} else {
-				( new UrlRewriter() )->rewrite( $url_pairs );
-			}
-		}
-
-		// --- WP metadata update ---
-		if ( $original_converted ) {
-			$metadata = $this->update_metadata_after_conversion( $metadata, $original_file, $original_new_file, $size_updates );
-		} elseif ( ! empty( $size_updates ) ) {
-			$metadata = $this->update_metadata_after_conversion( $metadata, '', '', $size_updates );
-		}
-
-		$metadata = $this->refresh_metadata_filesizes( $metadata, $base_path );
-
-		// --- Stats and marking ---
-		if ( $total_before > 0 ) {
-			$bytes_saved = max( $total_before - $total_after, 0 );
-			$this->update_stats( $bytes_saved, $total_before );
-
-			$final_mime = $original_converted
-				? $this->processor->get_mime_type( $original_new_file )
-				: $mime_type;
-
-			$final_path = $original_converted ? $original_new_file : $original_file;
-			$this->mark_attachment_optimized(
-				$attachment_id,
-				$total_before,
-				$total_after,
-				$final_path,
-				$final_mime,
-				$main_before,
-				$main_after
-			);
-		}
-
-		return $metadata;
-	}
-
-	/**
-	 * Optimizes and converts the thumbnails of an attachment.
-	 *
-	 * @param array<string, mixed> $metadata
-	 * @return array{before: int, after: int, updates: array<string, array<string, string>>, url_pairs: array<string, string>}
-	 */
-	private function process_sizes( array $metadata, string $mime_type, string $sizes_path, string $rel_dir ): array {
-		$result = [
-			'before'    => 0,
-			'after'     => 0,
-			'updates'   => [],
-			'url_pairs' => [],
-		];
-
-		foreach ( $metadata['sizes'] ?? [] as $size => $size_data ) {
-			if ( empty( $size_data['file'] ) ) {
-				continue;
-			}
-
-			$size_file = $sizes_path . $size_data['file'];
-			if ( ! file_exists( $size_file ) ) {
-				continue;
-			}
-
-			$before            = (int) filesize( $size_file );
-			$result['before'] += $before;
-
-			$this->processor->optimize( $size_file );
-			$converted  = $this->processor->convert( $size_file, $mime_type );
-			$final_file = false !== $converted ? $converted : $size_file;
-
-			$result['after'] += file_exists( $final_file ) ? (int) filesize( $final_file ) : $before;
-
-			if ( $converted && $converted !== $size_file ) {
-				$result['updates'][ $size ]                           = [
-					'file' => $converted,
-					'mime' => $this->processor->get_mime_type( $converted ),
-				];
-				$result['url_pairs'][ $rel_dir . $size_data['file'] ] = $rel_dir . basename( $converted );
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Accumulates URL rewrites instead of running them one by one.
-	 * Call before each image of a batch; flush_url_rewrites() empties them.
-	 */
-	public function begin_deferred_url_rewrites(): void {
-		$this->defer_url_rewrites = true;
-	}
-
-	/**
-	 * Rewrites in a single pass everything a batch has accumulated.
-	 */
-	public function flush_url_rewrites(): void {
-		$this->defer_url_rewrites = false;
-		if ( ! $this->pending_url_pairs ) {
-			return;
-		}
-		$pairs                   = $this->pending_url_pairs;
-		$this->pending_url_pairs = [];
-		( new UrlRewriter() )->rewrite( $pairs );
-	}
-
-	/* ================================================================
-	 * ACTIONS ON A MEDIA ITEM (attachment details panel)
+	 * FORMER PIPELINE: KEPT ORIGINALS AND FALLBACK FILES
 	 * ================================================================ */
 
 	/**
@@ -739,57 +496,6 @@ class Module extends AbstractModule {
 		$legacy = $base . self::LEGACY_BACKUP_DIR . '-' . $token;
 
 		return ! is_dir( $dir ) && is_dir( $legacy ) ? $legacy : $dir;
-	}
-
-	/**
-	 * Copies the intact main file into lumia-originals/, only once.
-	 *
-	 * @param string $rel Path relative to the uploads folder (metadata['file']).
-	 */
-	private function backup_original( int $attachment_id, string $file, string $rel ): void {
-		if ( empty( $this->settings['keep_original'] ) || '' !== $this->get_backup_path( $attachment_id ) || 0 !== validate_file( $rel ) ) {
-			return;
-		}
-
-		$dir  = $this->get_backup_dir();
-		$dest = $dir . '/' . $rel;
-
-		if ( ! wp_mkdir_p( dirname( $dest ) ) || ! copy( $file, $dest ) ) {
-			return;
-		}
-
-		// No directory listing, and access denied under Apache.
-		if ( ! file_exists( $dir . '/index.php' ) ) {
-			file_put_contents( $dir . '/index.php', "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local file created once.
-			file_put_contents( $dir . '/.htaccess', "Require all denied\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- same.
-		}
-
-		update_post_meta( $attachment_id, '_lumia_backup_file', $rel );
-	}
-
-	/**
-	 * Remembers the source files left on disk after conversion.
-	 *
-	 * The original extension is no longer known once the metadata has
-	 * been rewritten: it is now or never.
-	 *
-	 * @param string[] $rels Paths relative to the uploads folder.
-	 */
-	private function record_fallbacks( int $attachment_id, array $rels, string $base_path ): void {
-		$rels = array_filter(
-			$rels,
-			static function ( string $rel ) use ( $base_path ): bool {
-				return 0 === validate_file( $rel ) && file_exists( $base_path . $rel );
-			}
-		);
-		if ( ! $rels ) {
-			return;
-		}
-
-		$known = get_post_meta( $attachment_id, self::FALLBACK_META, true );
-		$known = is_array( $known ) ? $known : [];
-
-		update_post_meta( $attachment_id, self::FALLBACK_META, array_values( array_unique( array_merge( $known, $rels ) ) ) );
 	}
 
 	/**
@@ -853,319 +559,6 @@ class Module extends AbstractModule {
 		}
 	}
 
-	/**
-	 * Re-optimizes a media item with the current settings, possibly to another
-	 * format.
-	 *
-	 * Starts again from the kept original if there is one: otherwise every pass
-	 * recompresses an already compressed image.
-	 *
-	 * @param string $format '' (settings) or 'webp' / 'avif'.
-	 */
-	public function reprocess_attachment( int $attachment_id, string $format = '' ): ?\WP_Error {
-		if ( '' !== $format ) {
-			$cap = $this->processor->get_capabilities();
-			if ( ! in_array( $format, [ 'webp', 'avif' ], true ) || empty( $cap[ $format ] ) ) {
-				return new \WP_Error( 'lumia_format', __( 'This format is not available on this server.', 'lumia-tools' ) );
-			}
-		}
-
-		$previous = strtolower( pathinfo( (string) get_attached_file( $attachment_id ), PATHINFO_EXTENSION ) );
-
-		if ( '' !== $this->get_backup_path( $attachment_id ) ) {
-			$error = $this->restore_original( $attachment_id, true );
-			if ( $error ) {
-				return $error;
-			}
-		} else {
-			// The metas stay: the media item is still "optimized", and
-			// process_attachment_metadata() does not save its degraded version
-			// as if it were an original.
-			$this->unrecord_stats( $attachment_id );
-		}
-
-		$this->with_format(
-			$format,
-			function () use ( $attachment_id ): void {
-				$this->process_and_update_attachment( $attachment_id, true );
-			}
-		);
-
-		// convert() only keeps the requested format if it lightens the image.
-		// Starting from the original, a WebP converted in vain to AVIF would
-		// fall back to JPEG: we re-encode it in its previous format.
-		$result = strtolower( pathinfo( (string) get_attached_file( $attachment_id ), PATHINFO_EXTENSION ) );
-		if ( '' !== $format && $result !== $format && $result !== $previous
-			&& in_array( $previous, [ 'webp', 'avif' ], true ) && ! empty( $this->processor->get_capabilities()[ $previous ] ) ) {
-			return $this->reprocess_attachment( $attachment_id, $previous );
-		}
-
-		return null;
-	}
-
-	/**
-	 * Runs $callback with a forced conversion format (empty string: settings).
-	 */
-	private function with_format( string $format, callable $callback ): void {
-		$processor = $this->processor;
-		if ( '' !== $format ) {
-			$this->processor = new ImageProcessor( array_merge( $this->settings, [ 'format_mode' => $format ] ) );
-		}
-
-		try {
-			$callback();
-		} finally {
-			$this->processor = $processor;
-		}
-	}
-
-	/**
-	 * Recreates the thumbnails from the main file, then optimizes them
-	 * if the media item is.
-	 */
-	public function regenerate_thumbnails( int $attachment_id ): ?\WP_Error {
-		$old_metadata = wp_get_attachment_metadata( $attachment_id );
-		$file         = (string) get_attached_file( $attachment_id );
-
-		if ( ! is_array( $old_metadata ) || '' === $file || ! file_exists( $file ) ) {
-			return new \WP_Error( 'lumia_missing', __( 'File not found.', 'lumia-tools' ) );
-		}
-
-		$metadata = $this->generate_metadata( $attachment_id, $file, $old_metadata );
-		if ( null === $metadata ) {
-			return new \WP_Error( 'lumia_regenerate', __( 'Thumbnail generation failed.', 'lumia-tools' ) );
-		}
-
-		if ( $this->is_already_optimized( $attachment_id ) ) {
-			$subdir  = dirname( $metadata['file'] );
-			$rel_dir = ( '.' === $subdir || '' === $subdir ) ? '' : trailingslashit( str_replace( '\\', '/', $subdir ) );
-
-			// The thumbnails follow the main file's format: after a conversion
-			// to WebP from the details panel, the settings (AVIF, auto…)
-			// would give a WebP main file and AVIF thumbnails.
-			$format = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
-			$this->with_format(
-				in_array( $format, [ 'webp', 'avif' ], true ) ? $format : '',
-				function () use ( &$metadata, $file, $rel_dir, $attachment_id ): void {
-					$base_path = trailingslashit( wp_upload_dir()['basedir'] );
-					$sizes     = $this->process_sizes( $metadata, $this->processor->get_mime_type( $file ), $base_path . $rel_dir, $rel_dir );
-					$metadata  = $this->update_metadata_after_conversion( $metadata, '', '', $sizes['updates'] );
-					$this->record_fallbacks( $attachment_id, array_keys( $sizes['url_pairs'] ), $base_path );
-				}
-			);
-		}
-
-		$metadata = $this->replace_metadata( $attachment_id, $old_metadata, $metadata );
-
-		if ( $this->is_already_optimized( $attachment_id ) ) {
-			$this->refresh_attachment_totals( $attachment_id, $metadata );
-		}
-
-		return null;
-	}
-
-	/**
-	 * Puts the kept original back in place of the optimized versions.
-	 *
-	 * @param bool $keep_backup Keep the copy (re-optimization from
-	 *                          the original) or delete it (restore).
-	 */
-	public function restore_original( int $attachment_id, bool $keep_backup = false ): ?\WP_Error {
-		$backup       = $this->get_backup_path( $attachment_id );
-		$old_metadata = wp_get_attachment_metadata( $attachment_id );
-
-		if ( '' === $backup || ! is_array( $old_metadata ) || empty( $old_metadata['file'] ) ) {
-			return new \WP_Error( 'lumia_no_backup', __( 'No original kept for this media item.', 'lumia-tools' ) );
-		}
-
-		$target  = trailingslashit( wp_upload_dir()['basedir'] ) . get_post_meta( $attachment_id, '_lumia_backup_file', true );
-		$current = (string) get_attached_file( $attachment_id );
-
-		if ( ! copy( $backup, $target ) ) {
-			return new \WP_Error( 'lumia_restore', __( 'Could not copy the original back.', 'lumia-tools' ) );
-		}
-
-		if ( wp_normalize_path( $current ) !== wp_normalize_path( $target ) ) {
-			$this->update_attachment_database_refs( $attachment_id, $current, $target );
-		}
-
-		$metadata = $this->generate_metadata( $attachment_id, $target, $old_metadata );
-		if ( null === $metadata ) {
-			return new \WP_Error( 'lumia_regenerate', __( 'Thumbnail generation failed.', 'lumia-tools' ) );
-		}
-
-		$this->replace_metadata( $attachment_id, $old_metadata, $metadata );
-
-		$this->unrecord_stats( $attachment_id );
-		foreach ( self::OPTIMIZATION_META as $key ) {
-			delete_post_meta( $attachment_id, $key );
-		}
-
-		// The fallback files have become the media item's files again, or have
-		// been overwritten: a stale list would end up targeting another item's.
-		delete_post_meta( $attachment_id, self::FALLBACK_META );
-
-		if ( ! $keep_backup ) {
-			wp_delete_file( $backup );
-			delete_post_meta( $attachment_id, '_lumia_backup_file' );
-		}
-
-		return null;
-	}
-
-	/**
-	 * WordPress metadata recomputed from $file, without our processing.
-	 *
-	 * @param array<string, mixed> $old_metadata
-	 * @return array<string, mixed>|null
-	 */
-	private function generate_metadata( int $attachment_id, string $file, array $old_metadata ): ?array {
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-
-		// Large image: WordPress derives the thumbnails from the original from before
-		// "-scaled" (photo-150x150.jpg), not from the reduced file
-		// (photo-scaled-150x150.jpg). We do the same, otherwise every thumbnail
-		// changes name and any URL outside the database (cache, CDN, e-mail) breaks.
-		$original = empty( $old_metadata['original_image'] ) ? '' : path_join( dirname( $file ), $old_metadata['original_image'] );
-		if ( '' !== $original && file_exists( $original ) ) {
-			$metadata          = $old_metadata;
-			$metadata['file']  = _wp_relative_upload_path( $file );
-			$metadata['sizes'] = [];
-			$dimensions        = wp_getimagesize( $file );
-			if ( $dimensions ) {
-				$metadata['width']  = $dimensions[0];
-				$metadata['height'] = $dimensions[1];
-			}
-
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter, applied as in wp_create_image_subsizes().
-			$sizes = apply_filters( 'intermediate_image_sizes_advanced', wp_get_registered_image_subsizes(), $metadata, $attachment_id );
-
-			$metadata = _wp_make_subsizes( $sizes, $original, $metadata, $attachment_id );
-
-			// The filter above raised the lifecycle's "generating" flag; without
-			// wp_generate_attachment_metadata() nothing would lower it.
-			return $this->get_lifecycle()->on_generate_metadata( $metadata, $attachment_id );
-		}
-
-		// Without the "big image" threshold: the main file is already the right one,
-		// WordPress would otherwise make yet another "-scaled" of it.
-		add_filter( 'big_image_size_threshold', '__return_false', 999 );
-
-		$metadata = wp_generate_attachment_metadata( $attachment_id, $file );
-
-		remove_filter( 'big_image_size_threshold', '__return_false', 999 );
-
-		if ( empty( $metadata['file'] ) ) {
-			return null;
-		}
-
-		return $metadata;
-	}
-
-	/**
-	 * Saves the new metadata, deletes the files that no longer
-	 * appear in it and rewrites the URLs of the renamed files.
-	 *
-	 * @param array<string, mixed> $old_metadata
-	 * @param array<string, mixed> $metadata
-	 * @return array<string, mixed>
-	 */
-	private function replace_metadata( int $attachment_id, array $old_metadata, array $metadata ): array {
-		$base_path = trailingslashit( wp_upload_dir()['basedir'] );
-		$old_files = $this->metadata_files( $old_metadata );
-		$new_files = $this->metadata_files( $metadata );
-
-		// Same key (main file, "medium" size…): old → new.
-		$url_pairs = [];
-		foreach ( $old_files as $key => $rel ) {
-			if ( isset( $new_files[ $key ] ) && $new_files[ $key ] !== $rel ) {
-				$url_pairs[ $rel ] = $new_files[ $key ];
-			}
-		}
-
-		$kept = array_flip( $new_files );
-		foreach ( $old_files as $rel ) {
-			if ( ! isset( $kept[ $rel ] ) ) {
-				wp_delete_file( $base_path . $rel );
-			}
-		}
-
-		if ( $url_pairs ) {
-			( new UrlRewriter() )->rewrite( $url_pairs );
-		}
-
-		$metadata = $this->refresh_metadata_filesizes( $metadata, $base_path );
-		wp_update_attachment_metadata( $attachment_id, $metadata );
-
-		return $metadata;
-	}
-
-	/**
-	 * Files of an attachment, relative to the uploads folder, indexed by role
-	 * ('' for the main one, the size name otherwise).
-	 *
-	 * @param array<string, mixed> $metadata
-	 * @return array<string, string>
-	 */
-	private function metadata_files( array $metadata ): array {
-		if ( empty( $metadata['file'] ) ) {
-			return [];
-		}
-
-		$main    = str_replace( '\\', '/', $metadata['file'] );
-		$subdir  = dirname( $main );
-		$rel_dir = '.' === $subdir ? '' : trailingslashit( $subdir );
-		$files   = [ '' => $main ];
-
-		foreach ( $metadata['sizes'] ?? [] as $size => $size_data ) {
-			if ( ! empty( $size_data['file'] ) ) {
-				$files[ (string) $size ] = $rel_dir . $size_data['file'];
-			}
-		}
-
-		return $files;
-	}
-
-	/**
-	 * Recomputes the final weight of an optimized media item after its thumbnails
-	 * have been regenerated, and reports the difference in the global statistics.
-	 *
-	 * @param array<string, mixed> $metadata
-	 */
-	private function refresh_attachment_totals( int $attachment_id, array $metadata ): void {
-		$after = (int) ( $metadata['filesize'] ?? 0 );
-		foreach ( $metadata['sizes'] ?? [] as $size_data ) {
-			$after += (int) ( $size_data['filesize'] ?? 0 );
-		}
-
-		$original  = (int) get_post_meta( $attachment_id, '_lumia_original_bytes', true );
-		$old_saved = (int) get_post_meta( $attachment_id, '_lumia_bytes_saved', true );
-		$new_saved = max( $original - $after, 0 );
-
-		update_post_meta( $attachment_id, '_lumia_optimized_bytes', $after );
-		update_post_meta( $attachment_id, '_lumia_bytes_saved', $new_saved );
-
-		$stats                = $this->get_raw_stats();
-		$stats['bytes_saved'] = max( $stats['bytes_saved'] - $old_saved + $new_saved, 0 );
-		update_option( $this->get_stats_key(), $stats, false );
-	}
-
-	/**
-	 * Removes an optimized media item from the global statistics, before
-	 * reprocessing or restoring it: otherwise it would be counted twice.
-	 */
-	private function unrecord_stats( int $attachment_id ): void {
-		if ( ! $this->is_already_optimized( $attachment_id ) ) {
-			return;
-		}
-
-		$stats                   = $this->get_raw_stats();
-		$stats['optimized']      = max( $stats['optimized'] - 1, 0 );
-		$stats['bytes_saved']    = max( $stats['bytes_saved'] - (int) get_post_meta( $attachment_id, '_lumia_bytes_saved', true ), 0 );
-		$stats['original_bytes'] = max( $stats['original_bytes'] - (int) get_post_meta( $attachment_id, '_lumia_original_bytes', true ), 0 );
-		update_option( $this->get_stats_key(), $stats, false );
-	}
-
 	/* ================================================================
 	 * ALT TEXT
 	 * ================================================================ */
@@ -1193,49 +586,8 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * STATS
+	 * BULK
 	 * ================================================================ */
-
-	private function get_stats_key(): string {
-		return $this->get_module_option_key() . self::STATS_SUFFIX;
-	}
-
-	/**
-	 * Global counters as saved (without the server capabilities).
-	 *
-	 * @return array{optimized: int, bytes_saved: int, original_bytes: int}
-	 */
-	private function get_raw_stats(): array {
-		$stats = (array) get_option( $this->get_stats_key(), [] );
-
-		return [
-			'optimized'      => (int) ( $stats['optimized'] ?? 0 ),
-			'bytes_saved'    => (int) ( $stats['bytes_saved'] ?? 0 ),
-			'original_bytes' => (int) ( $stats['original_bytes'] ?? 0 ),
-		];
-	}
-
-	private function update_stats( int $bytes_saved, int $original_bytes ): void {
-		$stats = $this->get_raw_stats();
-
-		++$stats['optimized'];
-		$stats['bytes_saved']    += max( $bytes_saved, 0 );
-		$stats['original_bytes'] += max( $original_bytes, 0 );
-
-		update_option( $this->get_stats_key(), $stats, false );
-	}
-
-	/**
-	 * @return array<string, mixed>
-	 */
-	public function get_stats(): array {
-		return array_merge(
-			$this->get_raw_stats(),
-			[
-				'capabilities' => $this->processor->get_capabilities(),
-			]
-		);
-	}
 
 	/**
 	 * Counts per status, for the Bulk tab (settings template).
@@ -1247,125 +599,7 @@ class Module extends AbstractModule {
 	}
 
 	/* ================================================================
-	 * ATTACHMENT META
-	 * ================================================================ */
-
-	public function is_already_optimized( int $attachment_id ): bool {
-		return (bool) get_post_meta( $attachment_id, '_lumia_optimized', true );
-	}
-
-	private function mark_attachment_optimized(
-		int $attachment_id,
-		int $original_bytes,
-		int $optimized_bytes,
-		string $final_file,
-		string $final_mime,
-		int $main_original = 0,
-		int $main_optimized = 0
-	): void {
-		$bytes_saved      = max( $original_bytes - $optimized_bytes, 0 );
-		$main_bytes_saved = max( $main_original - $main_optimized, 0 );
-		$format           = strtolower( pathinfo( $final_file, PATHINFO_EXTENSION ) );
-
-		update_post_meta( $attachment_id, '_lumia_optimized', time() );
-		update_post_meta( $attachment_id, '_lumia_original_bytes', $original_bytes );
-		update_post_meta( $attachment_id, '_lumia_optimized_bytes', $optimized_bytes );
-		update_post_meta( $attachment_id, '_lumia_bytes_saved', $bytes_saved );
-		update_post_meta( $attachment_id, '_lumia_main_original_bytes', $main_original );
-		update_post_meta( $attachment_id, '_lumia_main_optimized_bytes', $main_optimized );
-		update_post_meta( $attachment_id, '_lumia_main_bytes_saved', $main_bytes_saved );
-		update_post_meta( $attachment_id, '_lumia_optimized_format', $format );
-		update_post_meta( $attachment_id, '_lumia_optimized_mime', $final_mime );
-	}
-
-	/* ================================================================
-	 * WP METADATA
-	 * ================================================================ */
-
-	private function update_attachment_database_refs( int $attachment_id, string $old_file, string $new_file ): void {
-		update_attached_file( $attachment_id, $new_file );
-
-		$mime = $this->processor->get_mime_type( $new_file );
-		if ( $mime ) {
-			wp_update_post(
-				[
-					'ID'             => $attachment_id,
-					'post_mime_type' => $mime,
-				]
-			);
-		}
-
-		// The guid carries the original URL of the file; some tools read it
-		// as a URL. wp_update_post() does not rewrite it on an update:
-		// we go through $wpdb, then purge the object cache.
-		global $wpdb;
-		$guid = (string) get_post_field( 'guid', $attachment_id );
-		if ( '' !== $guid && false !== strpos( $guid, basename( $old_file ) ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->update( $wpdb->posts, [ 'guid' => str_replace( basename( $old_file ), basename( $new_file ), $guid ) ], [ 'ID' => $attachment_id ] );
-			clean_post_cache( $attachment_id );
-		}
-	}
-
-	/**
-	 * @param array<string, mixed> $metadata
-	 * @param array<string, array<string, string>> $size_updates
-	 * @return array<string, mixed>
-	 */
-	private function update_metadata_after_conversion( array $metadata, string $old_file, string $new_file, array $size_updates ): array {
-		if ( $old_file && $new_file && ! empty( $metadata['file'] ) ) {
-			$old_info         = pathinfo( $old_file );
-			$new_info         = pathinfo( $new_file );
-			$metadata['file'] = str_replace( $old_info['basename'], $new_info['basename'], $metadata['file'] );
-		}
-
-		if ( ! empty( $metadata['sizes'] ) && ! empty( $size_updates ) ) {
-			foreach ( $size_updates as $size => $update ) {
-				if ( empty( $metadata['sizes'][ $size ] ) ) {
-					continue;
-				}
-				$metadata['sizes'][ $size ]['file']      = basename( $update['file'] );
-				$metadata['sizes'][ $size ]['mime-type'] = $update['mime'] ?? $metadata['sizes'][ $size ]['mime-type'];
-			}
-		}
-
-		return $metadata;
-	}
-
-	/**
-	 * @param array<string, mixed> $metadata
-	 * @return array<string, mixed>
-	 */
-	private function refresh_metadata_filesizes( array $metadata, string $base_path ): array {
-		if ( ! empty( $metadata['file'] ) ) {
-			$original_path = $base_path . $metadata['file'];
-			if ( file_exists( $original_path ) ) {
-				$metadata['filesize'] = (int) filesize( $original_path );
-			}
-		}
-
-		if ( empty( $metadata['sizes'] ) || empty( $metadata['file'] ) ) {
-			return $metadata;
-		}
-
-		$subdir          = dirname( $metadata['file'] );
-		$sizes_base_path = trailingslashit( $base_path . $subdir );
-
-		foreach ( $metadata['sizes'] as $size => $size_data ) {
-			if ( empty( $size_data['file'] ) ) {
-				continue;
-			}
-			$size_path = $sizes_base_path . $size_data['file'];
-			if ( file_exists( $size_path ) ) {
-				$metadata['sizes'][ $size ]['filesize'] = (int) filesize( $size_path );
-			}
-		}
-
-		return $metadata;
-	}
-
-	/* ================================================================
-	 * COMPATIBILITY: server capabilities (used in the settings template)
+	 * SERVER CAPABILITIES (upload conversion, migration command)
 	 * ================================================================ */
 
 	/**

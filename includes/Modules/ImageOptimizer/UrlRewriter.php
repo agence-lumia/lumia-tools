@@ -4,13 +4,13 @@ namespace Lumia\Tools\Modules\ImageOptimizer;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Rewrites the URLs of a converted media item wherever they have already been inserted.
+ * Rewrites the URLs of a renamed media item wherever they have already been inserted.
  *
- * Converting an image changes its file name (photo.jpg → photo.webp), and
- * ImageProcessor::convert() deletes the original by default. Without this pass,
- * every occurrence already inserted — post content, page builder metas
- * (Bricks, ACF…), theme options, srcset — pointed to a vanished file:
- * a bulk optimization broke every image already in a page.
+ * Only the legacy migration (`wp lumia images migrate`) uses it: the former pipeline
+ * replaced each file by its AVIF/WebP conversion (photo.jpg → photo.avif), and the
+ * migration gives the media item a JPEG/PNG again (photo.avif → photo.jpg). Every
+ * occurrence already inserted — post content, page builder metas (Bricks, ACF…), theme
+ * options, srcset — is pointed at the new file.
  *
  * Principles:
  *  - we look for the path RELATIVE to the uploads folder, preceded by a "/" and
@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
  *    is re-serialized under its original name, intact;
  *  - a single query per table and per call, whatever the number of
  *    media items: the stems (`/2024/01/photo`) are gathered in one OR.
- *    The bulk run thus groups the pairs of a whole batch before calling
+ *    The migration thus groups the pairs of a whole batch before calling
  *    rewrite() — five images, three queries, not fifteen.
  */
 class UrlRewriter {

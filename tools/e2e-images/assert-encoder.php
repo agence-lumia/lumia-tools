@@ -131,7 +131,7 @@ function enc_copy( string $fixture, string $case ): string {
 	return $dest;
 }
 
-$processor = new ImageProcessor( array() );
+$processor = new ImageProcessor();
 $caps      = $processor->get_capabilities();
 
 echo "== Capabilities ==\n";
@@ -350,7 +350,7 @@ enc_check( EncodeResult::SKIPPED === $r->status && 'stale' === $r->error, 'can_c
 enc_check( array() === enc_leftovers( dirname( $src ) ), 'can_commit false: no .avif and no temporary left', implode( ',', enc_leftovers( dirname( $src ) ) ) );
 
 echo "== GD fallback ==\n";
-$gd_processor = new class( array() ) extends ImageProcessor {
+$gd_processor = new class() extends ImageProcessor {
 	/**
 	 * @return array<string, bool|string>
 	 */

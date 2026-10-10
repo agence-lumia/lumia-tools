@@ -9,8 +9,8 @@
  *                   SKMT holds into out/skmt-snapshot.json.
  *   migration       after the activation: every row of the spec's migration table,
  *                   compared with the snapshot.
- *   restore         "Restore original" through the module on a migrated image, then
- *                   re-optimization so the fixture is left as it was.
+ *   kept-original   the module still reads a migrated image's kept original from
+ *                   lumia-originals-* (the legacy media migration uses it as a source).
  *   lumia-snapshot  records the Lumia data into out/lumia-snapshot.json.
  *   lumia-compare   the Lumia data still equals out/lumia-snapshot.json (after SKMT's
  *                   uninstall.php, after a reactivation).
@@ -618,35 +618,27 @@ if ( 'migration' === $e2e_phase ) {
 
 /* ------------------------------------------------------------------ */
 
-if ( 'restore' === $e2e_phase ) {
+if ( 'kept-original' === $e2e_phase ) {
 	$snap = e2e_read_json( E2E_SKMT_SNAPSHOT );
 	$ids  = $snap['optimized_post_ids'];
 	if ( [] === $ids ) {
-		WP_CLI::success( 'restore: no optimized image in this scenario.' );
+		WP_CLI::success( 'kept-original: no optimized image in this scenario.' );
 		return;
 	}
 	$id     = (int) $ids[0];
 	$module = Plugin::instance()->modules->get_instance( 'image_optimizer' );
 	$backup = $module->get_backup_path( $id );
-	$stats  = get_option( 'lumia_module_image_optimizer_stats' );
 
-	WP_CLI::log( "Restore original of attachment {$id}" );
+	// The "Restore original" action is gone with the former pipeline: the kept original is
+	// now only a source for `wp lumia images migrate`, read through the same method.
+	WP_CLI::log( "Kept original of attachment {$id}" );
 	e2e_check( 0 === strpos( $backup, e2e_uploads() . 'lumia-originals-' ), 'the original is read from lumia-originals-*' );
-	$result = $module->restore_original( $id );
-	e2e_check( null === $result, 'restore_original() succeeds' . ( is_wp_error( $result ) ? ': ' . $result->get_error_message() : '' ) );
-	e2e_check( ! file_exists( $backup ) && '' === get_post_meta( $id, '_lumia_optimized', true ), 'backup consumed, optimization meta cleared' );
-	e2e_check( 'image/jpeg' === get_post_mime_type( $id ), 'the attachment is a JPEG again' );
-
-	// Put the fixture back: optimized, original kept in the Lumia folder.
-	$module->process_and_update_attachment( $id, true );
-	e2e_check( '' !== get_post_meta( $id, '_lumia_optimized', true ) && '' !== $module->get_backup_path( $id ), 're-optimized, original kept again' );
-	$after = get_option( 'lumia_module_image_optimizer_stats' );
-	WP_CLI::log( '  info stats ' . ( $stats === $after ? 'unchanged' : 'changed: ' . wp_json_encode( $stats ) . ' -> ' . wp_json_encode( $after ) ) );
+	e2e_check( '' !== $backup && is_file( $backup ) && filesize( $backup ) > 0, 'the kept original is on disk' );
 
 	if ( $e2e_failures > 0 ) {
-		WP_CLI::error( "restore: {$e2e_failures} check(s) failed" );
+		WP_CLI::error( "kept-original: {$e2e_failures} check(s) failed" );
 	}
-	WP_CLI::success( 'restore: original restored through the module.' );
+	WP_CLI::success( 'kept-original: the module finds the original kept by SKMT.' );
 	return;
 }
 

@@ -402,8 +402,8 @@ cmd_assert_migration() {
 	notices="$(wp eval 'echo wp_json_encode( [ isset( get_user_meta( 1, "lumia_notices", true )["lumia_migrated_from_skmt"] ), get_option( "lumia_migration_notice" ) ] );' | tr -d '\r')"
 	check "first admin page: persistent success notice added, pending flag consumed (${notices})" "$([ "${notices}" = '[true,false]' ] && echo 0 || echo 1)"
 
-	echo "Restore original"
-	wp --user=admin eval-file /e2e/assert-migration.php restore || failures=$((failures + 1))
+	echo "Kept original"
+	wp --user=admin eval-file /e2e/assert-migration.php kept-original || failures=$((failures + 1))
 
 	wp --user=admin eval-file /e2e/assert-migration.php lumia-snapshot >/dev/null
 
