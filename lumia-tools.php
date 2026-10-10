@@ -4,7 +4,7 @@
  * Plugin URI:  https://github.com/agence-lumia/lumia-tools
  * Update URI:  https://github.com/agence-lumia/lumia-tools
  * Description: A modular toolkit to optimize and improve your WordPress site.
- * Version:     2.0.1-dev.3
+ * Version:     2.0.1-dev.4
  * Author:      Agence Lümia
  * Author URI:  https://agence-lumia.com
  * License:     GPL-2.0+
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Base constants
-define( 'LUMIA_VERSION', '2.0.1-dev.3' );
+define( 'LUMIA_VERSION', '2.0.1-dev.4' );
 define( 'LUMIA_PLUGIN_FILE', __FILE__ );
 define( 'LUMIA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LUMIA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
