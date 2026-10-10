@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Lümia Tools 2.0.1-dev.4\n"
+"Project-Id-Version: Lümia Tools 2.1.1-dev.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/lumia-tools\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T18:36:19+00:00\n"
+"POT-Creation-Date: 2026-10-10T21:33:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -87,9 +87,9 @@ msgstr ""
 #: includes/Admin/Admin.php:559
 #: includes/Modules/Database/settings-template.php:129
 #: includes/Modules/Database/settings-template.php:145
-#: includes/Modules/Files/settings-template.php:126
-#: includes/Modules/Files/settings-template.php:145
-#: includes/Modules/Files/settings-template.php:164
+#: includes/Modules/Files/settings-template.php:130
+#: includes/Modules/Files/settings-template.php:149
+#: includes/Modules/Files/settings-template.php:168
 #: includes/Modules/Media/Module.php:358
 msgid "Cancel"
 msgstr ""
@@ -183,7 +183,7 @@ msgstr ""
 #: includes/Admin/Admin.php:599
 #: includes/Admin/Admin.php:609
 #: includes/Modules/ActivityLog/settings-template.php:229
-#: includes/Modules/Files/settings-template.php:100
+#: includes/Modules/Files/settings-template.php:104
 #: includes/Modules/Smtp/settings-template.php:476
 msgid "Close"
 msgstr ""
@@ -208,8 +208,8 @@ msgstr ""
 #: includes/Admin/Admin.php:877
 #: includes/Admin/Admin.php:938
 #: includes/Admin/Admin.php:969
-#: includes/Admin/Admin.php:1008
-#: includes/Admin/Admin.php:1049
+#: includes/Admin/Admin.php:1012
+#: includes/Admin/Admin.php:1053
 #: includes/Modules/ActivityLog/Module.php:191
 #: includes/Modules/ActivityLog/Module.php:223
 #: includes/Modules/Database/Module.php:229
@@ -238,8 +238,8 @@ msgstr ""
 #: includes/Admin/Admin.php:873
 #: includes/Admin/Admin.php:934
 #: includes/Admin/Admin.php:965
-#: includes/Admin/Admin.php:1004
-#: includes/Admin/Admin.php:1045
+#: includes/Admin/Admin.php:1008
+#: includes/Admin/Admin.php:1049
 msgid "Invalid nonce."
 msgstr ""
 
@@ -301,7 +301,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:60
 #: includes/Core/Modules.php:62
-#: includes/Modules/ActivityLog/Events.php:43
+#: includes/Modules/ActivityLog/Events.php:44
 msgid "Login"
 msgstr ""
 
@@ -315,6 +315,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:68
 #: includes/Core/Modules.php:70
+#: includes/Modules/ActivityLog/Events.php:31
 msgid "Files"
 msgstr ""
 
@@ -448,108 +449,120 @@ msgstr ""
 msgid "Lümia Tools settings"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:47
+#: includes/Modules/ActivityLog/Events.php:48
 msgid "Login failed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:51
+#: includes/Modules/ActivityLog/Events.php:52
 msgid "Logout"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:55
+#: includes/Modules/ActivityLog/Events.php:56
 msgid "Content created"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:59
+#: includes/Modules/ActivityLog/Events.php:60
 msgid "Content updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:63
+#: includes/Modules/ActivityLog/Events.php:64
 msgid "Content trashed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:67
+#: includes/Modules/ActivityLog/Events.php:68
 msgid "Content restored"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:71
+#: includes/Modules/ActivityLog/Events.php:72
 msgid "Content deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:75
+#: includes/Modules/ActivityLog/Events.php:76
 msgid "Media added"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:79
+#: includes/Modules/ActivityLog/Events.php:80
 msgid "Media updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:83
+#: includes/Modules/ActivityLog/Events.php:84
 msgid "Media deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:87
+#: includes/Modules/ActivityLog/Events.php:88
 msgid "User created"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:91
+#: includes/Modules/ActivityLog/Events.php:92
 msgid "Profile updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:95
+#: includes/Modules/ActivityLog/Events.php:96
 msgid "Role changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:99
+#: includes/Modules/ActivityLog/Events.php:100
 msgid "User deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:103
+#: includes/Modules/ActivityLog/Events.php:104
 msgid "Password reset"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:107
+#: includes/Modules/ActivityLog/Events.php:108
 msgid "Plugin activated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:111
+#: includes/Modules/ActivityLog/Events.php:112
 msgid "Plugin deactivated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:115
+#: includes/Modules/ActivityLog/Events.php:116
 msgid "Plugin installed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:119
+#: includes/Modules/ActivityLog/Events.php:120
 msgid "Plugin updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:123
+#: includes/Modules/ActivityLog/Events.php:124
 msgid "Plugin deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:127
+#: includes/Modules/ActivityLog/Events.php:128
 msgid "Theme activated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:131
+#: includes/Modules/ActivityLog/Events.php:132
 msgid "Theme installed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:135
+#: includes/Modules/ActivityLog/Events.php:136
 msgid "Theme updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:139
+#: includes/Modules/ActivityLog/Events.php:140
 msgid "Theme deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:143
+#: includes/Modules/ActivityLog/Events.php:144
 msgid "Setting changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:147
+#: includes/Modules/ActivityLog/Events.php:148
 msgid "Settings changed"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:152
+msgid "File editing unlocked (danger mode)"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:156
+msgid "File editing locked again"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:160
+msgid "File written in danger mode"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:166
@@ -657,7 +670,7 @@ msgstr ""
 
 #. translators: 1: label, 2: value.
 #: includes/Modules/ActivityLog/Module.php:414
-#: includes/Modules/Files/Module.php:407
+#: includes/Modules/Files/Module.php:439
 #, php-format
 msgid "%1$s: %2$s"
 msgstr ""
@@ -781,121 +794,155 @@ msgstr ""
 msgid "Source"
 msgstr ""
 
+#: includes/Modules/ActivityLog/Module.php:484
+#: includes/Modules/ActivityLog/settings-template.php:84
+#: includes/Modules/Smtp/settings-template.php:372
+msgid "Until"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:485
+msgid "Reason"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:486
+msgid "Turned on by"
+msgstr ""
+
 #: includes/Modules/ActivityLog/Module.php:487
-msgid "Web interface"
-msgstr ""
-
-#: includes/Modules/ActivityLog/Module.php:488
-msgid "Web interface (AJAX)"
-msgstr ""
-
-#: includes/Modules/ActivityLog/Module.php:489
-msgid "REST API / block editor"
-msgstr ""
-
-#: includes/Modules/ActivityLog/Module.php:490
-msgid "Scheduled task"
+msgid "Operation"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:491
-msgid "WP-CLI"
+msgid "Locked by hand"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:492
+msgid "One hour elapsed"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:496
+msgid "Saved from the editor"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:497
+msgid "Uploaded"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:501
+msgid "Web interface"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:502
+msgid "Web interface (AJAX)"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:503
+msgid "REST API / block editor"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:504
+msgid "Scheduled task"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:505
+msgid "WP-CLI"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:506
 msgid "XML-RPC"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:512
+#: includes/Modules/ActivityLog/Module.php:526
 msgid "Limit reached"
 msgstr ""
 
 #. translators: %d: number of failed attempts logged per hour.
-#: includes/Modules/ActivityLog/Module.php:514
+#: includes/Modules/ActivityLog/Module.php:528
 #, php-format
 msgid "Further failed attempts from this IP are not logged for one hour (at most %d per hour)."
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:533
+#: includes/Modules/ActivityLog/Module.php:551
 msgid "enabled"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:533
+#: includes/Modules/ActivityLog/Module.php:551
 msgid "disabled"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:565
+#: includes/Modules/ActivityLog/Module.php:583
 msgid "changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:580
+#: includes/Modules/ActivityLog/Module.php:598
 msgid "yes"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:580
+#: includes/Modules/ActivityLog/Module.php:598
 msgid "no"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:653
+#: includes/Modules/ActivityLog/Recorder.php:658
 msgid "Site title"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:654
+#: includes/Modules/ActivityLog/Recorder.php:659
 msgid "Tagline"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:655
+#: includes/Modules/ActivityLog/Recorder.php:660
 msgid "WordPress address (URL)"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:656
+#: includes/Modules/ActivityLog/Recorder.php:661
 msgid "Site address (URL)"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:657
+#: includes/Modules/ActivityLog/Recorder.php:662
 msgid "Administration email"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:658
+#: includes/Modules/ActivityLog/Recorder.php:663
 msgid "Open registration"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:659
+#: includes/Modules/ActivityLog/Recorder.php:664
 msgid "Default role"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:660
+#: includes/Modules/ActivityLog/Recorder.php:665
 msgid "Search engine visibility"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:661
+#: includes/Modules/ActivityLog/Recorder.php:666
 msgid "Permalink structure"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:662
+#: includes/Modules/ActivityLog/Recorder.php:667
 msgid "Site language"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:663
+#: includes/Modules/ActivityLog/Recorder.php:668
 msgid "Timezone"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:664
+#: includes/Modules/ActivityLog/Recorder.php:669
 msgid "Homepage displays"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:665
+#: includes/Modules/ActivityLog/Recorder.php:670
 msgid "Homepage"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:666
+#: includes/Modules/ActivityLog/Recorder.php:671
 msgid "Posts page"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:667
+#: includes/Modules/ActivityLog/Recorder.php:672
 msgid "Comments allowed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:668
+#: includes/Modules/ActivityLog/Recorder.php:673
 msgid "Comments restricted to registered users"
 msgstr ""
 
@@ -942,11 +989,6 @@ msgstr ""
 #: includes/Modules/ActivityLog/settings-template.php:83
 #: includes/Modules/Smtp/settings-template.php:371
 msgid "Since"
-msgstr ""
-
-#: includes/Modules/ActivityLog/settings-template.php:84
-#: includes/Modules/Smtp/settings-template.php:372
-msgid "Until"
 msgstr ""
 
 #: includes/Modules/ActivityLog/settings-template.php:87
@@ -1145,8 +1187,8 @@ msgid "This query modifies the database and cannot be undone. Confirm execution?
 msgstr ""
 
 #: includes/Modules/Database/Module.php:117
-#: includes/Modules/Files/Module.php:545
-#: includes/Modules/Files/settings-template.php:56
+#: includes/Modules/Files/Module.php:616
+#: includes/Modules/Files/settings-template.php:59
 #: includes/Modules/Media/Module.php:355
 #: includes/Modules/MenuCreator/Module.php:1345
 msgid "Delete"
@@ -1615,6 +1657,16 @@ msgstr ""
 msgid "Insert row"
 msgstr ""
 
+#. translators: 1: time, e.g. "23:45". 2: display name of the user who turned it on.
+#: includes/Modules/Files/DangerMode.php:203
+#, php-format
+msgid "File editing is unlocked until %1$s (turned on by %2$s)."
+msgstr ""
+
+#: includes/Modules/Files/DangerMode.php:205
+msgid "an unknown user"
+msgstr ""
+
 #: includes/Modules/Files/FileManager.php:53
 msgid "Path does not exist."
 msgstr ""
@@ -1689,12 +1741,12 @@ msgstr ""
 
 #: includes/Modules/Files/FileManager.php:361
 #: includes/Modules/Files/FileManager.php:398
-#: includes/Modules/Files/Module.php:472
+#: includes/Modules/Files/Module.php:543
 msgid "ZipArchive is not available on this server."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:368
-#: includes/Modules/Files/Module.php:485
+#: includes/Modules/Files/Module.php:556
 msgid "Could not create the archive."
 msgstr ""
 
@@ -1715,262 +1767,332 @@ msgid "Archive rejected: symbolic link (%s)."
 msgstr ""
 
 #: includes/Modules/Files/FileManager.php:490
-#: includes/Modules/Files/Module.php:402
+#: includes/Modules/Files/Module.php:431
 msgid "Upload failed."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:147
-#: includes/Modules/Files/Module.php:365
-#: includes/Modules/Files/Module.php:434
+#: includes/Modules/Files/Module.php:150
+#: includes/Modules/Files/Module.php:394
+#: includes/Modules/Files/Module.php:505
 msgid "Permission denied."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:183
-msgid "File modification is disabled on this site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS or the file_mod_allowed filter)."
+#: includes/Modules/Files/Module.php:186
+msgid "File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter)."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:248
-#: includes/Modules/Files/Module.php:546
-msgid "Deleted successfully."
+#: includes/Modules/Files/Module.php:203
+msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT). Turn on the danger mode to unlock it for one hour."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:259
-#: includes/Modules/Files/Module.php:550
-msgid "Renamed successfully."
+#: includes/Modules/Files/Module.php:204
+msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT)."
 msgstr ""
 
 #: includes/Modules/Files/Module.php:273
-#: includes/Modules/Files/Module.php:551
+#: includes/Modules/Files/Module.php:617
+msgid "Deleted successfully."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:284
+#: includes/Modules/Files/Module.php:621
+msgid "Renamed successfully."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:298
+#: includes/Modules/Files/Module.php:622
 msgid "Moved successfully."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:288
-#: includes/Modules/Files/Module.php:549
+#: includes/Modules/Files/Module.php:313
+#: includes/Modules/Files/Module.php:620
 #: includes/Modules/Media/Module.php:360
 msgid "Folder created."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:308
+#: includes/Modules/Files/Module.php:333
 msgid "Archive created."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:325
-#: includes/Modules/Files/Module.php:547
+#: includes/Modules/Files/Module.php:350
+#: includes/Modules/Files/Module.php:618
 msgid "Archive extracted."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:356
-#: includes/Modules/Files/Module.php:552
+#: includes/Modules/Files/Module.php:385
+#: includes/Modules/Files/Module.php:623
 msgid "File saved."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:373
+#: includes/Modules/Files/Module.php:402
 msgid "No file received."
 msgstr ""
 
 #. translators: %s: maximum upload size, e.g. "64 MB".
-#: includes/Modules/Files/Module.php:395
+#: includes/Modules/Files/Module.php:424
 #, php-format
 msgid "The file exceeds the server's maximum upload size (%s)."
 msgstr ""
 
 #. translators: %d: number of files
-#: includes/Modules/Files/Module.php:419
+#: includes/Modules/Files/Module.php:451
 #, php-format
 msgid "%d file uploaded."
 msgid_plural "%d files uploaded."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Modules/Files/Module.php:442
-#: includes/Modules/Files/Module.php:451
+#: includes/Modules/Files/Module.php:469
+msgid "The danger mode is not available on this site."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:480
+msgid "File editing unlocked for one hour."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:492
+msgid "File editing locked again."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:513
+#: includes/Modules/Files/Module.php:522
 msgid "File not found."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:478
+#: includes/Modules/Files/Module.php:549
 msgid "Could not create the temporary file."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:532
+#: includes/Modules/Files/Module.php:603
 msgid "Delete this item(s)? This action cannot be undone."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:533
+#: includes/Modules/Files/Module.php:604
 msgid "This folder is empty."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:534
-#: includes/Modules/Files/settings-template.php:79
+#: includes/Modules/Files/Module.php:605
+#: includes/Modules/Files/settings-template.php:82
 msgid "Loading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:535
+#: includes/Modules/Files/Module.php:606
 msgid "Uploading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:536
+#: includes/Modules/Files/Module.php:607
 msgid "New folder name:"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:537
+#: includes/Modules/Files/Module.php:608
 msgid "Network error."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:538
+#: includes/Modules/Files/Module.php:609
 msgid "Upload error."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:539
+#: includes/Modules/Files/Module.php:610
 msgid "Edit"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:540
+#: includes/Modules/Files/Module.php:611
 msgid "Download"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:541
+#: includes/Modules/Files/Module.php:612
 msgid "Copy link"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:542
-#: includes/Modules/Files/settings-template.php:117
-#: includes/Modules/Files/settings-template.php:127
+#: includes/Modules/Files/Module.php:613
+#: includes/Modules/Files/settings-template.php:121
+#: includes/Modules/Files/settings-template.php:131
 #: includes/Modules/Media/Module.php:354
 msgid "Rename"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:543
-#: includes/Modules/Files/settings-template.php:146
+#: includes/Modules/Files/Module.php:614
+#: includes/Modules/Files/settings-template.php:150
 msgid "Move"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:544
+#: includes/Modules/Files/Module.php:615
 msgid "Extract"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:548
+#: includes/Modules/Files/Module.php:619
 msgid "Archive created. Downloading..."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:553
+#: includes/Modules/Files/Module.php:624
 msgid "Link copied."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:554
+#: includes/Modules/Files/Module.php:625
 msgid "Could not copy."
 msgstr ""
 
-#: includes/Modules/Files/Module.php:555
+#: includes/Modules/Files/Module.php:626
 msgid "folder"
 msgstr ""
 
 #. translators: %s: folder name
-#: includes/Modules/Files/Module.php:557
+#: includes/Modules/Files/Module.php:628
 #, php-format
 msgid "Compressing \"%s\"..."
 msgstr ""
 
 #. translators: %s: name of the downloaded zip file
-#: includes/Modules/Files/Module.php:559
+#: includes/Modules/Files/Module.php:630
 #, php-format
 msgid "\"%s\" downloaded."
 msgstr ""
 
 #. translators: %s: folder name
-#: includes/Modules/Files/Module.php:561
+#: includes/Modules/Files/Module.php:632
 #, php-format
 msgid "Error while compressing \"%s\"."
 msgstr ""
 
 #. translators: %d: number of selected items
-#: includes/Modules/Files/Module.php:563
+#: includes/Modules/Files/Module.php:634
 #, php-format
 msgid "%d selected"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:564
+#: includes/Modules/Files/Module.php:635
 msgctxt "file editor"
 msgid "Unsaved changes"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:565
+#: includes/Modules/Files/Module.php:636
 msgid "Do you want to leave without saving your changes?"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:566
+#: includes/Modules/Files/Module.php:637
 msgctxt "file editor"
 msgid "Leave without saving"
 msgstr ""
 
-#: includes/Modules/Files/Module.php:567
+#: includes/Modules/Files/Module.php:638
 msgid "Stay"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:26
+#: includes/Modules/Files/Module.php:639
+msgid "Danger mode:"
+msgstr ""
+
+#: includes/Modules/Files/Module.php:640
+msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT): saving and uploading are blocked."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:641
+msgid "File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter): files can only be browsed and downloaded."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:642
+msgid "Unlock for one hour"
+msgstr ""
+
+#: includes/Modules/Files/Module.php:643
+msgid "Lock now"
+msgstr ""
+
+#: includes/Modules/Files/Module.php:644
+msgid "Unlock file editing for one hour?"
+msgstr ""
+
+#: includes/Modules/Files/Module.php:645
+msgid "DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. When the Activity Log module is on, the unlock is recorded there."
+msgstr ""
+
+#. translators: %d: minutes left before file editing locks again.
+#: includes/Modules/Files/Module.php:647
+#, php-format
+msgid "%d min left."
+msgstr ""
+
+#. translators: %d: minutes left before file editing locks again.
+#: includes/Modules/Files/Module.php:649
+#, php-format
+msgid "Danger mode: %d min"
+msgstr ""
+
+#. translators: %d: minutes left before file editing locks again.
+#: includes/Modules/Files/Module.php:651
+#, php-format
+msgid "File editing locks again in %d min: save your changes."
+msgstr ""
+
+#: includes/Modules/Files/Module.php:652
+msgid "The hour is over: file editing is locked again."
+msgstr ""
+
+#: includes/Modules/Files/settings-template.php:29
 #: templates/components/sidebar.php:34
 msgid "Navigation"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:27
+#: includes/Modules/Files/settings-template.php:30
 msgid "WordPress root"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:33
+#: includes/Modules/Files/settings-template.php:36
 msgid "Upload files"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:35
+#: includes/Modules/Files/settings-template.php:38
 msgid "Upload"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:41
-#: includes/Modules/Files/settings-template.php:155
+#: includes/Modules/Files/settings-template.php:44
+#: includes/Modules/Files/settings-template.php:159
 #: includes/Modules/Media/Module.php:347
 msgid "New folder"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:52
+#: includes/Modules/Files/settings-template.php:55
 msgid "Zip & Download"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:67
+#: includes/Modules/Files/settings-template.php:70
 msgid "Select all"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:69
+#: includes/Modules/Files/settings-template.php:72
 msgid "Name"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:70
+#: includes/Modules/Files/settings-template.php:73
 msgid "Size"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:71
+#: includes/Modules/Files/settings-template.php:74
 msgid "Modified"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:72
+#: includes/Modules/Files/settings-template.php:75
 msgid "Permissions"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:73
+#: includes/Modules/Files/settings-template.php:76
 msgid "Owner"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:74
+#: includes/Modules/Files/settings-template.php:77
 #: includes/Modules/Media/Module.php:372
 msgid "Actions"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:88
+#: includes/Modules/Files/settings-template.php:91
 msgid "Drop files here"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:94
+#: includes/Modules/Files/settings-template.php:97
 msgid "File editor"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:103
+#: includes/Modules/Files/settings-template.php:107
 #: includes/Modules/Media/Module.php:357
 #: includes/Modules/MenuCreator/settings-template.php:198
 #: templates/admin/module-settings.php:26
@@ -1978,24 +2100,24 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:121
+#: includes/Modules/Files/settings-template.php:125
 msgid "New name"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:136
+#: includes/Modules/Files/settings-template.php:140
 msgid "Move to"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:139
+#: includes/Modules/Files/settings-template.php:143
 msgid "Relative path of the destination folder (e.g. wp-content/uploads)."
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:159
+#: includes/Modules/Files/settings-template.php:163
 #: includes/Modules/Media/Module.php:349
 msgid "Folder name"
 msgstr ""
 
-#: includes/Modules/Files/settings-template.php:165
+#: includes/Modules/Files/settings-template.php:169
 #: includes/Modules/Media/Module.php:356
 msgid "Create"
 msgstr ""
