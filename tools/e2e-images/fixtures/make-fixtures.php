@@ -20,6 +20,16 @@
  *   photo-exif6.jpg   800x600 stored, EXIF orientation 6 (+ GPS), small Display P3 profile
  *   photo-gps.jpg     800x600, orientation 1, EXIF with GPS + XMP APP1 segments, small P3 profile
  *   photo-cmyk.jpg    600x400, CMYK JPEG without an embedded profile
+ *
+ * Lifecycle fixtures (assert-lifecycle.php):
+ *
+ *   visual-alpha-noopt.png  copy of visual-alpha.png under an excluded name (suffix -noopt)
+ *   modern-opaque.avif      1200x800 opaque photo, AVIF (spec 9.13: converted to JPEG on upload)
+ *   modern-alpha.webp       600x400 with transparency, WebP (converted to PNG on upload)
+ *   modern-anim.webp        200x150, two frames, animated WebP (left as uploaded)
+ *
+ * A stack whose Imagick cannot write AVIF or WebP (OpenLiteSpeed: no AVIF encoder) prints
+ * "skipped" for that file instead of failing: the conversion assertions skip on that stack.
  */
 
 if ( 'cli' !== PHP_SAPI ) {
@@ -330,3 +340,70 @@ $cmyk->setImageFormat( 'jpeg' );
 $cmyk->setImageCompressionQuality( 90 );
 fx_write( $cmyk, "{$out_dir}/photo-cmyk.jpg" );
 $cmyk->clear();
+
+// --- Lifecycle fixtures ------------------------------------------------------
+
+copy( "{$out_dir}/visual-alpha.png", "{$out_dir}/visual-alpha-noopt.png" );
+printf( "  %-18s %9d bytes (copy of visual-alpha.png)\n", 'visual-alpha-noopt.png', filesize( "{$out_dir}/visual-alpha-noopt.png" ) );
+
+/**
+ * Writes a fixture in a format the local Imagick may not encode: a failure is reported, not fatal.
+ */
+function fx_try_write( callable $make, string $path ): void {
+	try {
+		$image = $make();
+		$image->writeImages( $path, true );
+		printf( "  %-18s %9d bytes\n", basename( $path ), filesize( $path ) );
+		$image->clear();
+	} catch ( Throwable $e ) {
+		@unlink( $path );
+		printf( "  %-18s skipped (%s)\n", basename( $path ), $e->getMessage() );
+	}
+}
+
+fx_try_write(
+	static function (): Imagick {
+		$image = fx_photo( 1200, 800 );
+		$image->setImageFormat( 'avif' );
+		$image->setCompressionQuality( 60 );
+		$image->setImageCompressionQuality( 60 );
+		$image->setOption( 'heic:speed', '9' );
+		return $image;
+	},
+	"{$out_dir}/modern-opaque.avif"
+);
+
+fx_try_write(
+	static function (): Imagick {
+		$image = new Imagick();
+		$image->newImage( 600, 400, new ImagickPixel( 'transparent' ) );
+		$draw = new ImagickDraw();
+		$fill = new ImagickPixel( '#2a9d8f' );
+		$fill->setColorValue( Imagick::COLOR_ALPHA, 0.7 );
+		$draw->setFillColor( $fill );
+		$draw->circle( 300, 200, 470, 200 );
+		$image->drawImage( $draw );
+		$image->blurImage( 4, 2 );
+		$image->setImageFormat( 'webp' );
+		$image->setImageCompressionQuality( 80 );
+		return $image;
+	},
+	"{$out_dir}/modern-alpha.webp"
+);
+
+fx_try_write(
+	static function (): Imagick {
+		$anim = new Imagick();
+		foreach ( array( '#e63946', '#457b9d' ) as $colour ) {
+			$frame = new Imagick();
+			$frame->newImage( 200, 150, new ImagickPixel( $colour ) );
+			$frame->setImageFormat( 'webp' );
+			$frame->setImageDelay( 50 );
+			$anim->addImage( $frame );
+		}
+		$anim->setImageFormat( 'webp' );
+		$anim->setImageIterations( 0 );
+		return $anim;
+	},
+	"{$out_dir}/modern-anim.webp"
+);

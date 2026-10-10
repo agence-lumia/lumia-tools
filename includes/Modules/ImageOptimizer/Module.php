@@ -20,6 +20,19 @@ class Module extends AbstractModule {
 	private const STATS_SUFFIX      = '_stats';
 	private const BULK_STATE_SUFFIX = '_bulk_state';
 
+	/**
+	 * Settings schema version, stored in the option (`settings_version`). Version 2 (AVIF
+	 * siblings): `quality` reset to 70 once, `max_dimension` replaces `max_width` /
+	 * `max_height`, `format_mode` and `keep_original` removed.
+	 */
+	private const SETTINGS_VERSION = 2;
+
+	/** AVIF encoder speed presets (libheif `heic:speed`). */
+	public const SPEEDS = [
+		'balanced' => 8,
+		'fast'     => 9,
+	];
+
 	/** Folder (under uploads) holding the untouched originals, suffixed with a token: see get_backup_dir(). */
 	public const BACKUP_DIR           = 'lumia-originals';
 	private const BACKUP_TOKEN_SUFFIX = '_backup_token';
@@ -59,6 +72,7 @@ class Module extends AbstractModule {
 	private BulkProcessor $bulk;
 	private MediaLibrary $media_library;
 	private SvgHandler $svg;
+	private ?FileLifecycle $lifecycle = null;
 
 	/**
 	 * Active module settings (in-memory cache).
@@ -110,9 +124,8 @@ class Module extends AbstractModule {
 		$this->svg = new SvgHandler( $this->settings );
 		$this->svg->init();
 
-		// Upload hook: the whole pipeline (original + thumbnails) goes through
-		// wp_generate_attachment_metadata, which measures the real original size.
-		add_filter( 'wp_generate_attachment_metadata', [ $this, 'optimize_attachment_sizes' ], 10, 2 );
+		// AVIF siblings: queueing on metadata changes, deletion, names, WordPress image settings.
+		$this->get_lifecycle()->register();
 
 		// Automatic alt text
 		add_action( 'add_attachment', [ $this, 'generate_alt_text' ] );
@@ -135,47 +148,124 @@ class Module extends AbstractModule {
 	 * ================================================================ */
 
 	/**
+	 * The AVIF siblings' lifecycle (created on first use: on_deactivate() may run on an
+	 * instance that init() never saw).
+	 */
+	public function get_lifecycle(): FileLifecycle {
+		if ( null === $this->lifecycle ) {
+			$this->lifecycle = new FileLifecycle( $this );
+		}
+
+		return $this->lifecycle;
+	}
+
+	/**
+	 * Settings, migrated once from the version 1 schema (see SETTINGS_VERSION).
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function get_settings(): array {
+		$stored = get_option( $this->get_module_option_key(), [] );
+		if ( is_array( $stored ) && $stored && (int) ( $stored['settings_version'] ?? 0 ) < self::SETTINGS_VERSION ) {
+			$this->save_module_settings( self::migrate_settings( $stored ) );
+		}
+
 		return $this->get_module_settings(
 			[
-				'optimize_on_upload' => true,
-				'format_mode'        => 'auto',
-				'quality'            => 75,
-				'max_width'          => 2560,
-				'max_height'         => 2560,
-				'strip_exif'         => true,
-				'generate_alt'       => true,
-				'keep_original'      => false,
-				'svg_upload'         => true,
-				'svg_roles'          => [ 'administrator' ],
+				'optimize_on_upload'     => true,
+				'quality'                => 70,
+				'speed'                  => 'balanced',
+				'max_dimension'          => 2560,
+				'exclude_suffixes'       => [ '-noopt' ],
+				'convert_modern_uploads' => true,
+				'strip_exif'             => true,
+				'generate_alt'           => true,
+				'svg_upload'             => true,
+				'svg_roles'              => [ 'administrator' ],
+				'settings_version'       => self::SETTINGS_VERSION,
 			]
 		);
+	}
+
+	/**
+	 * Version 1 → 2. The former quality was ignored by Imagick for AVIF: it is replaced by
+	 * the new default once, never again (settings_version).
+	 *
+	 * @param array<string, mixed> $stored
+	 * @return array<string, mixed>
+	 */
+	private static function migrate_settings( array $stored ): array {
+		$stored['quality'] = 70;
+
+		if ( isset( $stored['max_width'] ) || isset( $stored['max_height'] ) ) {
+			$stored['max_dimension'] = max( absint( $stored['max_width'] ?? 0 ), absint( $stored['max_height'] ?? 0 ) );
+		}
+
+		unset( $stored['format_mode'], $stored['keep_original'], $stored['max_width'], $stored['max_height'] );
+		$stored['settings_version'] = self::SETTINGS_VERSION;
+
+		return $stored;
+	}
+
+	/**
+	 * A version 1 configuration file is migrated before going through the form path.
+	 *
+	 * @param array<string, mixed> $stored
+	 * @return array<string, mixed>
+	 */
+	public function to_form_payload( array $stored ): array {
+		return (int) ( $stored['settings_version'] ?? 0 ) < self::SETTINGS_VERSION ? self::migrate_settings( $stored ) : $stored;
 	}
 
 	/**
 	 * @param array<string, mixed> $settings
 	 */
 	public function save_settings( array $settings ): bool {
+		$max = isset( $settings['max_dimension'] ) ? absint( $settings['max_dimension'] ) : 2560;
+
 		$sanitized = [
-			'optimize_on_upload' => isset( $settings['optimize_on_upload'] ),
-			'format_mode'        => isset( $settings['format_mode'] ) && in_array( $settings['format_mode'], [ 'auto', 'avif', 'webp' ], true )
-				? sanitize_key( $settings['format_mode'] )
-				: 'auto',
-			'quality'            => isset( $settings['quality'] ) ? min( 100, max( 1, absint( $settings['quality'] ) ) ) : 75,
-			'max_width'          => isset( $settings['max_width'] ) ? max( 100, absint( $settings['max_width'] ) ) : 2560,
-			'max_height'         => isset( $settings['max_height'] ) ? max( 100, absint( $settings['max_height'] ) ) : 2560,
-			'strip_exif'         => isset( $settings['strip_exif'] ),
-			'generate_alt'       => isset( $settings['generate_alt'] ),
-			'keep_original'      => isset( $settings['keep_original'] ),
-			'svg_upload'         => isset( $settings['svg_upload'] ),
-			'svg_roles'          => $this->sanitize_roles( $settings['svg_roles'] ?? [] ),
+			'optimize_on_upload'     => ! empty( $settings['optimize_on_upload'] ),
+			'quality'                => isset( $settings['quality'] ) ? min( 100, max( 1, absint( $settings['quality'] ) ) ) : 70,
+			'speed'                  => isset( $settings['speed'] ) && is_string( $settings['speed'] ) && isset( self::SPEEDS[ $settings['speed'] ] )
+				? $settings['speed']
+				: 'balanced',
+			'max_dimension'          => 0 === $max ? 0 : min( 20000, max( 100, $max ) ),
+			'exclude_suffixes'       => self::sanitize_suffixes( $settings['exclude_suffixes'] ?? [] ),
+			'convert_modern_uploads' => ! empty( $settings['convert_modern_uploads'] ),
+			'strip_exif'             => ! empty( $settings['strip_exif'] ),
+			'generate_alt'           => ! empty( $settings['generate_alt'] ),
+			'svg_upload'             => ! empty( $settings['svg_upload'] ),
+			'svg_roles'              => $this->sanitize_roles( $settings['svg_roles'] ?? [] ),
+			'settings_version'       => self::SETTINGS_VERSION,
 		];
 
 		$this->settings = $sanitized;
 
 		return $this->save_module_settings( $sanitized );
+	}
+
+	/**
+	 * Exclusion suffixes: a list, or the form's text (comma or line separated). Lowercase,
+	 * `[a-z0-9_-]` only, a leading hyphen added when missing, 20 at most.
+	 *
+	 * @param mixed $raw
+	 * @return string[]
+	 */
+	private static function sanitize_suffixes( $raw ): array {
+		if ( is_string( $raw ) ) {
+			$raw = preg_split( '/[,\r\n]+/', $raw );
+		}
+
+		$suffixes = [];
+		foreach ( is_array( $raw ) ? $raw : [] as $suffix ) {
+			$suffix = substr( (string) preg_replace( '/[^a-z0-9_-]/', '', strtolower( (string) $suffix ) ), 0, 32 );
+			if ( '' === trim( $suffix, '-_' ) ) {
+				continue;
+			}
+			$suffixes[] = '-' === $suffix[0] || '_' === $suffix[0] ? $suffix : '-' . $suffix;
+		}
+
+		return array_slice( array_values( array_unique( $suffixes ) ), 0, 20 );
 	}
 
 	/**
@@ -268,12 +358,28 @@ class Module extends AbstractModule {
 	 * LIFECYCLE
 	 * ================================================================ */
 
+	/**
+	 * Fingerprints checked in the background: a source changed while the module was off
+	 * must not keep its old AVIF.
+	 */
+	public function on_activate(): void {
+		delete_option( FileLifecycle::RECONCILE_CURSOR );
+		if ( ! wp_next_scheduled( FileLifecycle::RECONCILE_HOOK ) ) {
+			wp_schedule_single_event( time(), FileLifecycle::RECONCILE_HOOK );
+		}
+	}
+
 	public function on_deactivate(): void {
 		// Remove pending crons.
 		$timestamp = wp_next_scheduled( 'lumia_image_optimizer_cron' );
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'lumia_image_optimizer_cron' );
 		}
+		wp_unschedule_hook( FileLifecycle::RECONCILE_HOOK );
+
+		// The server would keep serving the AVIF siblings with nobody to keep them up to
+		// date: they go (the bulk regenerates them after a reactivation).
+		$this->get_lifecycle()->purge_all();
 	}
 
 	/* ================================================================
@@ -287,7 +393,10 @@ class Module extends AbstractModule {
 				'lumia_module_image_optimizer' . self::STATS_SUFFIX,
 				'lumia_module_image_optimizer' . self::BULK_STATE_SUFFIX,
 				'lumia_module_image_optimizer' . self::BACKUP_TOKEN_SUFFIX,
+				FileLifecycle::TOMBSTONES_OPTION,
+				FileLifecycle::RECONCILE_CURSOR,
 			],
+			'cron'    => [ FileLifecycle::RECONCILE_HOOK ],
 			// The files in lumia-originals/ stay on disk: they are the
 			// client's photos, not plugin data.
 			'meta'    => array_merge( self::OPTIMIZATION_META, [ '_lumia_backup_file', self::FALLBACK_META ] ),
@@ -585,7 +694,7 @@ class Module extends AbstractModule {
 	 * @param string $rel Path relative to the uploads folder (metadata['file']).
 	 */
 	private function backup_original( int $attachment_id, string $file, string $rel ): void {
-		if ( ! $this->settings['keep_original'] || '' !== $this->get_backup_path( $attachment_id ) || 0 !== validate_file( $rel ) ) {
+		if ( empty( $this->settings['keep_original'] ) || '' !== $this->get_backup_path( $attachment_id ) || 0 !== validate_file( $rel ) ) {
 			return;
 		}
 
@@ -878,19 +987,20 @@ class Module extends AbstractModule {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter, applied as in wp_create_image_subsizes().
 			$sizes = apply_filters( 'intermediate_image_sizes_advanced', wp_get_registered_image_subsizes(), $metadata, $attachment_id );
 
-			return _wp_make_subsizes( $sizes, $original, $metadata, $attachment_id );
+			$metadata = _wp_make_subsizes( $sizes, $original, $metadata, $attachment_id );
+
+			// The filter above raised the lifecycle's "generating" flag; without
+			// wp_generate_attachment_metadata() nothing would lower it.
+			return $this->get_lifecycle()->on_generate_metadata( $metadata, $attachment_id );
 		}
 
-		// Without our filter: the caller decides what gets optimized. Without the
-		// "big image" threshold: the main file is already the right one, WordPress
-		// would otherwise make yet another "-scaled" of it.
-		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'optimize_attachment_sizes' ], 10 );
+		// Without the "big image" threshold: the main file is already the right one,
+		// WordPress would otherwise make yet another "-scaled" of it.
 		add_filter( 'big_image_size_threshold', '__return_false', 999 );
 
 		$metadata = wp_generate_attachment_metadata( $attachment_id, $file );
 
 		remove_filter( 'big_image_size_threshold', '__return_false', 999 );
-		add_filter( 'wp_generate_attachment_metadata', [ $this, 'optimize_attachment_sizes' ], 10, 2 );
 
 		if ( empty( $metadata['file'] ) ) {
 			return null;

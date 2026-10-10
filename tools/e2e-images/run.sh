@@ -342,17 +342,24 @@ cmd_install_lumia() {
 	wp plugin install "/bench/out/${zip_name}" --force --activate
 }
 
+# ensure_fixtures: generate the synthetic images into out/fixtures/ once (inside the stack's PHP).
+# visual-alpha-noopt.png is the newest file of the generator: its absence means an older set.
+ensure_fixtures() {
+	if [ ! -s "${OUT_DIR}/fixtures/photo-4000.jpg" ] || [ ! -s "${OUT_DIR}/fixtures/visual-alpha-noopt.png" ] \
+		|| [ "${REGENERATE_FIXTURES:-0}" = 1 ]; then
+		rm -rf "${OUT_DIR}/fixtures"
+		echo "Generating the fixtures (synthetic images, no client data)..."
+		php_exec "${WP_USER}" /bench/fixtures/make-fixtures.php /bench/out/fixtures
+	fi
+}
+
 cmd_import_fixtures() {
 	use_stack "${1:-}"
 	prepare_out_dir
 	ensure_wp_phar
 
 	local dir=/bench/out/fixtures file name id url
-	if [ ! -s "${OUT_DIR}/fixtures/photo-4000.jpg" ] || [ "${REGENERATE_FIXTURES:-0}" = 1 ]; then
-		rm -rf "${OUT_DIR}/fixtures"
-		echo "Generating the fixtures (synthetic images, no client data)..."
-		php_exec "${WP_USER}" /bench/fixtures/make-fixtures.php "${dir}"
-	fi
+	ensure_fixtures
 
 	echo "Importing the fixtures..."
 	printf '%-20s %-6s %s\n' FIXTURE ID URL
@@ -422,6 +429,9 @@ cmd_assert() {
 	[ -f "${script}" ] || die "assert: no such script '${script}'"
 	prepare_out_dir
 	ensure_wp_phar
+
+	# Assertion scripts may read the fixtures (/bench/out/fixtures).
+	ensure_fixtures
 
 	tmp="assert-$$.php"
 	cp "${script}" "${OUT_DIR}/${tmp}"
