@@ -31,7 +31,7 @@ usage() {
 usage: run.sh <command> [args]
 
   up <stack>                      start a stack and install WordPress (stack: nginx | nginx-plain |
-                                  nginx-novary | cdn | cdn-noquery | cdn-vary | apache | ols)
+                                  nginx-novary | nginx-mig | cdn | cdn-noquery | cdn-vary | apache | ols)
   down <stack>                    stop it and delete its data
   wp <stack> <args...>            WP-CLI under the stack's PHP-FPM / mod_php / lsphp (the web runtime)
   wp-cron <nginx-stack> <args...> WP-CLI in the template's cron container (wordpress:cli image)
@@ -40,7 +40,8 @@ usage: run.sh <command> [args]
   fixtures <stack>                only generate them (out/fixtures/), nothing imported
   make-avif <stack> <path> [q]    hand-place <path>.avif next to a JPEG/PNG under wp-content/uploads
   htaccess <apache|ols> on|off    put / remove the spec 9.2 .htaccess block in wp-content/uploads
-  assert <stack> <script.php>     run a PHP assertion script with `wp eval-file` (as admin)
+  assert <stack> <script.php> [args...]
+                                  run a PHP assertion script with `wp eval-file` (as admin)
   curl-matrix <stack> <url> [avif|original|none]
                                   the client matrix against a path or URL (see README)
   latency <stack> <url> <seconds> median response time of a page over a duration
@@ -79,9 +80,10 @@ use_stack() {
 	STACK="${1:-}"
 	PROFILES=("${STACK}")
 	case "${STACK}" in
-		nginx | nginx-plain | nginx-novary | cdn | cdn-noquery | cdn-vary)
+		nginx | nginx-plain | nginx-novary | nginx-mig | cdn | cdn-noquery | cdn-vary)
 			# nginx-plain: the template without its AVIF rule (a third-party nginx host).
 			# nginx-novary: the rule without its `add_header Vary`.
+			# nginx-mig: the nginx stack as it is, for the legacy media migration (own data).
 			# cdn*: the template behind a caching proxy (cdn/default.conf.template); the
 			# loopback of the PHP container goes through the proxy too, as a production
 			# container would through a CDN in front of its domain. cdn ignores Vary,
@@ -91,6 +93,7 @@ use_stack() {
 				nginx) PORT=8091 ;;
 				nginx-plain) PORT=8095 ;;
 				nginx-novary) PORT=8101 ;;
+				nginx-mig) PORT=8102 ;;
 				cdn) PORT=8094 origin=8096 ;;
 				cdn-noquery) PORT=8097 origin=8098 ;;
 				cdn-vary) PORT=8099 origin=8100 ;;
@@ -127,7 +130,7 @@ use_stack() {
 			PHP_BIN=/usr/local/lsws/lsphp85/bin/php
 			export E2E_DISABLE_WP_CRON=false
 			;;
-		*) echo "unknown stack '${STACK}' (nginx | nginx-plain | nginx-novary | cdn | cdn-noquery | cdn-vary | apache | ols)" >&2; exit 2 ;;
+		*) echo "unknown stack '${STACK}' (nginx | nginx-plain | nginx-novary | nginx-mig | cdn | cdn-noquery | cdn-vary | apache | ols)" >&2; exit 2 ;;
 	esac
 	SITE_URL="http://localhost:${PORT}"
 	# One rendering per stack: the variants run side by side and must not share (or delete)
@@ -515,6 +518,7 @@ cmd_assert() {
 	use_stack "${1:-}"
 	local script="${2:-}" tmp rc=0
 	[ -f "${script}" ] || die "assert: no such script '${script}'"
+	shift 2
 	prepare_out_dir
 	ensure_wp_phar
 
@@ -524,7 +528,8 @@ cmd_assert() {
 	tmp="assert-$$.php"
 	cp "${script}" "${OUT_DIR}/${tmp}"
 	chmod 644 "${OUT_DIR}/${tmp}"
-	wp --user=admin eval-file "/bench/out/${tmp}" || rc=$?
+	# Extra arguments reach the script as $args.
+	wp --user=admin eval-file "/bench/out/${tmp}" "$@" || rc=$?
 	rm -f "${OUT_DIR}/${tmp}"
 	return "${rc}"
 }

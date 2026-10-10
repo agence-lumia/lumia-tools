@@ -61,22 +61,68 @@ final class FileLifecycle {
 	 */
 	private array $pending_tombstones = [];
 
+	/** register() ran: suspend() / resume() only act on hooks that were added. */
+	private bool $registered = false;
+
+	/** The file and state hooks are off (suspend()). */
+	private bool $suspended = false;
+
 	public function __construct( Module $module ) {
 		$this->module = $module;
 	}
 
 	public function register(): void {
+		$this->registered = true;
+		$this->add_suspendable_hooks();
+		add_filter( 'pre_wp_unique_filename_file_list', [ $this, 'filter_unique_file_list' ], 10, 2 );
+		add_filter( 'image_save_progressive', [ $this, 'filter_progressive' ], 10, 2 );
+		add_filter( 'wp_client_side_media_processing_enabled', '__return_false' );
+		add_action( self::RECONCILE_HOOK, [ $this, 'run_reconcile' ] );
+	}
+
+	/**
+	 * Takes the hooks that act on a media item's files or state off: queueing, sibling
+	 * deletion, name registry, upload conversion (spec 9.9, the legacy migration rewrites
+	 * files and metadata itself). Kept: the name uniqueness check (the migration resolves its
+	 * collisions with it), progressive JPEG and the browser-side processing switch. No effect
+	 * when the hooks were never registered (inactive module).
+	 */
+	public function suspend(): void {
+		if ( ! $this->registered || $this->suspended ) {
+			return;
+		}
+
+		remove_filter( 'big_image_size_threshold', [ $this, 'filter_big_image_threshold' ], 10 );
+		remove_filter( 'intermediate_image_sizes_advanced', [ $this, 'mark_generating' ], 10 );
+		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'on_generate_metadata' ], 99 );
+		remove_filter( 'wp_update_attachment_metadata', [ $this, 'on_update_metadata' ], 99 );
+		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ] );
+		remove_action( 'delete_attachment', [ $this, 'on_delete_attachment' ] );
+		remove_filter( 'wp_handle_upload', [ $this, 'convert_modern_upload' ] );
+
+		$this->suspended = true;
+	}
+
+	/**
+	 * Puts back the hooks taken off by suspend().
+	 */
+	public function resume(): void {
+		if ( ! $this->suspended ) {
+			return;
+		}
+
+		$this->suspended = false;
+		$this->add_suspendable_hooks();
+	}
+
+	private function add_suspendable_hooks(): void {
 		add_filter( 'big_image_size_threshold', [ $this, 'filter_big_image_threshold' ], 10, 4 );
 		add_filter( 'intermediate_image_sizes_advanced', [ $this, 'mark_generating' ], 10, 3 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'on_generate_metadata' ], 99, 2 );
 		add_filter( 'wp_update_attachment_metadata', [ $this, 'on_update_metadata' ], 99, 2 );
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ] );
 		add_action( 'delete_attachment', [ $this, 'on_delete_attachment' ] );
-		add_filter( 'pre_wp_unique_filename_file_list', [ $this, 'filter_unique_file_list' ], 10, 2 );
-		add_filter( 'image_save_progressive', [ $this, 'filter_progressive' ], 10, 2 );
-		add_filter( 'wp_client_side_media_processing_enabled', '__return_false' );
 		add_filter( 'wp_handle_upload', [ $this, 'convert_modern_upload' ] );
-		add_action( self::RECONCILE_HOOK, [ $this, 'run_reconcile' ] );
 	}
 
 	/* ================================================================
@@ -379,6 +425,7 @@ final class FileLifecycle {
 		}
 
 		$this->remove_siblings( $id );
+		$this->delete_legacy_files( $id );
 
 		$rels     = [];
 		$attached = (string) get_post_meta( $id, '_wp_attached_file', true );
@@ -408,6 +455,39 @@ final class FileLifecycle {
 
 		if ( $this->pending_tombstones && ! has_action( 'shutdown', [ $this, 'flush_tombstones' ] ) ) {
 			add_action( 'shutdown', [ $this, 'flush_tombstones' ] );
+		}
+	}
+
+	/**
+	 * The legacy files a migrated media item kept on disk (former `.avif` / `.webp` URLs,
+	 * spec 9.3) leave with it. A path that has become another media item's main file is left
+	 * alone.
+	 */
+	private function delete_legacy_files( int $id ): void {
+		$legacy = get_post_meta( $id, AvifState::LEGACY, true );
+		if ( ! is_array( $legacy ) || ! $legacy ) {
+			return;
+		}
+
+		global $wpdb;
+
+		foreach ( $legacy as $rel ) {
+			$rel = AvifState::rel( (string) $rel );
+			if ( '' === $rel || 0 !== validate_file( $rel ) ) {
+				continue;
+			}
+
+			$owner = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off check before a deletion.
+				$wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value = %s AND post_id <> %d LIMIT 1", $rel, $id )
+			);
+			if ( null !== $owner ) {
+				continue;
+			}
+
+			$path = AvifState::abs( $rel );
+			if ( is_file( $path ) ) {
+				wp_delete_file( $path );
+			}
 		}
 	}
 
@@ -579,7 +659,7 @@ final class FileLifecycle {
 				return null;
 			}
 
-			$png = $this->uses_alpha( $image ) || $image->getImageColors() <= 256;
+			$png = self::uses_alpha( $image ) || $image->getImageColors() <= 256;
 
 			// EXIF / XMP / IPTC go with strip_exif; the ICC profile always stays.
 			if ( $this->setting( 'strip_exif' ) ) {
@@ -640,7 +720,10 @@ final class FileLifecycle {
 		}
 	}
 
-	private function uses_alpha( \Imagick $image ): bool {
+	/**
+	 * The image has an alpha channel that is actually used (not fully opaque).
+	 */
+	public static function uses_alpha( \Imagick $image ): bool {
 		if ( ! $image->getImageAlphaChannel() ) {
 			return false;
 		}
