@@ -189,12 +189,17 @@ final class AvifState {
 	}
 
 	/**
-	 * `processing` and attempts + 1, written BEFORE the encode: a killed process leaves a trace.
+	 * Claims a `pending` item: `processing` and attempts + 1, written BEFORE the encode (a
+	 * killed process leaves a trace). Compare-and-set: the status only changes while it is
+	 * still `pending` (one UPDATE ... WHERE meta_value = 'pending'), so an item excluded,
+	 * purged, stopped or claimed by another process since it was picked is left alone.
 	 *
-	 * @return int Attempts after the increment.
+	 * @return int|null Attempts after the increment, null when the item was not `pending`.
 	 */
-	public static function begin_attempt( int $id ): int {
-		update_post_meta( $id, self::STATUS, self::PROCESSING );
+	public static function begin_attempt( int $id ): ?int {
+		if ( self::PENDING !== self::status_now( $id ) || ! update_post_meta( $id, self::STATUS, self::PROCESSING, self::PENDING ) ) {
+			return null;
+		}
 
 		$detail = self::detail( $id );
 		++$detail['attempts'];

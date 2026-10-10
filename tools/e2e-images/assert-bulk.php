@@ -438,8 +438,10 @@ WP_CLI::log( 'Resume failed media' );
 delete_user_meta( $admin_id, 'lumia_notices' );
 $gen_g1 = ab_state( $g1 )['gen'];
 // Three attempts already spent: a media item that kept its counter would end "too many attempts".
-AvifState::begin_attempt( $corrupt );
-AvifState::begin_attempt( $corrupt );
+foreach ( [ 1, 2 ] as $unused ) {
+	update_post_meta( $corrupt, AvifState::STATUS, AvifState::PENDING ); // begin_attempt() only claims a pending item.
+	AvifState::begin_attempt( $corrupt );
+}
 AvifState::set_status( $corrupt, AvifState::FAILED, 'old failure' );
 ab_check( 3 === ab_state( $corrupt )['attempts'], 'corrupt: attempts = 3 before the relaunch' );
 
@@ -473,6 +475,7 @@ $start = ab_data( ab_ajax( $admin, 'bulk' ) );
 ab_check( ( $start['queued'] ?? 0 ) >= 4, 'start with a busy worker: media queued (' . ( $start['queued'] ?? 'no answer' ) . ')' );
 // Upload-origin media waiting, and one in flight, added after the bulk was queued.
 AvifState::enqueue( $stale, 'upload' );
+update_post_meta( $g3, AvifState::STATUS, AvifState::PENDING ); // begin_attempt() only claims a pending item.
 AvifState::begin_attempt( $g3 );
 sleep( 2 );
 ab_check( AvifState::PENDING === ab_state( $s1 )['status'] && 'bulk' === ab_state( $s1 )['origin'], 'bulk items wait while the lock is held' );

@@ -170,6 +170,14 @@ wp_schedule_event( time() + HOUR_IN_SECONDS, 'lumia_five_minutes', QueueRunner::
 
 WP_CLI::log( 'Fixtures' );
 
+// A worker still draining what came before (a module activation queues the whole library, paced)
+// would pick the fixtures up as soon as they are queued: wait until the queue is idle.
+$idle_end = time() + 300;
+while ( time() < $idle_end && ( $queue->is_running() || null !== AvifState::next_pending() ) ) {
+	sleep( 2 );
+}
+aq_check( ! $queue->is_running() && null === AvifState::next_pending(), 'queue idle before the fixtures are imported' );
+
 $good    = aq_import( 'photo-p3.jpg', "queue-good-{$run}.jpg" );
 $corrupt = aq_import( 'corrupt.jpg', "queue-corrupt-{$run}.jpg" );
 $missing = aq_import( 'logo-flat.png', "queue-missing-{$run}.png" );
@@ -187,11 +195,19 @@ foreach ( [ $good, $corrupt, $missing, $retried ] as $id ) {
 $missing_file = (string) get_attached_file( $missing );
 @unlink( $missing_file );
 
-// An interrupted attempt: `processing` with three attempts already spent.
-AvifState::begin_attempt( $retried );
-AvifState::begin_attempt( $retried );
-AvifState::begin_attempt( $retried );
+// An interrupted attempt: `processing` with three attempts already spent (begin_attempt() only
+// claims a `pending` item: put back to `pending` before each).
+for ( $i = 0; $i < 3; $i++ ) {
+	update_post_meta( $retried, AvifState::STATUS, AvifState::PENDING );
+	AvifState::begin_attempt( $retried );
+}
 aq_check( AvifState::PROCESSING === aq_state( $retried )['status'] && 3 === aq_state( $retried )['attempts'], 'interrupted media: processing, attempts = 3' );
+
+// Compare-and-set: an item that is not `pending` any more is not claimed.
+aq_check( null === AvifState::begin_attempt( $retried ) && 3 === aq_state( $retried )['attempts'], 'begin_attempt() on a processing item: refused, attempts unchanged' );
+AvifState::set_status( $good, AvifState::EXCLUDED );
+aq_check( null === AvifState::begin_attempt( $good ) && AvifState::EXCLUDED === aq_state( $good )['status'], 'begin_attempt() on an excluded item: refused, status kept' );
+AvifState::enqueue( $good, 'manual' );
 
 // --- CLI: nothing encoded in this process -------------------------------------------------------
 

@@ -374,6 +374,11 @@ final class QueueRunner {
 
 		$gen      = AvifState::gen( $id );
 		$attempts = AvifState::begin_attempt( $id );
+		if ( null === $attempts ) {
+			// Not `pending` any more: excluded, purged, stopped or claimed by another process
+			// since it was picked.
+			return AvifState::status_now( $id );
+		}
 		AvifState::set_worker( $id, PHP_SAPI . ':' . getmypid() );
 
 		if ( function_exists( 'set_time_limit' ) ) {
