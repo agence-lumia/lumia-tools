@@ -19,6 +19,8 @@ msgstr ""
 #. Plugin Name of the plugin
 #: lumia-tools.php
 #: includes/Admin/Admin.php:93
+#: includes/Admin/Admin.php:94
+#: includes/Admin/Admin.php:154
 msgid "Lümia Tools"
 msgstr "Lümia Tools"
 
@@ -43,8 +45,6 @@ msgstr "Agence Lümia"
 msgid "https://agence-lumia.com"
 msgstr "https://agence-lumia.com"
 
-#: includes/Admin/Admin.php:94
-#: includes/Admin/Admin.php:154
 #: includes/Admin/Admin.php:600
 msgid "Lümia"
 msgstr "Lümia"

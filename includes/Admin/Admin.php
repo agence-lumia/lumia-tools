@@ -91,7 +91,7 @@ class Admin {
 	public function add_menu_page(): void {
 		add_menu_page(
 			__( 'Lümia Tools', 'lumia-tools' ),
-			__( 'Lümia', 'lumia-tools' ),
+			__( 'Lümia Tools', 'lumia-tools' ),
 			'manage_options',
 			$this->slug,
 			[ $this, 'render_page' ],
@@ -151,7 +151,7 @@ class Admin {
 			return;
 		}
 
-		$top_label = __( 'Lümia', 'lumia-tools' );
+		$top_label = __( 'Lümia Tools', 'lumia-tools' );
 		$seen      = [];
 		$filtered  = [];
 
