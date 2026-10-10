@@ -1,0 +1,24 @@
+# rsync --exclude-from list: what never ships in the release zip.
+# Read by tools/build/build-zip.sh (release workflows) and tools/e2e/run.sh (bench zips).
+# Anchored at the root: an unanchored 'vendor' would also drop assets/admin/js/vendor/.
+/.git
+/.github
+/.vscode
+/node_modules
+/dist
+/.claude
+/.mcp.json
+/.gitignore
+/vendor
+/composer.json
+/composer.lock
+/phpcs.xml.dist
+/phpstan.neon.dist
+/phpstan-baseline.neon
+/phpcs.baseline.xml
+/.phpcs.cache
+/tools
+/CLAUDE.md
+/docs
+/.superpowers
+/.DS_Store

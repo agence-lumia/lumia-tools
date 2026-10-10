@@ -17,14 +17,8 @@ SITE_URL="http://localhost:8089"
 WP_MIN_VERSION="6.9"
 ENCRYPTION_KEY="e2e-fixed-key"
 
-# Same list as the release workflows (.github/workflows/release-*.yml), anchored
-# at the root: an unanchored 'vendor' would also drop assets/admin/js/vendor/.
-# .superpowers is local working-tree noise that the workflows never see.
-ZIP_EXCLUDES=(
-	/.git /.github /.vscode /node_modules /dist /.claude /.mcp.json /.gitignore /vendor
-	/composer.json /composer.lock /phpcs.xml.dist /phpstan.neon.dist /phpstan-baseline.neon
-	/phpcs.baseline.xml /.phpcs.cache /tools /CLAUDE.md /docs /.superpowers /.DS_Store
-)
+# Same exclude list as the release build (tools/build/build-zip.sh), from the working tree.
+ZIP_EXCLUDES="${REPO_DIR}/tools/build/zip-excludes.txt"
 
 die() {
 	echo "error: $*" >&2
@@ -54,15 +48,11 @@ prepare_out_dir() {
 # build_zip <source-dir> <plugin-folder> <zip-path>: zip of <source-dir> with the
 # release excludes, rooted at <plugin-folder>/ like a release asset.
 build_zip() {
-	local src="$1" folder="$2" zip_path="$3" staging args=() item
-
-	for item in "${ZIP_EXCLUDES[@]}"; do
-		args+=("--exclude=${item}")
-	done
+	local src="$1" folder="$2" zip_path="$3" staging
 
 	staging="$(mktemp -d)"
 	mkdir -p "${staging}/${folder}"
-	rsync -a "${args[@]}" "${src}/" "${staging}/${folder}/"
+	rsync -a --exclude-from="${ZIP_EXCLUDES}" "${src}/" "${staging}/${folder}/"
 	rm -f "${zip_path}"
 	(cd "${staging}" && zip -qr "${zip_path}" "${folder}")
 	rm -rf "${staging}"
@@ -212,7 +202,19 @@ cmd_install_lumia() {
 	folder="$(working_tree_plugin)"
 	zip_name="${folder}-worktree.zip"
 
-	build_zip "${REPO_DIR}" "${folder}" "${OUT_DIR}/${zip_name}"
+	if [ -n "${LUMIA_ZIP:-}" ]; then
+		# A prebuilt zip (tools/build/build-zip.sh, a release asset), installed under the
+		# same name so that assert-reinstall reinstalls it too.
+		[ -f "${LUMIA_ZIP}" ] || die "LUMIA_ZIP: no such file ${LUMIA_ZIP}"
+		local entries
+		entries="$(unzip -Z1 "${LUMIA_ZIP}")" || die "LUMIA_ZIP: unreadable zip ${LUMIA_ZIP}"
+		if grep -qv "^${folder}/" <<<"${entries}"; then
+			die "LUMIA_ZIP: entries outside ${folder}/ in ${LUMIA_ZIP}"
+		fi
+		cp "${LUMIA_ZIP}" "${OUT_DIR}/${zip_name}"
+	else
+		build_zip "${REPO_DIR}" "${folder}" "${OUT_DIR}/${zip_name}"
+	fi
 	chmod 644 "${OUT_DIR}/${zip_name}"
 
 	# First install over a seeded SKMT: record what SKMT holds, so that assert-migration
@@ -626,6 +628,7 @@ Usage: tools/e2e/run.sh <command> [args]
                                        install SKMT (commit 8d4cd85) and seed realistic data
   capture <output-dir> [page-slug]     write the admin text to out/<output-dir>/ (slug defaults to studio-kyne-mini-tools)
   install-lumia                        install and activate the plugin built from the working tree
+                                       (LUMIA_ZIP=<path>: install that prebuilt zip instead)
   assert-compat                        check the SKMT compatibility layer (constants, hooks, tables) on an installed bench
   assert-migration                     check the SKMT -> Lumia migration (after seed-skmt then install-lumia)
   assert-after-uninstall               uninstall SKMT (its uninstall.php runs), then check the Lumia data is intact

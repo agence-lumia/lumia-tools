@@ -258,6 +258,10 @@ Distinct from the ephemeral toasts (`lumiaShowToast`), `Admin::add_persistent_no
 
 Composer is used **only** for development: no runtime dependency, `vendor/` is ignored by Git and excluded from the release ZIPs (like `composer.*`, `phpcs.*`, `phpstan*`, `tools/`, `CLAUDE.md`, `docs/`).
 
+### Release zip
+
+`tools/build/build-zip.sh <version> <output.zip>` is the only build, called by `release-dev.yml`, `release-please.yml` and the `build` job of `lint.yml` (so a broken build fails the PR, not the release). It copies the working tree without what `tools/build/zip-excludes.txt` lists (also read by the e2e bench) and without the `.po` / `.pot`, compiles each `languages/*.po` into a `.l10n.php` with `wp i18n make-php` (WordPress 6.5+ reads it before the `.mo`, which stays as a fallback), and minifies every `assets/**/*.js` / `*.css` except `*.min.*` in place with esbuild pinned to an exact version, in transform mode: no bundling and no `--format`, so top-level names and property names are kept and the files stay plain browser scripts. It fails if `tools/`, `docs/`, `vendor/` or a `.po` / `.pot` end up in the zip, or if an asset, a `.mo` or a `.l10n.php` is missing. It needs PHP (or `wp`) and Node: without PHP on the machine, run it in a container, e.g. `docker run --rm -v "$PWD:/app" -w /app --entrypoint sh composer:2 -c 'apk add -q bash rsync zip unzip nodejs npm && bash tools/build/build-zip.sh 0.0.0-local dist/lumia-tools.zip'`.
+
 ```bash
 composer install          # PHPCS (WPCS + PHPCompatibilityWP), PHPStan (+ WordPress stubs)
 composer lint             # phpcs — composer lint:fix for phpcbf

@@ -5,7 +5,7 @@ il installe SKMT à son état d'avant renommage (commit `8d4cd85`) avec des donn
 réalistes, capture le texte visible de l'administration, puis installe l'extension
 renommée pour contrôler la migration et les textes.
 
-Rien ici n'est distribué : les workflows de release excluent `tools/` du zip. Le
+Rien ici n'est distribué : `tools/build/zip-excludes.txt` exclut `tools/` du zip. Le
 mu-plugin `mu-plugins/e2e-auth.php` connecte n'importe quelle requête portant
 l'en-tête `X-E2E-User` : **il ne doit jamais sortir de ce banc**. `run.sh` refuse de
 construire un zip qui contiendrait `tools/` ou ce fichier.
@@ -48,7 +48,9 @@ sort en 2 : les tâches suivantes y ajoutent leurs commandes dans le `case` fina
   `studio-kyne-mini-tools` par défaut, `lumia-tools` après le renommage.
 - `install-lumia` : lit le nom du dossier du plugin dans l'arbre de travail (le fichier
   `*.php` à la racine portant un en-tête `Plugin Name:`), construit le zip avec les exclusions
-  de `release-please.yml` et l'installe par `wp plugin install --force --activate`.
+  de `tools/build/zip-excludes.txt` (celles du zip de release) et l'installe par
+  `wp plugin install --force --activate`. `LUMIA_ZIP=<chemin> tools/e2e/run.sh install-lumia`
+  installe à la place un zip déjà construit (sortie de `tools/build/build-zip.sh`, asset de release).
 
 ## Données semées (`seed-skmt.php`)
 
