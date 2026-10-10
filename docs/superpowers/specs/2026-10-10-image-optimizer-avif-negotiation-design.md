@@ -368,3 +368,13 @@ WP 7.1 active par défaut, en HTTPS dans l'éditeur de blocs, le traitement des 
 - PNG sans perte (si retenu) : temporaire + `rename`, et mise à jour de la seule clé `filesize` de la metadata, hooks suspendus.
 - Réglages : marqueur `settings_version` (= 2) pour ne remettre `quality` à 70 qu'une fois.
 - `Accept: image/avif;q=0` déclenche quand même l'AVIF : sans conséquence (aucun client réel).
+
+### 9.13 AVIF et WebP téléversés (décision du 10/10/2026)
+
+Remplace la phrase du §2 « Un WebP ou AVIF téléversé tel quel est laissé tel quel ».
+
+- Nouveau réglage `convert_modern_uploads` (défaut `true`) : un fichier **AVIF ou WebP non animé** téléversé est converti **avant** que WordPress ne le traite (filtre `wp_handle_upload`, fichier remplacé, nom et `type` mis à jour) en **PNG** si canal alpha utilisé ou ≤ 256 couleurs distinctes, sinon en **JPEG** q90 progressif. Nom : même base, nouvelle extension, unicité par la fonction du §9.4. Profil ICC conservé, EXIF retiré selon `strip_exif`. L'image suit ensuite le chemin normal (tailles WordPress, AVIF frères par la file).
+- Conversion seulement si `can_encode_here` (Imagick dans ce processus) ; sinon fichier laissé tel quel et statut `skipped` avec la raison.
+- AVIF/WebP **animés** : laissés tels quels, statut `skipped`, mention dans la médiathèque « Incompatible with some email clients ».
+- Réglage désactivé : comportement d'origine (fichier gardé tel quel, sans repli), même mention dans la médiathèque.
+- Tests : upload d'un AVIF opaque → `.jpg` + tailles JPEG + AVIF frères ; d'un WebP avec alpha → `.png` ; d'un WebP animé → laissé tel quel ; réglage désactivé → laissé tel quel.
