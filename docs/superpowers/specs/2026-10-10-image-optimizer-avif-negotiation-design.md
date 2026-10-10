@@ -2,6 +2,8 @@
 
 Date : 10/10/2026 · Module : `ImageOptimizer` · Dépôts : `agence-lumia/lumia-tools` (plugin) et `wp-dokploy-template` (règle nginx)
 
+> **La section 9 (« Corrections après relecture ») prévaut sur les sections 1 à 8 en cas de contradiction.**
+
 ## Objectif
 
 Rendre l'upload instantané et l'optimisation robuste, sans jamais casser une image, où qu'elle soit lue : page Bricks non enregistrée, e-mail WooCommerce, newsletter Brevo/Mailchimp, flux Google Merchant / Meta, aperçu LinkedIn, fichier envoyé à un prestataire, facture PDF.
@@ -221,7 +223,7 @@ Les AVIF hérités restent en q50 (originaux perdus) sauf en cas 1 : c'est assum
 
 ## 6. Désactivation, désinstallation
 
-- Désactivation : bloc `.htaccess` retiré, événements cron effacés **avec leurs arguments** (corrige le cron jamais nettoyé). Les `.avif` restent (désactivation souvent temporaire).
+- Désactivation : bloc `.htaccess` retiré, événements cron effacés **avec leurs arguments** (corrige le cron jamais nettoyé), **`.avif` générés supprimés** (voir 9.4).
 - Désinstallation : `.htaccess`, `uploads/lumia-tools/`, tous les `.avif` listés dans `_lumia_avif`, metas `_lumia_avif`, registre des noms, options du module.
 
 ## 7. Déploiement
@@ -259,3 +261,110 @@ Pas de tests automatisés du plugin (convention du dépôt) : `composer check`, 
 - Hébergement multisite, médias déportés (S3, offload).
 - Réduction des profils ICC des JPEG générés par WordPress.
 - Réencodage en meilleure qualité des 828 AVIF hérités sans original.
+
+## 9. Corrections après relecture (10/10/2026)
+
+Relecture indépendante, vérifiée sur WordPress 7.1.3, nginx 1.31.6 et Apache 2.4.68. Confirmé tel quel : la config nginx (`nginx -t`, `map` composée, `try_files` qui sert `image/avif` avec `Vary` et l'ETag du fichier servi, `?original`/`&original=1`, extensions en majuscules, ordre des locations, `.avif` direct toujours servi). Vérifié en plus : le décodeur ImageIO de macOS (celui de Safari et Mail) lit un AVIF 4:4:4. Le reste est corrigé ci-dessous.
+
+### 9.1 Encodage uniquement dans PHP-FPM (bloquant B1)
+
+L'image `wordpress:cli` (conteneur `cron`, WP-CLI) n'a pas d'Imagick capable d'AVIF/JPEG (0 format) : seul GD y encode, sans 4:4:4 et en perdant l'ICC.
+
+- **Aucun encodage en CLI.** Cron et WP-CLI ne font que **déclencher** le vidage par la boucle locale HTTP (donc dans FPM). Le déclencheur « WP-CLI : traitement immédiat » du §3 est supprimé.
+- Capacités : clé du cache = versions PHP, GD, `Imagick::getVersion()['versionString']` **et** `PHP_SAPI` (le cache objet Redis est partagé entre FPM et CLI).
+- **Migration** : la commande refuse de tourner si Imagick ne sait pas décoder l'AVIF **et** encoder JPEG/PNG/AVIF dans le processus courant, avec un message qui indique comment la lancer dans le conteneur `wordpress` (phar WP-CLI exécuté par le PHP de l'image FPM). Le banc reproduit le conteneur `cron` pour prouver le refus et le déclenchement par boucle locale.
+- `docs/modules/image-optimizer.md` (« AVIF delegate is missing ») est corrigé : vrai pour CLI, faux pour FPM.
+
+### 9.2 `.htaccess` sans risque de 500 (bloquant B2)
+
+- Tout le bloc est enveloppé : `<IfModule mod_rewrite.c>`, `<IfModule mod_headers.c>`, `<IfModule mod_mime.c>`. `RewriteOptions Inherit` après `RewriteEngine On` (sinon les règles WordPress cessent de s'appliquer dans `uploads/`, testé). `FilesMatch` : `\.(?i:jpe?g|png)(\.avif)?$`.
+- Juste après l'écriture, **dans la même requête**, le plugin demande aussi une URL témoin sans AVIF (attendu 200 `image/png`). Un 500, une réponse incorrecte **ou** un test non vérifiable → bloc retiré immédiatement. Le bloc n'est jamais laissé en place sans test réussi.
+
+### 9.3 Les anciennes URL restent valides après migration (bloquant B3)
+
+- Cas 2 : l'AVIF hérité n'est **pas renommé** : `photo.jpg.avif` est un **lien physique** (`link()`, repli `copy()`) vers `photo.avif`. Les `.avif` et `.webp` hérités **restent en place** : newsletters déjà envoyées, Google Images, liens externes, CSS Bricks pendant la migration, pages en cache et tables non couvertes par `UrlRewriter` (`termmeta`, `usermeta`, tables tierces) continuent de fonctionner.
+- Cas 1 : idem, les `.avif` hérités restent en place.
+- Les chemins hérités conservés sont listés dans la meta `_lumia_avif_legacy` et supprimés avec le média (suppression définitive), jamais avant.
+
+### 9.4 Jamais d'AVIF périmé (bloquant B4)
+
+- **Empreinte par fichier** : pour chaque fichier source encodé, `_lumia_avif` mémorise `bytes` et `mtime`. Un AVIF n'est valable que si l'empreinte correspond au fichier source actuel. Toute divergence (régénération par `unlink()` de WP-CLI, remplacement, FTP, module Fichiers) → AVIF supprimé et fichier remis en file.
+- **Désactivation : tous les `.avif` générés sont supprimés** (régénérables par le bulk) et `_lumia_avif` est remis à zéro. Le serveur continue de servir des `.avif` sinon, sans plus personne pour les tenir à jour. Une suppression du dossier du plugin sans passer par WordPress n'est pas gérable : documenté.
+- **À l'activation**, et à chaque analyse du bulk : réconciliation des empreintes.
+- **Famille de fichiers** : un nom est considéré comme occupé si un fichier de la famille `base(-\d+x\d+|-scaled|-rotated|-e\d+)?.ext.avif` existe, en plus du registre des noms. Implémentation par le filtre `pre_wp_unique_filename_file_list` (ajout de noms virtuels à la liste que WordPress compare), pas par une réimplémentation de la recherche de suffixe.
+- **Module Fichiers de Lümia** : ses suppressions, renommages et déplacements d'un JPEG/PNG des uploads s'appliquent aussi au `.avif` frère (hook dans `FileManager`).
+- Registre des noms alimenté par `delete_attachment` (liste des fichiers du média), écrit une seule fois par requête, `autoload` non.
+
+### 9.5 File d'attente : metas scalaires, génération, empreintes
+
+Remplace la meta sérialisée unique du §3 :
+
+| Meta | Valeur |
+|---|---|
+| `_lumia_avif_status` | `pending`, `processing`, `done`, `partial`, `skipped`, `failed`, `excluded` |
+| `_lumia_avif_queued_at` | timestamp de mise en file (ordre de traitement) |
+| `_lumia_avif_origin` | `upload`, `bulk`, `manual`, `reconcile` |
+| `_lumia_avif_gen` | compteur de génération, incrémenté à chaque mise en file |
+| `_lumia_avif` | détail : par fichier `{bytes, mtime, avif_bytes|null}`, `error`, `attempts`, `updated` |
+| `_lumia_avif_legacy` | chemins hérités conservés (migration) |
+
+- Mise en file **seulement** à la fin de `wp_generate_attachment_metadata` et sur `wp_update_attachment_metadata` hors création des sous-tailles (drapeau posé au début de la génération et retiré à la fin), et toujours en comparant l'union ancienne + nouvelle liste de fichiers : les AVIF des fichiers disparus sont supprimés, seuls les fichiers nouveaux ou modifiés (empreinte) sont réencodés. Plus de « supprimer tous les `.avif` » à chaque appel.
+- Le vidage relit `_lumia_avif_gen` **avant chaque `rename()`** et avant d'écrire le statut : si la génération a changé pendant l'encodage, le résultat est jeté.
+- « Arrêter » le bulk ne retire que les `pending` d'origine `bulk`.
+- Suffixe d'exclusion testé sur le nom avec le suffixe d'unicité : `-noopt(-\d+)?$`.
+
+### 9.6 Verrou et durée d'exécution
+
+- Nom du verrou : `lumia_avif_` + `md5( DB_NAME . $wpdb->prefix . home_url() )` (`GET_LOCK` est global au serveur MySQL et limité à 64 caractères ; en mutualisé, plusieurs sites partagent le serveur).
+- Avant chaque image : `IS_USED_LOCK(nom) = CONNECTION_ID()`, sinon arrêt (une reconnexion de `$wpdb` perd le verrou).
+- Avant `fastcgi_finish_request()` : `session_write_close()`, `ignore_user_abort( true )`. Hook `shutdown` en priorité `PHP_INT_MAX`.
+- `set_time_limit()` remis avant chaque image (sur Linux, `max_execution_time` compte le CPU de tout le processus, threads aom compris). Le budget de 20 s reste en temps mur.
+- **Charge** : le conteneur `wordpress` est limité à 2 CPU et une conversion en prend environ 2. Pendant un bulk (origine `bulk`), pause après chaque image égale au temps d'encodage de cette image (≈ 50 % du CPU disponible laissé aux pages). Le banc mesure la latence d'une page pendant un bulk.
+
+### 9.7 Traitement côté navigateur de WordPress 7.1
+
+WP 7.1 active par défaut, en HTTPS dans l'éditeur de blocs, le traitement des médias dans le navigateur : les tailles sont produites par le navigateur, le seuil `big_image_size_threshold` est forcé à `false` par le `create` REST, et `finalize` déclenche ensuite la génération. Décision : **désactivé** par `wp_client_side_media_processing_enabled` → `false` quand le module est actif, pour que les replis restent ceux de WordPress (q82, seuil appliqué). La mise en file attend dans tous les cas la fin de la génération.
+
+### 9.8 Progressif, EXIF et profils ICC
+
+- `image_save_progressive` → `true` **seulement pour `image/jpeg`** (sinon les PNG deviennent entrelacés et plus lourds).
+- **Confidentialité** : WordPress garde l'EXIF (dont le GPS) dans les sous-tailles et dans un principal non redimensionné (≤ 2560 px, gardé brut). Avec `strip_exif` actif, le plugin retire **sans perte** les segments APP1 (EXIF, XMP) des JPEG servis (principal et tailles, jamais `original_image`), en gardant APP2 (ICC). Pas de retrait si l'orientation EXIF est différente de 1 (évite une image tournée). Fait dans la file, avant l'encodage AVIF. Comportement équivalent à l'ancien module, sans réencodage.
+- AVIF : jamais `stripImage()` (retire aussi l'ICC — cause des couleurs P3 perdues dans l'existant). Retrait profil par profil (`exif`, `xmp`, `iptc`).
+- Profil > 4 Ko : conversion par `profileImage( 'icc', <sRGB.icc embarqué dans le plugin> )` (lcms présent en prod), puis retrait du profil. `transformImageColorspace` seul ne convertit pas P3 → sRGB.
+- `setImageDepth( 8 )` avant l'encodage (un PNG 16 bits donnerait un AVIF 12 bits).
+- **GD** : utilisé seulement pour une image sans profil ou en sRGB ; sinon `skipped` (« GD cannot preserve the color profile »).
+- JPEG CMYK : converti en sRGB pour l'AVIF (profil CMYK embarqué ou générique), sinon `skipped`.
+- **HEIC** : WP 7.1 convertit en JPEG mais laisse `post_mime_type` à `image/heic` : la décision se fait sur le **MIME réel de chaque fichier** (`wp_get_image_mime()`), pas sur le MIME de l'attachement.
+- Un principal ≤ 2560 px n'est ni recompressé ni rendu progressif par WordPress : documenté.
+
+### 9.9 Migration : sûreté et reprise
+
+- **Hooks suspendus** pendant la migration (mise en file, suppression des frères, registre des noms).
+- **Journal par média** (meta `_lumia_migration` : étape courante + table ancien → nouveau chemin), écrit **avant** toute opération sur les fichiers. Reprise : chaque étape est rejouable à partir du journal ; un média dont le journal indique « fichiers écrits » reprend à l'étape base de données.
+- **Cas 1** (original présent) : tailles produites par `WP_Image_Editor` (Imagick) **sans** `wp_create_image_subsizes()` (qui écrit en base au fil de l'eau) ; une seule écriture de la metadata à la fin. En cas d'échec, l'état d'avant (metadata, `_wp_attached_file`, MIME, `guid`) est restauré depuis le journal.
+- **Cas 2, format du repli** : aucune meta ne conserve l'extension d'origine (l'ancien `convert()` remplaçait l'extension, `_lumia_optimized_mime` contient le MIME final, le `guid` a été réécrit). Règle : **PNG** si canal alpha utilisé **ou** ≤ 256 couleurs distinctes (logos à aplats) ; sinon **JPEG** q90 progressif. `_lumia_backup_file` est utilisé comme source s'il existe.
+- **Collisions** résolues par famille (principal et toutes ses tailles sur la même base), avec la même fonction d'unicité que l'upload (9.4).
+- `original_image` retiré de la metadata si le fichier n'existe plus.
+- Cas 1, URL de tailles héritées absentes des nouvelles tailles : la réécriture les dirige vers la taille nouvelle la plus proche en largeur ; les fichiers hérités restent de toute façon en place (9.3).
+
+### 9.10 Auto-test et CDN
+
+- Chaque requête de test est faite **deux fois, ordre alterné** (AVIF puis non-AVIF, puis l'inverse) : un cache qui ignore `Vary` est détecté par la réponse, quel que soit l'en-tête. Lecture de `cf-cache-status`.
+- CDN détecté mais inconnu → AVIF coupé par défaut.
+- Distinction : **livraison incorrecte** (réponse de mauvais type) → couper tout de suite ; **injoignable** (erreur réseau, délai) → garder l'état précédent jusqu'à 3 échecs consécutifs (sauf juste après l'écriture d'un `.htaccess` : 9.2).
+- Limite connue : une boucle locale qui contourne le CDN (résolution interne) ne le voit pas. Le test d'un CDN se fait donc aussi depuis le navigateur de l'admin (requêtes `fetch` avec les deux `Accept` sur la sonde, depuis l'onglet Livraison), résultat renvoyé au serveur.
+
+### 9.11 Conventions du dépôt
+
+- Le point d'entrée AJAX `nopriv` + jeton HMAC du vidage déroge à la règle nonce + capacité : exception documentée dans `docs/core.md` (il ne fait que vider la file, n'accepte aucun paramètre que le jeton).
+- `BACKUP_DIR` et `LEGACY_BACKUP_DIR` restent (utilisés par `FromSkmt`) ; le banc `tools/e2e` `assert-migration` est relancé.
+- `Deactivator` et `uninstall.php` : `wp_unschedule_hook()` au lieu de `wp_clear_scheduled_hook()` (qui n'efface que les événements sans arguments). Changement du cœur partagé, valable pour tous les modules.
+- Les libellés d'interface de cette spec sont donnés en français pour la lecture : dans le code ils sont en anglais, la traduction va dans le `.po`.
+
+### 9.12 Autres précisions
+
+- `Cache-Control` : `max-age` d'un an conservé (audit Lighthouse du cache). Conséquence assumée et affichée à côté de l'interrupteur « format d'origine » : un visiteur qui a déjà l'AVIF en cache le garde jusqu'à un an.
+- Matrice de test : ajouter `Storebot-Google` et `Google-Shopping` (UA), `Accept` réel ou `*/*`.
+- PNG sans perte (si retenu) : temporaire + `rename`, et mise à jour de la seule clé `filesize` de la metadata, hooks suspendus.
+- Réglages : marqueur `settings_version` (= 2) pour ne remettre `quality` à 70 qu'une fois.
+- `Accept: image/avif;q=0` déclenche quand même l'AVIF : sans conséquence (aucun client réel).

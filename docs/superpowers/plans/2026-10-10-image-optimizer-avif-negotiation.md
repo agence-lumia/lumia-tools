@@ -88,6 +88,8 @@ Chaque tâche d'une même vague touche des fichiers distincts ; les ajouts dans 
 
 ### Task 2 : banc Docker `tools/e2e-images/`
 
+**Compléments (spec §9) :** la pile `nginx` inclut aussi le conteneur `cron` du template (`wordpress:cli-2-php8.5`, même volume) pour prouver qu'aucun encodage n'a lieu en CLI (§9.1) ; `lib.sh` ajoute les UA `Storebot-Google` et `Google-Shopping` (§9.12) et une commande `latency <stack> <url> <secondes>` (temps de réponse médian d'une page pendant une durée, pour §9.6).
+
 **Files :**
 - Create : `tools/e2e-images/docker-compose.yml`, `tools/e2e-images/run.sh`, `tools/e2e-images/lib.sh`, `tools/e2e-images/fixtures/make-fixtures.php`, `tools/e2e-images/nginx/` (stubs), `tools/e2e-images/README.md`
 - Modify : `tools/build/zip-excludes.txt` (vérifier que `tools/` entier est exclu ; sinon ajouter `tools/e2e-images/`)
@@ -124,6 +126,15 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 
 ### Task 3 : `AvifEncoder` (encodage, seuil, ICC) et capacités
 
+**Compléments (spec §9.1, §9.8) — prévalent sur le texte ci-dessous :**
+- Signature : `encode( string $source_path, ?callable $can_commit = null ): EncodeResult` ; `$can_commit()` est appelé juste avant le `rename()` final ; s'il renvoie `false`, le temporaire est supprimé et le résultat est `SKIPPED` avec `error = 'stale'` (§9.5).
+- Jamais `stripImage()` : `removeImageProfile()` pour `exif`, `xmp`, `iptc` (si `strip_exif`) ; profil ICC > 4096 octets → `profileImage( 'icc', file_get_contents( <plugin>/assets/icc/srgb.icc ) )` puis `removeImageProfile( 'icc' )`. Profil sRGB : `sRGB-v2-micro.icc` du dépôt saucecontrol/Compact-ICC-Profiles (licence CC0 à vérifier et citer dans un `assets/icc/README.md`). `setImageDepth( 8 )` avant l'encodage. CMYK → même conversion (profil embarqué de l'image, sinon `transformImageColorspace( COLORSPACE_SRGB )`), échec → `SKIPPED`.
+- GD seulement si l'image n'a pas de profil ou un profil sRGB ; sinon `SKIPPED` (« GD cannot preserve the color profile »).
+- MIME décidé par `wp_get_image_mime( $source_path )` (cas HEIC converti), jamais par le MIME de l'attachement.
+- Capacités : clé du transient = PHP, GD, `Imagick::getVersion()['versionString']`, `PHP_SAPI` ; nouvelle clé `can_encode_here` (bool) = Imagick encode AVIF **et** décode JPEG/PNG/AVIF dans ce processus.
+- Nouvelle classe `JpegMetadata` (`includes/Modules/ImageOptimizer/JpegMetadata.php`) : `public static function strip_app1( string $path ): int /* octets retirés */` — parcours des marqueurs JPEG, retrait des segments APP1 (`Exif\0\0` et XMP), conservation d'APP2 (ICC) et de tout le reste à l'octet près, aucun retrait si l'orientation EXIF ≠ 1, écriture temporaire + `rename`. Assertions : pixels identiques (`compareImages` = 0) ; plus de GPS (`exif_read_data`) ; profil ICC intact ; image orientée 6 inchangée.
+- Assertions supplémentaires dans `assert-encoder.php` : PNG 16 bits → AVIF en 8 bits ; `photo-p3.jpg` encodé par GD forcé → `SKIPPED` ; `$can_commit` renvoyant `false` → aucun `.avif` final ni temporaire.
+
 **Files :**
 - Create : `includes/Modules/ImageOptimizer/AvifEncoder.php`
 - Modify : `includes/Modules/ImageOptimizer/ImageProcessor.php` (supprimer `optimize*`, `convert*`, `get_target_format` ; étendre `get_capabilities()`)
@@ -153,6 +164,16 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 ---
 
 ### Task 4 : état, cycle de vie des fichiers, réglages
+
+**Compléments (spec §9.4, §9.5, §9.7, §9.8) — prévalent sur le texte ci-dessous :**
+- `AvifState` passe aux metas scalaires du §9.5 (`_lumia_avif_status`, `_lumia_avif_queued_at`, `_lumia_avif_origin`, `_lumia_avif_gen`, `_lumia_avif` pour le détail par fichier `{bytes, mtime, avif_bytes}`, `_lumia_avif_legacy`). API : `enqueue( int $id, string $origin ): int /* gen */`, `gen( int $id ): int`, `next_pending(): ?int` (plus ancien `queued_at`, requête sur metas scalaires), `fingerprint( string $path ): array{bytes:int,mtime:int}`, `is_fresh( int $id, string $path ): bool`, plus les méthodes déjà prévues.
+- Mise en file : drapeau « génération des sous-tailles en cours » (posé sur `intermediate_image_sizes_advanced`, retiré à la fin de `wp_generate_attachment_metadata`) ; `wp_update_attachment_metadata` ignoré pendant ce drapeau ; diff de l'union ancienne/nouvelle liste de fichiers : `.avif` des fichiers disparus supprimés, seuls les fichiers nouveaux ou d'empreinte changée remis à encoder.
+- Unicité : `pre_wp_unique_filename_file_list` ajoute des noms virtuels (familles `base(-\d+x\d+|-scaled|-rotated|-e\d+)?.ext` dont un `.avif` existe, et noms du registre) au lieu de filtrer `wp_unique_filename`. Registre alimenté par `delete_attachment` (fichiers du média), une écriture par requête.
+- Suffixe : `-noopt(-\d+)?$` (insensible à la casse) sur le nom sans extension.
+- `wp_client_side_media_processing_enabled` → `false` ; `image_save_progressive` → `true` seulement si le MIME est `image/jpeg`.
+- Module Fichiers : dans `includes/Modules/Files/FileManager.php`, suppression / renommage / déplacement d'un `.jpe?g|png` situé sous `uploads/` appliqués aussi au `.avif` frère (fonction utilitaire statique `FileLifecycle::sibling()`).
+- Désactivation : `FileLifecycle::purge_all(): int` supprime tous les `.avif` listés et remet les metas `_lumia_avif*` à zéro (sauf `_lumia_avif_legacy`) ; appelée par `Module::on_deactivate()`. Activation : `FileLifecycle::reconcile( int $limit ): int` (empreintes) appelée en tâche de fond.
+- Assertions supplémentaires : `wp media regenerate` (qui supprime par `unlink`) → empreintes divergentes détectées, AVIF supprimés et remis en file ; plusieurs `wp_update_attachment_metadata` pendant un upload → une seule génération utile (`_lumia_avif_gen` final ≤ 2) ; `logo-noopt-1.png` exclu ; réimport de `photo.jpg` alors que seul `photo-300x200.jpg.avif` orphelin existe → autre nom ; suppression d'un JPEG par le module Fichiers → `.avif` frère supprimé ; désactivation → plus aucun `.avif` généré.
 
 **Files :**
 - Create : `includes/Modules/ImageOptimizer/AvifState.php`, `includes/Modules/ImageOptimizer/FileLifecycle.php`
@@ -189,6 +210,14 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 
 ### Task 5 : `QueueRunner` (vidage en arrière-plan)
 
+**Compléments (spec §9.1, §9.5, §9.6) — prévalent sur le texte ci-dessous :**
+- Aucun encodage en CLI : sous `WP_CLI` ou `wp_doing_cron()` en CLI (`PHP_SAPI === 'cli'`), `drain()` ne fait que `trigger()` (boucle locale HTTP). Si `! get_capabilities()['can_encode_here']`, même chose.
+- Verrou `lumia_avif_` + `md5( DB_NAME . $wpdb->prefix . home_url() )` ; avant chaque image `SELECT IS_USED_LOCK(nom) = CONNECTION_ID()`, sinon arrêt.
+- `shutdown` priorité `PHP_INT_MAX` ; avant `fastcgi_finish_request()` : `session_write_close()` si session active, `ignore_user_abort( true )` ; `set_time_limit( 120 )` avant chaque image.
+- `process_one()` : n'encode que les fichiers non frais (`AvifState::is_fresh`) ; passe à l'encodeur `$can_commit = fn() => AvifState::gen( $id ) === $gen_lu_au_debut` ; relit la génération avant d'écrire le statut (génération changée → laisser `pending`).
+- Origine `bulk` : pause après chaque image (`usleep`) égale au temps d'encodage mesuré de cette image.
+- Assertions supplémentaires : `run.sh wp nginx eval 'do_action("lumia_image_optimizer_drain");'` dans le conteneur `cron` → aucun encodage dans ce processus (horodatage d'écriture du `.avif` postérieur et PID FPM consigné dans `_lumia_avif`), AVIF produit par FPM ; mise en file pendant un encodage (génération changée) → résultat jeté, image retraitée ; `latency nginx / 30` pendant un bulk de 20 images 4000 px → médiane consignée dans le README (pas de seuil bloquant, mais < 2 × la médiane au repos attendue).
+
 **Files :**
 - Create : `includes/Modules/ImageOptimizer/QueueRunner.php`
 - Modify : `includes/Modules/ImageOptimizer/Module.php` (`init()`, cron, désactivation)
@@ -213,6 +242,13 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 ---
 
 ### Task 6 : livraison — `DeliveryProbe` et `HtaccessWriter`
+
+**Compléments (spec §9.2, §9.10) — prévalent sur le texte ci-dessous :**
+- Bloc `.htaccess` : tout est sous `<IfModule>` ; `RewriteEngine On` suivi de `RewriteOptions Inherit` ; `FilesMatch "\.(?i:jpe?g|png)(\.avif)?$"`. Après écriture, la même requête teste aussi une URL témoin sans AVIF (200 + `image/png`) ; 500, réponse incorrecte ou test non vérifiable → `remove()` immédiat.
+- Chaque requête du test est faite deux fois en ordre alterné ; lecture de `cf-cache-status` ; CDN inconnu détecté → `none`.
+- États : `incorrect` → `none` tout de suite ; `unreachable` → état précédent conservé jusqu'à 3 échecs consécutifs (compteur dans l'option), sauf juste après une écriture `.htaccess`.
+- Test navigateur : l'onglet Delivery lance deux `fetch()` sur la sonde (`Accept: image/avif,*/*` puis `*/*`, `cache: 'no-store'` désactivé volontairement : `cache: 'default'` pour voir le cache intermédiaire) et envoie le résultat à `lumia_image_optimizer_delivery_browser` (nonce + capacité) ; un résultat incorrect force `none`.
+- Assertions supplémentaires : `uploads/.htaccess` actif → requête d'un fichier absent sous `uploads/` toujours traitée par WordPress (404 de WordPress, pas d'Apache) grâce à `Inherit` ; `AllowOverride None` sans `FileInfo` simulé → bloc retiré, aucune réponse 500 laissée ; proxy de cache simulé démarré à froid avec une première requête Chrome puis Outlook → `none`.
 
 **Files :**
 - Create : `includes/Modules/ImageOptimizer/DeliveryProbe.php`, `includes/Modules/ImageOptimizer/HtaccessWriter.php`
@@ -265,6 +301,8 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 
 ### Task 7 : bulk (`BulkProcessor`) et écran du module
 
+**Compléments (spec §9.4, §9.5) :** « Lancer » met en file avec l'origine `bulk` ; « Arrêter » ne retire que les `pending` d'origine `bulk` ; « Analyser » lance d'abord `FileLifecycle::reconcile()` sur les médias analysés.
+
 **Files :**
 - Modify : `includes/Modules/ImageOptimizer/BulkProcessor.php` (réécriture), `settings-template.php` (onglet Bulk), `assets/admin/js/modules/image-optimizer.js` (partie bulk), `Module.php` (`get_admin_js_data()`, AJAX)
 - Test : `tools/e2e-images/assert-bulk.php`
@@ -297,6 +335,15 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 
 ### Task 9 : migration de l'existant (`wp lumia images migrate`)
 
+**Compléments (spec §9.1, §9.3, §9.9) — prévalent sur le texte ci-dessous :**
+- Refus si `! get_capabilities()['can_encode_here']`, avec le message exact : `This command needs Imagick with AVIF, JPEG and PNG support in this PHP process. On the Dokploy template, run it in the wordpress container: docker exec -u www-data <project>-wordpress-1 php /tmp/wp-cli.phar lumia images migrate`. Assertion : lancé depuis le conteneur `cron` → code ≠ 0 et ce message.
+- Hooks du module suspendus pendant la commande (`FileLifecycle::suspend()` / `resume()`).
+- Journal `_lumia_migration` écrit avant toute opération sur les fichiers ; reprise étape par étape ; plus de variable `LUMIA_MIGRATE_DIE_AFTER_FILES` : le test d'interruption tue le processus (`kill -9`) après l'apparition du journal à l'étape « files written ».
+- Cas 2 : `link()` (repli `copy()`) de `photo.avif` vers `repli.ext.avif` ; anciens `.avif`/`.webp` **jamais supprimés**, listés dans `_lumia_avif_legacy`. Format : PNG si alpha utilisé ou ≤ 256 couleurs distinctes (`Imagick::getImageColors()`), sinon JPEG q90 progressif. Collisions résolues par famille.
+- Cas 1 : `WP_Image_Editor` (Imagick) pour chaque taille enregistrée de `wp_get_registered_image_subsizes()`, une seule écriture de metadata ; échec → état d'avant restauré depuis le journal. URL des tailles héritées sans équivalent → taille nouvelle la plus proche en largeur.
+- `original_image` retiré de la metadata si absent du disque.
+- Assertions supplémentaires : après migration, chaque **ancienne** URL `.avif`/`.webp` répond toujours 200 ; logo opaque à aplats → repli PNG ; suppression définitive d'un média migré → fichiers hérités supprimés aussi.
+
 **Files :**
 - Create : `includes/Modules/ImageOptimizer/MigrationCommand.php`, `tools/e2e-images/seed-legacy.php`, `tools/e2e-images/crawl-check.sh`, `tools/e2e-images/assert-migration.php`
 - Modify : `Module.php` (enregistrement `WP_CLI::add_command( 'lumia images', MigrationCommand::class )` si `WP_CLI`)
@@ -316,6 +363,8 @@ Matrice des clients (dans `lib.sh`, valeurs exactes) :
 ---
 
 ### Task 10 : nettoyage, désinstallation, doc, traductions, revue finale
+
+**Compléments (spec §9.11) :** `includes/Core/Deactivator.php` et `uninstall.php` passent à `wp_unschedule_hook()` ; exception `nopriv` + HMAC documentée dans `docs/core.md` (section AJAX) ; banc `tools/e2e` relancé (`up`, `seed-skmt`, `install-lumia`, `assert-migration`) car `FromSkmt` dépend de `BACKUP_DIR`/`LEGACY_BACKUP_DIR` ; doc du module : corriger « AVIF delegate is missing » (vrai en CLI seulement), documenter le principal ≤ 2560 px brut et le cache d'un an après bascule « format d'origine ».
 
 **Files :**
 - Modify : `Module.php` (retrait du code mort : `process_*`, sauvegardes, `restore_original`, `reprocess_attachment`, `with_format`, statistiques globales ; garder `BACKUP_DIR` et `LEGACY_BACKUP_DIR` utilisés par `FromSkmt`), `uninstall.php` (appel d'un nettoyage de fichiers propre au module), `templates/admin/settings.php` (badges : AVIF + mode de livraison, plus de WebP), `docs/modules/image-optimizer.md` (réécrit), `docs/README.md` si index, `languages/lumia-tools.pot`, `languages/lumia-tools-fr_FR.po`, `.mo`, `.l10n.php` selon l'outillage
