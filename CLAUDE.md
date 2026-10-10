@@ -4,7 +4,7 @@ Working guide for Claude Code on this repository. The rules below are absolute; 
 
 ## The project
 
-**Lümia Tools** (repository `agence-lumia/lumia-tools`, text domain and slug `lumia-tools`) is a modular WordPress plugin (PHP 8.0+, WP 6.9+). It is the former Studio Kyne Mini Tools (SKMT), renamed in 2.0.0. No build step, no runtime Composer, no npm: plain PHP with a home-grown PSR-4 autoloader (`Lumia\Tools\` → `includes/`). No automated tests of the plugin itself (the only checks are `composer check`, the language-file gate and the Docker bench, see below). Third-party JS is shipped as is under `assets/admin/js/vendor/`, never bundled.
+**Lümia Tools** (repository `agence-lumia/lumia-tools`, text domain and slug `lumia-tools`) is a modular WordPress plugin (PHP 8.0+, WP 6.9+). It is the former Studio Kyne Mini Tools (SKMT), renamed in 2.0.0. No build step in development, no runtime Composer, no npm: plain PHP with a home-grown PSR-4 autoloader (`Lumia\Tools\` → `includes/`). The source assets stay readable; only the release zip is minified (see below). No automated tests of the plugin itself (the only checks are `composer check`, the language-file gate and the Docker bench, see below). Third-party JS is shipped as is under `assets/admin/js/vendor/`, never bundled.
 
 Ten modules under `includes/Modules/`: Security, WhiteLabel, ImageOptimizer, MenuCreator, Login, Files, Media, Database, ActivityLog, Smtp. Each extends `AbstractModule`, registers its hooks in `init()`, sanitizes what it persists itself (`save_settings()` — the core applies nothing) and declares its uninstall keys. Settings: `lumia_settings` (global + module state) and `lumia_module_{id}` (per module), merged **recursively** over the defaults.
 
@@ -12,7 +12,7 @@ Lifecycle: `plugins_loaded` → `Plugin::instance()` → `init` → text domain 
 
 ## Absolute rules
 
-- **Never bump the version by hand.** CI does it (`* Version:` and `LUMIA_VERSION` in `lumia-tools.php`, always in step). A push to `dev` → automatic pre-release; stable → `workflow_dispatch` on `main`, input `bump` = `patch` (default), `minor` or `major` (`gh workflow run release-please.yml -f bump=minor`). The release asset is `lumia-tools-<version>.zip` (folder `lumia-tools/`).
+- **Never bump the version by hand.** CI does it (`* Version:` and `LUMIA_VERSION` in `lumia-tools.php`, always in step). A push to `dev` → automatic pre-release; stable → `workflow_dispatch` on `main`, input `bump` = `patch` (default), `minor` or `major` (`gh workflow run release-please.yml -f bump=minor`). The release asset is `lumia-tools-<version>.zip` (folder `lumia-tools/`), built by `tools/build/build-zip.sh` in both release workflows (and on every PR by `lint.yml`): excludes from `tools/build/zip-excludes.txt`, `.po`/`.pot` left out, a `.l10n.php` compiled next to the `.mo`, JS/CSS minified with a pinned esbuild ([docs/core.md](docs/core.md#release-zip)).
 - **`ABSPATH` guard** on every PHP file: `defined( 'ABSPATH' ) || exit;` after `namespace`, otherwise after the docblock.
 - **Never a drawn or approximated SVG.** Every icon comes from [Lucide](https://lucide.dev) (lucide-static v1.34.0), the official file fetched as is — in PHP (`Admin::get_icon_paths()`) as in the modules' JS.
 - **Design-system components only** (`components.css` + `admin.js`): modals, tooltips, toasts, buttons, forms, tabs. Do not code an equivalent. See [docs/design-system.md](docs/design-system.md).
@@ -84,7 +84,7 @@ Allow-list of files that may contain a legacy name in code or data (anything els
 
 ## Docker bench (`tools/e2e/`)
 
-A disposable WordPress + MariaDB + wp-cli bench that installs SKMT as it was before the rename (`8d4cd85`) with realistic data, captures the visible admin text, then installs the working tree to check the migration, the compatibility layer and the texts. Nothing in `tools/` is shipped (the release workflows exclude it). The mu-plugin `mu-plugins/e2e-auth.php` logs in any request carrying `X-E2E-User`: **it must never leave the bench**.
+A disposable WordPress + MariaDB + wp-cli bench that installs SKMT as it was before the rename (`8d4cd85`) with realistic data, captures the visible admin text, then installs the working tree to check the migration, the compatibility layer and the texts. Nothing in `tools/` is shipped (`tools/build/zip-excludes.txt`). `LUMIA_ZIP=<zip> tools/e2e/run.sh install-lumia` installs a prebuilt zip (a `build-zip.sh` output) instead of the working tree. The mu-plugin `mu-plugins/e2e-auth.php` logs in any request carrying `X-E2E-User`: **it must never leave the bench**.
 
 ```bash
 tools/e2e/run.sh up                       # start (http://localhost:8089, admin / admin)

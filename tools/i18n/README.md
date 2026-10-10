@@ -1,6 +1,6 @@
 # Language-file tooling
 
-Development only: `tools/` is never shipped (anchored `/tools` exclude in the release workflows).
+Development only: `tools/` is never shipped (anchored `/tools` exclude in `tools/build/zip-excludes.txt`). The release zip carries the `.mo` and a `.l10n.php` compiled from the `.po` by `tools/build/build-zip.sh`, never the `.po` / `.pot`.
 
 Source strings in the code are English; the French catalogue is
 `languages/lumia-tools-fr_FR.po` (compiled to `.mo`). **The `.po` is the only source
