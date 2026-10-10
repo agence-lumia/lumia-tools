@@ -98,6 +98,13 @@ jobs:
           sed -E -i "s/^ \* Version:[[:space:]]+.*/ * Version:     ${VERSION}/" lumia-tools.php
           sed -E -i "s/(define[[:space:]]*\([[:space:]]*'LUMIA_VERSION'[[:space:]]*,[[:space:]]*')[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]*)?/\1${VERSION}/" lumia-tools.php
 
+      # Built before the version commit and the tag are pushed: a failed build
+      # leaves no tag without a release.
+      - name: Build release zip
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: bash tools/build/build-zip.sh "$VERSION" "dist/lumia-tools-${VERSION}.zip"
+
       - name: Commit release version
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -129,11 +136,6 @@ jobs:
 
           git tag -a "$tag" -m "Release ${tag}"
           git push origin "$tag"
-
-      - name: Build release zip
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: bash tools/build/build-zip.sh "$VERSION" "dist/lumia-tools-${VERSION}.zip"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
