@@ -75,6 +75,7 @@ foreach ( (array) glob( $base . '/lumia-originals-*', GLOB_ONLYDIR ) as $old_dir
 	seed_rmdir( (string) $old_dir );
 }
 delete_option( 'lumia_e2e_legacy_hero' );
+delete_option( 'lumia_e2e_legacy_double' );
 // Names deleted by earlier runs would push the seeded names to -1 (registry, spec 9.4).
 delete_option( 'lumia_module_image_optimizer_tombstones' );
 delete_option( 'lumia_module_image_optimizer_migration_pairs' );
@@ -346,6 +347,10 @@ update_post_meta( $page_id, 'rank_math_facebook_image_id', $ids['photo'] );
 update_post_meta( $page_id, '_e2e_json', wp_slash( wp_json_encode( [ 'src' => $urls['webp-photo'] ] ) ) ); // Slashed: update_post_meta() unslashes.
 // An option.
 update_option( 'lumia_e2e_legacy_hero', [ 'image' => $urls['collide'] ], false );
+// Doubly serialized: a plugin that serializes its value itself before WordPress does.
+delete_option( 'lumia_e2e_legacy_double' );
+update_option( 'lumia_e2e_legacy_double', serialize( [ 'image' => $urls['logo'], 'label' => "\u{2192} x" ] ), false ); // phpcs:ignore
+update_post_meta( $page_id, '_e2e_double', wp_slash( serialize( [ 'bg' => [ 'url' => $urls['alpha'] ] ] ) ) ); // phpcs:ignore
 
 // Bricks' external CSS file.
 wp_mkdir_p( dirname( $css_file ) );

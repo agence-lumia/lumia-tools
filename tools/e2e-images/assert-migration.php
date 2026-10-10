@@ -497,6 +497,15 @@ if ( 'final' === $phase ) {
 	$option = get_option( 'lumia_e2e_legacy_hero' );
 	am_check( is_array( $option ) && str_ends_with( $option['image'], '/e2e-legacy/collide-1.jpg' ), 'option: collide-1.jpg' );
 
+	// Doubly serialized values: the inner string must still unserialize (its s:N: lengths
+	// recomputed), with the URL rewritten.
+	$double = get_option( 'lumia_e2e_legacy_double' );
+	$inner  = is_string( $double ) ? @unserialize( $double, [ 'allowed_classes' => false ] ) : false; // phpcs:ignore
+	am_check( is_array( $inner ) && str_ends_with( (string) $inner['image'], '/e2e-legacy/logo.png' ) && "\u{2192} x" === $inner['label'], 'doubly serialized option: still valid, logo.png' );
+	$double = get_post_meta( $page_id, '_e2e_double', true );
+	$inner  = is_string( $double ) ? @unserialize( $double, [ 'allowed_classes' => false ] ) : false; // phpcs:ignore
+	am_check( is_array( $inner ) && str_ends_with( (string) $inner['bg']['url'], '/e2e-legacy/alpha.png' ), 'doubly serialized meta: still valid, alpha.png' );
+
 	$css = (string) file_get_contents( am_abs( $m['css'] ) );
 	am_check( ! preg_match( $legacy_re, $css ) && false !== strpos( $css, '/e2e-legacy/photo.jpg)' ) && false !== strpos( $css, '/e2e-legacy/big-lost-scaled.jpg"' ), 'Bricks CSS file rewritten (photo.jpg, big-lost-scaled.jpg)' );
 	am_check( false === get_option( 'lumia_module_image_optimizer_migration_pairs' ), 'pending CSS pairs option cleared' );

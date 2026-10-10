@@ -23,7 +23,9 @@ defined( 'ABSPATH' ) || exit;
  *    re-serialized — a textual replacement would corrupt the string
  *    lengths (`s:42:"…"`) and break the value. Only stdClass is
  *    instantiated: any other class stays incomplete (no __wakeup) and
- *    is re-serialized under its original name, intact;
+ *    is re-serialized under its original name, intact. A string found
+ *    inside is checked again: a doubly serialized value (a plugin that
+ *    serializes before WordPress does) is handled the same way;
  *  - a single query per table and per call, whatever the number of
  *    media items: the stems (`/2024/01/photo`) are gathered in one OR.
  *    The migration thus groups the pairs of a whole batch before calling
@@ -206,7 +208,11 @@ class UrlRewriter {
 	 */
 	private function replace_recursive( $data, array $pairs ) {
 		if ( is_string( $data ) ) {
-			return $this->replace_in_string( $data, $pairs );
+			// A string that is itself serialized (a plugin that serializes before
+			// update_option() / update_post_meta(), which serialize again): unserialized,
+			// walked and re-serialized like the outer value, through replace_in_value().
+			// A plain replacement would break its inner `s:N:` lengths.
+			return $this->replace_in_value( $data, $pairs );
 		}
 		if ( is_array( $data ) ) {
 			foreach ( $data as $k => $v ) {
