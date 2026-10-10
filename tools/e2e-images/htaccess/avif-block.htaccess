@@ -1,0 +1,18 @@
+# BEGIN Lumia Tools AVIF
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteOptions Inherit
+RewriteCond %{QUERY_STRING} !(^|&)original(=|&|$)
+RewriteCond %{HTTP_ACCEPT} image/avif
+RewriteCond %{REQUEST_FILENAME}.avif -f
+RewriteRule ^(.+\.(?:jpe?g|png))$ $1.avif [NC,T=image/avif,L]
+</IfModule>
+<IfModule mod_headers.c>
+<FilesMatch "\.(?i:jpe?g|png)(\.avif)?$">
+Header append Vary Accept
+</FilesMatch>
+</IfModule>
+<IfModule mod_mime.c>
+AddType image/avif .avif
+</IfModule>
+# END Lumia Tools AVIF
