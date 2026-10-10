@@ -18,6 +18,13 @@ class MediaLibrary {
 	/** Formats that get AVIF siblings. */
 	private const SOURCE_MIMES = [ 'image/jpeg', 'image/png' ];
 
+	/**
+	 * Attachment types whose served file may be a JPEG WordPress made (a HEIC upload converted
+	 * by WordPress keeps `image/heic` on its attachment): the file itself decides, as in the
+	 * queue (QueueRunner::ELIGIBLE_MIMES, AvifEncoder).
+	 */
+	private const CONVERTED_MIMES = [ 'image/heic', 'image/heif' ];
+
 	/** Formats an uploaded file can keep when it is not converted (spec 9.13). */
 	private const MODERN_MIMES = [ 'image/avif', 'image/webp' ];
 
@@ -80,7 +87,7 @@ class MediaLibrary {
 			return;
 		}
 
-		$mime = (string) get_post_mime_type( $post_id );
+		$mime = $this->source_mime( $post_id );
 
 		if ( strpos( $mime, 'image/' ) !== 0 ) {
 			echo '<span class="lumia-badge lumia-badge--inactive">—</span>';
@@ -269,7 +276,7 @@ class MediaLibrary {
 	 * the display.
 	 */
 	public function render_panel( int $attachment_id ): string {
-		$mime  = (string) get_post_mime_type( $attachment_id );
+		$mime  = $this->source_mime( $attachment_id );
 		$state = AvifState::get( $attachment_id );
 
 		// An uploaded AVIF / WebP left as is (animated, conversion off): only the reason.
@@ -517,14 +524,15 @@ class MediaLibrary {
 	}
 
 	/**
-	 * `pending` (origin `manual`, new generation), siblings deleted and fingerprints cleared:
-	 * the queue skips a file whose recorded result is still fresh, so nothing is kept, and a
-	 * stale AVIF is never served while the new one is encoded. The queue listens to the
-	 * `lumia_image_optimizer_enqueued` action.
+	 * Siblings deleted and fingerprints cleared, then `pending` (origin `manual`, new
+	 * generation): the queue skips a file whose recorded result is still fresh, so nothing is
+	 * kept, and a stale AVIF is never served while the new one is encoded. Same order as
+	 * FileLifecycle::sync(): a worker that picks the item up the moment it is `pending` finds
+	 * the files already reset. The queue listens to the `lumia_image_optimizer_enqueued` action.
 	 */
 	private function queue( int $attachment_id ): void {
-		AvifState::enqueue( $attachment_id, 'manual' );
 		$this->reset_files( $attachment_id );
+		AvifState::enqueue( $attachment_id, 'manual' );
 
 		/** This action is documented in includes/Modules/ImageOptimizer/FileLifecycle.php. */
 		do_action( 'lumia_image_optimizer_enqueued', $attachment_id );
@@ -549,6 +557,23 @@ class MediaLibrary {
 	}
 
 	/**
+	 * Type of the media item's served file: the attachment's MIME type, except for a HEIC /
+	 * HEIF upload, whose served file is the JPEG (or PNG) WordPress converted it to: the real
+	 * type of that file is read (`wp_get_image_mime()`), like the queue does.
+	 */
+	private function source_mime( int $attachment_id ): string {
+		$mime = (string) get_post_mime_type( $attachment_id );
+		if ( ! in_array( $mime, self::CONVERTED_MIMES, true ) ) {
+			return $mime;
+		}
+
+		$file = (string) get_attached_file( $attachment_id );
+		$real = '' !== $file && is_file( $file ) ? (string) wp_get_image_mime( $file ) : '';
+
+		return in_array( $real, self::SOURCE_MIMES, true ) ? $real : $mime;
+	}
+
+	/**
 	 * Checks nonce, capability and media item; returns the ID or answers with an error.
 	 */
 	private function get_request_attachment(): int {
@@ -564,7 +589,7 @@ class MediaLibrary {
 			wp_send_json_error( __( 'Invalid ID.', 'lumia-tools' ) );
 		}
 
-		$mime = (string) get_post_mime_type( $attachment_id );
+		$mime = $this->source_mime( $attachment_id );
 		if ( ! in_array( $mime, self::SOURCE_MIMES, true ) ) {
 			wp_send_json_error( __( 'Unsupported format.', 'lumia-tools' ) );
 		}

@@ -463,6 +463,49 @@ AvifState::set_status( $jpg, AvifState::EXCLUDED );
 $res = ml_ajax( 'lumia_image_optimizer_media_regenerate', [ 'attachment_id' => $jpg ] );
 ml_check( is_array( $res ) && empty( $res['success'] ) && ml_status( $jpg ) === AvifState::EXCLUDED, 'excluded: regenerate refused' );
 
+// Order of a regeneration: when the item becomes `pending` (a worker may pick it up at once),
+// its siblings are already gone and its fingerprints cleared. Called in this process, through
+// the same private method the AJAX action uses, with a watcher on the status write.
+AvifState::clear( $jpg );
+ml_state( $jpg, $lc, AvifState::DONE, [ [ 1000, 370 ], [ 400, 150 ] ] );
+$seen    = null;
+$watcher = static function ( $meta_id, $object_id, $meta_key, $value ) use ( $jpg, $lc, &$seen ): void {
+	if ( (int) $object_id === $jpg && AvifState::STATUS === $meta_key && AvifState::PENDING === $value ) {
+		$state = AvifState::get( $jpg );
+		$seen  = [
+			'siblings' => count( ml_siblings( $jpg, $lc ) ),
+			'fresh'    => count( array_filter( $state['sizes'], static fn( $e ) => null !== $e['bytes'] ) ),
+		];
+	}
+};
+add_action( 'updated_post_meta', $watcher, 10, 4 );
+add_action( 'added_post_meta', $watcher, 10, 4 );
+$media_library = new \Lumia\Tools\Modules\ImageOptimizer\MediaLibrary( $module, new \Lumia\Tools\Modules\ImageOptimizer\ImageProcessor() );
+$queue_method  = new ReflectionMethod( $media_library, 'queue' );
+$queue_method->invoke( $media_library, $jpg );
+remove_action( 'updated_post_meta', $watcher, 10 );
+remove_action( 'added_post_meta', $watcher, 10 );
+ml_check( is_array( $seen ) && 0 === $seen['siblings'] && 0 === $seen['fresh'], 'regenerate: siblings deleted and fingerprints cleared before the item becomes pending (' . wp_json_encode( $seen ) . ')' );
+
+// --- HEIC upload converted by WordPress (attachment image/heic, served file a JPEG) ------------
+
+WP_CLI::log( 'HEIC attachment' );
+
+$heic = ml_import( 'photo-p3.jpg', "ml-{$run}-heic.jpg" );
+$GLOBALS['wpdb']->update( $GLOBALS['wpdb']->posts, [ 'post_mime_type' => 'image/heic' ], [ 'ID' => $heic ] );
+clean_post_cache( $heic );
+ml_check( 'image/heic' === get_post_mime_type( $heic ), 'attachment typed image/heic, its file a JPEG' );
+AvifState::clear( $heic );
+ml_has( ml_column( $heic ), 'Not generated', 'HEIC: column treats the JPEG it was converted to ("Not generated")' );
+$panel = ml_panel( $heic );
+ml_has( $panel, 'Serve the original format', 'HEIC: panel rendered with its toggle' );
+ml_has( $panel, 'data-lumia-io-action="regenerate"', 'HEIC: regenerate offered' );
+$res = ml_ajax( 'lumia_image_optimizer_media_regenerate', [ 'attachment_id' => $heic ] );
+ml_check( is_array( $res ) && ! empty( $res['success'] ), 'HEIC: regenerate accepted (' . ( $res['data']['message'] ?? wp_json_encode( $res ) ) . ')' );
+ml_check( in_array( ml_status( $heic ), [ AvifState::PENDING, AvifState::PROCESSING, AvifState::DONE, AvifState::PARTIAL ], true ), 'HEIC: queued like the queue sees it (' . ml_status( $heic ) . ')' );
+$res = ml_ajax( 'lumia_image_optimizer_media_toggle_original', [ 'attachment_id' => $heic, 'enabled' => '1' ] );
+ml_check( is_array( $res ) && ! empty( $res['success'] ) && AvifState::EXCLUDED === ml_status( $heic ), 'HEIC: original format can be switched on' );
+
 // --- Screens: list column, attachment form ------------------------------------------------------
 
 WP_CLI::log( 'Screens' );
