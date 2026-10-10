@@ -87,6 +87,13 @@ import`; the command prints id and URL of each.
 | `logo-flat.png` | 300x100, flat colours |
 | `anim.gif` | two frames |
 | `corrupt.jpg` | valid JPEG header, data cut after 700 bytes |
+| `visual-alpha-noopt.png` | copy of `visual-alpha.png` under an excluded name (not imported) |
+| `modern-opaque.avif`, `modern-alpha.webp`, `modern-anim.webp` | opaque AVIF, WebP with transparency, two-frame WebP: uploads converted (or not) by spec 9.13 (not imported; skipped with a message where Imagick cannot write the format) |
+
+`run.sh assert` generates the fixtures too when they are missing: `assert-lifecycle.php` sideloads
+its own copies (spec 3, 4, 9.4, 9.5, 9.7, 9.8, 9.13: state, queueing, siblings, name registry,
+settings v2, AVIF/WebP upload conversion, Files module, deactivation purge). It needs the plugin
+installed and the Image Optimizer module active; it encodes nothing (fake siblings).
 
 The P3 profile is built by hand (matrix/TRC v2.4 profile, Apple's D50-adapted primaries): valid for
 ImageMagick and lcms, not byte-identical to Apple's.
