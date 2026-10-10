@@ -91,11 +91,12 @@ class Admin {
 	public function add_menu_page(): void {
 		add_menu_page(
 			__( 'Lümia Tools', 'lumia-tools' ),
-			__( 'Lümia', 'lumia-tools' ),
+			__( 'Lümia Tools', 'lumia-tools' ),
 			'manage_options',
 			$this->slug,
 			[ $this, 'render_page' ],
-			plugins_url( 'assets/admin/images/menu-icon.svg', LUMIA_PLUGIN_FILE ),
+			// Versioned: the Dokploy template's nginx serves SVGs as `immutable` for a year.
+			add_query_arg( 'ver', LUMIA_VERSION, plugins_url( 'assets/admin/images/menu-icon.svg', LUMIA_PLUGIN_FILE ) ),
 			99
 		);
 
@@ -151,7 +152,7 @@ class Admin {
 			return;
 		}
 
-		$top_label = __( 'Lümia', 'lumia-tools' );
+		$top_label = __( 'Lümia Tools', 'lumia-tools' );
 		$seen      = [];
 		$filtered  = [];
 
