@@ -95,7 +95,8 @@ class Admin {
 			'manage_options',
 			$this->slug,
 			[ $this, 'render_page' ],
-			plugins_url( 'assets/admin/images/menu-icon.svg', LUMIA_PLUGIN_FILE ),
+			// Versioned: the Dokploy template's nginx serves SVGs as `immutable` for a year.
+			add_query_arg( 'ver', LUMIA_VERSION, plugins_url( 'assets/admin/images/menu-icon.svg', LUMIA_PLUGIN_FILE ) ),
 			99
 		);
 

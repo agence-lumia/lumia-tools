@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T09:49:47+00:00\n"
+"POT-Creation-Date: 2026-10-10T09:52:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -18,7 +18,7 @@ msgstr ""
 #: lumia-tools.php
 #: includes/Admin/Admin.php:93
 #: includes/Admin/Admin.php:94
-#: includes/Admin/Admin.php:154
+#: includes/Admin/Admin.php:155
 msgid "Lümia Tools"
 msgstr ""
 
@@ -43,20 +43,20 @@ msgstr ""
 msgid "https://agence-lumia.com"
 msgstr ""
 
-#: includes/Admin/Admin.php:111
+#: includes/Admin/Admin.php:112
 #: templates/admin/dashboard.php:25
 #: templates/components/sidebar.php:14
 msgid "Overview"
 msgstr ""
 
-#: includes/Admin/Admin.php:112
+#: includes/Admin/Admin.php:113
 #: includes/Modules/ActivityLog/Module.php:482
 #: templates/admin/modules.php:13
 #: templates/components/sidebar.php:20
 msgid "Modules"
 msgstr ""
 
-#: includes/Admin/Admin.php:113
+#: includes/Admin/Admin.php:114
 #: includes/Modules/ActivityLog/settings-template.php:31
 #: includes/Modules/ImageOptimizer/settings-template.php:19
 #: includes/Modules/Smtp/settings-template.php:45
@@ -65,26 +65,26 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Admin.php:224
-#: includes/Admin/Admin.php:379
+#: includes/Admin/Admin.php:225
+#: includes/Admin/Admin.php:380
 msgid "Settings saved successfully."
 msgstr ""
 
-#: includes/Admin/Admin.php:225
+#: includes/Admin/Admin.php:226
 msgid "An error occurred."
 msgstr ""
 
-#: includes/Admin/Admin.php:226
+#: includes/Admin/Admin.php:227
 msgid "Are you sure?"
 msgstr ""
 
-#: includes/Admin/Admin.php:227
-#: includes/Admin/Admin.php:561
+#: includes/Admin/Admin.php:228
+#: includes/Admin/Admin.php:562
 msgid "Confirm"
 msgstr ""
 
-#: includes/Admin/Admin.php:228
-#: includes/Admin/Admin.php:558
+#: includes/Admin/Admin.php:229
+#: includes/Admin/Admin.php:559
 #: includes/Modules/Database/settings-template.php:129
 #: includes/Modules/Database/settings-template.php:145
 #: includes/Modules/Files/settings-template.php:126
@@ -95,122 +95,122 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: includes/Admin/Admin.php:229
+#: includes/Admin/Admin.php:230
 #: includes/Modules/ImageOptimizer/Module.php:227
 #: includes/Modules/Media/Module.php:370
 msgid "Error"
 msgstr ""
 
-#: includes/Admin/Admin.php:231
+#: includes/Admin/Admin.php:232
 #: templates/admin/dashboard.php:96
 #: templates/admin/modules.php:47
 msgid "Configure"
 msgstr ""
 
-#: includes/Admin/Admin.php:232
+#: includes/Admin/Admin.php:233
 #: includes/Modules/MenuCreator/Module.php:1321
 msgid "Unsaved changes"
 msgstr ""
 
-#: includes/Admin/Admin.php:233
+#: includes/Admin/Admin.php:234
 msgid "You have unsaved changes. Leave without saving?"
 msgstr ""
 
-#: includes/Admin/Admin.php:234
+#: includes/Admin/Admin.php:235
 msgid "Leave without saving"
 msgstr ""
 
-#: includes/Admin/Admin.php:235
+#: includes/Admin/Admin.php:236
 msgid "Stay on this page"
 msgstr ""
 
-#: includes/Admin/Admin.php:316
-#: includes/Admin/Admin.php:324
+#: includes/Admin/Admin.php:317
+#: includes/Admin/Admin.php:325
 msgid "You do not have the required permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:380
-#: includes/Admin/Admin.php:842
+#: includes/Admin/Admin.php:381
+#: includes/Admin/Admin.php:843
 msgid "Module activated."
 msgstr ""
 
-#: includes/Admin/Admin.php:381
-#: includes/Admin/Admin.php:846
+#: includes/Admin/Admin.php:382
+#: includes/Admin/Admin.php:847
 msgid "Module deactivated."
 msgstr ""
 
-#: includes/Admin/Admin.php:382
+#: includes/Admin/Admin.php:383
 msgid "Modules updated."
 msgstr ""
 
-#: includes/Admin/Admin.php:383
+#: includes/Admin/Admin.php:384
 msgid "Update check completed."
 msgstr ""
 
-#: includes/Admin/Admin.php:384
+#: includes/Admin/Admin.php:385
 msgid "Configuration reset to default values."
 msgstr ""
 
-#: includes/Admin/Admin.php:385
+#: includes/Admin/Admin.php:386
 msgid "Configuration imported successfully."
 msgstr ""
 
-#: includes/Admin/Admin.php:386
+#: includes/Admin/Admin.php:387
 msgid "Error while loading the file."
 msgstr ""
 
-#: includes/Admin/Admin.php:387
+#: includes/Admin/Admin.php:388
 msgid "The JSON file is invalid or incompatible."
 msgstr ""
 
-#: includes/Admin/Admin.php:388
+#: includes/Admin/Admin.php:389
 msgid "The file exceeds the maximum allowed size (2 MB)."
 msgstr ""
 
-#: includes/Admin/Admin.php:505
-#: includes/Admin/Admin.php:607
-#: includes/Admin/Admin.php:615
+#: includes/Admin/Admin.php:506
+#: includes/Admin/Admin.php:608
+#: includes/Admin/Admin.php:616
 msgid "Notifications"
 msgstr ""
 
-#: includes/Admin/Admin.php:530
+#: includes/Admin/Admin.php:531
 msgid "No-index"
 msgstr ""
 
-#: includes/Admin/Admin.php:534
+#: includes/Admin/Admin.php:535
 msgid "Search engines are asked not to index this site (Settings > Reading)."
 msgstr ""
 
-#: includes/Admin/Admin.php:598
-#: includes/Admin/Admin.php:608
+#: includes/Admin/Admin.php:599
+#: includes/Admin/Admin.php:609
 #: includes/Modules/ActivityLog/settings-template.php:229
 #: includes/Modules/Files/settings-template.php:100
 #: includes/Modules/Smtp/settings-template.php:476
 msgid "Close"
 msgstr ""
 
-#: includes/Admin/Admin.php:599
+#: includes/Admin/Admin.php:600
 msgid "No notifications"
 msgstr ""
 
-#: includes/Admin/Admin.php:600
+#: includes/Admin/Admin.php:601
 msgid "Lümia"
 msgstr ""
 
-#: includes/Admin/Admin.php:605
+#: includes/Admin/Admin.php:606
 msgid "Notification center"
 msgstr ""
 
-#: includes/Admin/Admin.php:698
-#: includes/Admin/Admin.php:721
-#: includes/Admin/Admin.php:756
-#: includes/Admin/Admin.php:788
-#: includes/Admin/Admin.php:830
-#: includes/Admin/Admin.php:876
-#: includes/Admin/Admin.php:937
-#: includes/Admin/Admin.php:968
-#: includes/Admin/Admin.php:1007
-#: includes/Admin/Admin.php:1048
+#: includes/Admin/Admin.php:699
+#: includes/Admin/Admin.php:722
+#: includes/Admin/Admin.php:757
+#: includes/Admin/Admin.php:789
+#: includes/Admin/Admin.php:831
+#: includes/Admin/Admin.php:877
+#: includes/Admin/Admin.php:938
+#: includes/Admin/Admin.php:969
+#: includes/Admin/Admin.php:1008
+#: includes/Admin/Admin.php:1049
 #: includes/Modules/ActivityLog/Module.php:191
 #: includes/Modules/ActivityLog/Module.php:223
 #: includes/Modules/Database/Module.php:229
@@ -229,23 +229,23 @@ msgstr ""
 msgid "Insufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:702
+#: includes/Admin/Admin.php:703
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:363
 msgid "Invalid ID."
 msgstr ""
 
-#: includes/Admin/Admin.php:717
-#: includes/Admin/Admin.php:784
-#: includes/Admin/Admin.php:826
-#: includes/Admin/Admin.php:872
-#: includes/Admin/Admin.php:933
-#: includes/Admin/Admin.php:964
-#: includes/Admin/Admin.php:1003
-#: includes/Admin/Admin.php:1044
+#: includes/Admin/Admin.php:718
+#: includes/Admin/Admin.php:785
+#: includes/Admin/Admin.php:827
+#: includes/Admin/Admin.php:873
+#: includes/Admin/Admin.php:934
+#: includes/Admin/Admin.php:965
+#: includes/Admin/Admin.php:1004
+#: includes/Admin/Admin.php:1045
 msgid "Invalid nonce."
 msgstr ""
 
-#: includes/Admin/Admin.php:837
+#: includes/Admin/Admin.php:838
 #: includes/Modules/Database/Module.php:478
 #: includes/Modules/Database/Module.php:518
 msgid "Invalid parameters."
