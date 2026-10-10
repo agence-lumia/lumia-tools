@@ -87,9 +87,28 @@ import`; the command prints id and URL of each.
 | `logo-flat.png` | 300x100, flat colours |
 | `anim.gif` | two frames |
 | `corrupt.jpg` | valid JPEG header, data cut after 700 bytes |
+| `photo-16bit.png` | 800x600, 16 bits per channel (encoder fixture, not imported) |
+| `photo-exif6.jpg` | 800x600 stored, EXIF orientation 6 + GPS, small P3 profile (encoder fixture, not imported) |
+| `photo-gps.jpg` | 800x600, orientation 1, EXIF with GPS + XMP APP1 segments, small P3 profile (encoder fixture, not imported) |
+| `photo-cmyk.jpg` | 600x400, CMYK JPEG without a profile (encoder fixture, not imported) |
 
 The P3 profile is built by hand (matrix/TRC v2.4 profile, Apple's D50-adapted primaries): valid for
 ImageMagick and lcms, not byte-identical to Apple's.
+
+## Encoder assertions (`assert-encoder.php`, `assert-encoder-cli.php`)
+
+`AvifEncoder`, `JpegMetadata` and the capabilities of `ImageProcessor`, in the runtime that encodes
+in production (the FPM image's PHP; needs `import-fixtures` and `install-lumia` first):
+
+```bash
+tools/e2e-images/run.sh install-lumia nginx
+tools/e2e-images/run.sh assert nginx tools/e2e-images/assert-encoder.php
+tools/e2e-images/run.sh wp-cron nginx eval "$(tail -n +2 tools/e2e-images/assert-encoder-cli.php)"
+```
+
+The second script runs in the template's `cron` container (`wp eval` takes code without the opening
+tag): `can_encode_here` must be false there. It also checks that the capabilities cache of the two
+runtimes does not collide.
 
 ## Client matrix (`lib.sh`)
 

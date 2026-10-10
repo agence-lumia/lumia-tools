@@ -4,7 +4,7 @@
 
 ## Encoder detection
 
-`ImageProcessor::get_capabilities()` probes the encoders with **real 1x1 encodings** (queryFormats/gd_info lie on some builds) and stores the result in a 24 h transient, whose key is tied to the PHP/GD/Imagick versions. This is the only detection: `templates/admin/settings.php` reuses it, there is no second computation any more. `is_animated()` short-circuits by MIME type (`ANIMATABLE_MIMES`): a JPEG is never loaded into Imagick to count its frames.
+`ImageProcessor::get_capabilities()` probes the encoders with **real 1x1 encodings** (queryFormats/gd_info lie on some builds) and stores the result in a 24 h transient, whose key is tied to the PHP and GD versions, the ImageMagick build (version string **and** a digest of the formats it lists) and `PHP_SAPI`. This is the only detection: `templates/admin/settings.php` reuses it, there is no second computation any more. `is_animated()` short-circuits by MIME type (`ANIMATABLE_MIMES`): a JPEG is never loaded into Imagick to count its frames.
 
 ## URL rewriting (`UrlRewriter`)
 
@@ -29,6 +29,30 @@ The panel (`MediaLibrary::render_panel()`) offers: optimize, re-optimize, conver
 `<style>` is on the whitelist, and its **text content** is sanitized by `clean_style_element()` → `sanitize_css()`. Only the *attributes* used to be: an `@import url("//evil.tld/x.css")` went through the sanitizer intact and triggered an outgoing request on every render of the SVG (tracking, context exfiltration through `url()`, arbitrary CSS if the SVG is inlined). Two ordering precautions, the same as for `normalize_sql()` in the Database module: **CSS comments go first**, and **hexadecimal escapes are decoded before any test** — `\40 import` *is* `@import` for the browser, not decoding it only recognizes the naive form of the attack. Resources (`url()`) go through `is_safe_href()`, the same whitelist as the `href` attributes: we do not maintain two definitions of "safe" that would end up diverging. `expression()` and `-moz-binding` make the **whole declaration** be removed, not just the keyword — erasing `expression(` left `alert(1))` behind, invalid CSS in a file we have just declared clean.
 
 `SvgHandler::sanitize()` is also reused by the icon picker of [MenuCreator](menu-creator.md) (`ajax_sanitize_svg`): same risk, same whitelist, no second cleaner.
+
+## AVIF encoder (`AvifEncoder`, `EncodeResult`, `JpegMetadata`)
+
+`AvifEncoder::encode( $path, $can_commit )` writes `<file>.<ext>.avif` next to a WordPress-made JPEG/PNG and never throws: the outcome is an `EncodeResult` (`done` / `skipped` / `failed`, source and AVIF sizes, message). The MIME is decided by `wp_get_image_mime()` on the file itself (a HEIC upload converted to JPEG keeps `image/heic` on its attachment). The write goes to a hidden `.<name>.avif.tmp-XXXX` in the same folder and is `rename()`d, so the final name never designates a partial file; `$can_commit()` is called right before the rename and a `false` abandons the file (`skipped`, `stale`). A `skipped` result removes any previous sibling.
+
+Capabilities added to `get_capabilities()`: `avif_engine` (`imagick`, `gd` or empty), `heic_speed` / `heic_chroma` (probed: speed 2 and 9 must give different bytes, `heic:chroma=444` must give an av1C box without subsampling) and `can_encode_here` (Imagick encodes AVIF **and** decodes JPEG, PNG and AVIF in this process). The `cli` image (the template's `cron` container) lists formats its Imagick can neither read nor write: `can_encode_here` is false there, and a cache shared through the database or Redis must not hand it the answer of PHP-FPM, hence the format digest and the SAPI in the transient key.
+
+Pitfalls, each measured on the bench (`tools/e2e-images`, `assert-encoder.php`):
+
+- **Quality**: `setCompressionQuality()` **and** `setImageCompressionQuality()` both. Before, the AVIF was always q50 whatever the setting (identical bytes from q30 to q95).
+- **Never `stripImage()`**: it removes the ICC profile too, so Display P3 photos lost their colours. EXIF, XMP and IPTC are removed profile by profile. A profile above 4096 bytes is **converted** with `profileImage( 'icc', <sRGB> )` (lcms) then dropped; `transformImageColorspace()` alone does not convert P3 to sRGB. The sRGB profile is `assets/icc/srgb.icc` (compact v2, CC0, see `assets/icc/README.md`). A small profile (Display P3 is 516 bytes) is kept as is. CMYK goes through the same conversion, or `transformImageColorspace()` without a profile; failure means `skipped`.
+- **`setImageDepth( 8 )`** before encoding: a 16-bit PNG would otherwise give a 12-bit AVIF.
+- **Orientation**: the pixels are rotated when the EXIF orientation is not 1 (an AVIF has no EXIF block to read), and the EXIF profile is then dropped even without `strip_exif`.
+- **Truncated files**: Imagick reads a truncated JPEG without an exception (the missing part comes out grey), so a JPEG without an end-of-image marker (`JpegMetadata::is_complete()`) or a PNG without `IEND` is `failed`.
+- **Files are read through a handle** (`readImageFile`), because ImageMagick parses a path as a file specification (`[0]`, `@list`, `fmt:`).
+- **GD** (only when `avif_engine` is `gd`) keeps no profile and ignores the EXIF orientation: it encodes a picture without a profile or with an sRGB one (the colorants are compared, since compact sRGB profiles are named "uRGB"), and answers `skipped` ("GD cannot preserve the color profile") for the rest. Quality is the setting minus 5.
+- **Options**: an option the encoder refuses is dropped (chroma first, then speed) and named in `error` of a `done` result. `heic:speed=10` is refused by libheif.
+- **Presets**: `balanced` is speed 8, `fast` is speed 9. On the bench, 9 saves about 20% of the CPU time (user time, 3 runs) but almost nothing on the wall clock, since aom runs several threads: measure CPU, not seconds.
+
+`JpegMetadata::strip_app1()` removes the EXIF and XMP APP1 segments of a served JPEG **without recompressing**: it walks the markers and copies every other byte (the ICC profile in APP2 included), then renames a temporary over the file. Nothing is removed when the EXIF orientation is not 1 (the browser turns the picture from that tag). WordPress keeps the GPS block in its sub-sizes and in an unscaled main file.
+
+### Lossless PNG rewrite: measured, not adopted
+
+Rewriting the PNGs WordPress produces with Imagick (`png:compression-level=9`, `png:compression-filter=5`, `png:compression-strategy=1`, `png:exclude-chunks=date,time,tEXt,zTXt,iTXt`; pixels verified identical, `compareImages( METRIC_ABSOLUTEERRORMETRIC )` = 0) gains **0.1%** over the main file and all the sizes of a 1200x800 transparent PNG and of a flat logo (210 128 bytes to 209 908, never rewriting a file that gets bigger). Individual files go from -12.7% (an 864-byte logo) to +15.7% (a 362-byte size). A PNG written by GD is already smaller (52 001 bytes against 52 881 after the rewrite). Far below the 5% threshold: no `optimize_png()`. The measurement used synthetic images; a PNG exported by a design tool with metadata could gain more, which would justify measuring again on a real upload before reopening this.
 
 ## Production
 

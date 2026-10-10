@@ -13,6 +13,13 @@
  *   logo-flat.png     300x100, flat colours
  *   anim.gif          200x150, two frames
  *   corrupt.jpg       a JPEG whose data is cut short after the header
+ *
+ * Encoder fixtures (AvifEncoder / JpegMetadata, not imported as media):
+ *
+ *   photo-16bit.png   800x600, 16 bits per channel, no alpha
+ *   photo-exif6.jpg   800x600 stored, EXIF orientation 6 (+ GPS), small Display P3 profile
+ *   photo-gps.jpg     800x600, orientation 1, EXIF with GPS + XMP APP1 segments, small P3 profile
+ *   photo-cmyk.jpg    600x400, CMYK JPEG without an embedded profile
  */
 
 if ( 'cli' !== PHP_SAPI ) {
@@ -220,3 +227,106 @@ $blob   = $source->getImageBlob();
 $source->clear();
 file_put_contents( "{$out_dir}/corrupt.jpg", substr( $blob, 0, 700 ) );
 printf( "  %-18s %9d bytes (truncated)\n", 'corrupt.jpg', filesize( "{$out_dir}/corrupt.jpg" ) );
+
+// --- Encoder fixtures ------------------------------------------------------
+
+/**
+ * A big-endian EXIF APP1 segment (marker included) with an Orientation tag and a GPS IFD
+ * (48 51 24 N, 2 21 7 E: a Paris-like position, drawn here, not a client's).
+ */
+function fx_exif_segment( int $orientation ): string {
+	$entry = static function ( int $tag, int $type, int $count, string $value ): string {
+		return pack( 'nnN', $tag, $type, $count ) . $value;
+	};
+
+	$ifd0_len = 2 + 2 * 12 + 4;
+	$gps_off  = 8 + $ifd0_len;
+	$gps_len  = 2 + 4 * 12 + 4;
+	$lat_off  = $gps_off + $gps_len;
+	$lon_off  = $lat_off + 24;
+
+	$tiff  = 'MM' . pack( 'nN', 0x002A, 8 );
+	$tiff .= pack( 'n', 2 );
+	$tiff .= $entry( 0x0112, 3, 1, pack( 'nn', $orientation, 0 ) );
+	$tiff .= $entry( 0x8825, 4, 1, pack( 'N', $gps_off ) );
+	$tiff .= pack( 'N', 0 );
+	$tiff .= pack( 'n', 4 );
+	$tiff .= $entry( 0x0001, 2, 2, "N\0\0\0" );
+	$tiff .= $entry( 0x0002, 5, 3, pack( 'N', $lat_off ) );
+	$tiff .= $entry( 0x0003, 2, 2, "E\0\0\0" );
+	$tiff .= $entry( 0x0004, 5, 3, pack( 'N', $lon_off ) );
+	$tiff .= pack( 'N', 0 );
+	$tiff .= pack( 'N6', 48, 1, 51, 1, 24, 1 );
+	$tiff .= pack( 'N6', 2, 1, 21, 1, 7, 1 );
+
+	$payload = "Exif\0\0" . $tiff;
+
+	return "\xFF\xE1" . pack( 'n', strlen( $payload ) + 2 ) . $payload;
+}
+
+/**
+ * An XMP APP1 segment (marker included).
+ */
+function fx_xmp_segment(): string {
+	$payload = "http://ns.adobe.com/xap/1.0/\0"
+		. '<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+		. '<rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator>Lumia bench</dc:creator></rdf:Description>'
+		. '</rdf:RDF></x:xmpmeta>';
+
+	return "\xFF\xE1" . pack( 'n', strlen( $payload ) + 2 ) . $payload;
+}
+
+/**
+ * Inserts segments right after SOI and the JFIF APP0 (if any).
+ */
+function fx_insert_segments( string $jpeg, string $segments ): string {
+	$at = 2;
+	if ( "\xFF\xE0" === substr( $jpeg, 2, 2 ) ) {
+		$at = 4 + unpack( 'n', substr( $jpeg, 4, 2 ) )[1] - 2 + 2;
+	}
+
+	return substr( $jpeg, 0, $at ) . $segments . substr( $jpeg, $at );
+}
+
+/**
+ * @return int Bytes written.
+ */
+function fx_write_blob( string $blob, string $path ): int {
+	file_put_contents( $path, $blob );
+	printf( "  %-18s %9d bytes\n", basename( $path ), strlen( $blob ) );
+
+	return strlen( $blob );
+}
+
+// photo-16bit.png: 16 bits per channel.
+$deep = new Imagick();
+$deep->newPseudoImage( 800, 600, 'gradient:#102a43-#f0b429' );
+$deep_plasma = new Imagick();
+$deep_plasma->newPseudoImage( 800, 600, 'plasma:fractal' );
+$deep->compositeImage( $deep_plasma, Imagick::COMPOSITE_OVERLAY, 0, 0 );
+$deep_plasma->clear();
+$deep->setImageFormat( 'png48' );
+$deep->setImageDepth( 16 );
+$deep->setOption( 'png:bit-depth', '16' );
+fx_write( $deep, "{$out_dir}/photo-16bit.png" );
+$deep->clear();
+
+// photo-exif6.jpg: orientation 6 (rotate 90 clockwise), GPS, P3 profile.
+$exif6 = fx_photo( 800, 600 );
+$exif6->profileImage( 'icc', fx_icc_p3() );
+fx_write_blob( fx_insert_segments( $exif6->getImageBlob(), fx_exif_segment( 6 ) ), "{$out_dir}/photo-exif6.jpg" );
+$exif6->clear();
+
+// photo-gps.jpg: orientation 1, EXIF + GPS + XMP, P3 profile.
+$gps = fx_photo( 800, 600 );
+$gps->profileImage( 'icc', fx_icc_p3() );
+fx_write_blob( fx_insert_segments( $gps->getImageBlob(), fx_exif_segment( 1 ) . fx_xmp_segment() ), "{$out_dir}/photo-gps.jpg" );
+$gps->clear();
+
+// photo-cmyk.jpg: CMYK, no embedded profile.
+$cmyk = fx_photo( 600, 400 );
+$cmyk->transformImageColorspace( Imagick::COLORSPACE_CMYK );
+$cmyk->setImageFormat( 'jpeg' );
+$cmyk->setImageCompressionQuality( 90 );
+fx_write( $cmyk, "{$out_dir}/photo-cmyk.jpg" );
+$cmyk->clear();

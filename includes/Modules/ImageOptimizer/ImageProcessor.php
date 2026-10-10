@@ -4,8 +4,11 @@ namespace Lumia\Tools\Modules\ImageOptimizer;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Pure image-file processing: optimization, format conversion,
- * server capability detection.
+ * Server capability detection (Imagick/GD, AVIF encoding in this process) and file utilities.
+ *
+ * The AVIF encoding itself lives in AvifEncoder. The optimize() / convert() family below is the
+ * former in-place pipeline, deprecated: its last callers (Module, MediaLibrary) are removed by
+ * the queue rework.
  *
  * No WordPress hooks — receives its settings at construction.
  */
@@ -49,8 +52,16 @@ class ImageProcessor {
 	 *
 	 * The probes are real encodings: redoing them on every request
 	 * (upload, bulk batch, settings screen) cost four encodings
-	 * per call. The result lives in a transient, under a key tied to the PHP,
-	 * GD and Imagick versions: a build change invalidates the cache by itself.
+	 * per call. The result lives in a transient, under a key tied to the PHP, GD and
+	 * ImageMagick versions and to the SAPI: a build change invalidates the cache by itself, and
+	 * so does the SAPI (a shared object cache is read by PHP-FPM and by the CLI, whose Imagick
+	 * can differ: the official `cli` image has an Imagick without any codec).
+	 *
+	 * Keys added by the AVIF rework:
+	 * - `avif_engine`     `imagick`, `gd` or '' : the engine that encodes AVIF here.
+	 * - `heic_speed`      the `heic:speed` option changes the output (it is honoured).
+	 * - `heic_chroma`     `heic:chroma=444` gives a 4:4:4 AVIF.
+	 * - `can_encode_here` Imagick encodes AVIF and decodes JPEG, PNG and AVIF in THIS process.
 	 *
 	 * @return array<string, bool|string>
 	 */
@@ -59,9 +70,11 @@ class ImageProcessor {
 			return $this->capabilities;
 		}
 
-		$cache_key = 'lumia_image_caps_' . md5( PHP_VERSION . '|' . (string) phpversion( 'gd' ) . '|' . (string) phpversion( 'imagick' ) );
+		$cache_key = 'lumia_image_caps_v2_' . md5(
+			PHP_VERSION . '|' . (string) phpversion( 'gd' ) . '|' . $this->imagick_version_string() . '|' . PHP_SAPI
+		);
 		$cached    = get_transient( $cache_key );
-		if ( is_array( $cached ) && isset( $cached['editor'] ) ) {
+		if ( is_array( $cached ) && isset( $cached['editor'], $cached['can_encode_here'] ) ) {
 			$this->capabilities = $cached;
 			return $cached;
 		}
@@ -79,11 +92,20 @@ class ImageProcessor {
 		$imagick_webp = false;
 		$gd_avif      = false;
 		$gd_webp      = false;
+		$heic_speed   = false;
+		$heic_chroma  = false;
+		$can_here     = false;
 
 		if ( $has_imagick ) {
 			$formats      = \Imagick::queryFormats();
 			$imagick_avif = in_array( 'AVIF', $formats, true ) && $this->imagick_can_encode( 'avif' );
 			$imagick_webp = in_array( 'WEBP', $formats, true ) && $this->imagick_can_encode( 'webp' );
+
+			if ( $imagick_avif ) {
+				$heic_chroma = $this->heic_chroma_honoured();
+				$heic_speed  = $this->heic_speed_honoured();
+				$can_here    = $this->imagick_can_decode_here();
+			}
 		}
 
 		if ( $has_gd ) {
@@ -95,20 +117,142 @@ class ImageProcessor {
 		}
 
 		$this->capabilities = [
-			'imagick'      => $has_imagick,
-			'gd'           => $has_gd,
-			'avif'         => $imagick_avif || $gd_avif,
-			'webp'         => $imagick_webp || $gd_webp,
-			'imagick_avif' => $imagick_avif,
-			'imagick_webp' => $imagick_webp,
-			'gd_avif'      => $gd_avif,
-			'gd_webp'      => $gd_webp,
-			'editor'       => $has_imagick ? 'imagick' : ( $has_gd ? 'gd' : 'none' ),
+			'imagick'         => $has_imagick,
+			'gd'              => $has_gd,
+			'avif'            => $imagick_avif || $gd_avif,
+			'webp'            => $imagick_webp || $gd_webp,
+			'imagick_avif'    => $imagick_avif,
+			'imagick_webp'    => $imagick_webp,
+			'gd_avif'         => $gd_avif,
+			'gd_webp'         => $gd_webp,
+			'editor'          => $has_imagick ? 'imagick' : ( $has_gd ? 'gd' : 'none' ),
+			'avif_engine'     => $imagick_avif ? 'imagick' : ( $gd_avif ? 'gd' : '' ),
+			'heic_speed'      => $heic_speed,
+			'heic_chroma'     => $heic_chroma,
+			'can_encode_here' => $can_here,
 		];
 
 		set_transient( $cache_key, $this->capabilities, self::CAPABILITIES_TTL );
 
 		return $this->capabilities;
+	}
+
+	/**
+	 * Identity of the ImageMagick build behind Imagick ('' without the extension): its version
+	 * string and a digest of the formats it lists. The version alone does not tell a full build
+	 * from the `cli` image's, which has the same ImageMagick without any codec.
+	 */
+	private function imagick_version_string(): string {
+		if ( ! extension_loaded( 'imagick' ) ) {
+			return '';
+		}
+
+		try {
+			$version = \Imagick::getVersion();
+			$formats = md5( implode( ',', \Imagick::queryFormats() ) );
+		} catch ( \Throwable $e ) {
+			return '';
+		}
+
+		return (string) ( $version['versionString'] ?? '' ) . '|' . $formats;
+	}
+
+	/**
+	 * A small noisy picture for the option probes: a flat one would give the same bytes whatever
+	 * the encoder settings.
+	 */
+	private function probe_image(): \Imagick {
+		$image = new \Imagick();
+		$image->newPseudoImage( 96, 96, 'plasma:fractal' );
+		$image->setImageFormat( 'avif' );
+		$image->setCompressionQuality( 50 );
+		$image->setImageCompressionQuality( 50 );
+
+		return $image;
+	}
+
+	/**
+	 * Encodes the probe picture with the given heic: options.
+	 *
+	 * @param array<string, string> $options
+	 */
+	private function probe_blob( array $options ): string {
+		$image = null;
+		try {
+			$image = $this->probe_image();
+			foreach ( $options as $name => $value ) {
+				$image->setOption( $name, $value );
+			}
+			$blob = $image->getImageBlob();
+
+			return is_string( $blob ) ? $blob : '';
+		} catch ( \Throwable $e ) {
+			return '';
+		} finally {
+			if ( $image instanceof \Imagick ) {
+				$image->clear();
+			}
+		}
+	}
+
+	/**
+	 * `heic:chroma=444` really gives a 4:4:4 AVIF (av1C: no chroma subsampling).
+	 */
+	private function heic_chroma_honoured(): bool {
+		$blob = $this->probe_blob( [ 'heic:chroma' => '444' ] );
+		$pos  = strpos( $blob, 'av1C' );
+		if ( false === $pos || strlen( $blob ) < $pos + 7 ) {
+			return false;
+		}
+
+		$flags = ord( $blob[ $pos + 6 ] );
+
+		// Bits of the third av1C byte: monochrome (4), subsampling x (3) and y (2).
+		return 0 === ( $flags & 0b00001100 );
+	}
+
+	/**
+	 * `heic:speed` changes the output: two very different speeds give different bytes.
+	 */
+	private function heic_speed_honoured(): bool {
+		$slow = $this->probe_blob( [ 'heic:speed' => '2' ] );
+		$fast = $this->probe_blob( [ 'heic:speed' => '9' ] );
+
+		return '' !== $slow && '' !== $fast && $slow !== $fast;
+	}
+
+	/**
+	 * Imagick decodes JPEG, PNG and AVIF in this process (1x1 pictures built in: the CLI image
+	 * has an Imagick that lists formats it cannot read or write).
+	 */
+	private function imagick_can_decode_here(): bool {
+		// 1x1 white JPEG and PNG, generated once with ImageMagick and stripped.
+		$jpeg = base64_decode( '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AVN//2Q==', true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- fixed test picture, not obfuscation.
+		$png  = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVQI12NoAAAAggCB3UNq9AAAAABJRU5ErkJggg==', true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- fixed test picture, not obfuscation.
+		$avif = $this->probe_blob( [] );
+
+		foreach ( [ $jpeg, $png, $avif ] as $blob ) {
+			if ( ! is_string( $blob ) || '' === $blob ) {
+				return false;
+			}
+
+			$probe = null;
+			try {
+				$probe = new \Imagick();
+				$probe->readImageBlob( $blob );
+				if ( $probe->getImageWidth() < 1 ) {
+					return false;
+				}
+			} catch ( \Throwable $e ) {
+				return false;
+			} finally {
+				if ( $probe instanceof \Imagick ) {
+					$probe->clear();
+				}
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -162,6 +306,8 @@ class ImageProcessor {
 	/**
 	 * Determines the target conversion format from the settings and capabilities.
 	 * Returns '' if no conversion is possible or wanted.
+	 *
+	 * @deprecated Part of the former in-place conversion, removed with its callers by the queue rework.
 	 */
 	public function get_target_format(): string {
 		$cap  = $this->get_capabilities();
@@ -194,6 +340,8 @@ class ImageProcessor {
 	/**
 	 * Optimizes an image file in place.
 	 * Idempotent within this request (files already processed are skipped).
+	 *
+	 * @deprecated Part of the former in-place pipeline, removed with its callers by the queue rework.
 	 */
 	public function optimize( string $file_path ): void {
 		if ( ! file_exists( $file_path ) || isset( $this->optimized_paths[ $file_path ] ) ) {
@@ -282,6 +430,8 @@ class ImageProcessor {
 	 * @param string $mime_type     Known MIME type (avoids a needless detection).
 	 * @param int    $attachment_id For MIME detection through WP if mime_type is empty.
 	 * @return string|false
+	 *
+	 * @deprecated Part of the former in-place pipeline, removed with its callers by the queue rework.
 	 */
 	public function convert( string $file_path, string $mime_type = '', int $attachment_id = 0 ) {
 		if ( ! file_exists( $file_path ) ) {
