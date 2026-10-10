@@ -25,6 +25,23 @@ die() {
 	exit 1
 }
 
+# Temporary files of this run, all under one directory created by the main shell:
+# removed on exit even when a command substitution ($(cmd_install_lumia)) dies,
+# since a subshell does not run the parent's EXIT trap. Commands that write
+# snippets set CLEANUP_SNIPPETS=1 rather than installing their own EXIT trap.
+TMP_ROOT="$(mktemp -d)"
+CLEANUP_SNIPPETS=0
+
+cleanup() {
+	rm -rf "${TMP_ROOT}"
+	if [ "${CLEANUP_SNIPPETS}" -eq 1 ]; then
+		remove_snippets
+	fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 dc() {
 	docker compose -f "${E2E_DIR}/docker-compose.yml" "$@"
 }
@@ -48,9 +65,9 @@ prepare_out_dir() {
 # build_zip <source-dir> <plugin-folder> <zip-path>: zip of <source-dir> with the
 # release excludes, rooted at <plugin-folder>/ like a release asset.
 build_zip() {
-	local src="$1" folder="$2" zip_path="$3" staging
+	local src="$1" folder="$2" zip_path="$3" staging entries
 
-	staging="$(mktemp -d)"
+	staging="$(mktemp -d "${TMP_ROOT}/staging.XXXXXX")"
 	mkdir -p "${staging}/${folder}"
 	rsync -a --exclude-from="${ZIP_EXCLUDES}" "${src}/" "${staging}/${folder}/"
 	rm -f "${zip_path}"
@@ -58,7 +75,10 @@ build_zip() {
 	rm -rf "${staging}"
 
 	# The e2e-auth mu-plugin logs in anyone who sends a header: it must never ship.
-	if unzip -Z1 "${zip_path}" | grep -Eq '(^|/)(tools|e2e-auth\.php)(/|$)'; then
+	# Listing captured first: "unzip | grep -q" fails with SIGPIPE under pipefail
+	# when grep exits before unzip has written everything.
+	entries="$(unzip -Z1 "${zip_path}")" || die "unreadable zip ${zip_path}"
+	if grep -Eq '(^|/)(tools|e2e-auth\.php)(/|$)' <<<"${entries}"; then
 		rm -f "${zip_path}"
 		die "tools/ or e2e-auth.php ended up in ${zip_path}"
 	fi
@@ -152,13 +172,21 @@ cmd_seed_skmt() {
 		esac
 	done
 
+	# SKMT comes from the repository history, which a shallow clone does not have.
+	if ! git -C "${REPO_DIR}" cat-file -e "${SKMT_COMMIT}^{commit}" 2>/dev/null; then
+		if [ "$(git -C "${REPO_DIR}" rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+			die "commit ${SKMT_COMMIT} (SKMT before the rename) is missing from this shallow clone: run 'git fetch --unshallow' first"
+		fi
+		die "commit ${SKMT_COMMIT} (SKMT before the rename) not found in ${REPO_DIR}: run 'git fetch origin' first"
+	fi
+
 	prepare_out_dir
 	if [ -n "$(skmt_folder)" ]; then
 		die "SKMT is already installed: run 'down' then 'up' for a fresh bench"
 	fi
 
 	local zip_name="${folder}-${SKMT_COMMIT}.zip" extracted
-	extracted="$(mktemp -d)"
+	extracted="$(mktemp -d "${TMP_ROOT}/skmt.XXXXXX")"
 	git -C "${REPO_DIR}" archive "${SKMT_COMMIT}" | tar -x -C "${extracted}"
 	build_zip "${extracted}" "${folder}" "${OUT_DIR}/${zip_name}"
 	rm -rf "${extracted}"
@@ -255,7 +283,7 @@ cmd_assert_compat() {
 
 	folder="$(working_tree_plugin)"
 	wp plugin is-active "${folder}" >/dev/null 2>&1 || die "${folder} is not active: run 'install-lumia' first"
-	trap remove_snippets EXIT
+	CLEANUP_SNIPPETS=1
 	remove_snippets
 
 	# Security on, with its defaults (custom login URL /connexion): wp-login.php answers 404.
@@ -454,7 +482,7 @@ cmd_assert_partial() {
 	if wp plugin is-installed "${folder}" >/dev/null 2>&1; then
 		die "${folder} is already installed: start from a freshly seeded bench"
 	fi
-	trap remove_snippets EXIT
+	CLEANUP_SNIPPETS=1
 	remove_snippets
 	write_snippet fail-post-meta <<'PHP'
 <?php
@@ -553,7 +581,7 @@ cmd_assert_interrupted() {
 	if wp plugin is-installed "${folder}" >/dev/null 2>&1; then
 		die "${folder} is already installed: start from a freshly seeded bench"
 	fi
-	trap remove_snippets EXIT
+	CLEANUP_SNIPPETS=1
 	remove_snippets
 	write_snippet kill-user-meta <<'PHP'
 <?php
