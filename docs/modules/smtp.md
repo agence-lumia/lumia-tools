@@ -6,7 +6,7 @@
 - `BrevoMailer`: PHPMailer subclass that sends through the Brevo API (see [below](#brevo-api)).
 - `Crypto`: encryption of the password at rest.
 - `Logger`: captures every call to `wp_mail()` and writes it to the table.
-- `Providers`: SMTP presets for common providers (Brevo, Mailgun US/EU, SendGrid, Postmark, SES, Mailjet, OVHcloud, Gmail, Microsoft 365).
+- `Providers`: SMTP presets for common providers (Brevo, Mailgun US/EU, SendGrid, Postmark, SES, Mailjet, OVHcloud, Hostinger, Gmail, Microsoft 365).
 - `Store`: the `{prefix}lumia_mail_log` table, modeled on the activity log (see [activity-log.md](activity-log.md#storage): `dbDelta`, `maybe_install()` on every load, recreation after a manual drop, purge in batches).
 
 ## Sending: `phpmailer_init`, no replaced `wp_mail()`

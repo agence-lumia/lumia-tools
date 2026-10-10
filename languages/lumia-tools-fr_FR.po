@@ -4238,10 +4238,14 @@ msgid "Username: the full email address; password: the mailbox password."
 msgstr "Identifiant : l'adresse e-mail complète ; mot de passe : celui de la boîte."
 
 #: includes/Modules/Smtp/Providers.php:94
+msgid "Username: the full email address; password: the mailbox password. If the web host blocks port 465, use port 587 with STARTTLS."
+msgstr "Identifiant : l'adresse e-mail complète ; mot de passe : celui de la boîte. Si l'hébergeur du site bloque le port 465, utilisez le port 587 en STARTTLS."
+
+#: includes/Modules/Smtp/Providers.php:102
 msgid "Username: the Gmail address; password: an app password (2-step verification required), not the account password. Limit of about 500 emails per day."
 msgstr "Identifiant : l'adresse Gmail ; mot de passe : un mot de passe d'application (validation en deux étapes requise), pas celui du compte. Limite d'environ 500 envois par jour."
 
-#: includes/Modules/Smtp/Providers.php:102
+#: includes/Modules/Smtp/Providers.php:110
 msgid "SMTP authentication must be allowed for the mailbox in the Microsoft 365 admin center; it is often disabled there by default."
 msgstr "L'authentification SMTP doit être autorisée pour la boîte dans le centre d'administration Microsoft 365 ; elle y est souvent désactivée par défaut."
 

@@ -104,7 +104,7 @@ In Settings > Updates:
 ### SMTP
 
 - Sending through an authenticated SMTP server or the Brevo HTTP API, instead of the host's `mail()`
-- Presets for common providers (Brevo, Mailgun, SendGrid, Postmark, SES, Mailjet, OVHcloud, Gmail, Microsoft 365)
+- Presets for common providers (Brevo, Mailgun, SendGrid, Postmark, SES, Mailjet, OVHcloud, Hostinger, Gmail, Microsoft 365)
 - Test email with the SMTP transcript, and a log of every email sent (purged on a schedule)
 - The password is encrypted at rest and never part of the settings export. Credentials can instead be defined in `wp-config.php` (`LUMIA_SMTP_USER`, `LUMIA_SMTP_PASSWORD`, `LUMIA_BREVO_API_KEY`, and `LUMIA_ENCRYPTION_KEY` to pin the encryption key)
 
