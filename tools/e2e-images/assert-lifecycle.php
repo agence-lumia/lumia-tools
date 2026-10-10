@@ -13,6 +13,7 @@
 use Lumia\Tools\Core\Plugin;
 use Lumia\Tools\Modules\Files\FileManager;
 use Lumia\Tools\Modules\ImageOptimizer\AvifState;
+use Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe;
 use Lumia\Tools\Modules\ImageOptimizer\FileLifecycle;
 
 if ( ! defined( 'WP_CLI' ) ) {
@@ -344,6 +345,43 @@ lc_check( file_exists( FileLifecycle::sibling( $moved ) ) && ! file_exists( File
 
 $fm->delete( $rel_of( $moved ) );
 lc_check( ! file_exists( FileLifecycle::sibling( $moved ) ), 'delete: the .avif is deleted' );
+
+// A file whose content is replaced loses the AVIF of the former picture.
+$edited = "{$dir}/fm-{$run}-edited.jpg";
+copy( LC_FIXTURES . '/photo-p3.jpg', $edited );
+lc_fake_sibling( $edited );
+$fm->save_content( $rel_of( $edited ), (string) file_get_contents( LC_FIXTURES . '/photo-gps.jpg' ) );
+lc_check( ! file_exists( FileLifecycle::sibling( $edited ) ), 'save_content over a JPEG: its .avif is deleted' );
+
+if ( class_exists( 'ZipArchive' ) ) {
+	$zipped = "{$dir}/fm-{$run}-dir/fm-{$run}-zipped.jpg";
+	copy( LC_FIXTURES . '/photo-p3.jpg', $zipped );
+	lc_fake_sibling( $zipped );
+	$zip_path = "{$dir}/fm-{$run}-dir/fm-{$run}.zip";
+	$zip      = new ZipArchive();
+	$zip->open( $zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE );
+	$zip->addFile( LC_FIXTURES . '/photo-gps.jpg', "fm-{$run}-zipped.jpg" );
+	$zip->close();
+	$fm->extract_zip( $rel_of( $zip_path ) );
+	lc_check( md5_file( $zipped ) === md5_file( LC_FIXTURES . '/photo-gps.jpg' ) && ! file_exists( FileLifecycle::sibling( $zipped ) ), 'archive extracted over a JPEG: its .avif is deleted' );
+	@unlink( $zipped );
+	@unlink( $zip_path );
+} else {
+	lc_skip( 'archive extraction: ZipArchive missing' );
+}
+
+// Renamed or moved onto a name that has an orphan .avif (its JPEG deleted outside WordPress),
+// the source having none: the orphan would be served in place of the moved image.
+$plain = "{$dir}/fm-{$run}-plain.jpg";
+copy( LC_FIXTURES . '/photo-p3.jpg', $plain );
+file_put_contents( "{$dir}/fm-{$run}-target.jpg.avif", 'orphan' );
+$fm->rename( $rel_of( $plain ), "fm-{$run}-target.jpg" );
+lc_check( ! file_exists( "{$dir}/fm-{$run}-target.jpg.avif" ), 'rename onto a name with an orphan .avif: the orphan is deleted' );
+file_put_contents( "{$dir}/fm-{$run}-dir/fm-{$run}-target.jpg.avif", 'orphan' );
+$fm->move( $rel_of( "{$dir}/fm-{$run}-target.jpg" ), $rel_of( "{$dir}/fm-{$run}-dir" ) );
+lc_check( ! file_exists( "{$dir}/fm-{$run}-dir/fm-{$run}-target.jpg.avif" ), 'move onto a name with an orphan .avif: the orphan is deleted' );
+@unlink( "{$dir}/fm-{$run}-dir/fm-{$run}-target.jpg" );
+@unlink( $edited );
 @rmdir( "{$dir}/fm-{$run}-dir" );
 
 // --- Uploaded AVIF / WebP (spec 9.13) ------------------------------------------------------
@@ -405,6 +443,7 @@ for ( $i = 0; $i < 50 && AvifState::DONE === AvifState::get( $rec )['status']; $
 }
 lc_check( $requeued >= 1 && AvifState::PENDING === AvifState::get( $rec )['status'] && 'reconcile' === AvifState::get( $rec )['origin'], 'reconcile(): changed source queued again (origin reconcile)' );
 lc_check( ! file_exists( FileLifecycle::sibling( $rec_src ) ), 'reconcile(): stale .avif deleted' );
+lc_check( 20 === has_action( DeliveryProbe::CRON_HOOK, [ $lc, 'run_reconcile' ] ), 'the daily delivery check also walks the fingerprints (run_reconcile on ' . DeliveryProbe::CRON_HOOK . ')' );
 
 // Generation flag: wp_update_image_subsizes() with no size missing (REST post-process retry,
 // media_create_image_subsizes) ends without wp_generate_attachment_metadata. A flag left up

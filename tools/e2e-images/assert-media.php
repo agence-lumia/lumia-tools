@@ -506,6 +506,41 @@ ml_check( in_array( ml_status( $heic ), [ AvifState::PENDING, AvifState::PROCESS
 $res = ml_ajax( 'lumia_image_optimizer_media_toggle_original', [ 'attachment_id' => $heic, 'enabled' => '1' ] );
 ml_check( is_array( $res ) && ! empty( $res['success'] ) && AvifState::EXCLUDED === ml_status( $heic ), 'HEIC: original format can be switched on' );
 
+// --- Files module upload over an image of the uploads -------------------------------------------
+
+WP_CLI::log( 'Files module upload' );
+
+$settings_before = get_option( 'lumia_settings', [] );
+$settings_files  = is_array( $settings_before ) ? $settings_before : [];
+$settings_files['modules']['files'] = true;
+update_option( 'lumia_settings', $settings_files );
+
+$target = (string) get_attached_file( $jpg );
+ml_fake_sibling( $target );
+$cookie = implode( '; ', array_map( static fn( $k, $v ) => $k . '=' . $v, array_keys( $ml_http['cookies'] ), $ml_http['cookies'] ) );
+$ch     = curl_init( admin_url( 'admin-ajax.php' ) );
+curl_setopt_array(
+	$ch,
+	[
+		CURLOPT_POST           => true,
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_TIMEOUT        => 60,
+		CURLOPT_HTTPHEADER     => [ 'Cookie: ' . $cookie ],
+		CURLOPT_POSTFIELDS     => [
+			'action'   => 'lumia_files_upload',
+			'nonce'    => $ml_http['nonce'],
+			'path'     => ltrim( substr( dirname( $target ), strlen( untrailingslashit( ABSPATH ) ) ), '/' ),
+			'files[0]' => new CURLFile( ML_FIXTURES . '/photo-gps.jpg', 'image/jpeg', basename( $target ) ),
+		],
+	]
+);
+$body = (string) curl_exec( $ch );
+$json = json_decode( $body, true );
+clearstatcache();
+ml_check( is_array( $json ) && ! empty( $json['success'] ) && md5_file( $target ) === md5_file( ML_FIXTURES . '/photo-gps.jpg' ), 'Files module: upload over an existing JPEG of the uploads (' . substr( $body, 0, 120 ) . ')' );
+ml_check( ! file_exists( FileLifecycle::sibling( $target ) ), 'Files module upload: the former picture\'s .avif is deleted' );
+update_option( 'lumia_settings', $settings_before );
+
 // --- Screens: list column, attachment form ------------------------------------------------------
 
 WP_CLI::log( 'Screens' );

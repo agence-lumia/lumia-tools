@@ -219,6 +219,9 @@ class FileManager {
 	 */
 	private function follow_avif_sibling( string $sibling, string $new_abs ): void {
 		if ( '' === $sibling ) {
+			// The source has no sibling: an orphan one at the new name (left by a file deleted
+			// outside WordPress) would be served in place of the moved image.
+			$this->drop_avif_sibling( $new_abs );
 			return;
 		}
 		if ( preg_match( '/\.(?:jpe?g|png)$/i', $new_abs ) && '' !== $this->uploads_path( $new_abs ) ) {
@@ -226,6 +229,19 @@ class FileManager {
 			return;
 		}
 		unlink( $sibling );
+	}
+
+	/**
+	 * Deletes the `.avif` sibling of a JPEG/PNG of the uploads folder whose content was just
+	 * replaced (upload, archive extraction, editor): the AVIF of the former picture would
+	 * otherwise be served in its place. The Image Optimizer's fingerprint check queues the
+	 * media item again.
+	 */
+	private function drop_avif_sibling( string $abs ): void {
+		$sibling = $this->avif_sibling( $abs );
+		if ( '' !== $sibling ) {
+			unlink( $sibling );
+		}
 	}
 
 	/**
@@ -330,6 +346,7 @@ class FileManager {
 			/* translators: %s: relative file path */
 			throw new \RuntimeException( sprintf( __( 'Write failed: %s', 'lumia-tools' ), $rel ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
+		$this->drop_avif_sibling( $abs );
 
 		return true;
 	}
@@ -410,8 +427,18 @@ class FileManager {
 			}
 		}
 
+		$names = [];
+		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+			$names[] = (string) $zip->getNameIndex( $i );
+		}
+
 		$zip->extractTo( $dest );
 		$zip->close();
+
+		// A JPEG/PNG the archive wrote over (or next to an orphan sibling) loses its AVIF.
+		foreach ( $names as $name ) {
+			$this->drop_avif_sibling( $dest . DIRECTORY_SEPARATOR . str_replace( [ '/', '\\' ], DIRECTORY_SEPARATOR, $name ) );
+		}
 		return true;
 	}
 
@@ -462,6 +489,7 @@ class FileManager {
 		if ( ! move_uploaded_file( $file['tmp_name'], $dest ) ) {
 			throw new \RuntimeException( __( 'Upload failed.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- message returned as JSON, escaped on display by the toast.
 		}
+		$this->drop_avif_sibling( $dest );
 
 		return $this->to_relative( $dest );
 	}

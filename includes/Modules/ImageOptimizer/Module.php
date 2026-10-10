@@ -120,6 +120,11 @@ class Module extends AbstractModule {
 		// Delivery self-test: daily check, Retest button, browser check.
 		$this->get_delivery_probe()->register();
 
+		// The daily check also walks the fingerprints (a batch now, the next ones every 30 s
+		// until the walk is over): a JPEG/PNG replaced by FTP or another tool loses its stale
+		// AVIF within a day.
+		add_action( DeliveryProbe::CRON_HOOK, [ $this->get_lifecycle(), 'run_reconcile' ], 20 );
+
 		// AVIF encoding in the background: after the response, by loopback, or by cron.
 		$this->get_queue()->register();
 
