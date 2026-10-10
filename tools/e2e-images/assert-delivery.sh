@@ -430,6 +430,50 @@ scenario_apache() {
 	retest >/dev/null
 	expect "FileInfo back: mode" "$(delivery mode)" htaccess
 
+	# After the block answered 500, the daily check must not write it again (a 500 on every
+	# upload for a moment, every day): only a Retest or a settings save does.
+	echo "  -- daily check after an HTTP 500"
+	"${RUN}" apache-override apache nofileinfo >/dev/null 2>&1
+	retest >/dev/null
+	expect "no FileInfo: reason" "$(delivery reason)" server_error
+	expect "no FileInfo: block held back" "$(delivery held)" 1
+	wpx cron event run lumia_image_optimizer_delivery_check >/dev/null 2>&1 || true
+	expect "daily check: block not written again" "$(htaccess_block)" ''
+	expect "daily check: reason kept" "$(delivery reason)" server_error
+	expect "daily check: still held back" "$(delivery held)" 1
+	expect "daily check: media answers (no 500)" "$(status_code "${url}")" 200
+	if grep -q 'The daily check does not write these rules again' <<<"$(module_screen)"; then pass "Delivery tab: held back explained"; else fail "Delivery tab: held back not explained"; fi
+	"${RUN}" apache-override apache fileinfo >/dev/null 2>&1
+	wpx cron event run lumia_image_optimizer_delivery_check >/dev/null 2>&1 || true
+	expect "FileInfo back, daily check: block still not written" "$(htaccess_block)" ''
+	expect "FileInfo back, daily check: mode" "$(delivery mode)" none
+	retest >/dev/null
+	expect "FileInfo back, Retest: mode" "$(delivery mode)" htaccess
+	expect "Retest: no longer held back" "$(delivery held)" ''
+
+	# A block that cannot be removed (uploads folder read-only): never a clean "none".
+	echo "  -- block that cannot be removed"
+	local uploads mode_before php_container=lumia-img-apache-wp-apache-1
+	uploads="$(wpx eval 'echo wp_upload_dir()["basedir"];')"
+	mode_before="$(docker exec "${php_container}" stat -c %a "${uploads}")"
+	"${RUN}" make-avif apache "${rel}" >/dev/null
+	docker exec "${php_container}" chmod 555 "${uploads}"
+	"${RUN}" apache-override apache nofileinfo >/dev/null 2>&1
+	retest >/dev/null
+	expect "unremovable block: mode" "$(delivery mode)" none
+	expect "unremovable block: reason" "$(delivery reason)" write_failed
+	if [ -n "$(htaccess_block)" ]; then pass "unremovable block: still in the file (as reported)"; else fail "unremovable block: the block is gone, the scenario did not apply"; fi
+	expect "unremovable block: siblings deleted (the rules serve nothing)" "$(avif_files)" ''
+	if grep -q 'could not remove its rules from wp-content/uploads/.htaccess' <<<"$(module_screen)"; then pass "Delivery tab: what to remove by hand"; else fail "Delivery tab: leftover block not reported"; fi
+	"${RUN}" apache-override apache fileinfo >/dev/null 2>&1
+	wpx eval 'delete_user_meta( 1, "lumia_notices" );' >/dev/null
+	module deactivate
+	expect "module off, block left: reason" "$(delivery reason)" write_failed
+	expect "module off, block left: notice for the administrator" "$(wpx eval '$n = get_user_meta( 1, "lumia_notices", true ); echo is_array( $n ) && isset( $n["image_optimizer_htaccess_left"] ) ? "yes" : "no";')" yes
+	docker exec "${php_container}" chmod "${mode_before}" "${uploads}"
+	module activate
+	expect "folder writable again, module on: mode" "$(delivery mode)" htaccess
+
 	echo "  -- deactivation"
 	module deactivate
 	expect "module off: block removed" "$(htaccess_block)" ''

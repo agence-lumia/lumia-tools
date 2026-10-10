@@ -105,6 +105,12 @@ $lumia_rule    = implode(
 		<span class="lumia-badge <?php echo esc_attr( $lumia_badge[0] ); ?>"><?php echo esc_html( $lumia_badge[1] ); ?></span>
 		<?php echo esc_html( $lumia_reasons[ $lumia_reason ] ?? $lumia_reasons['pending'] ); ?>
 	</p>
+	<?php if ( ! empty( $lumia_delivery['held'] ) ) : ?>
+		<p class="lumia-form__help"><?php echo esc_html__( 'The daily check does not write these rules again. Run the test below (or save the settings) once the host allows them.', 'lumia-tools' ); ?></p>
+	<?php endif; ?>
+	<?php if ( ! $lumia_serving && ( new \Lumia\Tools\Modules\ImageOptimizer\HtaccessWriter() )->is_present() ) : ?>
+		<p class="lumia-form__help"><?php echo esc_html( \Lumia\Tools\Modules\ImageOptimizer\DeliveryProbe::block_left_message() ); ?></p>
+	<?php endif; ?>
 	<?php if ( $lumia_serving && (int) $lumia_delivery['failures'] > 0 ) : ?>
 		<p class="lumia-form__help">
 			<?php

@@ -116,10 +116,62 @@ final class DeliveryProbe {
 	 */
 	public static function reset(): void {
 		wp_unschedule_hook( self::CRON_HOOK );
-		( new HtaccessWriter() )->remove();
 
-		$server = self::result()['server'];
-		update_option( self::OPTION, '' === $server ? [] : [ 'server' => $server ], true );
+		$server  = self::result()['server'];
+		$removed = self::remove_block( new HtaccessWriter() );
+		$kept    = '' === $server ? [] : [ 'server' => $server ];
+
+		if ( ! $removed ) {
+			// Never a clean "not tested" while the rules are still in the file: the siblings
+			// are purged by the caller, so the block has nothing left to serve, but the user
+			// must take it out by hand.
+			$kept['reason'] = 'write_failed';
+			$kept['detail'] = 'the block could not be removed from uploads/.htaccess';
+			self::notify_block_left();
+		}
+
+		update_option( self::OPTION, $kept, true );
+	}
+
+	/**
+	 * Takes the block out of uploads/.htaccess, with one retry (a file being replaced by
+	 * another process, a passing permission glitch). True when no block is left.
+	 */
+	private static function remove_block( HtaccessWriter $htaccess ): bool {
+		if ( $htaccess->remove() ) {
+			return true;
+		}
+
+		clearstatcache();
+
+		return $htaccess->remove();
+	}
+
+	/**
+	 * The block could not be removed: a persistent notice for the current user (the Delivery
+	 * tab says so too while the module is on), and a line in the PHP error log.
+	 */
+	private static function notify_block_left(): void {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- deliberate: a file the user must fix by hand.
+		error_log( '[LUMIA Image Optimizer] the AVIF block could not be removed from wp-content/uploads/.htaccess (file permissions): remove it by hand.' );
+
+		\Lumia\Tools\Admin\Admin::add_persistent_notice(
+			'image_optimizer_htaccess_left',
+			self::block_left_message(),
+			'error'
+		);
+	}
+
+	/**
+	 * What to do when the block could not be removed (Delivery tab and notice).
+	 */
+	public static function block_left_message(): string {
+		return sprintf(
+			/* translators: 1: first line of the block, 2: last line of the block. */
+			__( 'WordPress could not remove its rules from wp-content/uploads/.htaccess (file permissions). Delete the lines from "%1$s" to "%2$s" in that file by hand. The AVIF versions were deleted, so the rules no longer serve anything.', 'lumia-tools' ),
+			HtaccessWriter::BEGIN,
+			HtaccessWriter::END
+		);
 	}
 
 	/* ================================================================
@@ -146,8 +198,10 @@ final class DeliveryProbe {
 	 * - `failures`    consecutive unreachable checks
 	 * - `server`      apache | litespeed | nginx | other | '' (last known web server)
 	 * - `browser`     '' | ok | failed (last browser check), `browser_at` its timestamp
+	 * - `held`        the `.htaccess` block answered HTTP 500 (`server_error`): the daily check
+	 *                 does not write it again, only a Retest or a settings save does
 	 *
-	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int}
+	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int, held: bool}
 	 */
 	public static function result(): array {
 		$raw = get_option( self::OPTION, [] );
@@ -168,6 +222,7 @@ final class DeliveryProbe {
 			'server'      => (string) ( $raw['server'] ?? '' ),
 			'browser'     => in_array( $browser, [ 'ok', 'failed' ], true ) ? $browser : '',
 			'browser_at'  => (int) ( $raw['browser_at'] ?? 0 ),
+			'held'        => ! empty( $raw['held'] ),
 		];
 	}
 
@@ -179,32 +234,35 @@ final class DeliveryProbe {
 	 * Runs the self-test and records the result. A test already running elsewhere: the
 	 * recorded result is returned unchanged.
 	 *
-	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int}
+	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int, held: bool}
 	 */
-	public function run(): array {
+	public function run( bool $manual = true ): array {
 		$lock = $this->lock();
 		if ( '' === $lock ) {
 			return self::result();
 		}
 
 		try {
-			return $this->evaluate();
+			return $this->evaluate( $manual );
 		} finally {
 			$this->unlock( $lock );
 		}
 	}
 
 	/**
-	 * Cron handler (daily).
+	 * Cron handler (daily). Not a manual run: a block that answered HTTP 500 is not written
+	 * again (on Apache it would break every upload for a moment, every day).
 	 */
 	public function run_scheduled(): void {
-		$this->run();
+		$this->run( false );
 	}
 
 	/**
-	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int}
+	 * @param bool $manual Retest, settings save or activation: a block held back after an
+	 *                     HTTP 500 is written again. False for the daily check.
+	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int, held: bool}
 	 */
-	private function evaluate(): array {
+	private function evaluate( bool $manual ): array {
 		$previous = self::result();
 
 		// WP-CLI and a system cron do not know the web server: the last one seen is used.
@@ -213,23 +271,30 @@ final class DeliveryProbe {
 			$server = $previous['server'];
 		}
 
+		// After an HTTP 500 caused by the block, only a manual run writes it again.
+		$held = $previous['held'] && ! $manual && ! $this->htaccess->is_present();
+
 		$next = array_merge(
 			$previous,
 			[
 				'server'     => $server,
 				'checked_at' => time(),
 				'failures'   => 0,
+				'held'       => $held,
 			]
 		);
 
 		if ( ! $this->ensure_probe_files() ) {
-			$this->htaccess->remove();
+			if ( ! self::remove_block( $this->htaccess ) ) {
+				// The block stays with no test behind it: the siblings go.
+				return $this->commit( $previous, $this->verdict( $next, self::MODE_NONE, 'write_failed', 'probe files missing; the block could not be removed from uploads/.htaccess', '' ), true );
+			}
 			return $this->commit( $previous, $this->verdict( $next, self::MODE_NONE, 'probe_files', '', '' ), false );
 		}
 
 		$wrote        = false;
 		$write_failed = false;
-		if ( in_array( $server, [ 'apache', 'litespeed' ], true ) && ! $this->htaccess->is_current() ) {
+		if ( in_array( $server, [ 'apache', 'litespeed' ], true ) && ! $held && ! $this->htaccess->is_current() ) {
 			$wrote        = $this->htaccess->write();
 			$write_failed = ! $wrote;
 		}
@@ -257,9 +322,12 @@ final class DeliveryProbe {
 				|| ( 'no_vary' === $check['reason'] && ! $tested_with_block )
 				|| ( 'incorrect' === $check['status'] && '' !== $check['cdn'] );
 
+			$reason = $check['reason'];
+			$detail = $check['detail'];
+
 			if ( $tested_with_block ) {
 				// The block is never left in place without a successful test (spec 9.2).
-				$this->htaccess->remove();
+				$removed = self::remove_block( $this->htaccess );
 
 				// OpenLiteSpeed keeps applying a removed .htaccess in the workers that loaded
 				// it, and once an AVIF client was rewritten, it serves the AVIF to everyone at
@@ -267,14 +335,30 @@ final class DeliveryProbe {
 				// it: the probe's goes, and on LiteSpeed every generated one too.
 				wp_delete_file( self::dir() . '/probe.png.avif' );
 				$purge = $purge || 'litespeed' === $server;
+
+				if ( ! $removed ) {
+					// A failed test with the block still in place: never reported as a clean
+					// "none". The siblings go, so that the rules left behind serve nothing.
+					$reason = 'write_failed';
+					$detail = 'the block could not be removed from uploads/.htaccess | ' . $detail;
+					$purge  = true;
+				} elseif ( 'server_error' === $reason ) {
+					// The block itself answered 500: the daily check leaves it out from now on.
+					$next['held'] = true;
+				}
+			} elseif ( $held ) {
+				// Tested without the block it is holding back: still the HTTP 500 verdict.
+				$reason = 'server_error';
+				$detail = 'daily check without the .htaccess rules (held back after an HTTP 500: Retest or save the settings to try them again) | ' . $detail;
 			}
 
-			$reason = $check['reason'];
 			if ( $write_failed && in_array( $reason, [ 'no_rule', 'no_vary' ], true ) ) {
 				$reason = 'write_failed';
 			}
-			return $this->commit( $previous, $this->verdict( $next, self::MODE_NONE, $reason, $check['detail'], $check['cdn'] ), $purge );
+			return $this->commit( $previous, $this->verdict( $next, self::MODE_NONE, $reason, $detail, $check['cdn'] ), $purge );
 		}
+
+		$next['held'] = false;
 
 		$server_mode = $this->htaccess->is_present() ? self::MODE_HTACCESS : self::MODE_NGINX;
 
@@ -308,7 +392,7 @@ final class DeliveryProbe {
 	 *
 	 * @param array<string, mixed> $previous
 	 * @param array<string, mixed> $next
-	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int}
+	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int, held: bool}
 	 */
 	private function commit( array $previous, array $next, bool $purge ): array {
 		update_option( self::OPTION, $next, true );
@@ -544,7 +628,7 @@ final class DeliveryProbe {
 	 * previous veto. Statuses other than 200, or types that are not images, prove nothing and
 	 * change nothing.
 	 *
-	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int}
+	 * @return array{mode: string, server_mode: string, cdn: string, reason: string, detail: string, checked_at: int, failures: int, server: string, browser: string, browser_at: int, held: bool}
 	 */
 	public function apply_browser_result( int $avif_status, string $avif_type, int $plain_status, string $plain_type ): array {
 		$previous = self::result();
