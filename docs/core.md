@@ -42,7 +42,8 @@ Each module is a class extending `AbstractModule` (which implements `ModuleInter
 - `get_settings(): array` — current settings
 - `save_settings(array $settings): bool` — sanitize and persist; the core applies no sanitization
 - `static get_defaults(): array` — nested array of defaults, merged recursively by `get_module_settings()`
-- `static get_uninstall_keys(): array` — declares `options`, `meta` (**post** meta), `user_meta`, `post_type`, `taxonomy`, `tables` (own tables, **without prefix**, dropped with `DROP TABLE`) and `cron` (scheduled task hooks) for the uninstall cleanup; every key is optional. The two meta channels live in different tables: a user meta declared under `meta` is never deleted. The `cron` hooks are also unscheduled by `Deactivator` when the plugin is deactivated: without that, WordPress kept firing every day a hook nobody listens to.
+- `static get_uninstall_keys(): array` — declares `options`, `meta` (**post** meta), `user_meta`, `post_type`, `taxonomy`, `tables` (own tables, **without prefix**, dropped with `DROP TABLE`) and `cron` (scheduled task hooks) for the uninstall cleanup; every key is optional. The two meta channels live in different tables: a user meta declared under `meta` is never deleted. The `cron` hooks are also unscheduled by `Deactivator` when the plugin is deactivated: without that, WordPress kept firing every day a hook nobody listens to. Both use `wp_unschedule_hook()`: `wp_clear_scheduled_hook()` only removes the events scheduled **without arguments**, and an event carried over from SKMT with its arguments survived it.
+- `static uninstall_files(): void` (optional, not in the interface) — files a module created outside its options, removed by `uninstall.php` **before** the module's keys (it may read them). Only the Image Optimizer has one (`uploads/.htaccess` block, AVIF siblings, `uploads/lumia-tools/`).
 
 Optional overrides: `get_admin_css()`, `get_admin_js()`, `get_admin_js_deps()`, `get_admin_js_data()`, `to_form_payload()`, `get_export_extras()` / `import_extras()`, `get_required_capability()`, `on_activate()`, `on_deactivate()`.
 
@@ -230,6 +231,8 @@ if ( ! current_user_can( 'manage_options' ) ) {
     wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'lumia-tools' ) ] );
 }
 ```
+
+**One documented exception:** the Image Optimizer's queue drain, `wp_ajax_nopriv_lumia_image_optimizer_drain` (and its logged-in twin). It is the site calling itself (HTTP loopback, no user, no cookie), so it carries no nonce and checks no capability; it is authenticated by a short-lived HMAC token instead (`QueueRunner::token()`, keyed on `wp_salt( 'nonce' )`, five-minute windows), accepts no other input and can only drain what is already queued. See [modules/image-optimizer.md](modules/image-optimizer.md#background-queue-queuerunner).
 
 Any request data goes through `sanitize_text_field( wp_unslash( $_POST[...] ) )` (or the sanitizer suited to the type) before use; responses go through `wp_send_json_success()` / `wp_send_json_error()`. The nonce is created once via `wp_create_nonce( 'lumia_admin_nonce' )` and shared between modules (`window.lumiaNotifData.nonce` / `window.lumiaAdmin`).
 

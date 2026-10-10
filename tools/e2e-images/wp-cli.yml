@@ -1,0 +1,4 @@
+# WP-CLI cannot tell from the CLI whether mod_rewrite is on: say so, so that
+# `wp rewrite flush --hard` writes the root .htaccess (Apache, OpenLiteSpeed stacks).
+apache_modules:
+  - mod_rewrite

@@ -9,7 +9,157 @@
     initBulkOptimization();
     initMediaActions();
     initSvgRolesToggle();
+    initDelivery();
   });
+
+  // Delivery tab: Retest button, copy of the nginx rule, and the check from the
+  // administrator's browser (spec 9.10).
+  function initDelivery() {
+    const container = document.getElementById("lumia-delivery-status");
+    if (!container || typeof lumiaAdmin === "undefined") return;
+
+    const retestBtn = document.getElementById("lumia-delivery-retest");
+    const i18n = (lumiaAdmin.i18n && lumiaAdmin.i18n.delivery) || {};
+    let browserChecked = false;
+
+    function post(action, fields) {
+      const formData = new FormData();
+      formData.append("action", action);
+      formData.append("nonce", lumiaAdmin.nonce);
+      Object.keys(fields || {}).forEach(function (key) {
+        formData.append(key, fields[key]);
+      });
+      return fetch(lumiaAdmin.ajaxUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      }).then(function (response) {
+        return response.json();
+      });
+    }
+
+    // Replaces the status block with the one the server rendered. False on an error answer.
+    function render(data) {
+      if (data && data.success && data.data && typeof data.data.html === "string") {
+        container.innerHTML = data.data.html;
+        return true;
+      }
+      return false;
+    }
+
+    function probe(url, accept) {
+      // cache: "default" on purpose: a CDN or proxy between the browser and the server must
+      // answer as it does for visitors (no-store would go around the browser cache only, but
+      // also send no-cache upstream).
+      return fetch(url, { headers: { Accept: accept }, cache: "default", credentials: "omit" }).then(
+        function (response) {
+          const type = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+          return { status: response.status, type: type };
+        }
+      );
+    }
+
+    // The server tests itself through a loopback request that may go around a CDN; the
+    // browser goes through it like a visitor. Only run when the server-side test passed:
+    // the browser can then only veto.
+    function browserCheck() {
+      const box = container.querySelector(".lumia-delivery");
+      if (!box || box.getAttribute("data-server-ok") !== "1") return;
+
+      const url = box.getAttribute("data-probe-url");
+      const cell = container.querySelector("[data-lumia-delivery-browser]");
+      if (cell) cell.textContent = i18n.checking || "";
+
+      let avif = null;
+      probe(url, "image/avif,*/*")
+        .then(function (result) {
+          avif = result;
+          return probe(url, "*/*");
+        })
+        .then(function (plain) {
+          return post("lumia_image_optimizer_delivery_browser", {
+            avif_status: avif.status,
+            avif_type: avif.type,
+            plain_status: plain.status,
+            plain_type: plain.type,
+          });
+        })
+        .then(function (data) {
+          if (!render(data) && cell) cell.textContent = i18n.unverified || "";
+        })
+        .catch(function () {
+          if (cell) cell.textContent = i18n.unverified || "";
+        });
+    }
+
+    function browserCheckOnce() {
+      if (browserChecked) return;
+      browserChecked = true;
+      browserCheck();
+    }
+
+    document.addEventListener("lumia:tab", function (event) {
+      const detail = event.detail || {};
+      if (detail.group === "image_optimizer" && detail.name === "delivery") browserCheckOnce();
+    });
+    const panel = container.closest("[data-lumia-tab-panel]");
+    if (panel && !panel.hidden) browserCheckOnce();
+
+    if (retestBtn) {
+      retestBtn.addEventListener("click", function () {
+        const label = retestBtn.innerHTML;
+        retestBtn.disabled = true;
+        retestBtn.textContent = i18n.retesting || "";
+
+        post("lumia_image_optimizer_delivery_retest", {})
+          .then(function (data) {
+            if (!render(data)) {
+              toast((data && data.data) || lumiaAdmin.i18n.networkError, "error");
+              return;
+            }
+            browserCheck();
+          })
+          .catch(function (err) {
+            toast(err.message || lumiaAdmin.i18n.networkError, "error");
+          })
+          .finally(function () {
+            retestBtn.disabled = false;
+            retestBtn.innerHTML = label;
+          });
+      });
+    }
+
+    // "Copy the rule" (the block is re-rendered: delegation).
+    container.addEventListener("click", function (event) {
+      const button = event.target.closest("[data-lumia-copy]");
+      if (!button) return;
+      const source = container.querySelector(button.getAttribute("data-lumia-copy"));
+      if (!source) return;
+      const text = source.textContent;
+
+      function fallback() {
+        const range = document.createRange();
+        range.selectNodeContents(source);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        try {
+          document.execCommand("copy");
+          toast(i18n.copied, "success");
+        } catch (e) {
+          toast(i18n.copyFailed, "error");
+        }
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          toast(i18n.copied, "success");
+        }, fallback);
+      } else {
+        fallback();
+      }
+    });
+  }
 
   // Greys out the role picker when SVG upload is disabled.
   function initSvgRolesToggle() {
@@ -24,256 +174,199 @@
     sync();
   }
 
+  /* ================================================================
+   * BULK TAB
+   * The progress is the distribution of the statuses the server counts
+   * (queue in the background): the screen only polls and displays it.
+   * ================================================================ */
+
   function initBulkOptimization() {
-    const startBtn = document.getElementById("lumia-bulk-start");
-    if (!startBtn || typeof lumiaAdmin === "undefined") return;
+    const root = document.getElementById("lumia-bulk");
+    if (!root || typeof lumiaAdmin === "undefined") return;
 
+    const i18n = lumiaAdmin.i18n || {};
     const scanBtn = document.getElementById("lumia-bulk-scan");
-    const introEl = document.getElementById("lumia-bulk-scan-intro");
-    const resultEl = document.getElementById("lumia-bulk-result");
-    const potentialTile = document.getElementById("lumia-bulk-potential-tile");
-    const progressEl = document.querySelector(".lumia-bulk-status__progress");
-    const messageEl = document.querySelector(".lumia-bulk-status__message");
-    const barEl = document.querySelector(".lumia-progress__bar");
-    const remainingEl = document.getElementById("lumia-bulk-remaining");
-    const potentialEl = document.getElementById("lumia-bulk-potential");
+    const startBtn = document.getElementById("lumia-bulk-start");
+    const stopBtn = document.getElementById("lumia-bulk-stop");
+    const barBox = document.getElementById("lumia-bulk-progress");
+    const barEl = barBox ? barBox.querySelector(".lumia-progress__bar") : null;
+    const messageEl = document.getElementById("lumia-bulk-message");
+    const unservedEl = root.querySelector("[data-lumia-bulk-unserved]");
+    const untouchedEl = root.querySelector("[data-lumia-bulk-untouched] .lumia-bulk__stat-value");
+    const POLL_MS = 3000;
+    const POLL_ERROR_MS = 10000;
 
-    var POLL_MIN = 2000;
-    var POLL_MAX = 5000;
-    var pollInterval = POLL_MIN;
-    var isRunning = false;
+    const startLabel = startBtn ? startBtn.querySelector(".lumia-btn__label") : null;
+    const scanLabel = scanBtn ? scanBtn.querySelector(".lumia-btn__label") : null;
+    const startText = startLabel ? startLabel.textContent : "";
+    const scanText = scanLabel ? scanLabel.textContent : "";
 
-    // Switches from the "scan" prompt to the result block (stats + button).
-    function revealResult() {
-      if (introEl) introEl.style.display = "none";
-      if (resultEl) resultEl.style.display = "flex";
+    let current = lumiaAdmin.bulk || { counts: {}, total: 0, handled: 0, active: false, serving: true };
+    let busy = false;
+    let timer = null;
+    let failedOnce = false;
+
+    function format(value) {
+      return Number(value || 0).toLocaleString();
     }
 
-    // On-demand scan: counts the images and estimates the savings.
-    if (scanBtn) {
-      scanBtn.addEventListener("click", function () {
-        scanBtn.disabled = true;
-        var originalLabel = scanBtn.textContent;
-        scanBtn.textContent = lumiaAdmin.i18n.bulkScanning;
-
-        const formData = new FormData();
-        formData.append("action", "lumia_image_optimizer_bulk_scan");
-        formData.append("nonce", lumiaAdmin.nonce);
-
-        fetch(lumiaAdmin.ajaxUrl, {
-          method: "POST",
-          credentials: "same-origin",
-          body: formData,
-        })
-          .then(function (response) {
-            return response.json();
-          })
-          .then(function (data) {
-            scanBtn.disabled = false;
-            scanBtn.textContent = originalLabel;
-
-            if (!data.success) {
-              if (typeof window.lumiaShowToast === "function") {
-                window.lumiaShowToast(data.data || lumiaAdmin.i18n.error, "error");
-              }
-              return;
-            }
-
-            const result = data.data || {};
-            const remaining = parseInt(result.remaining, 10) || 0;
-            const estimated = parseInt(result.estimated_bytes_saved, 10) || 0;
-
-            if (remainingEl) remainingEl.textContent = remaining;
-
-            // The estimate is only shown when a history makes it credible.
-            if (potentialTile) {
-              if (estimated > 0) {
-                if (potentialEl) potentialEl.textContent = formatBytes(estimated);
-                potentialTile.style.display = "";
-              } else {
-                potentialTile.style.display = "none";
-              }
-            }
-
-            startBtn.disabled = remaining === 0;
-            revealResult();
-          })
-          .catch(function (err) {
-            scanBtn.disabled = false;
-            scanBtn.textContent = originalLabel;
-            if (typeof window.lumiaShowToast === "function") {
-              window.lumiaShowToast(err.message || lumiaAdmin.i18n.networkError, "error");
-            }
-          });
-      });
-    }
-
-    startBtn.addEventListener("click", function () {
-      if (isRunning) return;
-      isRunning = true;
-      pollInterval = POLL_MIN;
-
-      startBtn.disabled = true;
-      startBtn.textContent = lumiaAdmin.i18n.bulkRunning;
-
-      if (progressEl) {
-        progressEl.style.display = "flex";
-      }
-
-      startBulk();
-    });
-
-    // Resync: if a bulk run is already going on server-side (started before a
-    // reload/page close), we resume the display and the polling
-    // instead of leaving the page looking idle.
-    var initialState = lumiaAdmin.bulkState;
-    if (initialState && initialState.running) {
-      isRunning = true;
-      pollInterval = POLL_MIN;
-
-      revealResult();
-
-      startBtn.disabled = true;
-      startBtn.textContent = lumiaAdmin.i18n.bulkRunning;
-
-      if (progressEl) {
-        progressEl.style.display = "flex";
-      }
-
-      updateStatus({
-        processed: initialState.processed,
-        remaining: initialState.remaining,
-        total: initialState.total,
-      });
-
-      pollStatus();
-    }
-
-    function startBulk() {
+    function post(action) {
       const formData = new FormData();
-      formData.append("action", "lumia_image_optimizer_bulk");
+      formData.append("action", "lumia_image_optimizer_" + action);
       formData.append("nonce", lumiaAdmin.nonce);
 
-      fetch(lumiaAdmin.ajaxUrl, {
+      return fetch(lumiaAdmin.ajaxUrl, {
         method: "POST",
         credentials: "same-origin",
         body: formData,
-      })
-        .then(function (response) {
-          return response.json();
-        })
-        .then(function (data) {
-          if (!data.success) {
-            showError(data.data || lumiaAdmin.i18n.error);
-            return;
-          }
-
-          const result = data.data;
-          updateStatus(result);
-
-          if (result.done && !result.running) {
-            finishBulk();
-            return;
-          }
-
-          pollStatus();
-        })
-        .catch(function (err) {
-          showError(err.message || lumiaAdmin.i18n.networkError);
-        });
+      }).then(function (response) {
+        return response.json();
+      });
     }
 
-    function pollStatus() {
-      const formData = new FormData();
-      formData.append("action", "lumia_image_optimizer_bulk_status");
-      formData.append("nonce", lumiaAdmin.nonce);
+    // Replaces the figures with the ones the server counted.
+    function render(snapshot) {
+      current = snapshot;
+      const counts = snapshot.counts || {};
 
-      fetch(lumiaAdmin.ajaxUrl, {
-        method: "POST",
-        credentials: "same-origin",
-        body: formData,
-      })
-        .then(function (response) {
-          return response.json();
-        })
-        .then(function (data) {
-          if (!data.success) {
-            showError(data.data || lumiaAdmin.i18n.error);
-            return;
-          }
+      root.querySelectorAll("[data-lumia-bulk-status]").forEach(function (tile) {
+        const status = tile.getAttribute("data-lumia-bulk-status");
+        const value = tile.querySelector(".lumia-bulk__stat-value");
+        const n = counts[status] || 0;
+        if (value) {
+          value.textContent = format(n);
+          value.classList.toggle("is-nonzero", n > 0);
+        }
+      });
 
-          const result = data.data;
-          updateStatus(result);
-
-          if (result.done && !result.running) {
-            finishBulk();
-            return;
-          }
-
-          setTimeout(pollStatus, pollInterval);
-          pollInterval = Math.min(pollInterval + 500, POLL_MAX);
-        })
-        .catch(function (err) {
-          showError(err.message || lumiaAdmin.i18n.networkError);
-        });
-    }
-
-    function updateStatus(result) {
-      if (remainingEl) {
-        remainingEl.textContent = result.remaining;
-      }
-      if (potentialEl && typeof result.estimated_bytes_saved === "number") {
-        potentialEl.textContent = formatBytes(result.estimated_bytes_saved);
+      if (untouchedEl && typeof snapshot.untouched === "number") {
+        untouchedEl.textContent = format(snapshot.untouched);
       }
 
+      const percent = snapshot.total > 0 ? Math.floor((100 * snapshot.handled) / snapshot.total) : 0;
+      if (barEl) barEl.style.width = percent + "%";
+      if (barBox) barBox.setAttribute("aria-valuenow", String(percent));
       if (messageEl) {
         messageEl.textContent =
-          lumiaAdmin.i18n.bulkProcessed +
-          " " +
-          result.processed +
-          " — " +
-          lumiaAdmin.i18n.bulkRemaining +
-          " " +
-          result.remaining;
+          snapshot.total > 0
+            ? (i18n.bulkProgress || "")
+                .replace("%1$s", format(snapshot.handled))
+                .replace("%2$s", format(snapshot.total))
+            : i18n.bulkEmpty || "";
       }
 
-      if (barEl) {
-        const total = result.total || result.processed + result.remaining || 1;
-        const percent = Math.round(((total - result.remaining) / total) * 100);
-        barEl.style.width = percent + "%";
-      }
+      if (unservedEl) unservedEl.hidden = !!snapshot.serving;
+      refreshButtons();
     }
 
-    function finishBulk() {
-      isRunning = false;
-      startBtn.disabled = false;
-      startBtn.textContent = lumiaAdmin.i18n.bulkDone;
-
-      var completeMsg = lumiaAdmin.i18n.bulkComplete;
-
-      if (messageEl) {
-        messageEl.textContent = completeMsg;
+    function refreshButtons() {
+      if (startBtn) {
+        startBtn.disabled = busy || !current.serving || !!current.active;
+        if (startLabel) startLabel.textContent = current.active ? i18n.bulkRunning : startText;
       }
-
-      if (barEl) {
-        barEl.style.width = "100%";
-      }
-
-      if (typeof window.lumiaShowToast === "function") {
-        window.lumiaShowToast(completeMsg, "success");
-      }
+      if (stopBtn) stopBtn.disabled = busy || !((current.counts || {}).pending > 0);
+      if (scanBtn) scanBtn.disabled = busy;
     }
 
-    function showError(msg) {
-      isRunning = false;
-      startBtn.disabled = false;
-      startBtn.textContent = lumiaAdmin.i18n.bulkRetry;
+    function withBusy(button, label, text, task) {
+      busy = true;
+      if (label && text) label.textContent = text;
+      refreshButtons();
 
-      if (messageEl) {
-        messageEl.textContent = msg;
-        messageEl.style.color = "var(--lumia-danger)";
-      }
+      return task()
+        .catch(function (err) {
+          toast((err && err.message) || i18n.networkError, "error");
+        })
+        .finally(function () {
+          busy = false;
+          if (label && button === scanBtn) label.textContent = scanText;
+          refreshButtons();
+          schedule();
+        });
     }
+
+    // Calls an action and shows what the server answers; false on an error answer.
+    function run(action) {
+      return post(action).then(function (data) {
+        if (!data || !data.success) {
+          toast((data && data.data) || i18n.error, "error");
+          return null;
+        }
+        render(data.data);
+        return data.data;
+      });
+    }
+
+    function poll() {
+      timer = null;
+      if (!current.active) return;
+      if (document.hidden || busy) {
+        schedule();
+        return;
+      }
+
+      const wasActive = current.active;
+      post("bulk_status")
+        .then(function (data) {
+          if (!data || !data.success) throw new Error((data && data.data) || i18n.networkError);
+          failedOnce = false;
+          render(data.data);
+          if (wasActive && !data.data.active) toast(i18n.bulkComplete, "success");
+          schedule();
+        })
+        .catch(function (err) {
+          if (!failedOnce) toast((err && err.message) || i18n.networkError, "error");
+          failedOnce = true;
+          schedule(POLL_ERROR_MS);
+        });
+    }
+
+    // Polls only while items are waiting or being processed.
+    function schedule(delay) {
+      if (timer || !current.active) return;
+      timer = setTimeout(poll, delay || POLL_MS);
+    }
+
+    if (scanBtn) {
+      scanBtn.addEventListener("click", function () {
+        withBusy(scanBtn, scanLabel, i18n.bulkScanning, function () {
+          return run("bulk_scan").then(function (result) {
+            if (result && result.requeued > 0) {
+              toast((i18n.bulkRequeued || "").replace("%s", format(result.requeued)), "info");
+            }
+          });
+        });
+      });
+    }
+
+    if (startBtn) {
+      startBtn.addEventListener("click", function () {
+        withBusy(startBtn, startLabel, i18n.bulkRunning, function () {
+          return run("bulk").then(function (result) {
+            if (!result) return;
+            toast(
+              result.queued > 0 ? (i18n.bulkQueued || "").replace("%s", format(result.queued)) : i18n.bulkNothing,
+              result.queued > 0 ? "success" : "info"
+            );
+          });
+        });
+      });
+    }
+
+    if (stopBtn) {
+      stopBtn.addEventListener("click", function () {
+        withBusy(stopBtn, null, null, function () {
+          return run("bulk_stop").then(function (result) {
+            if (result) toast((i18n.bulkStopped || "").replace("%s", format(result.removed)), "info");
+          });
+        });
+      });
+    }
+
+    refreshButtons();
+    // A run started before this page was loaded: follow it (the status call also restarts a
+    // queue that nobody is working on).
+    schedule(500);
   }
 
   /* ================================================================
@@ -282,61 +375,68 @@
    * as is instead of recomputing sizes and buttons in JS.
    * ================================================================ */
 
-  var MODAL_ID = "lumia-io-modal";
-  var FORMAT_LABELS = { webp: "WebP", avif: "AVIF" };
-
   function initMediaActions() {
+    if (typeof lumiaAdmin === "undefined") return;
+
     document.addEventListener("click", function (event) {
       var button = event.target.closest("[data-lumia-io-action]");
-      if (!button || typeof lumiaAdmin === "undefined") return;
+      if (!button) return;
 
       var panel = button.closest(".lumia-media-optimizer");
       if (!panel) return;
 
       var action = button.getAttribute("data-lumia-io-action");
-      var i18n = lumiaAdmin.i18n || {};
-      var run = function (extra) {
-        runAction(panel, button, action, extra);
-      };
-
-      if (action === "reoptimize") {
-        var hasBackup = button.getAttribute("data-has-backup") === "1";
-        confirmAction({
-          title: i18n.reoptimize.title,
-          message: hasBackup ? i18n.reoptimize.backup : i18n.reoptimize.noBackup,
-          confirm: i18n.reoptimize.confirm,
-          onConfirm: run,
-        });
-      } else if (action === "convert") {
-        confirmAction({
-          title: i18n.convert.title,
-          message: i18n.convert.message,
-          confirm: i18n.convert.confirm,
-          formats: (button.getAttribute("data-formats") || "").split(",").filter(Boolean),
-          onConfirm: run,
-        });
-      } else if (action === "restore") {
-        confirmAction({
-          title: i18n.restore.title,
-          message: i18n.restore.message,
-          confirm: i18n.restore.confirm,
-          danger: true,
-          onConfirm: run,
-        });
-      } else {
-        run({});
+      if (action === "copy-url") {
+        copyText(button.getAttribute("data-url") || "", panel).then(
+          function () {
+            toast(lumiaAdmin.i18n.mediaCopied, "success");
+          },
+          function () {
+            toast(lumiaAdmin.i18n.mediaCopyFail, "error");
+          }
+        );
+      } else if (action === "regenerate") {
+        runAction(panel, button, "regenerate", {});
       }
     });
+
+    // Capture phase: the media modal's Backbone view listens to `change` on its fields to
+    // save them (save-attachment-compat); this switch is not one of them.
+    document.addEventListener(
+      "change",
+      function (event) {
+        var toggle = event.target.closest && event.target.closest("[data-lumia-io-toggle]");
+        if (!toggle) return;
+
+        var panel = toggle.closest(".lumia-media-optimizer");
+        if (!panel) return;
+
+        event.stopPropagation();
+        runAction(panel, toggle, "toggle_original", { enabled: toggle.checked ? "1" : "0" });
+      },
+      true
+    );
   }
 
-  function runAction(panel, button, action, extra) {
+  function runAction(panel, control, action, extra) {
     var attachmentId = panel.getAttribute("data-attachment");
-    var buttons = panel.querySelectorAll("[data-lumia-io-action]");
-    buttons.forEach(function (b) {
-      b.disabled = true;
+
+    // Only the controls that were enabled come back enabled (a name-excluded image keeps
+    // its switch disabled).
+    var disabled = [];
+    panel.querySelectorAll("[data-lumia-io-action], [data-lumia-io-toggle]").forEach(function (el) {
+      if (!el.disabled) {
+        el.disabled = true;
+        disabled.push(el);
+      }
     });
-    var label = button.textContent;
-    button.textContent = lumiaAdmin.i18n.mediaRunning;
+    panel.querySelectorAll("a.lumia-btn").forEach(function (link) {
+      link.setAttribute("aria-disabled", "true");
+    });
+
+    var isButton = control.tagName === "BUTTON";
+    var original = isButton ? control.innerHTML : "";
+    if (isButton) control.textContent = lumiaAdmin.i18n.mediaRunning;
 
     var formData = new FormData();
     formData.append("action", "lumia_image_optimizer_media_" + action);
@@ -362,81 +462,57 @@
         panel.outerHTML = data.data.html;
         toast(data.data.message, data.data.type);
 
-        // Media library grid: the Backbone model keeps the old URL
-        // (and the old panel) until it is reloaded.
+        // Media library grid: the Backbone model keeps the old panel
+        // until it is reloaded.
         if (window.wp && wp.media && typeof wp.media.attachment === "function") {
           wp.media.attachment(attachmentId).fetch();
         }
       })
       .catch(function (err) {
-        buttons.forEach(function (b) {
-          b.disabled = false;
+        disabled.forEach(function (el) {
+          el.disabled = false;
         });
-        button.textContent = label;
+        panel.querySelectorAll("a.lumia-btn").forEach(function (link) {
+          link.removeAttribute("aria-disabled");
+        });
+        if (isButton) control.innerHTML = original;
+        if (control.type === "checkbox") control.checked = !control.checked;
         toast(err.message || lumiaAdmin.i18n.mediaError, "error");
       });
   }
 
-  // Named design-system modal, created once in <body>: the media screens
-  // do not have the #lumia-modal-overlay singleton of the plugin pages.
-  function confirmAction(options) {
-    var modal = document.getElementById(MODAL_ID);
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.id = MODAL_ID;
-      modal.className = "lumia-modal-overlay";
-      modal.setAttribute("role", "dialog");
-      modal.setAttribute("aria-modal", "true");
-      modal.setAttribute("aria-labelledby", MODAL_ID + "-title");
-      modal.innerHTML =
-        '<div class="lumia-modal">' +
-        '<div class="lumia-modal__header"><h3 id="' + MODAL_ID + '-title" class="lumia-modal__title"></h3></div>' +
-        '<div class="lumia-modal__body">' +
-        '<p class="lumia-io-modal__message"></p>' +
-        '<div class="lumia-form__group lumia-io-modal__format">' +
-        '<label class="lumia-form__label" for="' + MODAL_ID + '-format"></label>' +
-        '<select class="lumia-select" id="' + MODAL_ID + '-format"></select>' +
-        "</div></div>" +
-        '<div class="lumia-modal__footer">' +
-        '<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary lumia-modal-close"></button>' +
-        '<button type="button" class="lumia-btn lumia-btn--sm lumia-io-modal__confirm"></button>' +
-        "</div></div>";
-      document.body.appendChild(modal);
-
-      modal.querySelector(".lumia-modal-close").textContent = lumiaAdmin.i18n.cancel;
-      modal.querySelector(".lumia-form__label").textContent = lumiaAdmin.i18n.format;
-      modal.querySelector(".lumia-io-modal__confirm").addEventListener("click", function () {
-        window.lumiaModalClose(MODAL_ID);
-        if (typeof modal.onConfirm === "function") modal.onConfirm();
+  // Copies a text: Clipboard API where the page is secure, a temporary field otherwise
+  // (kept inside the panel so that the media modal's focus trap does not reject it).
+  function copyText(text, container) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return legacyCopy(text, container);
       });
     }
+    return legacyCopy(text, container);
+  }
 
-    var formats = options.formats || [];
-    var select = modal.querySelector("select");
-    select.innerHTML = "";
-    formats.forEach(function (format) {
-      var option = document.createElement("option");
-      option.value = format;
-      option.textContent = FORMAT_LABELS[format] || format;
-      select.appendChild(option);
+  function legacyCopy(text, container) {
+    return new Promise(function (resolve, reject) {
+      var field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.position = "absolute";
+      field.style.left = "-9999px";
+      container.appendChild(field);
+      field.select();
+
+      var ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+      container.removeChild(field);
+
+      if (ok) resolve();
+      else reject(new Error("copy"));
     });
-    modal.querySelector(".lumia-io-modal__format").style.display = formats.length ? "" : "none";
-
-    modal.querySelector(".lumia-modal__title").textContent = options.title;
-    modal.querySelector(".lumia-io-modal__message").textContent = options.message;
-
-    var confirmBtn = modal.querySelector(".lumia-io-modal__confirm");
-    confirmBtn.textContent = options.confirm;
-    confirmBtn.className =
-      "lumia-btn lumia-btn--sm lumia-io-modal__confirm " +
-      (options.danger ? "lumia-btn--danger" : "lumia-btn--primary");
-
-    modal.onConfirm = function () {
-      options.onConfirm(formats.length ? { format: select.value } : {});
-    };
-
-    window.lumiaModalOpen(MODAL_ID);
-    confirmBtn.focus();
   }
 
   // The toast container only exists on the plugin pages.
@@ -451,17 +527,5 @@
       document.body.appendChild(container);
     }
     window.lumiaShowToast(message, type || "success");
-  }
-
-  function formatBytes(bytes) {
-    if (!bytes || bytes <= 0) return "0 B";
-    const units = ["B", "KB", "MB", "GB"];
-    let index = 0;
-    let value = bytes;
-    while (value >= 1024 && index < units.length - 1) {
-      value /= 1024;
-      index++;
-    }
-    return value.toFixed(2) + " " + units[index];
   }
 })();

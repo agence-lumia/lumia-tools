@@ -31,12 +31,14 @@ In Settings > Updates:
 
 ### Image Optimizer
 
-- AVIF/WebP conversion (automatic)
-- Configurable quality
-- Resizing
-- EXIF removal
+- AVIF version of every JPEG/PNG, generated in the background and served only to the browsers that accept it (the JPEG/PNG stays the file, at the same URL)
+- Delivery self-test: nginx rule, or `.htaccess` rules written on Apache/LiteSpeed; nothing is generated until the test passes
+- Configurable quality and encoding speed, maximum dimension
+- EXIF removal (lossless on the served JPEG files)
+- Per-image "serve the original format" switch, exclusion by file name suffix
 - Automatic alt text
 - Bulk optimization
+- `wp lumia images migrate` for the media converted by earlier versions
 - Safe SVG upload (allow-list sanitizing, allowed per role)
 
 ### Security

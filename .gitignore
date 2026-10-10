@@ -11,6 +11,7 @@ vendor/
 
 # Docker bench: generated captures and zips (development only)
 tools/e2e/out/
+tools/e2e-images/out/
 
 # Language tooling: WP-CLI phar downloaded on demand (tools/i18n/wp.sh)
 tools/i18n/.cache/

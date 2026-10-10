@@ -4,13 +4,13 @@ namespace Lumia\Tools\Modules\ImageOptimizer;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Rewrites the URLs of a converted media item wherever they have already been inserted.
+ * Rewrites the URLs of a renamed media item wherever they have already been inserted.
  *
- * Converting an image changes its file name (photo.jpg → photo.webp), and
- * ImageProcessor::convert() deletes the original by default. Without this pass,
- * every occurrence already inserted — post content, page builder metas
- * (Bricks, ACF…), theme options, srcset — pointed to a vanished file:
- * a bulk optimization broke every image already in a page.
+ * Only the legacy migration (`wp lumia images migrate`) uses it: the former pipeline
+ * replaced each file by its AVIF/WebP conversion (photo.jpg → photo.avif), and the
+ * migration gives the media item a JPEG/PNG again (photo.avif → photo.jpg). Every
+ * occurrence already inserted — post content, page builder metas (Bricks, ACF…), theme
+ * options, srcset — is pointed at the new file.
  *
  * Principles:
  *  - we look for the path RELATIVE to the uploads folder, preceded by a "/" and
@@ -23,10 +23,12 @@ defined( 'ABSPATH' ) || exit;
  *    re-serialized — a textual replacement would corrupt the string
  *    lengths (`s:42:"…"`) and break the value. Only stdClass is
  *    instantiated: any other class stays incomplete (no __wakeup) and
- *    is re-serialized under its original name, intact;
+ *    is re-serialized under its original name, intact. A string found
+ *    inside is checked again: a doubly serialized value (a plugin that
+ *    serializes before WordPress does) is handled the same way;
  *  - a single query per table and per call, whatever the number of
  *    media items: the stems (`/2024/01/photo`) are gathered in one OR.
- *    The bulk run thus groups the pairs of a whole batch before calling
+ *    The migration thus groups the pairs of a whole batch before calling
  *    rewrite() — five images, three queries, not fifteen.
  */
 class UrlRewriter {
@@ -206,7 +208,11 @@ class UrlRewriter {
 	 */
 	private function replace_recursive( $data, array $pairs ) {
 		if ( is_string( $data ) ) {
-			return $this->replace_in_string( $data, $pairs );
+			// A string that is itself serialized (a plugin that serializes before
+			// update_option() / update_post_meta(), which serialize again): unserialized,
+			// walked and re-serialized like the outer value, through replace_in_value().
+			// A plain replacement would break its inner `s:N:` lengths.
+			return $this->replace_in_value( $data, $pairs );
 		}
 		if ( is_array( $data ) ) {
 			foreach ( $data as $k => $v ) {

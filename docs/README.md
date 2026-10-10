@@ -12,7 +12,7 @@ Internal plugin documentation, excluded from the release ZIPs. `CLAUDE.md` at th
 |---|---|---|
 | Security | [modules/security.md](modules/security.md) | IP resolution, rate limiter (including application passwords), login URL, anti-enumeration, `X-Powered-By` |
 | WhiteLabel | [modules/white-label.md](modules/white-label.md) | admin bar, profile, local avatars, `MenuProfileManager` and its cache |
-| ImageOptimizer | [modules/image-optimizer.md](modules/image-optimizer.md) | encoder detection, `UrlRewriter`, bulk, SVG sanitizer |
+| ImageOptimizer | [modules/image-optimizer.md](modules/image-optimizer.md) | AVIF siblings served by `Accept` negotiation, delivery self-test, background queue, encoder pitfalls, bulk, legacy migration, uninstall, SVG sanitizer |
 | MenuCreator | [modules/menu-creator.md](modules/menu-creator.md) | profile application, access blocking, export, history, icons |
 | Login | [modules/login.md](modules/login.md) | `login_*` hooks |
 | Files | [modules/files.md](modules/files.md) | `FileManager`, core CodeMirror, `DISALLOW_FILE_*` |
