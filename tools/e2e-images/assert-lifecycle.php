@@ -234,6 +234,56 @@ lc_check( ! isset( $lc_enqueued[ $noopt ] ), 'excluded media: no enqueued action
 $noopt1 = lc_import( 'logo-flat.png', "logo-{$run}-noopt-1.png" );
 lc_check( $noopt1 > 0 && AvifState::EXCLUDED === AvifState::get( $noopt1 )['status'], 'logo-noopt-1.png: excluded' );
 
+// --- EXIF stripped at upload, whether or not an AVIF is ever made -----------------------
+
+WP_CLI::log( 'EXIF at upload' );
+
+/**
+ * EXIF / XMP APP1 segments and ICC profile present in a JPEG file.
+ *
+ * @return array{exif: bool, xmp: bool, icc: bool}
+ */
+function lc_jpeg_segments( string $path ): array {
+	$data = (string) file_get_contents( $path );
+	return [
+		'exif' => str_contains( $data, "Exif\0\0" ),
+		'xmp'  => str_contains( $data, 'http://ns.adobe.com/xap/1.0/' ),
+		'icc'  => str_contains( $data, 'ICC_PROFILE' ),
+	];
+}
+
+$gps_fixture = lc_jpeg_segments( LC_FIXTURES . '/photo-gps.jpg' );
+lc_check( $gps_fixture['exif'] && $gps_fixture['xmp'] && $gps_fixture['icc'], 'photo-gps.jpg fixture: EXIF, XMP and ICC present' );
+
+$exif_cases = [
+	'excluded name'           => [ [], "gps-{$run}-noopt.jpg" ],
+	'automatic processing off' => [ [ 'optimize_on_upload' => false ], "gps-off-{$run}.jpg" ],
+];
+foreach ( $exif_cases as $label => [ $settings, $name ] ) {
+	if ( $settings ) {
+		update_option( $option_key, $settings );
+	}
+	$gps  = lc_import( 'photo-gps.jpg', $name );
+	$meta = wp_get_attachment_metadata( $gps );
+	$main = (string) get_attached_file( $gps );
+	$segs = lc_jpeg_segments( $main );
+	lc_check( $gps > 0 && ! $segs['exif'] && ! $segs['xmp'] && $segs['icc'], "{$label}: served JPEG without EXIF / XMP, ICC kept (" . wp_json_encode( $segs ) . ')' );
+	$stale = [];
+	foreach ( (array) ( $meta['sizes'] ?? [] ) as $size ) {
+		$path = path_join( dirname( $main ), (string) $size['file'] );
+		if ( lc_jpeg_segments( $path )['exif'] || ( isset( $size['filesize'] ) && (int) $size['filesize'] !== (int) filesize( $path ) ) ) {
+			$stale[] = $size['file'];
+		}
+	}
+	lc_check( ! $stale && (int) ( $meta['filesize'] ?? -1 ) === (int) filesize( $main ), "{$label}: sizes stripped, metadata filesize matches the files" . ( $stale ? ' (' . implode( ', ', $stale ) . ')' : '' ) );
+	delete_option( $option_key );
+}
+
+update_option( $option_key, [ 'strip_exif' => false ] );
+$gps_kept = lc_import( 'photo-gps.jpg', "gps-kept-{$run}.jpg" );
+lc_check( lc_jpeg_segments( (string) get_attached_file( $gps_kept ) )['exif'], 'strip_exif off: EXIF left in the served JPEG' );
+delete_option( $option_key );
+
 $counts = AvifState::count_by_status();
 lc_check( $counts[ AvifState::EXCLUDED ] >= 2 && $counts[ AvifState::PENDING ] >= 1 && array_key_exists( AvifState::FAILED, $counts ), 'count_by_status() lists every status' );
 

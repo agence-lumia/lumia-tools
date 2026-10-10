@@ -223,7 +223,47 @@ final class FileLifecycle {
 		unset( $this->generating[ $id ] );
 
 		if ( $id > 0 && is_array( $metadata ) ) {
+			$metadata = $this->strip_served_jpegs( $metadata );
 			$this->sync( $id, $metadata, true, 'upload' );
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * With `strip_exif`, removes the EXIF / XMP APP1 segments of the served JPEG files (main
+	 * file and sizes, never `original_image`) losslessly, as soon as WordPress has made them:
+	 * whether or not an AVIF is ever encoded (delivery not proven, excluded name, automatic
+	 * processing off), the GPS block must not stay public. Done before sync(), so that a
+	 * fingerprint recorded later is the stripped file's; the `filesize` entries of the metadata
+	 * about to be saved are corrected. The queue does it again (a no-op on a stripped file).
+	 *
+	 * @param array<string, mixed> $metadata
+	 * @return array<string, mixed>
+	 */
+	private function strip_served_jpegs( array $metadata ): array {
+		if ( ! $this->setting( 'strip_exif' ) ) {
+			return $metadata;
+		}
+
+		$main = $this->metadata_sources( $metadata );
+		$main = (string) reset( $main );
+
+		foreach ( $this->metadata_sources( $metadata ) as $path ) {
+			if ( ! is_file( $path ) || 'image/jpeg' !== wp_get_image_mime( $path ) || JpegMetadata::strip_app1( $path ) <= 0 ) {
+				continue;
+			}
+
+			clearstatcache( true, $path );
+			$bytes = (int) filesize( $path );
+			if ( $path === $main && isset( $metadata['filesize'] ) ) {
+				$metadata['filesize'] = $bytes;
+			}
+			foreach ( (array) ( $metadata['sizes'] ?? [] ) as $size => $data ) {
+				if ( is_array( $data ) && isset( $data['filesize'], $data['file'] ) && wp_basename( (string) $data['file'] ) === wp_basename( $path ) ) {
+					$metadata['sizes'][ $size ]['filesize'] = $bytes;
+				}
+			}
 		}
 
 		return $metadata;
