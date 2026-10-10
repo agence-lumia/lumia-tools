@@ -24,7 +24,7 @@ require_once ABSPATH . 'wp-admin/includes/media.php';
 require_once ABSPATH . 'wp-admin/includes/image.php';
 
 // wp eval-file includes this file from inside a function: globals must be declared.
-global $lc_failures, $lc_created, $lc_enqueued;
+global $lc_failures, $lc_created, $lc_enqueued, $wpdb;
 $lc_failures = 0;
 $lc_created  = [];
 $lc_enqueued = [];
@@ -406,13 +406,61 @@ for ( $i = 0; $i < 50 && AvifState::DONE === AvifState::get( $rec )['status']; $
 lc_check( $requeued >= 1 && AvifState::PENDING === AvifState::get( $rec )['status'] && 'reconcile' === AvifState::get( $rec )['origin'], 'reconcile(): changed source queued again (origin reconcile)' );
 lc_check( ! file_exists( FileLifecycle::sibling( $rec_src ) ), 'reconcile(): stale .avif deleted' );
 
+// Generation flag: wp_update_image_subsizes() with no size missing (REST post-process retry,
+// media_create_image_subsizes) ends without wp_generate_attachment_metadata. A flag left up
+// would make every later metadata save of the item ignored for the rest of the request.
+lc_simulate_encoded( $fam, $lc );
+wp_update_image_subsizes( $fam );
+$fam_srcs = $lc->source_files( $fam );
+$fam_size = end( $fam_srcs );
+file_put_contents( $fam_size, file_get_contents( $fam_size ) . 'x' );
+wp_update_attachment_metadata( $fam, wp_get_attachment_metadata( $fam ) );
+lc_check( AvifState::PENDING === AvifState::get( $fam )['status'] && ! file_exists( FileLifecycle::sibling( $fam_size ) ), 'after wp_update_image_subsizes() with nothing missing, a metadata save is still handled (no stuck generation flag)' );
+
+// Deactivation at scale: 3 000 fake media items (state metas only, files absent), one in ten
+// excluded, one in a hundred with a legacy list, purged with the real ones.
+$fake_first = 900000001;
+$fake_count = 3000;
+$fake_where = $wpdb->prepare( 'post_id BETWEEN %d AND %d', $fake_first, $fake_first + $fake_count - 1 );
+$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE {$fake_where}" );
+$rows = [];
+for ( $n = 0; $n < $fake_count; $n++ ) {
+	$fid    = $fake_first + $n;
+	$sizes  = [];
+	foreach ( [ '', '-150x150', '-300x225', '-768x576', '-1024x768', '-1536x1152', '-2048x1536' ] as $suffix ) {
+		$sizes[ "2026/10/purge-{$n}{$suffix}.jpg" ] = [ 'bytes' => 1000, 'mtime' => 1, 'avif_bytes' => 600 ];
+	}
+	$detail = maybe_serialize( [ 'sizes' => $sizes, 'error' => '', 'attempts' => 1, 'updated' => 1 ] );
+	$status = 0 === $n % 10 ? AvifState::EXCLUDED : AvifState::DONE;
+	foreach ( [ AvifState::META => $detail, AvifState::STATUS => $status, AvifState::GEN => '1', AvifState::QUEUED_AT => '1', AvifState::ORIGIN => 'bulk' ] as $key => $value ) {
+		$rows[] = $wpdb->prepare( '( %d, %s, %s )', $fid, $key, $value );
+	}
+	if ( 0 === $n % 100 ) {
+		$rows[] = $wpdb->prepare( '( %d, %s, %s )', $fid, AvifState::LEGACY, maybe_serialize( [ 'legacy.avif' ] ) );
+	}
+}
+foreach ( array_chunk( $rows, 1000 ) as $chunk ) {
+	$wpdb->query( "INSERT INTO {$wpdb->postmeta} ( post_id, meta_key, meta_value ) VALUES " . implode( ', ', $chunk ) );
+}
+
 lc_simulate_encoded( $fam, $lc );
 lc_simulate_encoded( $big, $lc );
+$t0 = microtime( true );
 $module->on_deactivate();
+$purge_ms = (int) round( ( microtime( true ) - $t0 ) * 1000 );
+WP_CLI::log( "  info purge of {$fake_count} fake + the bench's media items: {$purge_ms} ms" );
 $left = array_merge( lc_siblings( $fam, $lc ), lc_siblings( $big, $lc ) );
 lc_check( ! $left, 'deactivation: no generated .avif left (' . count( $left ) . ')' );
-lc_check( '' === (string) get_post_meta( $big, '_lumia_avif_status', true ) && '' === (string) get_post_meta( $big, '_lumia_avif', true ), 'deactivation: _lumia_avif* metas reset' );
+lc_check( '' === (string) get_post_meta( $big, '_lumia_avif_status', true ) && '' === (string) get_post_meta( $big, '_lumia_avif', true ), 'deactivation: _lumia_avif* metas reset (meta cache cleared too)' );
 lc_check( AvifState::EXCLUDED === AvifState::get( $noopt )['status'], 'deactivation: an exclusion survives (no AVIF to purge)' );
+$fake_left = $wpdb->get_results( "SELECT meta_key, meta_value, COUNT(*) AS n FROM {$wpdb->postmeta} WHERE {$fake_where} GROUP BY meta_key, meta_value", ARRAY_A );
+$by_key    = [];
+foreach ( $fake_left as $row ) {
+	$by_key[ $row['meta_key'] . '=' . ( AvifState::STATUS === $row['meta_key'] ? $row['meta_value'] : '*' ) ] = (int) $row['n'];
+}
+lc_check( [ AvifState::LEGACY . '=*' => 30, AvifState::STATUS . '=' . AvifState::EXCLUDED => 300 ] == $by_key, "purge at scale: only the 300 exclusions and the 30 legacy lists remain (" . wp_json_encode( $by_key ) . ')' );
+lc_check( $purge_ms < 30000, "purge at scale completes well within a request ({$purge_ms} ms)" );
+$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE {$fake_where}" );
 
 // --- Cleanup ------------------------------------------------------------------------------------
 

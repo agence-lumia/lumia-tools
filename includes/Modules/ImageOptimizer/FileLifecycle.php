@@ -746,38 +746,99 @@ final class FileLifecycle {
 	 * the server stops serving AVIF nobody keeps up to date any more. The legacy list
 	 * (migration) and a manual exclusion stay: neither has a generated file.
 	 *
+	 * Runs to the end whatever the library size: the module is already recorded as off
+	 * when this runs (Modules::deactivate()), so a purge cut by max_execution_time would
+	 * leave siblings served and never updated again. Per item, only file checks remain:
+	 * the metadata is read in batches, and the metas go in one DELETE.
+	 *
 	 * @return int Siblings deleted.
 	 */
 	public function purge_all(): int {
 		global $wpdb;
 
-		$deleted = 0;
-		$last    = 0;
+		ignore_user_abort( true );
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 0 );
+		}
+
+		$keys     = AvifState::STATE_KEYS;
+		$excluded = array_map(
+			'intval',
+			(array) $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off read before the bulk delete.
+				$wpdb->prepare( "SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s", AvifState::STATUS, AvifState::EXCLUDED )
+			)
+		);
+
+		$deleted  = 0;
+		$last     = 0;
+		$affected = [];
 
 		do {
-			$ids = array_map(
-				'intval',
-				(array) $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off walk over the state metas.
-					$wpdb->prepare(
-						"SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ( %s, %s ) AND post_id > %d ORDER BY post_id ASC LIMIT 500",
-						AvifState::META,
-						AvifState::STATUS,
-						$last
-					)
+			// One query per batch: the item, its detail meta, its WordPress metadata.
+			$rows = (array) $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- batch walk over the state metas.
+				$wpdb->prepare(
+					"SELECT ids.post_id, d.meta_value AS detail, a.meta_value AS attachment
+					FROM ( SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ( %s, %s ) AND post_id > %d ORDER BY post_id ASC LIMIT 1000 ) ids
+					LEFT JOIN {$wpdb->postmeta} d ON d.post_id = ids.post_id AND d.meta_key = %s
+					LEFT JOIN {$wpdb->postmeta} a ON a.post_id = ids.post_id AND a.meta_key = '_wp_attachment_metadata'
+					ORDER BY ids.post_id ASC",
+					AvifState::META,
+					AvifState::STATUS,
+					$last,
+					AvifState::META
 				)
 			);
 
-			foreach ( $ids as $id ) {
-				$deleted += $this->remove_siblings( $id );
-				$excluded = AvifState::EXCLUDED === get_post_meta( $id, AvifState::STATUS, true );
-				AvifState::clear( $id );
-				if ( $excluded ) {
-					AvifState::set_status( $id, AvifState::EXCLUDED );
+			$batch = [];
+			foreach ( $rows as $row ) {
+				$id = (int) $row->post_id;
+
+				$paths  = [];
+				$detail = maybe_unserialize( (string) $row->detail );
+				if ( is_array( $detail ) && is_array( $detail['sizes'] ?? null ) ) {
+					foreach ( array_keys( $detail['sizes'] ) as $rel ) {
+						$paths[] = AvifState::abs( (string) $rel );
+					}
 				}
-				$last = $id;
+				$metadata = maybe_unserialize( (string) $row->attachment );
+				if ( is_array( $metadata ) ) {
+					$paths = array_merge( $paths, array_values( $this->metadata_sources( $metadata ) ) );
+				}
+
+				foreach ( array_unique( $paths ) as $path ) {
+					if ( $this->delete_sibling( $path ) ) {
+						++$deleted;
+					}
+				}
+
+				$batch[ $id ] = true;
+				$last         = max( $last, $id );
 			}
-			$batch = count( $ids );
-		} while ( 500 === $batch );
+			$affected += $batch;
+			$size      = count( $batch );
+		} while ( 1000 <= $size );
+
+		// The metas, in one statement (the legacy list is not in STATE_KEYS).
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk reset, the cache is cleared below.
+			$wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN ( " . implode( ', ', array_fill( 0, count( $keys ), '%s' ) ) . ' )', $keys )
+		);
+
+		// A manual exclusion survives (status only).
+		foreach ( array_chunk( $excluded, 500 ) as $chunk ) {
+			$values = [];
+			foreach ( $chunk as $id ) {
+				$values[] = $wpdb->prepare( '( %d, %s, %s )', $id, AvifState::STATUS, AvifState::EXCLUDED );
+			}
+			$wpdb->query( "INSERT INTO {$wpdb->postmeta} ( post_id, meta_key, meta_value ) VALUES " . implode( ', ', $values ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- each tuple prepared above.
+		}
+
+		if ( function_exists( 'wp_cache_supports' ) && wp_cache_supports( 'flush_group' ) ) {
+			wp_cache_flush_group( 'post_meta' );
+		} else {
+			foreach ( array_keys( $affected ) as $id ) {
+				wp_cache_delete( $id, 'post_meta' );
+			}
+		}
 
 		delete_option( self::RECONCILE_CURSOR );
 

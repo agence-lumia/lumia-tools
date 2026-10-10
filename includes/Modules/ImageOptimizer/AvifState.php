@@ -39,6 +39,9 @@ final class AvifState {
 	public const STATUSES = [ self::PENDING, self::PROCESSING, self::DONE, self::PARTIAL, self::SKIPPED, self::FAILED, self::EXCLUDED ];
 	public const ORIGINS  = [ 'upload', 'bulk', 'manual', 'reconcile' ];
 
+	/** Every state meta except the legacy list. */
+	public const STATE_KEYS = [ self::META, self::STATUS, self::QUEUED_AT, self::ORIGIN, self::GEN ];
+
 	/**
 	 * Full state of a media item. `status` is '' when the item has none.
 	 *
@@ -201,7 +204,7 @@ final class AvifState {
 	 * Removes every `_lumia_avif*` meta of a media item except the legacy list.
 	 */
 	public static function clear( int $id ): void {
-		foreach ( [ self::META, self::STATUS, self::QUEUED_AT, self::ORIGIN, self::GEN ] as $key ) {
+		foreach ( self::STATE_KEYS as $key ) {
 			delete_post_meta( $id, $key );
 		}
 	}
