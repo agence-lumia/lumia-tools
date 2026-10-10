@@ -1727,10 +1727,6 @@ msgstr "Échec de l'upload."
 msgid "Permission denied."
 msgstr "Permission refusée."
 
-#: includes/Modules/Files/Module.php:183
-msgid "File modification is disabled on this site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS or the file_mod_allowed filter)."
-msgstr "La modification de fichiers est désactivée sur ce site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS ou filtre file_mod_allowed)."
-
 #: includes/Modules/Files/Module.php:248
 #: includes/Modules/Files/Module.php:546
 msgid "Deleted successfully."
@@ -5357,3 +5353,90 @@ msgstr "Gérer les modules"
 #: templates/components/sidebar.php:27
 msgid "Global configuration"
 msgstr "Configuration globale"
+
+msgid "File editing unlocked (danger mode)"
+msgstr "Édition des fichiers déverrouillée (mode danger)"
+
+msgid "File editing locked again"
+msgstr "Édition des fichiers reverrouillée"
+
+msgid "File written in danger mode"
+msgstr "Fichier écrit en mode danger"
+
+msgid "Reason"
+msgstr "Motif"
+
+msgid "Turned on by"
+msgstr "Activé par"
+
+msgid "Operation"
+msgstr "Opération"
+
+msgid "Locked by hand"
+msgstr "Verrouillé manuellement"
+
+msgid "One hour elapsed"
+msgstr "Heure écoulée"
+
+msgid "Saved from the editor"
+msgstr "Enregistré depuis l'éditeur"
+
+msgid "Uploaded"
+msgstr "Uploadé"
+
+msgid "File editing is unlocked until %1$s (turned on by %2$s)."
+msgstr "L'édition des fichiers est déverrouillée jusqu'à %1$s (activée par %2$s)."
+
+msgid "an unknown user"
+msgstr "un utilisateur inconnu"
+
+msgid "File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter)."
+msgstr "La modification de fichiers est désactivée sur ce site (DISALLOW_FILE_MODS ou filtre file_mod_allowed)."
+
+msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT). Turn on the danger mode to unlock it for one hour."
+msgstr "L'édition du code est désactivée sur ce site (DISALLOW_FILE_EDIT). Activez le mode danger pour la déverrouiller pendant une heure."
+
+msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT)."
+msgstr "L'édition du code est désactivée sur ce site (DISALLOW_FILE_EDIT)."
+
+msgid "The danger mode is not available on this site."
+msgstr "Le mode danger n'est pas disponible sur ce site."
+
+msgid "File editing unlocked for one hour."
+msgstr "Édition des fichiers déverrouillée pour une heure."
+
+msgid "File editing locked again."
+msgstr "Édition des fichiers reverrouillée."
+
+msgid "Danger mode:"
+msgstr "Mode danger :"
+
+msgid "Code editing is disabled on this site (DISALLOW_FILE_EDIT): saving and uploading are blocked."
+msgstr "L'édition du code est désactivée sur ce site (DISALLOW_FILE_EDIT) : l'enregistrement et l'upload sont bloqués."
+
+msgid "File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter): files can only be browsed and downloaded."
+msgstr "La modification de fichiers est désactivée sur ce site (DISALLOW_FILE_MODS ou filtre file_mod_allowed) : les fichiers peuvent seulement être parcourus et téléchargés."
+
+msgid "Unlock for one hour"
+msgstr "Déverrouiller pour une heure"
+
+msgid "Lock now"
+msgstr "Verrouiller maintenant"
+
+msgid "Unlock file editing for one hour?"
+msgstr "Déverrouiller l'édition des fichiers pendant une heure ?"
+
+msgid "DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. The unlock is recorded in the activity log."
+msgstr "DISALLOW_FILE_EDIT interdit d'éditer le code depuis le navigateur sur ce site. Pendant une heure, ce gestionnaire de fichiers pourra quand même enregistrer et uploader des fichiers, puis il se reverrouillera de lui-même. Une erreur dans un fichier PHP peut faire tomber tout le site : gardez un accès SSH ou SFTP sous la main. Le déverrouillage est inscrit dans le journal d'activité."
+
+msgid "%d min left."
+msgstr "Encore %d min."
+
+msgid "Danger mode: %d min"
+msgstr "Mode danger : %d min"
+
+msgid "File editing locks again in 5 minutes: save your changes."
+msgstr "L'édition des fichiers se reverrouille dans 5 minutes : enregistrez vos modifications."
+
+msgid "The hour is over: file editing is locked again."
+msgstr "L'heure est écoulée : l'édition des fichiers est reverrouillée."

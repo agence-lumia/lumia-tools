@@ -28,6 +28,7 @@ class Events {
 			'themes'   => __( 'Themes', 'lumia-tools' ),
 			'options'  => __( 'WordPress settings', 'lumia-tools' ),
 			'settings' => __( 'Lümia Tools settings', 'lumia-tools' ),
+			'files'    => __( 'Files', 'lumia-tools' ),
 		];
 	}
 
@@ -145,6 +146,18 @@ class Events {
 			'lumia_settings'   => [
 				'group' => 'settings',
 				'label' => __( 'Settings changed', 'lumia-tools' ),
+			],
+			'files_unlocked'   => [
+				'group' => 'files',
+				'label' => __( 'File editing unlocked (danger mode)', 'lumia-tools' ),
+			],
+			'files_locked'     => [
+				'group' => 'files',
+				'label' => __( 'File editing locked again', 'lumia-tools' ),
+			],
+			'file_written'     => [
+				'group' => 'files',
+				'label' => __( 'File written in danger mode', 'lumia-tools' ),
 			],
 		];
 	}

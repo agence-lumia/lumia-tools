@@ -21,6 +21,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	data-nonce="<?php echo esc_attr( wp_create_nonce( 'lumia_admin_nonce' ) ); ?>"
 >
 
+	<!-- LOCK / DANGER MODE (rendered by files.js, see Files\DangerMode) -- -->
+	<div class="lumia-notice lumia-files__lock" id="lumia-files-lock" role="status" hidden></div>
+
 	<!-- TOOLBAR ----------------------------------------------------------- -->
 	<div class="lumia-files__toolbar">
 		<nav class="lumia-files__breadcrumb" id="lumia-files-breadcrumb" aria-label="<?php esc_attr_e( 'Navigation', 'lumia-tools' ); ?>">
@@ -96,6 +99,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="lumia-files-editor__header">
 			<span class="lumia-files-editor__filename" id="lumia-editor-filename"></span>
 			<div class="lumia-files-editor__header-actions">
+				<span class="lumia-files-editor__lock" id="lumia-editor-lock"></span>
 				<button type="button" class="lumia-btn lumia-btn--sm lumia-btn--secondary" id="lumia-editor-close">
 					<?php esc_html_e( 'Close', 'lumia-tools' ); ?>
 				</button>

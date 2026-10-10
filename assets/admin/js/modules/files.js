@@ -26,6 +26,10 @@
     movePath: null,
     renamePath: null,
     dragCounter: 0,
+    danger: lumiaAdmin.danger || {},
+    dangerDeadline: 0,
+    dangerTimer: null,
+    dangerWarned: false,
   };
 
   /* ================================================================
@@ -44,6 +48,7 @@
     var headerSave = document.querySelector('.lumia-page__header-actions [form="lumia-module-form"]');
     if (headerSave) headerSave.style.display = "none";
 
+    renderDanger(fm.danger);
     loadDirectory("");
     initCheckAll();
     initSelectionBar();
@@ -53,6 +58,179 @@
     initEditor();
     initModals();
   });
+
+  /* ================================================================
+   * DANGER MODE (DISALLOW_FILE_EDIT lifted for one hour)
+   *
+   * The server is the only authority (Files\DangerMode): this code only
+   * displays its state and disables the controls that would be refused.
+   * The deadline is rebuilt from the remaining seconds sent by the server,
+   * so a wrong client clock does not matter.
+   * ================================================================ */
+
+  /** True if saving and uploading are currently allowed. */
+  function canWriteContent() {
+    var d = fm.danger || {};
+    if (d.modsAllowed === false) return false;
+    return !d.editDisallowed || !!d.active;
+  }
+
+  function renderDanger(state) {
+    fm.danger = state || {};
+    var d   = fm.danger;
+    var box = document.getElementById("lumia-files-lock");
+
+    clearInterval(fm.dangerTimer);
+    fm.dangerTimer = null;
+    fm.dangerDeadline = d.active ? Date.now() + (parseInt(d.remaining, 10) || 0) * 1000 : 0;
+
+    applyWriteLock();
+    renderEditorLock();
+    if (!box) return;
+
+    box.textContent = "";
+    box.className = "lumia-notice lumia-files__lock";
+
+    if (d.modsAllowed === false) {
+      box.classList.add("lumia-notice--warning");
+      box.appendChild(lockText(t("dangerModsText")));
+      box.hidden = false;
+      return;
+    }
+
+    if (!d.editDisallowed) {
+      box.hidden = true;
+      return;
+    }
+
+    if (d.active) {
+      box.classList.add("lumia-notice--error");
+      var text = lockText("");
+      var strong = document.createElement("strong");
+      strong.textContent = t("dangerLabel");
+      var until = document.createElement("span");
+      until.textContent = " " + (d.until || "") + " ";
+      var remaining = document.createElement("span");
+      remaining.id = "lumia-files-lock-remaining";
+      text.appendChild(strong);
+      text.appendChild(until);
+      text.appendChild(remaining);
+      box.appendChild(text);
+      box.appendChild(lockButton(t("dangerDisableBtn"), "lumia-btn--secondary", disableDanger));
+      box.hidden = false;
+      fm.dangerWarned = false;
+      tickDanger();
+      fm.dangerTimer = setInterval(tickDanger, 15000);
+      return;
+    }
+
+    box.classList.add("lumia-notice--warning");
+    box.appendChild(lockText(t("dangerLockedText")));
+    if (d.available) {
+      box.appendChild(lockButton(t("dangerEnableBtn"), "lumia-btn--danger", confirmEnableDanger));
+    }
+    box.hidden = false;
+  }
+
+  /**
+   * Same state in the editor header: the editor covers the whole screen, and
+   * an expiry in the middle of an edit must not force closing it (and losing
+   * the changes) to unlock again.
+   */
+  function renderEditorLock() {
+    var slot = document.getElementById("lumia-editor-lock");
+    if (!slot) return;
+    var d = fm.danger || {};
+
+    slot.textContent = "";
+    if (d.modsAllowed === false || !d.editDisallowed) return;
+
+    if (d.active) {
+      var badge = document.createElement("span");
+      badge.className = "lumia-badge lumia-badge--danger";
+      badge.id = "lumia-editor-lock-remaining";
+      slot.appendChild(badge);
+      return;
+    }
+
+    if (d.available) {
+      slot.appendChild(lockButton(t("dangerEnableBtn"), "lumia-btn--danger", confirmEnableDanger));
+    }
+  }
+
+  function lockText(text) {
+    var p = document.createElement("p");
+    p.className = "lumia-files__lock-text";
+    p.textContent = text;
+    return p;
+  }
+
+  function lockButton(label, variant, onClick) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "lumia-btn lumia-btn--sm " + variant;
+    btn.textContent = label;
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+
+  /** Updates the remaining minutes; switches back to locked at the deadline. */
+  function tickDanger() {
+    var left = fm.dangerDeadline - Date.now();
+    if (left <= 0) {
+      var state = Object.assign({}, fm.danger, { active: false, remaining: 0 });
+      renderDanger(state);
+      showToast(t("dangerExpired"), "info");
+      return;
+    }
+    var minutes = Math.ceil(left / 60000);
+    var el = document.getElementById("lumia-files-lock-remaining");
+    if (el) el.textContent = fmt(t("dangerRemaining"), minutes);
+    var badge = document.getElementById("lumia-editor-lock-remaining");
+    if (badge) badge.textContent = fmt(t("dangerBadge"), minutes);
+
+    if (minutes <= 5 && !fm.dangerWarned) {
+      fm.dangerWarned = true;
+      showToast(t("dangerSoon"), "warning");
+    }
+  }
+
+  /** Disables the upload and the editor's Save button while writing is refused. */
+  function applyWriteLock() {
+    var allowed = canWriteContent();
+    var input   = document.getElementById("lumia-files-upload-input");
+    var label   = input ? input.closest("label") : null;
+
+    if (input) input.disabled = !allowed;
+    if (label) {
+      label.classList.toggle("is-disabled", !allowed);
+      label.setAttribute("aria-disabled", allowed ? "false" : "true");
+    }
+    updateSaveBtn();
+  }
+
+  function confirmEnableDanger() {
+    if (typeof window.lumiaModal === "undefined") return;
+    window.lumiaModal.open({
+      title:        t("dangerConfirmTitle"),
+      message:      t("dangerConfirmMessage"),
+      confirmLabel: t("dangerEnableBtn"),
+      danger:       true,
+      onConfirm:    function () {
+        ajax("lumia_files_danger_enable", {}, onDangerResponse);
+      },
+    });
+  }
+
+  function disableDanger() {
+    ajax("lumia_files_danger_disable", {}, onDangerResponse);
+  }
+
+  function onDangerResponse(data) {
+    var payload = (data && data.data) || {};
+    if (payload.danger) renderDanger(payload.danger);
+    showToast(payload.message || t("error"), data && data.success ? "success" : "error");
+  }
 
   /* ================================================================
    * AJAX
@@ -90,6 +268,7 @@
     renderLoading();
 
     ajax("lumia_files_list", { path: path }, function (data) {
+      if (data && data.data && data.data.danger) renderDanger(data.data.danger);
       if (!data.success) {
         showToast((data.data && data.data.message) || t("error"), "error");
         renderEmpty();
@@ -557,6 +736,11 @@
   }
 
   function uploadFiles(files) {
+    if (!canWriteContent()) {
+      showToast(t(fm.danger.modsAllowed === false ? "dangerModsText" : "dangerLockedText"), "error");
+      return;
+    }
+
     var form = new FormData();
     form.append("action", "lumia_files_upload");
     form.append("nonce", fm.nonce);
@@ -573,6 +757,7 @@
       .then(function (data) {
         if (!data.success) {
           showToast((data.data && data.data.message) || t("uploadError"), "error");
+          if (data.data && data.data.danger) renderDanger(data.data.danger);
           return;
         }
         showToast(data.data.message, "success");
@@ -620,7 +805,7 @@
 
   function updateSaveBtn() {
     var btn = document.getElementById("lumia-editor-save");
-    if (btn) btn.disabled = !fm.editorDirty;
+    if (btn) btn.disabled = !fm.editorDirty || !canWriteContent();
   }
 
   function initEditor() {
@@ -653,7 +838,7 @@
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        if (!fm.editorDirty) return;
+        if (!fm.editorDirty || !canWriteContent()) return;
         saveEditorContent();
       }
     });
@@ -792,8 +977,10 @@
     ajax("lumia_files_save_content", { path: fm.editorPath, content: content }, function (data) {
       if (!data.success) {
         showToast((data.data && data.data.message) || t("error"), "error");
-        // Re-enable the button on error
-        if (saveBtn) saveBtn.disabled = false;
+        // Refused by the lock (danger mode expired, or locked from another tab).
+        if (data.data && data.data.danger) renderDanger(data.data.danger);
+        // Re-enable the button on error, unless writing is now locked
+        updateSaveBtn();
         return;
       }
       fm.editorDirty = false;

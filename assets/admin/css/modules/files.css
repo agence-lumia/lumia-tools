@@ -20,6 +20,32 @@
 }
 
 /* ================================================================
+ * LOCK / DANGER MODE BANNER (lumia-notice, filled by files.js)
+ * ================================================================ */
+
+.lumia-files__lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 20px 0;
+  flex-shrink: 0;
+}
+
+.lumia-files__lock[hidden] {
+  display: none;
+}
+
+.lumia-files__lock-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.lumia-files__lock .lumia-btn {
+  flex-shrink: 0;
+}
+
+/* ================================================================
  * TOOLBAR
  * ================================================================ */
 
@@ -90,6 +116,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Writing locked (DISALLOW_FILE_EDIT without danger mode): the input is
+   disabled, the label only has to look it. */
+.lumia-files__upload-label.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .lumia-files__upload-label svg,
@@ -489,6 +522,15 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.lumia-files-editor__lock {
+  display: inline-flex;
+  align-items: center;
+}
+
+.lumia-files-editor__lock:empty {
+  display: none;
 }
 
 .lumia-files-editor__header-sep {
