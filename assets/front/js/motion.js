@@ -396,82 +396,9 @@
     });
   }
 
-  /* An entrance whose start lies at or past the end of the page (an element near the
-   * bottom of a short page, a footer) would never fire: ScrollTrigger cannot scroll
-   * there. After every refresh, such items play once the visitor reaches the end of the
-   * page, or at once when they are already there or the page does not scroll. */
-
-  function unreachable() {
-    var max = ScrollTrigger.maxScroll(window);
-    var late = items.filter(function (item) {
-      return item.family === "enter" && item.state === "pending" && item.trigger && item.trigger.start >= max;
-    });
-    return { max: max, late: late };
-  }
-
-  function playLate(late) {
-    var groups = {};
-    late.forEach(function (item) {
-      (groups[item.signature] = groups[item.signature] || []).push(item);
-    });
-    Object.keys(groups).forEach(function (signature) {
-      var group = groups[signature];
-      try {
-        enterPlay(
-          group[0].options,
-          group.map(function (item) {
-            return item.el;
-          })
-        );
-      } catch (error) {
-        report("animation failed: elements shown as they end.", error);
-        group.forEach(settle);
-      }
-    });
-  }
-
-  function onTriggersRefreshed() {
-    if (!running || !animate) {
-      return;
-    }
-    var found = unreachable();
-    if (found.late.length && window.scrollY >= found.max - END_MARGIN) {
-      playLate(found.late);
-    }
-  }
-
-  function onPageEnd() {
-    playLate(unreachable().late);
-  }
-
-  // One trigger for the whole page, at its end; created with the first entrance.
-  function watchPageEnd() {
-    if (endWatch) {
-      return;
-    }
-    endWatch = ScrollTrigger.create({
-      start: function () {
-        return Math.max(0, ScrollTrigger.maxScroll(window) - END_MARGIN);
-      },
-      end: "max",
-      onEnter: onPageEnd,
-    });
-    ScrollTrigger.addEventListener("refresh", onTriggersRefreshed);
-  }
-
-  function unwatchPageEnd() {
-    if (!endWatch) {
-      return;
-    }
-    endWatch.kill();
-    endWatch = null;
-    ScrollTrigger.removeEventListener("refresh", onTriggersRefreshed);
-  }
-
   var enter = {
     // Sets the start state of the new pending items and watches them, one batch per signature.
     start: function (list) {
-      watchPageEnd();
       var groups = {};
       var order = [];
       list.forEach(function (item) {
@@ -526,6 +453,22 @@
       });
     },
 
+    // Plays pending items now, without their trigger (a start the page cannot reach).
+    play: function (list) {
+      var groups = {};
+      list.forEach(function (item) {
+        (groups[item.signature] = groups[item.signature] || []).push(item);
+      });
+      Object.keys(groups).forEach(function (signature) {
+        enterPlay(
+          groups[signature][0].options,
+          groups[signature].map(function (item) {
+            return item.el;
+          })
+        );
+      });
+    },
+
     final: function (item) {
       if (item.trigger) {
         item.trigger.kill();
@@ -545,12 +488,103 @@
   };
 
   /* Builders by family. Each one has:
-   * - start(items): animate the new pending items (they may be settled instead);
+   * - start(items): animate the new pending items (they may be settled instead), each
+   *   watched by a one-shot item.trigger, or a scrub (options.scrub);
+   * - play(items): play pending one-shot items now, whatever their trigger (see below);
    * - final(item): show the element as it ends, without animation;
    * - kill(item): undo everything (the element is removed, rebuilt or the engine destroyed). */
   var FAMILIES = {
     enter: enter,
   };
+
+  /* ================================================================
+   * STARTS THE PAGE CANNOT REACH
+   * A one-shot item whose start lies at or past the end of the page (near the bottom of a
+   * short page, a footer) would never fire: the page cannot scroll there. Such items play
+   * when the visitor reaches the end of the page, or at once when they are already there
+   * or the page does not scroll. Scrubs follow the scroll and are never late.
+   * ================================================================ */
+
+  // The maximum scroll right now; ScrollTrigger's own value can be older (see onScrollEnd).
+  function liveMax() {
+    var scroller = document.scrollingElement || root;
+    return Math.max(0, scroller.scrollHeight - window.innerHeight);
+  }
+
+  function unreachable(max) {
+    return items.filter(function (item) {
+      return item.state === "pending" && item.trigger && !item.options.scrub && item.trigger.start >= max;
+    });
+  }
+
+  function playLate(max) {
+    if (!running || !animate || window.scrollY < max - END_MARGIN) {
+      return;
+    }
+    var byFamily = {};
+    unreachable(max).forEach(function (item) {
+      (byFamily[item.family] = byFamily[item.family] || []).push(item);
+    });
+    Object.keys(byFamily).forEach(function (family) {
+      try {
+        FAMILIES[family].play(byFamily[family]);
+      } catch (error) {
+        report("animation failed: elements shown as they end.", error);
+        byFamily[family].forEach(function (item) {
+          if (item.state !== "final") {
+            settle(item);
+          }
+        });
+      }
+    });
+  }
+
+  // After every refresh, once the page has loaded: before that, an image without
+  // dimensions could still push these items down (the load refresh comes back here).
+  function onTriggersRefreshed() {
+    if (document.readyState === "complete") {
+      playLate(ScrollTrigger.maxScroll(window));
+    }
+  }
+
+  // The visitor reached the end of the page as measured by the last refresh.
+  function onPageEnd() {
+    playLate(ScrollTrigger.maxScroll(window));
+  }
+
+  // Scrolling stopped. A phone that hides its address bar makes the screen taller and the
+  // page shorter without any refresh (ignoreMobileResize): measure the end again.
+  function onScrollEnd() {
+    if (items.length) {
+      playLate(liveMax());
+    }
+  }
+
+  // One trigger and two listeners for the whole page, created with the first animated item.
+  function watchPageEnd() {
+    if (endWatch) {
+      return;
+    }
+    endWatch = ScrollTrigger.create({
+      start: function () {
+        return Math.max(0, ScrollTrigger.maxScroll(window) - END_MARGIN);
+      },
+      end: "max",
+      onEnter: onPageEnd,
+    });
+    ScrollTrigger.addEventListener("refresh", onTriggersRefreshed);
+    ScrollTrigger.addEventListener("scrollEnd", onScrollEnd);
+  }
+
+  function unwatchPageEnd() {
+    if (!endWatch) {
+      return;
+    }
+    endWatch.kill();
+    endWatch = null;
+    ScrollTrigger.removeEventListener("refresh", onTriggersRefreshed);
+    ScrollTrigger.removeEventListener("scrollEnd", onScrollEnd);
+  }
 
   /* ================================================================
    * BUILD AND REFRESH
@@ -642,6 +676,7 @@
     });
 
     Object.keys(fresh).forEach(function (family) {
+      watchPageEnd();
       try {
         FAMILIES[family].start(fresh[family]);
       } catch (error) {

@@ -288,6 +288,14 @@ async function shortPage() {
 			`${ label }: starts ${ built.map( ( i ) => i.options.start ).join( ', ' ) } (expected top 30%, top 60%)`
 		);
 
+		// Scrollable page: nothing plays before the visitor reaches the end, even once loading is over.
+		if ( geometry.max > 0 ) {
+			await page.waitForFunction( () => document.readyState === 'complete' );
+			await page.waitForTimeout( 500 );
+			const early = ( await items( page ) ).filter( ( i ) => i.id.startsWith( 'brxe-shrt' ) && i.state !== 'pending' );
+			assert( early.length === 0, `${ label }: played before the end of the page was reached: ${ early.map( ( i ) => `${ i.id }:${ i.state }` ).join( ', ' ) }` );
+		}
+
 		await page.evaluate( () => window.scrollTo( 0, document.documentElement.scrollHeight ) );
 		const shown = await page.waitForFunction(
 			() => [ 'brxe-shrt30', 'brxe-shrtpr' ].every( ( id ) => getComputedStyle( document.getElementById( id ) ).opacity === '1' ),
@@ -299,6 +307,50 @@ async function shortPage() {
 		assert( page.errors.length === 0, `${ label }: page errors: ${ page.errors.join( ' | ' ) }` );
 		await page.context().close();
 	}
+}
+
+/**
+ * A phone hiding its address bar: the screen gets taller, the page's maximum scroll shorter,
+ * and ScrollTrigger (ignoreMobileResize) does not refresh. A start between the two maximums
+ * looked reachable at the last refresh and no longer is.
+ */
+async function addressBar() {
+	const GROW = 100;
+	const page = await newPage( { width: 390, height: 700, mobile: true } );
+	await page.goto( pageUrl( 'lm-e2e-short' ), { waitUntil: 'load' } );
+	await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ) && window.lumiaMotion && window.lumiaMotion._debug && document.readyState === 'complete', null, { timeout: 5000 } );
+
+	const before = await page.evaluate( ( grow ) => {
+		const max = document.scrollingElement.scrollHeight - window.innerHeight;
+		const node = document.getElementById( 'brxe-shrtpr' );
+		const top = node.getBoundingClientRect().top + window.scrollY;
+		// Start half-way between the maximum scroll now and the one once the screen is taller.
+		node.style.setProperty( '--lm-start', `top ${ Math.round( top - ( max - grow / 2 ) ) }px` );
+		window.lumiaMotion.refresh();
+		const start = ( ScrollTrigger.getAll().find( ( t ) => t.trigger === node ) || {} ).start;
+		window.lmRefreshes = 0;
+		ScrollTrigger.addEventListener( 'refresh', () => window.lmRefreshes++ );
+		return { max, start, touch: !! ScrollTrigger.isTouch };
+	}, GROW );
+	assert( before.touch, 'address bar: ScrollTrigger does not see a touch device, the case cannot be reproduced' );
+	assert( before.start < before.max && before.start > before.max - GROW, `address bar: start ${ before.start } is not between ${ before.max - GROW } and ${ before.max }` );
+
+	await page.setViewportSize( { width: 390, height: 700 + GROW } );
+	await page.waitForTimeout( 600 );
+	const grown = await page.evaluate( () => ( { refreshes: window.lmRefreshes, max: document.scrollingElement.scrollHeight - window.innerHeight } ) );
+	assert( grown.refreshes === 0, `address bar: the taller screen caused ${ grown.refreshes } refresh(es), the case is not reproduced` );
+	assert( before.start > grown.max, `address bar: start ${ before.start } is still reachable (max ${ grown.max })` );
+
+	await page.evaluate( () => window.scrollTo( 0, document.scrollingElement.scrollHeight ) );
+	const shown = await page.waitForFunction(
+		() => [ 'brxe-shrt30', 'brxe-shrtpr' ].every( ( id ) => getComputedStyle( document.getElementById( id ) ).opacity === '1' ),
+		null,
+		{ timeout: 4000 }
+	).then( () => true, () => false );
+	const states = ( await items( page ) ).filter( ( i ) => i.id.startsWith( 'brxe-shrt' ) ).map( ( i ) => `${ i.id }:${ i.state }` );
+	assert( shown, `address bar: hidden at the bottom of the page once the screen got taller (${ states.join( ', ' ) }, max ${ before.max } -> ${ grown.max })` );
+	assert( page.errors.length === 0, `address bar: page errors: ${ page.errors.join( ' | ' ) }` );
+	await page.context().close();
 }
 
 async function debugLog() {
@@ -363,6 +415,7 @@ async function legacyOff() {
 
 export default async function () {
 	await shortPage();
+	await addressBar();
 	await desktop();
 	await breakpointSwitch();
 	await debugLog();

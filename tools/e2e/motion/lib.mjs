@@ -40,7 +40,7 @@ export async function browser() {
 /**
  * New page in its own context. Page errors are collected in page.errors.
  *
- * @param {object} [o] width, height, reducedMotion ('reduce'|'no-preference'), auth (reuse the login state).
+ * @param {object} [o] width, height, reducedMotion ('reduce'|'no-preference'), auth (reuse the login state), mobile (touch phone emulation).
  */
 export async function newPage( o = {} ) {
 	if ( o.auth && ! existsSync( STATE ) ) {
@@ -51,6 +51,8 @@ export async function newPage( o = {} ) {
 		viewport: { width: o.width || 1440, height: o.height || 900 },
 		reducedMotion: o.reducedMotion || 'no-preference',
 		storageState: o.auth ? STATE : undefined,
+		isMobile: !! o.mobile,
+		hasTouch: !! o.mobile,
 	} );
 	const page = await ctx.newPage();
 	page.errors = [];
