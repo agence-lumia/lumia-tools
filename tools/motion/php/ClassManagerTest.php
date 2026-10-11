@@ -274,7 +274,9 @@ return [
 		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @name: X\n* @status: published\n*/" ) === 'published', 'published' );
 		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @status:draft\n*/" ) === 'draft', 'draft, no space' );
 		lm_assert( ClassManager::snippet_status( "<?php\necho 1;" ) === '', 'no header' );
-		lm_assert( ClassManager::snippet_status( "<?php\n" . str_repeat( ' ', 3000 ) . '// @status: published' ) === '', 'only the header is read: a mention further down does not count' );
+		// FluentSnippets writes the description in the header, before the status: a long one pushes it past 2 KB.
+		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @name: X\n* @description: " . str_repeat( 'x', 3000 ) . "\n* @status: published\n*/" ) === 'published', 'a status after a long description is read' );
+		lm_assert( ClassManager::snippet_status( "<?php\n" . str_repeat( ' ', 9000 ) . '// @status: published' ) === '', 'only the header is read: a mention further down does not count' );
 	},
 	'snippet scan of a missing directory is empty'      => static function (): void {
 		lm_assert( ClassManager::snippet_hits( sys_get_temp_dir() . '/lm-does-not-exist-' . bin2hex( random_bytes( 4 ) ) ) === [], 'no directory, no hit' );

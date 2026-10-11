@@ -107,11 +107,18 @@ class Module extends AbstractModule {
 	/**
 	 * Keys to delete on uninstall.
 	 *
+	 * The cached usage scan is a transient: its two rows are deleted as options, so they go even
+	 * when an object cache does not hold them.
+	 *
 	 * @return array{options: string[], meta: string[]}
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'lumia_module_motion' ],
+			'options' => [
+				'lumia_module_motion',
+				'_transient_' . ClassManager::USAGE_TRANSIENT,
+				'_transient_timeout_' . ClassManager::USAGE_TRANSIENT,
+			],
 			'meta'    => [],
 		];
 	}

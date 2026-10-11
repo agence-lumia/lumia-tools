@@ -52,6 +52,9 @@ final class ClassManager {
 	/** A snippet file larger than this is not read. */
 	const SNIPPET_MAX_BYTES = 2097152;
 
+	/** Bytes of a snippet file searched for its status: the header, description included. */
+	const SNIPPET_HEADER_BYTES = 8192;
+
 	/** Transient that keeps the usage for the settings screen. */
 	const USAGE_TRANSIENT = 'lumia_motion_legacy_usage';
 
@@ -302,12 +305,13 @@ final class ClassManager {
 	/**
 	 * Status written in the header of a FluentSnippets file (`published`, `draft`), '' when there is none.
 	 *
-	 * Only the beginning of the file is read: that is where the header is.
+	 * Only the beginning of the file is read: that is where the header is. 8 KB, because the header
+	 * holds the description of the snippet, before its status.
 	 *
 	 * @param string $source Contents of the file.
 	 */
 	public static function snippet_status( string $source ): string {
-		return 1 === preg_match( '/@status:[ \t]*(\w+)/', substr( $source, 0, 2048 ), $match ) ? $match[1] : '';
+		return 1 === preg_match( '/@status:[ \t]*(\w+)/', substr( $source, 0, self::SNIPPET_HEADER_BYTES ), $match ) ? $match[1] : '';
 	}
 
 	/**
