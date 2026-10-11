@@ -127,22 +127,43 @@ for name in sk-fade sk-reveal sk-entry-blur sk-scale-in sk-scale-in-blur sk-text
 	echo "${DRY_TEXT}" | grep -q "^${name}[[:space:]]" || fail "the dry run does not list ${name}"
 done
 echo "${DRY_TEXT}" | grep -q 'Dry run: nothing was written' || fail 'the dry run does not say it wrote nothing'
+echo "${DRY_TEXT}" | grep -q 'will stop matching at --apply' || fail 'the dry run should warn about the selectors that will stop matching'
+echo "${DRY_TEXT}" | grep -q 'keep working through the compatibility setting' || fail 'the dry run should list what compatibility keeps working'
 
 DRY_JSON="$(wpx lumia motion migrate --format=json | json_of)"
+EXPECTED="$(helper expected-usage)"
+NOISE="$(helper noise-ids)"
+echo "expected usage (computed on real posts only): ${EXPECTED}; noise posts: ${NOISE}"
+SNIPPET_STATUS="$(helper snippet-status)"
 js '
 	const r = JSON.parse(env.R);
+	const want = JSON.parse(env.EXPECTED);
 	assert(r.applied === false, "applied should be false");
 	assert(r.renamed.length === 10 && r.conflicts.length === 0, "ten renames and no conflict, got " + env.R.slice(0, 300));
-	assert(r.elements >= 3, "elements > 0 (at least the seeded page), got " + r.elements);
-	assert(r.posts >= 1, "posts > 0, got " + r.posts);
-	const hits = r.css_hits.join("\n");
-	assert(/post \d+ "LM E2E migration" element mgtext1: legacy name in the custom CSS/.test(hits), "the underline variable of the element is reported");
-	assert(/element mgtext2: legacy class in the CSS classes field/.test(hits), "the class typed by hand is reported");
-	assert(/element mgtext3: legacy name in the custom CSS/.test(hits), "the selector of the element is reported");
-	assert(/fluent-snippet-storage\/4-sk-motion\.php/.test(hits), "the former snippet file is reported");
-	assert(/class lm-text-lines/.test(hits), "the longer class name left in the CSS of lm-text-lines is reported");
-	assert(/class lm-underline/.test(hits), "the underline variable left in the CSS of lm-underline is reported (variables are never rewritten)");
-' R="${DRY_JSON}"
+	assert(want.unfiltered_posts > want.posts, "the bench should hold revisions and the like (unfiltered " + want.unfiltered_posts + ", real " + want.posts + "), or this test proves nothing");
+	assert(r.posts === want.posts, "posts: the command says " + r.posts + ", real pages and templates that use a legacy class: " + want.posts + " (unfiltered: " + want.unfiltered_posts + ")");
+	assert(r.elements === want.elements, "elements: the command says " + r.elements + ", expected " + want.elements);
+	assert(r.elements >= 3 && r.posts >= 1, "elements and posts > 0");
+
+	const all = r.selectors.concat(r.compat, r.snippets);
+	assert(JSON.stringify(r.css_hits) === JSON.stringify(all), "css_hits is the three lists together");
+	for (const id of env.NOISE.trim().split(/\s+/)) {
+		assert(!all.some((h) => h.includes("post " + id + " ")), "post " + id + " (revision, trash or auto-draft) must not be reported");
+	}
+
+	const sel = r.selectors.join("\n"), kept = r.compat.join("\n");
+	assert(/element mgtext3: selector of a former class name that stops matching/.test(sel), "the selector of a renamed class breaks: " + sel.slice(0, 300));
+	assert(/element mgtext6: selector of a former class name that stops matching/.test(sel), "sk-counter is renamed in this dry run, so its selector breaks");
+	assert(!/mgtext1|mgtext2|mgtext5/.test(sel), "only mgtext3 and mgtext6 stop matching, got " + sel.slice(0, 300));
+	assert(/element mgtext1: legacy name that keeps working/.test(kept), "the underline variable keeps working");
+	assert(/element mgtext2: legacy class typed in the CSS classes field/.test(kept), "the class typed by hand keeps working");
+	assert(!all.some((h) => /mgtext5/.test(h)), "an agency class like .sk-container must never be reported");
+	assert(/class lm-underline: legacy name that keeps working/.test(kept), "the underline variable in the CSS of lm-underline is reported as kept");
+	assert(!/class lm-text-lines/.test(all.join("\n")), "the longer class name in lm-text-lines is not a legacy class");
+	// Fluent snippet: reported only when published.
+	const snippet = r.snippets.some((h) => /4-sk-motion\.php/.test(h));
+	assert(snippet === (env.SNIPPET === "published"), "the former snippet is reported only when published (status " + env.SNIPPET + "), reported: " + snippet);
+' R="${DRY_JSON}" EXPECTED="${EXPECTED}" NOISE="${NOISE}" SNIPPET="${SNIPPET_STATUS}"
 [ "$(helper checksum)" = "${SEED_SUM}" ] || fail 'the dry run wrote something (options or Bricks post meta changed)'
 echo 'ok dry run lists 10 classes and writes nothing'
 
@@ -155,6 +176,8 @@ echo "${APPLY_NO_USER}" | grep -q 'Give an administrator with --user' || fail "-
 # ---------------------------------------------------------------- a class made by hand collides
 COUNTER_ID="$(helper add-class lm-counter)"
 BEFORE_APPLY="$(helper snapshot)"
+# The settings screen keeps its numbers five minutes: fill the cache now, the apply has to drop it.
+js 'assert(JSON.parse(env.R).classes.length === 10, "ten legacy classes before the apply: " + env.R)' R="$(helper usage-cached | json_of)"
 BEFORE_SUM="$(helper checksum)"
 PAGE_BEFORE="$(curl -fsS "${BASE_URL}/lm-e2e-migration/")"
 echo "${PAGE_BEFORE}" | grep -qE 'class="[^"]*sk-fade' || fail 'the seeded page should carry the legacy class before the migration'
@@ -171,7 +194,14 @@ js '
 	assert(r.renamed.length === 9 && !r.renamed.includes("sk-counter"), "nine renames, not sk-counter: " + JSON.stringify(r.renamed));
 	assert(JSON.stringify(r.conflicts) === JSON.stringify(["sk-counter"]), "sk-counter is the one conflict, got " + JSON.stringify(r.conflicts));
 	assert(r.elements >= 2, "elements that use a renamed class: " + r.elements);
+	const sel = r.selectors.join("\n"), kept = r.compat.join("\n");
+	assert(/element mgtext3: selector of a former class name that stops matching/.test(sel), "the selector of a renamed class is still listed after the apply");
+	assert(!/mgtext6/.test(sel) && /element mgtext6: legacy name that keeps working/.test(kept), "the selector of sk-counter (a class that stays) keeps matching: it moves to the kept list");
 ' R="${APPLY_OUT}"
+js '
+	const c = JSON.parse(env.R).classes;
+	assert(JSON.stringify(c) === JSON.stringify(["sk-counter"]), "the cached usage should be dropped by the apply, got " + env.R);
+' R="$(helper usage-cached | json_of)"
 
 AFTER_APPLY="$(helper snapshot)"
 js '
@@ -239,7 +269,9 @@ SECOND_TEXT="$(wpx lumia motion migrate --apply 2>&1)"
 echo "${SECOND_TEXT}" | sed -n '1,12p'
 echo "${SECOND_TEXT}" | grep -q '0 class(es) renamed' || fail 'the second run should rename nothing'
 echo "${SECOND_TEXT}" | grep -q 'sk-counter is left as it is' || fail 'the conflict on sk-counter should be reported as a warning'
-echo "${SECOND_TEXT}" | grep -q 'Deactivate the "SK Motion" snippet' || fail 'the reminder about the snippet is missing'
+echo "${SECOND_TEXT}" | grep -q 'Deactivate (or delete) the "SK Motion" snippet' || fail 'the reminder about the snippet is missing'
+echo "${SECOND_TEXT}" | grep -q 'Purge the page cache' || fail 'the reminder to purge the page cache is missing'
+echo "${SECOND_TEXT}" | grep -q 'selector(s) stopped matching' || fail 'the apply should say which selectors stopped matching'
 [ "$(helper checksum)" = "${APPLIED_SUM}" ] || fail 'the second --apply (text) wrote something'
 echo 'ok a second --apply renames nothing and writes nothing'
 

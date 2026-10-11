@@ -40,9 +40,9 @@ $ease            = (string) ( $module_settings['ease'] ?? 'lumia' );
 $ease_custom     = (string) ( $module_settings['ease_custom'] ?? '' );
 $builder_preview = (string) ( $module_settings['builder_preview'] ?? 'replay' );
 
-// What still uses a former class: read when the screen opens, never cached (the numbers must follow the migration).
+// What still uses a former class: kept five minutes, and dropped by the migration, so the numbers follow it.
 try {
-	$legacy_usage = ClassManager::legacy_usage();
+	$legacy_usage = ClassManager::legacy_usage_cached();
 } catch ( \Throwable $lumia_motion_error ) {
 	$legacy_usage = null;
 }
@@ -429,11 +429,29 @@ $number_ranges = [
 				</div>
 				<div class="lumia-option">
 					<div class="lumia-option__content">
-						<span class="lumia-option__label"><?php esc_html_e( 'To fix by hand', 'lumia-tools' ); ?></span>
-						<p class="lumia-option__desc"><?php esc_html_e( 'Custom CSS, the global CSS and snippet files that still name a former class or variable. The migration reports them and never rewrites them.', 'lumia-tools' ); ?></p>
+						<span class="lumia-option__label"><?php esc_html_e( 'Selectors that will stop matching', 'lumia-tools' ); ?></span>
+						<p class="lumia-option__desc"><?php esc_html_e( 'Custom CSS that targets a class that is renamed. The content then carries the new name and the compatibility setting does not bring the old one back, so fix these before or right after the migration. They are listed, never rewritten.', 'lumia-tools' ); ?></p>
 					</div>
 					<div class="lumia-option__control">
-						<span class="lumia-badge <?php echo [] === $legacy_usage['css_hits'] ? 'lumia-badge--success' : 'lumia-badge--warning'; ?>"><?php echo esc_html( number_format_i18n( count( $legacy_usage['css_hits'] ) ) ); ?></span>
+						<span class="lumia-badge <?php echo [] === $legacy_usage['selectors'] ? 'lumia-badge--success' : 'lumia-badge--danger'; ?>"><?php echo esc_html( number_format_i18n( count( $legacy_usage['selectors'] ) ) ); ?></span>
+					</div>
+				</div>
+				<div class="lumia-option">
+					<div class="lumia-option__content">
+						<span class="lumia-option__label"><?php esc_html_e( 'Kept working by compatibility', 'lumia-tools' ); ?></span>
+						<p class="lumia-option__desc"><?php esc_html_e( 'Former names typed in a CSS classes field, former underline variables, and selectors of classes that keep their name. They stop working when the compatibility setting is turned off.', 'lumia-tools' ); ?></p>
+					</div>
+					<div class="lumia-option__control">
+						<span class="lumia-badge <?php echo [] === $legacy_usage['compat'] ? 'lumia-badge--success' : 'lumia-badge--warning'; ?>"><?php echo esc_html( number_format_i18n( count( $legacy_usage['compat'] ) ) ); ?></span>
+					</div>
+				</div>
+				<div class="lumia-option">
+					<div class="lumia-option__content">
+						<span class="lumia-option__label"><?php esc_html_e( 'Published snippets', 'lumia-tools' ); ?></span>
+						<p class="lumia-option__desc"><?php esc_html_e( 'FluentSnippets files that are published and still name the former classes. Deactivate or delete them.', 'lumia-tools' ); ?></p>
+					</div>
+					<div class="lumia-option__control">
+						<span class="lumia-badge <?php echo [] === $legacy_usage['snippets'] ? 'lumia-badge--success' : 'lumia-badge--warning'; ?>"><?php echo esc_html( number_format_i18n( count( $legacy_usage['snippets'] ) ) ); ?></span>
 					</div>
 				</div>
 			<?php endif; ?>
@@ -456,7 +474,7 @@ $number_ranges = [
 				echo esc_html(
 					sprintf(
 						/* translators: %s: name of the former animation snippet. */
-						__( 'Then deactivate the "%s" snippet in FluentSnippets, check the site, and turn off the compatibility setting above.', 'lumia-tools' ),
+						__( 'Then deactivate (or delete) the "%s" snippet in FluentSnippets, purge the page cache, check the site, and turn off the compatibility setting above once nothing is kept working by it.', 'lumia-tools' ),
 						Legacy::SNIPPET_NAME
 					)
 				);

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-11T17:51:54+00:00\n"
+"POT-Creation-Date: 2026-10-11T18:09:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -4774,23 +4774,39 @@ msgid "Spread over %s pages, headers, footers or templates."
 msgstr ""
 
 #: includes/Modules/Motion/settings-template.php:432
-msgid "To fix by hand"
+msgid "Selectors that will stop matching"
 msgstr ""
 
 #: includes/Modules/Motion/settings-template.php:433
-msgid "Custom CSS, the global CSS and snippet files that still name a former class or variable. The migration reports them and never rewrites them."
+msgid "Custom CSS that targets a class that is renamed. The content then carries the new name and the compatibility setting does not bring the old one back, so fix these before or right after the migration. They are listed, never rewritten."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:441
+msgid "Kept working by compatibility"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:442
+msgid "Former names typed in a CSS classes field, former underline variables, and selectors of classes that keep their name. They stop working when the compatibility setting is turned off."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:450
+msgid "Published snippets"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:451
+msgid "FluentSnippets files that are published and still name the former classes. Deactivate or delete them."
 msgstr ""
 
 #. translators: 1: a WP-CLI command that previews the migration, 2: the same command that applies it.
-#: includes/Modules/Motion/settings-template.php:446
+#: includes/Modules/Motion/settings-template.php:464
 #, php-format
 msgid "Preview it with %1$s, which writes nothing and lists everything it found. Apply it with %2$s."
 msgstr ""
 
 #. translators: %s: name of the former animation snippet.
-#: includes/Modules/Motion/settings-template.php:459
+#: includes/Modules/Motion/settings-template.php:477
 #, php-format
-msgid "Then deactivate the \"%s\" snippet in FluentSnippets, check the site, and turn off the compatibility setting above."
+msgid "Then deactivate (or delete) the \"%s\" snippet in FluentSnippets, purge the page cache, check the site, and turn off the compatibility setting above once nothing is kept working by it."
 msgstr ""
 
 #: includes/Modules/Security/HardeningService.php:122

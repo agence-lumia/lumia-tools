@@ -11,6 +11,11 @@
  *   remove-class <name>  delete the global classes named <name>.
  *   on-activate      what turning the module on does: Module::on_activate().
  *   without-bricks   the same while the active theme is not Bricks: must create nothing.
+ *   expected-usage   JSON {posts, elements, unfiltered_posts}: what uses the legacy classes by ID, computed here
+ *                    on real posts only (no revision, trash or auto-draft), and with no filter at all.
+ *   snippet-status   status in the header of the former snippet file (published, draft, absent).
+ *   noise-ids        IDs of the revision, trashed and auto-draft posts the seed made (not to be counted).
+ *   usage-cached     JSON {classes} from ClassManager::legacy_usage_cached() (fills the transient).
  *   snapshot         JSON: classes, categories, locked IDs, sync timestamp.
  *   checksum         "<options md5> <bricks post meta md5>" (transients and cron excluded).
  */
@@ -159,11 +164,17 @@ switch ( $lm_mode ) {
 			$lm_el( 'mgtext1', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Underlined', '_cssGlobalClasses' => array( $lm_id( 'sk-hover-underline' ) ), '_cssCustom' => '#brxe-mgtext1 { --sk-hover-underline-gap: 3px; }' ) ),
 			// A class typed by hand in the "CSS classes" field: not an ID, reported.
 			$lm_el( 'mgtext2', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Typed by hand', '_cssClasses' => 'sk-reveal card' ) ),
-			// A selector in the element's own CSS: reported.
-			$lm_el( 'mgtext3', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Selector', '_cssCustom' => '.sk-fade-note { color: red; }' ) ),
+			// A selector of a class that is renamed: stops matching at --apply.
+			$lm_el( 'mgtext3', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Selector', '_cssCustom' => '.sk-fade .note { color: red; }' ) ),
 			// Nothing legacy.
 			$lm_el( 'mgtext4', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Plain', '_cssGlobalClasses' => array( $lm_id( 'nodrag' ) ) ) ),
+			// An agency class that merely starts like the legacy ones: never reported.
+			$lm_el( 'mgtext5', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Agency class', '_cssCustom' => '.sk-container { padding: 0; } .sk-fade-note { color: red; }' ) ),
+			// A selector of a class that stays (it collides with a class made by hand): keeps matching.
+			$lm_el( 'mgtext6', 'text-basic', 'mgcnt1', array(), array( 'text' => 'Kept', '_cssCustom' => '.sk-counter .digit { color: red; }' ) ),
 		);
+		$lm_content[1]['children'][] = 'mgtext5';
+		$lm_content[1]['children'][] = 'mgtext6';
 
 		$lm_existing = get_page_by_path( 'lm-e2e-migration', OBJECT, 'page' );
 		$lm_post     = wp_insert_post(
@@ -181,8 +192,138 @@ switch ( $lm_mode ) {
 		}
 		update_post_meta( $lm_post, '_bricks_editor_mode', 'bricks' );
 		update_post_meta( $lm_post, '_bricks_page_content_2', wp_slash( $lm_content ) );
+
+		// Noise that must not be counted: a revision of the page (Bricks copies its meta to revisions),
+		// a trashed page and an auto-draft, all carrying the same content.
+		global $wpdb;
+		// The revision goes straight into the table: wp_insert_post() does not create one for a revision type.
+		$lm_made = $wpdb->insert(
+			$wpdb->posts,
+			array(
+				'post_content'          => '',
+				'post_excerpt'          => '',
+				'post_content_filtered' => '',
+				'to_ping'               => '',
+				'pinged'                => '',
+				'post_type'         => 'revision',
+				'post_status'       => 'inherit',
+				'post_parent'       => $lm_post,
+				'post_name'         => $lm_post . '-revision-v99',
+				'post_title'        => 'LM E2E migration noise',
+				'post_date'         => current_time( 'mysql' ),
+				'post_date_gmt'     => current_time( 'mysql', true ),
+				'post_modified'     => current_time( 'mysql' ),
+				'post_modified_gmt' => current_time( 'mysql', true ),
+			)
+		);
+		if ( ! $lm_made ) {
+			WP_CLI::error( 'The revision could not be inserted: ' . $wpdb->last_error );
+		}
+		$lm_noise_ids = array( (int) $wpdb->insert_id );
+		foreach ( array( 'trash', 'auto-draft' ) as $lm_status ) {
+			$lm_nid = wp_insert_post(
+				array(
+					'post_type'   => 'page',
+					'post_status' => $lm_status,
+					'post_title'  => 'LM E2E migration noise',
+					'post_name'   => 'lm-e2e-migration-' . $lm_status,
+				),
+				true
+			);
+			if ( is_wp_error( $lm_nid ) ) {
+				WP_CLI::error( $lm_nid->get_error_message() );
+			}
+			$lm_noise_ids[] = $lm_nid;
+		}
+		// The revision WordPress made itself, if any, carries the content too (Bricks copies its meta).
+		foreach ( wp_get_post_revisions( $lm_post, array( 'fields' => 'ids' ) ) as $lm_rev ) {
+			$lm_noise_ids[] = (int) $lm_rev;
+		}
+		foreach ( array_unique( $lm_noise_ids ) as $lm_nid ) {
+			// update_metadata(), not update_post_meta(): the latter writes a revision's meta on its parent.
+			update_metadata( 'post', $lm_nid, '_bricks_page_content_2', wp_slash( $lm_content ) );
+			update_metadata( 'post', $lm_nid, '_lm_e2e_noise', 1 );
+		}
 		wp_cache_flush();
 		WP_CLI::log( sprintf( 'seeded: %d classes, page #%d', count( $lm_classes ), $lm_post ) );
+		break;
+
+	case 'snippet-status':
+		$lm_file = WP_CONTENT_DIR . '/fluent-snippet-storage/4-sk-motion.php';
+		echo is_readable( $lm_file ) && preg_match( '/@status:[ \t]*(\w+)/', substr( (string) file_get_contents( $lm_file ), 0, 2048 ), $lm_m ) ? $lm_m[1] : 'absent', "\n";
+		break;
+
+	case 'noise-ids':
+		global $wpdb;
+		echo implode( ' ', $wpdb->get_col( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_lm_e2e_noise'" ) ), "\n";
+		break;
+
+	case 'usage-cached':
+		$lm_usage = \Lumia\Tools\Modules\Motion\ClassManager::legacy_usage_cached();
+		echo wp_json_encode( array( 'classes' => array_values( $lm_usage['classes'] ) ) ), "\n";
+		break;
+
+	case 'expected-usage':
+		global $wpdb;
+		$lm_ids = array();
+		foreach ( $lm_classes as $lm_class ) {
+			if ( isset( $lm_pairs[ $lm_class['name'] ] ) ) {
+				$lm_ids[] = $lm_class['id'];
+			}
+		}
+		$lm_count = static function ( $elements ) use ( $lm_ids ) {
+			$n = 0;
+			foreach ( (array) $elements as $e ) {
+				if ( is_array( $e ) && array_intersect( $lm_ids, (array) ( $e['settings']['_cssGlobalClasses'] ?? array() ) ) ) {
+					++$n;
+				}
+			}
+			return $n;
+		};
+		$lm_keys = array( '_bricks_page_content_2', '_bricks_page_header_2', '_bricks_page_footer_2' );
+
+		// Real posts: every type but revisions, every status but trash, auto-draft and inherit.
+		$lm_types    = array_diff( get_post_types(), array( 'revision' ) );
+		$lm_statuses = array_diff( get_post_stati(), array( 'trash', 'auto-draft', 'inherit' ) );
+		$lm_posts    = get_posts(
+			array(
+				'post_type'        => array_values( $lm_types ),
+				'post_status'      => array_values( $lm_statuses ),
+				'numberposts'      => -1,
+				'fields'           => 'ids',
+				'suppress_filters' => true,
+			)
+		);
+		$lm_real_posts = 0;
+		$lm_elements   = 0;
+		foreach ( $lm_posts as $lm_pid ) {
+			$n = 0;
+			foreach ( $lm_keys as $lm_key ) {
+				$n += $lm_count( get_post_meta( $lm_pid, $lm_key, true ) );
+			}
+			if ( $n > 0 ) {
+				++$lm_real_posts;
+			}
+			$lm_elements += $n;
+		}
+		foreach ( (array) get_option( 'bricks_components', array() ) as $lm_component ) {
+			$lm_elements += $lm_count( $lm_component['elements'] ?? array() );
+		}
+
+		// Same count with no filter: what the scan would report if it counted every row.
+		$lm_all = array();
+		foreach ( $wpdb->get_results( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key IN ( '_bricks_page_content_2', '_bricks_page_header_2', '_bricks_page_footer_2' )" ) as $lm_row ) {
+			if ( $lm_count( maybe_unserialize( $lm_row->meta_value ) ) > 0 ) {
+				$lm_all[ $lm_row->post_id ] = true;
+			}
+		}
+		echo wp_json_encode(
+			array(
+				'posts'            => $lm_real_posts,
+				'elements'         => $lm_elements,
+				'unfiltered_posts' => count( $lm_all ),
+			)
+		), "\n";
 		break;
 
 	case 'add-class':

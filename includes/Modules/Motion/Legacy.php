@@ -61,11 +61,11 @@ final class Legacy {
 	/** Name of the former snippet, to deactivate once the migration is done. */
 	const SNIPPET_NAME = 'SK Motion';
 
-	/** Fragments that mark custom CSS still relying on the former names (a class selector, the underline variables). */
-	const CSS_NEEDLES = [ '.sk-', '--sk-hover-underline' ];
+	/** Start of the former underline variables (thickness, gap, color, duration): what a stylesheet or a snippet searches for. */
+	const VARIABLE_NEEDLE = '--sk-hover-underline';
 
 	/** Plain strings that mark a snippet file as the former one, besides the class names. */
-	const SNIPPET_MARKERS = [ '--sk-hover-underline', self::ENGINE_GLOBAL, self::SNIPPET_NAME ];
+	const SNIPPET_MARKERS = [ self::VARIABLE_NEEDLE, self::ENGINE_GLOBAL, self::SNIPPET_NAME ];
 
 	/**
 	 * Class that replaces a legacy class.

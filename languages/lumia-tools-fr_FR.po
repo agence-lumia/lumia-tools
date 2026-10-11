@@ -5666,17 +5666,29 @@ msgstr "Éléments concernés"
 msgid "Spread over %s pages, headers, footers or templates."
 msgstr "Répartis sur %s pages, en-têtes, pieds de page ou modèles."
 
-msgid "To fix by hand"
-msgstr "À corriger à la main"
+msgid "Selectors that will stop matching"
+msgstr "Sélecteurs qui vont cesser de correspondre"
 
-msgid "Custom CSS, the global CSS and snippet files that still name a former class or variable. The migration reports them and never rewrites them."
-msgstr "CSS personnalisé, CSS global et fichiers de snippets qui nomment encore une ancienne classe ou variable. La migration les signale et ne les réécrit jamais."
+msgid "Custom CSS that targets a class that is renamed. The content then carries the new name and the compatibility setting does not bring the old one back, so fix these before or right after the migration. They are listed, never rewritten."
+msgstr "CSS personnalisé qui cible une classe renommée. Le contenu porte alors le nouveau nom et le réglage de compatibilité ne ramène pas l'ancien : corrigez-les avant la migration ou juste après. Ils sont listés, jamais réécrits."
+
+msgid "Kept working by compatibility"
+msgstr "Maintenus par la compatibilité"
+
+msgid "Former names typed in a CSS classes field, former underline variables, and selectors of classes that keep their name. They stop working when the compatibility setting is turned off."
+msgstr "Anciens noms saisis dans un champ de classes CSS, anciennes variables de soulignement et sélecteurs de classes qui gardent leur nom. Ils cessent de fonctionner quand le réglage de compatibilité est désactivé."
+
+msgid "Published snippets"
+msgstr "Snippets publiés"
+
+msgid "FluentSnippets files that are published and still name the former classes. Deactivate or delete them."
+msgstr "Fichiers FluentSnippets publiés qui nomment encore les anciennes classes. Désactivez-les ou supprimez-les."
 
 msgid "Preview it with %1$s, which writes nothing and lists everything it found. Apply it with %2$s."
 msgstr "Prévisualisez-la avec %1$s, qui n'écrit rien et liste tout ce qu'elle trouve. Appliquez-la avec %2$s."
 
-msgid "Then deactivate the \"%s\" snippet in FluentSnippets, check the site, and turn off the compatibility setting above."
-msgstr "Désactivez ensuite le snippet « %s » dans FluentSnippets, vérifiez le site, puis désactivez le réglage de compatibilité ci-dessus."
+msgid "Then deactivate (or delete) the \"%s\" snippet in FluentSnippets, purge the page cache, check the site, and turn off the compatibility setting above once nothing is kept working by it."
+msgstr "Désactivez ensuite (ou supprimez) le snippet « %s » dans FluentSnippets, videz le cache des pages, vérifiez le site, puis désactivez le réglage de compatibilité ci-dessus une fois que plus rien n'est maintenu par lui."
 
 msgid "Effect"
 msgstr "Effet"

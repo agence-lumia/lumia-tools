@@ -52,8 +52,11 @@ final class ClassManager {
 	/** A snippet file larger than this is not read. */
 	const SNIPPET_MAX_BYTES = 2097152;
 
+	/** Transient that keeps the usage for the settings screen. */
+	const USAGE_TRANSIENT = 'lumia_motion_legacy_usage';
+
 	/** Post meta rows read per query by the usage scan. */
-	const SCAN_BATCH = 50;
+	const SCAN_BATCH = 20;
 
 	/* ================================================================
 	 * PURE PLANNING
@@ -168,19 +171,58 @@ final class ClassManager {
 	}
 
 	/**
-	 * Whether some custom CSS of these settings still relies on a legacy name.
+	 * The legacy names that the custom CSS of these settings still uses.
 	 *
 	 * Reads the `_cssCustom*` keys of an element or a class, the `customCss` key of a page, of the
-	 * global settings and of a theme style, at any depth.
+	 * global settings and of a theme style, at any depth. A class counts as a selector (`.name`, whole
+	 * word: only the ten known classes, never another class of the agency that starts the same way);
+	 * the underline variables are reported as `Legacy::VARIABLE_NEEDLE`.
 	 *
 	 * @param array<int|string, mixed> $settings Settings (or any nested array of settings).
+	 * @return string[] Legacy class names found as selectors, then the variable needle when present, each once.
 	 */
-	public static function has_legacy_css( array $settings ): bool {
+	public static function legacy_css_found( array $settings ): array {
+		$found = [];
+		self::collect_legacy_css( $settings, $found );
+
+		$names = array_values( array_intersect( array_keys( Legacy::CLASS_ALIASES ), $found ) );
+
+		return in_array( Legacy::VARIABLE_NEEDLE, $found, true ) ? array_merge( $names, [ Legacy::VARIABLE_NEEDLE ] ) : $names;
+	}
+
+	/**
+	 * Sorts the legacy names of some custom CSS into what breaks and what keeps working.
+	 *
+	 * A selector of a former class name that no class carries after the migration stops matching at once:
+	 * the compatibility setting only makes the engine recognise the old names, it never puts them back in
+	 * the markup. A selector of a class that keeps its name, or an underline variable, keeps working.
+	 *
+	 * @param array<int|string, mixed> $settings Settings (or any nested array of settings).
+	 * @param string[]                 $stopping Legacy class names that no class will carry.
+	 * @return array{selector: bool, kept: bool}
+	 */
+	public static function classify_css( array $settings, array $stopping ): array {
+		$result = [
+			'selector' => false,
+			'kept'     => false,
+		];
+		foreach ( self::legacy_css_found( $settings ) as $token ) {
+			$result[ in_array( $token, $stopping, true ) ? 'selector' : 'kept' ] = true;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Walks settings and records the legacy names of their custom CSS.
+	 *
+	 * @param array<int|string, mixed> $settings Settings.
+	 * @param string[]                 $found    Names found, by reference.
+	 */
+	private static function collect_legacy_css( array $settings, array &$found ): void {
 		foreach ( $settings as $key => $value ) {
 			if ( is_array( $value ) ) {
-				if ( self::has_legacy_css( $value ) ) {
-					return true;
-				}
+				self::collect_legacy_css( $value, $found );
 				continue;
 			}
 			if ( ! is_string( $value ) || ! is_string( $key ) ) {
@@ -189,14 +231,15 @@ final class ClassManager {
 			if ( 'customCss' !== $key && 0 !== strpos( $key, '_cssCustom' ) ) {
 				continue;
 			}
-			foreach ( Legacy::CSS_NEEDLES as $needle ) {
-				if ( false !== strpos( $value, $needle ) ) {
-					return true;
+			foreach ( array_keys( Legacy::CLASS_ALIASES ) as $name ) {
+				if ( 1 === preg_match( '/\.' . preg_quote( $name, '/' ) . '(?![\w-])/', $value ) ) {
+					$found[] = $name;
 				}
 			}
+			if ( false !== strpos( $value, Legacy::VARIABLE_NEEDLE ) ) {
+				$found[] = Legacy::VARIABLE_NEEDLE;
+			}
 		}
-
-		return false;
 	}
 
 	/**
@@ -205,17 +248,19 @@ final class ClassManager {
 	 * @param array<int|string, mixed> $elements     Elements (Bricks format).
 	 * @param string[]                 $legacy_ids   IDs of the global classes to look for.
 	 * @param string[]                 $legacy_names Class names to look for in the "CSS classes" field.
-	 * @return array{by_id: string[], raw: string[], css: string[]} Element IDs that carry one of the classes by ID,
-	 *                                                              that name one in their "CSS classes" field, and
-	 *                                                              whose custom CSS uses a legacy name.
+	 * @param string[]                 $stopping     Legacy class names that no class will carry (see classify_css()).
+	 * @return array{by_id: string[], raw: string[], selectors: string[], kept: string[]} Element IDs that carry one of
+	 *         the classes by ID, that name one in their "CSS classes" field, whose custom CSS has a selector that stops
+	 *         matching, and whose custom CSS names a legacy class or variable that keeps working.
 	 */
-	public static function scan_elements( array $elements, array $legacy_ids, array $legacy_names ): array {
+	public static function scan_elements( array $elements, array $legacy_ids, array $legacy_names, array $stopping ): array {
 		$ids   = array_flip( array_map( 'strval', $legacy_ids ) );
 		$names = array_flip( $legacy_names );
 		$scan  = [
-			'by_id' => [],
-			'raw'   => [],
-			'css'   => [],
+			'by_id'     => [],
+			'raw'       => [],
+			'selectors' => [],
+			'kept'      => [],
 		];
 
 		foreach ( $elements as $element ) {
@@ -242,8 +287,12 @@ final class ClassManager {
 				}
 			}
 
-			if ( self::has_legacy_css( $settings ) ) {
-				$scan['css'][] = $id;
+			$css = self::classify_css( $settings, $stopping );
+			if ( $css['selector'] ) {
+				$scan['selectors'][] = $id;
+			}
+			if ( $css['kept'] ) {
+				$scan['kept'][] = $id;
 			}
 		}
 
@@ -251,9 +300,21 @@ final class ClassManager {
 	}
 
 	/**
-	 * FluentSnippets files that still name the former snippet's classes, variables or global.
+	 * Status written in the header of a FluentSnippets file (`published`, `draft`), '' when there is none.
 	 *
-	 * Read only: a snippet is never modified.
+	 * Only the beginning of the file is read: that is where the header is.
+	 *
+	 * @param string $source Contents of the file.
+	 */
+	public static function snippet_status( string $source ): string {
+		return 1 === preg_match( '/@status:[ \t]*(\w+)/', substr( $source, 0, 2048 ), $match ) ? $match[1] : '';
+	}
+
+	/**
+	 * Published FluentSnippets files that still name the former snippet's classes, variables or global.
+	 *
+	 * A draft or disabled snippet runs nothing, so it is not a problem and is not reported. Read only:
+	 * a snippet is never modified.
 	 *
 	 * @param string $dir Directory of the snippet files.
 	 * @return string[] One line per file: its path under wp-content and the names found.
@@ -272,7 +333,7 @@ final class ClassManager {
 				continue;
 			}
 			$source = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file, not a URL.
-			if ( ! is_string( $source ) ) {
+			if ( ! is_string( $source ) || 'published' !== self::snippet_status( $source ) ) {
 				continue;
 			}
 
@@ -413,11 +474,16 @@ final class ClassManager {
 	 * class's own custom CSS, saves the classes and regenerates the Bricks CSS files. Run again, it
 	 * finds nothing to rename and writes nothing.
 	 *
-	 * `elements` and `posts` count what uses a class that is renamed (by ID); `css_hits` lists what
-	 * stays to be fixed by hand once the renames are done.
+	 * `elements` and `posts` count what uses a class that is renamed (by ID), in real content only (no
+	 * revision, trashed post or auto-draft). What names a legacy class or variable is never rewritten and
+	 * is sorted by what happens at --apply: `selectors` stop matching (a `.name` selector of a former class
+	 * name that no class carries any more: the markup carries the new name, and the compatibility setting
+	 * does not put the old one back), `compat` keep working through the compatibility setting (raw names typed in a "CSS
+	 * classes" field, underline variables, selectors of a class that keeps its name), `snippets` are
+	 * published snippet files. `css_hits` is the three lists together.
 	 *
 	 * @param bool $apply Whether to write.
-	 * @return array{renamed: string[], conflicts: string[], elements: int, posts: int, css_hits: string[]}
+	 * @return array{renamed: string[], conflicts: string[], elements: int, posts: int, selectors: string[], compat: string[], snippets: string[], css_hits: string[]}
 	 *         `renamed` and `conflicts` hold legacy class names; in a dry run `renamed` is what would be renamed.
 	 * @throws \RuntimeException When Bricks is not available, or did not keep the classes.
 	 */
@@ -451,17 +517,21 @@ final class ClassManager {
 				update_option( self::OPTION_CATEGORIES, $with['categories'], false );
 			}
 			self::save_classes( $next );
+			delete_transient( self::USAGE_TRANSIENT );
 			self::regenerate_assets();
 		}
 
 		// What is left to fix is read on the classes as they stand once renamed (also in a dry run).
-		$survey = self::survey( $next, array_map( 'strval', array_keys( $plan['rename'] ) ), array_keys( Legacy::CLASS_ALIASES ), false );
+		$survey = self::survey( $next, array_map( 'strval', array_keys( $plan['rename'] ) ), self::stopping_names( $plan['conflicts'] ), false );
 
 		return [
 			'renamed'   => $renamed,
 			'conflicts' => $plan['conflicts'],
 			'elements'  => $survey['elements'],
 			'posts'     => $survey['posts'],
+			'selectors' => $survey['selectors'],
+			'compat'    => $survey['compat'],
+			'snippets'  => $survey['snippets'],
 			'css_hits'  => $survey['css_hits'],
 		];
 	}
@@ -472,8 +542,8 @@ final class ClassManager {
 	 * Reads the Bricks content (pages, headers, footers, templates), the components, the class
 	 * settings, the global and theme custom CSS and the FluentSnippets files. Writes nothing.
 	 *
-	 * @return array{classes: array<string, string>, elements: int, posts: int, css_hits: string[]}
-	 *         `classes` maps the ID of each class that carries a legacy name to that name; `elements` also counts
+	 * @return array{classes: array<string, string>, elements: int, posts: int, selectors: string[], compat: string[], snippets: string[], css_hits: string[]}
+	 *         `selectors`, `compat` and `snippets` are as in migrate(), for the renames that a migration would do now. `classes` maps the ID of each class that carries a legacy name to that name; `elements` also counts
 	 *         the elements that name a legacy class in their "CSS classes" field.
 	 */
 	public static function legacy_usage(): array {
@@ -485,14 +555,50 @@ final class ClassManager {
 			}
 		}
 
-		$survey = self::survey( $classes, array_map( 'strval', array_keys( $legacy ) ), array_values( $legacy ), true );
+		$survey = self::survey( $classes, array_map( 'strval', array_keys( $legacy ) ), self::stopping_names( self::plan_migration( $classes )['conflicts'] ), true );
 
 		return [
-			'classes'  => $legacy,
-			'elements' => $survey['elements'],
-			'posts'    => $survey['posts'],
-			'css_hits' => $survey['css_hits'],
+			'classes'   => $legacy,
+			'elements'  => $survey['elements'],
+			'posts'     => $survey['posts'],
+			'selectors' => $survey['selectors'],
+			'compat'    => $survey['compat'],
+			'snippets'  => $survey['snippets'],
+			'css_hits'  => $survey['css_hits'],
 		];
+	}
+
+	/**
+	 * Legacy class names whose selectors stop matching once the migration is done.
+	 *
+	 * Every former name, except those of the classes that stay as they are (the conflicts). It does not
+	 * depend on what was renamed already, so a selector keeps being listed after the migration: no class
+	 * carries that name any more.
+	 *
+	 * @param string[] $conflicts Legacy names of the classes that cannot be renamed.
+	 * @return string[]
+	 */
+	private static function stopping_names( array $conflicts ): array {
+		return array_values( array_diff( array_keys( Legacy::CLASS_ALIASES ), $conflicts ) );
+	}
+
+	/**
+	 * legacy_usage() kept for a few minutes: the settings screen asks for it on every open.
+	 *
+	 * Dropped by migrate( true ) so the screen follows a migration at once.
+	 *
+	 * @return array{classes: array<string, string>, elements: int, posts: int, selectors: string[], compat: string[], snippets: string[], css_hits: string[]}
+	 */
+	public static function legacy_usage_cached(): array {
+		$cached = get_transient( self::USAGE_TRANSIENT );
+		if ( is_array( $cached ) && isset( $cached['classes'], $cached['elements'], $cached['posts'], $cached['selectors'], $cached['compat'], $cached['snippets'], $cached['css_hits'] ) ) {
+			return $cached;
+		}
+
+		$usage = self::legacy_usage();
+		set_transient( self::USAGE_TRANSIENT, $usage, 5 * MINUTE_IN_SECONDS );
+
+		return $usage;
 	}
 
 	/* ================================================================
@@ -500,36 +606,47 @@ final class ClassManager {
 	 * ================================================================ */
 
 	/**
-	 * Counts the usage of some classes and lists the custom CSS that names a legacy class.
+	 * Counts the usage of some classes and lists what names a legacy class or variable.
 	 *
-	 * @param array<int|string, mixed> $classes      Global classes, as they should be read.
-	 * @param string[]                 $ids          IDs of the classes whose usage is counted.
-	 * @param string[]                 $names        Class names looked for in the "CSS classes" fields.
-	 * @param bool                     $count_by_name Whether an element that names a class in that field is counted.
-	 * @return array{elements: int, posts: int, css_hits: string[]}
+	 * @param array<int|string, mixed> $classes       Global classes, as they should be read.
+	 * @param string[]                 $ids           IDs of the classes whose usage is counted.
+	 * @param string[]                 $stopping      Legacy class names that no class will carry (see classify_css()).
+	 * @param bool                     $count_by_name Whether an element that names a class in its "CSS classes" field is counted.
+	 * @return array{elements: int, posts: int, selectors: string[], compat: string[], snippets: string[], css_hits: string[]}
 	 */
-	private static function survey( array $classes, array $ids, array $names, bool $count_by_name ): array {
-		$elements = 0;
-		$posts    = [];
-		$hits     = [];
+	private static function survey( array $classes, array $ids, array $stopping, bool $count_by_name ): array {
+		$names     = array_keys( Legacy::CLASS_ALIASES );
+		$elements  = 0;
+		$posts     = [];
+		$selectors = [];
+		$compat    = [];
+
+		// A place made of settings: class, global CSS, theme style, page settings.
+		$place = static function ( string $label, array $settings ) use ( $stopping, &$selectors, &$compat ): void {
+			$css = self::classify_css( $settings, $stopping );
+			if ( $css['selector'] ) {
+				$selectors[] = $label . ': selector of a former class name that stops matching';
+			}
+			if ( $css['kept'] ) {
+				$compat[] = $label . ': legacy name that keeps working through the compatibility setting';
+			}
+		};
 
 		foreach ( $classes as $class ) {
-			if ( is_array( $class ) && is_array( $class['settings'] ?? null ) && self::has_legacy_css( $class['settings'] ) ) {
-				$hits[] = sprintf( 'class %s', (string) ( $class['name'] ?? $class['id'] ?? '?' ) );
+			if ( is_array( $class ) && is_array( $class['settings'] ?? null ) ) {
+				$place( sprintf( 'class %s', (string) ( $class['name'] ?? $class['id'] ?? '?' ) ), $class['settings'] );
 			}
 		}
 
 		$settings = get_option( self::OPTION_SETTINGS, [] );
-		if ( is_array( $settings ) && is_string( $settings['customCss'] ?? null ) && self::has_legacy_css( [ 'customCss' => $settings['customCss'] ] ) ) {
-			$hits[] = 'Bricks global custom CSS';
+		if ( is_array( $settings ) && is_string( $settings['customCss'] ?? null ) ) {
+			$place( 'Bricks global custom CSS', [ 'customCss' => $settings['customCss'] ] );
 		}
 
 		$themes = get_option( self::OPTION_THEME_STYLES, [] );
-		if ( is_array( $themes ) ) {
-			foreach ( $themes as $key => $style ) {
-				if ( is_array( $style ) && self::has_legacy_css( $style ) ) {
-					$hits[] = sprintf( 'theme style %s', is_string( $style['label'] ?? null ) ? $style['label'] : (string) $key );
-				}
+		foreach ( is_array( $themes ) ? $themes : [] as $key => $style ) {
+			if ( is_array( $style ) ) {
+				$place( sprintf( 'theme style %s', is_string( $style['label'] ?? null ) ? $style['label'] : (string) $key ), $style );
 			}
 		}
 
@@ -537,13 +654,12 @@ final class ClassManager {
 			if ( ! is_array( $component ) || ! is_array( $component['elements'] ?? null ) ) {
 				continue;
 			}
-			$scan      = self::scan_elements( $component['elements'], $ids, $names );
+			$scan      = self::scan_elements( $component['elements'], $ids, $names, $stopping );
 			$elements += self::used( $scan, $count_by_name );
-			$label     = sprintf( 'component %s', (string) ( $component['label'] ?? $component['id'] ?? '?' ) );
-			$hits      = array_merge( $hits, self::element_hits( $label, $scan ) );
+			self::element_hits( sprintf( 'component %s', (string) ( $component['label'] ?? $component['id'] ?? '?' ) ), $scan, $selectors, $compat );
 		}
 
-		foreach ( self::scan_posts( $ids, $names ) as $post_id => $row ) {
+		foreach ( self::scan_posts( $ids, $names, $stopping ) as $post_id => $row ) {
 			$scan      = $row['scan'];
 			$used      = self::used( $scan, $count_by_name );
 			$elements += $used;
@@ -551,26 +667,34 @@ final class ClassManager {
 				$posts[ $post_id ] = true;
 			}
 			$label = sprintf( 'post %d "%s"', $post_id, get_the_title( $post_id ) );
-			$hits  = array_merge( $hits, self::element_hits( $label, $scan ) );
-			if ( $row['settings_css'] ) {
-				$hits[] = $label . ' page settings';
+			self::element_hits( $label, $scan, $selectors, $compat );
+			if ( $row['settings_css']['selector'] ) {
+				$selectors[] = $label . ' page settings: selector of a former class name that stops matching';
+			}
+			if ( $row['settings_css']['kept'] ) {
+				$compat[] = $label . ' page settings: legacy name that keeps working through the compatibility setting';
 			}
 		}
 
-		$hits = array_merge( $hits, self::snippet_hits( trailingslashit( WP_CONTENT_DIR ) . self::SNIPPET_DIR ) );
+		$snippets  = self::snippet_hits( trailingslashit( WP_CONTENT_DIR ) . self::SNIPPET_DIR );
+		$selectors = array_values( array_unique( $selectors ) );
+		$compat    = array_values( array_unique( $compat ) );
 
 		return [
-			'elements' => $elements,
-			'posts'    => count( $posts ),
-			'css_hits' => array_values( array_unique( $hits ) ),
+			'elements'  => $elements,
+			'posts'     => count( $posts ),
+			'selectors' => $selectors,
+			'compat'    => $compat,
+			'snippets'  => $snippets,
+			'css_hits'  => array_merge( $selectors, $compat, $snippets ),
 		];
 	}
 
 	/**
 	 * Number of elements of a scan that count as users of the classes.
 	 *
-	 * @param array{by_id: string[], raw: string[], css: string[]} $scan          Result of scan_elements().
-	 * @param bool                                                 $count_by_name Whether the "CSS classes" field counts.
+	 * @param array{by_id: string[], raw: string[], selectors: string[], kept: string[]} $scan          Result of scan_elements().
+	 * @param bool                                                                       $count_by_name Whether the "CSS classes" field counts.
 	 */
 	private static function used( array $scan, bool $count_by_name ): int {
 		$ids = $count_by_name ? array_merge( $scan['by_id'], $scan['raw'] ) : $scan['by_id'];
@@ -579,42 +703,46 @@ final class ClassManager {
 	}
 
 	/**
-	 * Report lines for the elements of a scan that need a manual fix.
+	 * Adds the report lines of the elements of a scan to the two lists.
 	 *
-	 * @param string                                               $label Where the elements are.
-	 * @param array{by_id: string[], raw: string[], css: string[]} $scan  Result of scan_elements().
-	 * @return string[]
+	 * @param string                                                                     $label     Where the elements are.
+	 * @param array{by_id: string[], raw: string[], selectors: string[], kept: string[]} $scan      Result of scan_elements().
+	 * @param string[]                                                                   $selectors Lines of what stops matching, by reference.
+	 * @param string[]                                                                   $compat    Lines of what keeps working, by reference.
 	 */
-	private static function element_hits( string $label, array $scan ): array {
-		$hits = [];
+	private static function element_hits( string $label, array $scan, array &$selectors, array &$compat ): void {
+		foreach ( $scan['selectors'] as $id ) {
+			$selectors[] = sprintf( '%s element %s: selector of a former class name that stops matching', $label, $id );
+		}
 		foreach ( $scan['raw'] as $id ) {
-			$hits[] = sprintf( '%s element %s: legacy class in the CSS classes field', $label, $id );
+			$compat[] = sprintf( '%s element %s: legacy class typed in the CSS classes field', $label, $id );
 		}
-		foreach ( $scan['css'] as $id ) {
-			$hits[] = sprintf( '%s element %s: legacy name in the custom CSS', $label, $id );
+		foreach ( $scan['kept'] as $id ) {
+			$compat[] = sprintf( '%s element %s: legacy name that keeps working through the compatibility setting', $label, $id );
 		}
-
-		return $hits;
 	}
 
 	/**
-	 * Scans the Bricks content meta of every post, a few rows at a time.
+	 * Scans the Bricks content meta of the real posts, a few rows at a time.
 	 *
-	 * Only the rows that mention a class ID, a legacy name or a CSS needle are decoded: the
+	 * Revisions, trashed posts and auto-drafts are left out: Bricks copies its content meta to every
+	 * revision, so they would inflate the counts and keep hits alive that the page no longer has. Only
+	 * the rows that mention a class ID, a legacy name or the underline variable are decoded: the
 	 * database does the filtering, PHP checks the exact matches.
 	 *
-	 * @param string[] $ids   IDs of the classes looked for.
-	 * @param string[] $names Class names looked for in the "CSS classes" fields.
-	 * @return array<int, array{scan: array{by_id: string[], raw: string[], css: string[]}, settings_css: bool}> By post ID.
+	 * @param string[] $ids      IDs of the classes looked for.
+	 * @param string[] $names    Class names looked for in the "CSS classes" fields.
+	 * @param string[] $stopping Legacy class names that no class will carry.
+	 * @return array<int, array{scan: array{by_id: string[], raw: string[], selectors: string[], kept: string[]}, settings_css: array{selector: bool, kept: bool}}> By post ID.
 	 */
-	private static function scan_posts( array $ids, array $names ): array {
+	private static function scan_posts( array $ids, array $names, array $stopping ): array {
 		global $wpdb;
 
-		$terms = array_merge( array_map( 'strval', $ids ), $names, Legacy::CSS_NEEDLES );
+		$terms = array_merge( array_map( 'strval', $ids ), $names, [ Legacy::VARIABLE_NEEDLE ] );
 		$like  = [];
 		foreach ( array_unique( $terms ) as $term ) {
 			if ( '' !== $term ) {
-				$like[] = $wpdb->prepare( 'meta_value LIKE %s', '%' . $wpdb->esc_like( $term ) . '%' );
+				$like[] = $wpdb->prepare( 'm.meta_value LIKE %s', '%' . $wpdb->esc_like( $term ) . '%' );
 			}
 		}
 		if ( [] === $like ) {
@@ -631,7 +759,7 @@ final class ClassManager {
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $where was built with prepare() above.
-						"SELECT meta_id, post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_id > %d AND ( {$where} ) ORDER BY meta_id ASC LIMIT %d",
+						"SELECT m.meta_id, m.post_id, m.meta_value FROM {$wpdb->postmeta} m INNER JOIN {$wpdb->posts} p ON p.ID = m.post_id WHERE m.meta_key = %s AND m.meta_id > %d AND p.post_type <> 'revision' AND p.post_status NOT IN ( 'trash', 'auto-draft', 'inherit' ) AND ( {$where} ) ORDER BY m.meta_id ASC LIMIT %d",
 						$key,
 						$last,
 						self::SCAN_BATCH
@@ -647,18 +775,22 @@ final class ClassManager {
 					if ( ! isset( $found[ $post_id ] ) ) {
 						$found[ $post_id ] = [
 							'scan'         => [
-								'by_id' => [],
-								'raw'   => [],
-								'css'   => [],
+								'by_id'     => [],
+								'raw'       => [],
+								'selectors' => [],
+								'kept'      => [],
 							],
-							'settings_css' => false,
+							'settings_css' => [
+								'selector' => false,
+								'kept'     => false,
+							],
 						];
 					}
 					if ( self::PAGE_SETTINGS_META_KEY === $key ) {
-						$found[ $post_id ]['settings_css'] = self::has_legacy_css( $value );
+						$found[ $post_id ]['settings_css'] = self::classify_css( $value, $stopping );
 						continue;
 					}
-					$scan = self::scan_elements( $value, $ids, $names );
+					$scan = self::scan_elements( $value, $ids, $names, $stopping );
 					foreach ( $scan as $part => $list ) {
 						$found[ $post_id ]['scan'][ $part ] = array_merge( $found[ $post_id ]['scan'][ $part ], $list );
 					}

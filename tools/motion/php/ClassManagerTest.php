@@ -44,7 +44,7 @@ return [
 		lm_assert( $plan === $want, 'got ' . implode( ',', $plan ) );
 		lm_assert( count( $plan ) === 10, 'ten classes' );
 	},
-	'creation once everything exists gives nothing'        => static function (): void {
+	'creation once everything exists gives nothing'     => static function (): void {
 		$classes = [];
 		foreach ( Effects::catalog() as $definition ) {
 			$classes[] = [
@@ -61,7 +61,7 @@ return [
 		}
 		lm_assert( ClassManager::plan_creation( $classes ) === [], 'a site with the ten legacy classes needs no new class' );
 	},
-	'creation ignores a malformed entry'                   => static function (): void {
+	'creation ignores a malformed entry'                => static function (): void {
 		$plan = ClassManager::plan_creation( [ 'oops', 3, [ 'id' => 'z' ], [ 'name' => [ 'sk-fade' ] ] ] );
 		lm_assert( count( $plan ) === 10, 'garbage entries must not hide a class' );
 	},
@@ -85,16 +85,16 @@ return [
 		lm_assert( array_keys( $plan['rename'] ) === [ 552528 ], 'PHP turns a numeric string key into an int' );
 		lm_assert( array_key_exists( '552528', $plan['rename'] ), 'the string id still finds it' );
 	},
-	'migration of a migrated site is empty'                => static function () use ( $lm_class ): void {
+	'migration of a migrated site is empty'             => static function () use ( $lm_class ): void {
 		$plan = ClassManager::plan_migration( [ $lm_class( 'a', 'lm-fade' ), $lm_class( 'b', 'nodrag' ) ] );
 		lm_assert( $plan['rename'] === [] && $plan['conflicts'] === [], 'nothing left to do' );
 	},
-	'migration never renames two classes into one name'    => static function () use ( $lm_class ): void {
+	'migration never renames two classes into one name' => static function () use ( $lm_class ): void {
 		$plan = ClassManager::plan_migration( [ $lm_class( 'a', 'sk-fade' ), $lm_class( 'b', 'sk-fade' ) ] );
 		lm_assert( array_keys( $plan['rename'] ) === [ 'a' ], 'only the first one is renamed' );
 		lm_assert( $plan['conflicts'] === [ 'sk-fade' ], 'the second one is a conflict: ' . json_encode( $plan['conflicts'] ) );
 	},
-	'migration target comes from Legacy'                   => static function () use ( $lm_class ): void {
+	'migration target comes from Legacy'                => static function () use ( $lm_class ): void {
 		$classes = [];
 		foreach ( array_keys( Legacy::CLASS_ALIASES ) as $i => $legacy ) {
 			$classes[] = $lm_class( 'i' . $i, $legacy );
@@ -120,7 +120,7 @@ return [
 		lm_assert( $out['_typography'] === [ 'color' => '.sk-fade' ], 'only _cssCustom keys are touched' );
 		lm_assert( $out['_margin'] === '.sk-fade', 'only _cssCustom keys are touched (string)' );
 	},
-	'rewrite leaves settings without the class alone'      => static function (): void {
+	'rewrite leaves settings without the class alone'   => static function (): void {
 		$settings = [
 			'_cssCustom' => '.other{color:red}',
 			'_lmEffect'  => 'fade',
@@ -137,13 +137,53 @@ return [
 		lm_assert( $out['_cssCustom'] === [ 'not' => 'a string' ], 'array value kept' );
 		lm_assert( $out['_cssCustom:tablet'] === '.a$1b.lm-$0fade{}', 'replacement is literal: ' . $out['_cssCustom:tablet'] );
 	},
-	'legacy css is found by the class selector and the underline variable' => static function (): void {
-		lm_assert( ClassManager::has_legacy_css( [ '_cssCustom' => '.x .sk-fade{}' ] ), 'selector' );
-		lm_assert( ClassManager::has_legacy_css( [ '_cssCustom:mobile_portrait' => 'a{--sk-hover-underline-gap:3px}' ] ), 'variable' );
-		lm_assert( ClassManager::has_legacy_css( [ 'customCss' => '.sk-counter{}' ] ), 'page or theme custom CSS' );
-		lm_assert( ClassManager::has_legacy_css( [ 'general' => [ 'customCss' => '.sk-counter{}' ] ] ), 'nested (theme styles)' );
-		lm_assert( ! ClassManager::has_legacy_css( [ '_cssCustom' => '.mask-image{} .task-list{} .lm-fade{}' ] ), 'no false positive' );
-		lm_assert( ! ClassManager::has_legacy_css( [ '_typography' => '.sk-fade' ] ), 'only custom CSS keys count' );
+	'legacy css names the known classes as whole words, and the underline variable' => static function (): void {
+		lm_assert( ClassManager::legacy_css_found( [ '_cssCustom' => '.x .sk-fade{} a.sk-counter:hover{}' ] ) === [ 'sk-fade', 'sk-counter' ], 'selectors' );
+		lm_assert( ClassManager::legacy_css_found( [ '_cssCustom:mobile_portrait' => 'a{--sk-hover-underline-gap:3px}' ] ) === [ Legacy::VARIABLE_NEEDLE ], 'variable' );
+		lm_assert( ClassManager::legacy_css_found( [ 'customCss' => '.sk-counter{}' ] ) === [ 'sk-counter' ], 'page or theme custom CSS' );
+		lm_assert( ClassManager::legacy_css_found( [ 'general' => [ 'customCss' => '.sk-counter{}' ] ] ) === [ 'sk-counter' ], 'nested (theme styles)' );
+		lm_assert( ClassManager::legacy_css_found( [ '_cssCustom' => '.mask-image{} .task-list{} .lm-fade{}' ] ) === [], 'no false positive' );
+		lm_assert( ClassManager::legacy_css_found( [ '_typography' => '.sk-fade' ] ) === [], 'only custom CSS keys count' );
+		lm_assert( ClassManager::legacy_css_found( [ '_cssCustom' => '.sk-container{} .sk-fade-extra{} .sk-hover-underline-x{}' ] ) === [], 'an agency class that is not one of the ten is never reported' );
+		lm_assert( ClassManager::legacy_css_found( [ '_cssCustom' => '.sk-fade, .sk-fade .a{}' ] ) === [ 'sk-fade' ], 'each name once' );
+	},
+	'css is classified as breaking or kept'             => static function (): void {
+		$stopping = [ 'sk-fade' ];
+		lm_assert(
+			ClassManager::classify_css( [ '_cssCustom' => '.sk-fade{}' ], $stopping ) === [
+				'selector' => true,
+				'kept'     => false,
+			],
+			'selector of a renamed class stops matching'
+		);
+		lm_assert(
+			ClassManager::classify_css( [ '_cssCustom' => '.sk-counter{}' ], $stopping ) === [
+				'selector' => false,
+				'kept'     => true,
+			],
+			'selector of a class that stays keeps matching'
+		);
+		lm_assert(
+			ClassManager::classify_css( [ '_cssCustom' => 'a{--sk-hover-underline-gap:1px}' ], $stopping ) === [
+				'selector' => false,
+				'kept'     => true,
+			],
+			'variable is kept working by compatibility'
+		);
+		lm_assert(
+			ClassManager::classify_css( [ '_cssCustom' => '.sk-fade{--sk-hover-underline-gap:1px}' ], $stopping ) === [
+				'selector' => true,
+				'kept'     => true,
+			],
+			'both'
+		);
+		lm_assert(
+			ClassManager::classify_css( [], $stopping ) === [
+				'selector' => false,
+				'kept'     => false,
+			],
+			'nothing'
+		);
 	},
 	'scan counts elements by class id and by raw class name' => static function (): void {
 		$elements = [
@@ -171,13 +211,18 @@ return [
 				'id'       => 'e6',
 				'settings' => [],
 			],
+			[
+				'id'       => 'e7',
+				'settings' => [ '_cssCustom' => '#brxe-e7{--sk-hover-underline-gap:1px} .sk-reveal{}' ],
+			],
 		];
-		$scan     = ClassManager::scan_elements( $elements, [ 'idfade' ], [ 'sk-fade', 'sk-reveal' ] );
+		$scan     = ClassManager::scan_elements( $elements, [ 'idfade' ], [ 'sk-fade', 'sk-reveal' ], [ 'sk-fade' ] );
 		lm_assert( $scan['by_id'] === [ 'e1' ], 'by_id ' . json_encode( $scan['by_id'] ) );
 		lm_assert( $scan['raw'] === [ 'e3' ], 'raw ' . json_encode( $scan['raw'] ) );
-		lm_assert( $scan['css'] === [ 'e5' ], 'css ' . json_encode( $scan['css'] ) );
+		lm_assert( $scan['selectors'] === [ 'e5' ], 'selectors ' . json_encode( $scan['selectors'] ) );
+		lm_assert( $scan['kept'] === [ 'e7' ], 'kept ' . json_encode( $scan['kept'] ) );
 	},
-	'scan tolerates malformed elements'                    => static function (): void {
+	'scan tolerates malformed elements'                 => static function (): void {
 		$scan = ClassManager::scan_elements(
 			[
 				'oops',
@@ -196,16 +241,22 @@ return [
 				],
 			],
 			[ 'idfade' ],
+			[],
 			[]
 		);
 		lm_assert( $scan['by_id'] === [ 'd' ], 'by_id ' . json_encode( $scan['by_id'] ) );
 	},
-	'snippet files are reported, never the unrelated ones' => static function (): void {
-		$dir = sys_get_temp_dir() . '/lm-snippets-' . bin2hex( random_bytes( 4 ) );
+	'only published snippet files are reported, never the unrelated ones' => static function (): void {
+		$dir    = sys_get_temp_dir() . '/lm-snippets-' . bin2hex( random_bytes( 4 ) );
+		$header = static function ( string $status, string $name = 'Progressive blur' ): string {
+			return "<?php\n// <Internal Doc Start>\n/*\n* @name: {$name}\n* @type: PHP\n* @status: {$status}\n*/\n?>\n";
+		};
 		mkdir( $dir );
-		file_put_contents( $dir . '/4-former.php', "<?php\n// @name: " . Legacy::SNIPPET_NAME . "\n\$c = 'sk-fade sk-counter'; window." . Legacy::ENGINE_GLOBAL . ";\n" );
-		file_put_contents( $dir . '/6-blur.php', "<?php\n.mask-image{ -webkit-mask-image: x; } .task-sk-fade{}\n" );
-		file_put_contents( $dir . '/9-var.php', "<?php\n\$css = 'a{--sk-hover-underline-gap:2px}';\n" );
+		file_put_contents( $dir . '/4-former.php', $header( 'published', Legacy::SNIPPET_NAME ) . "<?php \$c = 'sk-fade sk-counter'; window." . Legacy::ENGINE_GLOBAL . ";\n" );
+		file_put_contents( $dir . '/5-draft.php', $header( 'draft' ) . "<?php \$c = 'sk-fade';\n" );
+		file_put_contents( $dir . '/6-blur.php', $header( 'published' ) . "<?php\n.mask-image{ -webkit-mask-image: x; } .task-sk-fade{}\n" );
+		file_put_contents( $dir . '/9-var.php', $header( 'published' ) . "<?php \$css = 'a{--sk-hover-underline-gap:2px}';\n" );
+		file_put_contents( $dir . '/10-nostatus.php', "<?php \$c = 'sk-fade';\n" );
 		file_put_contents( $dir . '/readme.txt', 'sk-fade' );
 		try {
 			$hits = ClassManager::snippet_hits( $dir );
@@ -213,16 +264,22 @@ return [
 			array_map( 'unlink', (array) glob( $dir . '/*' ) );
 			rmdir( $dir );
 		}
-		lm_assert( count( $hits ) === 2, 'two files: ' . json_encode( $hits ) );
+		lm_assert( count( $hits ) === 2, 'two published files: ' . json_encode( $hits ) );
 		lm_assert( strpos( $hits[0], '4-former.php' ) !== false, 'first ' . $hits[0] );
 		lm_assert( strpos( $hits[0], 'sk-fade' ) !== false && strpos( $hits[0], 'sk-counter' ) !== false, 'names listed: ' . $hits[0] );
 		lm_assert( strpos( $hits[0], Legacy::ENGINE_GLOBAL ) !== false, 'engine global listed: ' . $hits[0] );
 		lm_assert( strpos( $hits[1], '9-var.php' ) !== false, 'second ' . $hits[1] );
 	},
-	'snippet scan of a missing directory is empty'         => static function (): void {
+	'snippet status is read from the header'            => static function (): void {
+		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @name: X\n* @status: published\n*/" ) === 'published', 'published' );
+		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @status:draft\n*/" ) === 'draft', 'draft, no space' );
+		lm_assert( ClassManager::snippet_status( "<?php\necho 1;" ) === '', 'no header' );
+		lm_assert( ClassManager::snippet_status( "<?php\n" . str_repeat( ' ', 3000 ) . '// @status: published' ) === '', 'only the header is read: a mention further down does not count' );
+	},
+	'snippet scan of a missing directory is empty'      => static function (): void {
 		lm_assert( ClassManager::snippet_hits( sys_get_temp_dir() . '/lm-does-not-exist-' . bin2hex( random_bytes( 4 ) ) ) === [], 'no directory, no hit' );
 	},
-	'category is found by name, created otherwise'         => static function (): void {
+	'category is found by name, created otherwise'      => static function (): void {
 		$found = ClassManager::with_category(
 			[
 				[
@@ -256,7 +313,7 @@ return [
 		);
 		lm_assert( $made['id'] !== 'c1' && preg_match( '/^[a-z]{6}$/', $made['id'] ) === 1, 'id ' . $made['id'] );
 	},
-	'new ids are six letters and never taken'              => static function (): void {
+	'new ids are six letters and never taken'           => static function (): void {
 		$taken = [];
 		for ( $i = 0; $i < 200; $i++ ) {
 			$id = ClassManager::new_id( $taken );
