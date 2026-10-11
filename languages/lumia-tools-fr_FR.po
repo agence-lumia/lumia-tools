@@ -5440,3 +5440,204 @@ msgstr "L'édition des fichiers se reverrouille dans %d min : enregistrez vos mo
 
 msgid "The hour is over: file editing is locked again."
 msgstr "L'heure est écoulée : l'édition des fichiers est reverrouillée."
+
+msgid "Motion"
+msgstr "Motion"
+
+msgid "Entrance and scroll animations for Bricks, adjustable per element."
+msgstr "Animations d'entrée et de défilement pour Bricks, réglables élément par élément."
+
+msgid "Animate Bricks elements"
+msgstr "Animer les éléments Bricks"
+
+msgid "Bricks is not the active theme"
+msgstr "Bricks n'est pas le thème actif"
+
+msgid "Motion adds its animations to the elements of Bricks. Nothing is loaded on this site until the Bricks theme is active, and there is nothing to configure."
+msgstr "Motion ajoute ses animations aux éléments de Bricks. Rien n'est chargé sur ce site tant que le thème Bricks n'est pas actif, et il n'y a rien à régler."
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Slow"
+msgstr "Lent"
+
+msgid "Smooth"
+msgstr "Douce"
+
+msgid "Snappy"
+msgstr "Vive"
+
+msgid "Bouncy"
+msgstr "Rebond"
+
+msgid "Linear"
+msgstr "Linéaire"
+
+msgid "Custom"
+msgstr "Personnalisée"
+
+msgid "Top"
+msgstr "Haut"
+
+msgid "Center"
+msgstr "Centre"
+
+msgid "Bottom"
+msgstr "Bas"
+
+msgid "Fade"
+msgstr "Fondu"
+
+msgid "Reveal"
+msgstr "Révélation"
+
+msgid "Blur in"
+msgstr "Apparition floue"
+
+msgid "Scale in"
+msgstr "Apparition agrandie"
+
+msgid "Scale and blur in"
+msgstr "Apparition agrandie et floue"
+
+msgid "Text lines"
+msgstr "Lignes de texte"
+
+msgid "Text words"
+msgstr "Mots du texte"
+
+msgid "Text characters"
+msgstr "Caractères du texte"
+
+msgid "Counter"
+msgstr "Compteur"
+
+msgid "Start edge"
+msgstr "Repère de début"
+
+msgid "Start position"
+msgstr "Position de début"
+
+msgid "End edge"
+msgstr "Repère de fin"
+
+msgid "End position"
+msgstr "Position de fin"
+
+msgid "Delay (s)"
+msgstr "Délai (s)"
+
+msgid "Duration (s)"
+msgstr "Durée (s)"
+
+msgid "Stagger (s)"
+msgstr "Décalage (s)"
+
+msgid "Distance (px)"
+msgstr "Distance (px)"
+
+msgid "Blur (px)"
+msgstr "Flou (px)"
+
+msgid "Scale"
+msgstr "Échelle"
+
+msgid "Starting opacity"
+msgstr "Opacité de départ"
+
+msgid "Starting value"
+msgstr "Valeur de départ"
+
+msgid "Distance (%)"
+msgstr "Distance (%)"
+
+msgid "Motion module sections"
+msgstr "Sections du module Motion"
+
+msgid "Animations"
+msgstr "Animations"
+
+msgid "Scrolling"
+msgstr "Défilement"
+
+msgid "Builder"
+msgstr "Builder"
+
+msgid "Compatibility"
+msgstr "Compatibilité"
+
+msgid "Pace and curve"
+msgstr "Rythme et courbe"
+
+msgid "How animations move by default. Each element can override them in the Bricks builder."
+msgstr "La façon dont les animations bougent par défaut. Chaque élément peut les remplacer dans le builder de Bricks."
+
+msgid "Tempo"
+msgstr "Rythme"
+
+msgid "Fast shortens durations and staggers by 30%, slow lengthens them by 40%. Delays are never scaled."
+msgstr "Rapide raccourcit les durées et les décalages de 30 %, lent les allonge de 40 %. Les délais ne sont jamais modifiés."
+
+msgid "Easing curve"
+msgstr "Courbe d'animation"
+
+msgid "The Lümia curve starts held back and lands very softly. Smooth, snappy and bouncy are springs with increasing overshoot."
+msgstr "La courbe Lümia démarre retenue et arrive très doucement. Douce, vive et rebond sont des ressorts au dépassement croissant."
+
+msgid "Custom curve"
+msgstr "Courbe personnalisée"
+
+msgid "Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the Lümia curve."
+msgstr "Utilisée quand la courbe d'animation est réglée sur Personnalisée. Quatre nombres, par exemple cubic-bezier(0.2, 0.8, 0.2, 1). Le premier et le troisième doivent être compris entre 0 et 1 ; une courbe invalide revient à la courbe Lümia."
+
+msgid "Reference values"
+msgstr "Valeurs de référence"
+
+msgid "Used by every element of an effect that does not set its own value. The start edge is the part of the element that triggers the animation; the start position is how far down the screen that edge must be (98% is almost at the bottom). Effects that follow the scroll also have an end."
+msgstr "Utilisées par chaque élément d'un effet qui ne définit pas sa propre valeur. Le repère de début est la partie de l'élément qui déclenche l'animation ; la position de début indique à quelle hauteur de l'écran ce repère doit arriver (98 % est presque en bas). Les effets qui suivent le défilement ont aussi une fin."
+
+msgid "The underline effect has no reference value: it is styled with the CSS variables --lm-underline-thickness, --lm-underline-gap, --lm-underline-color and --lm-underline-duration."
+msgstr "L'effet de soulignement n'a pas de valeur de référence : il se règle avec les variables CSS --lm-underline-thickness, --lm-underline-gap, --lm-underline-color et --lm-underline-duration."
+
+msgid "Smooth scrolling"
+msgstr "Défilement doux"
+
+msgid "Eases the mouse wheel on desktop. Touch screens keep their native scrolling."
+msgstr "Adoucit la molette de la souris sur ordinateur. Les écrans tactiles gardent leur défilement natif."
+
+msgid "Loaded on every public page, with or without animation, so the scroll feels the same everywhere."
+msgstr "Chargé sur toutes les pages publiques, avec ou sans animation, pour que le défilement soit le même partout."
+
+msgid "Intensity"
+msgstr "Intensité"
+
+msgid "Between 0.01 and 1. A low value glides for longer, 1 follows the wheel with no easing."
+msgstr "Entre 0,01 et 1. Une valeur basse glisse plus longtemps, 1 suit la molette sans adoucissement."
+
+msgid "Builder preview"
+msgstr "Aperçu dans le builder"
+
+msgid "Elements always appear in their final state in the builder, so the page can be built without hidden content."
+msgstr "Dans le builder, les éléments s'affichent toujours dans leur état final : la page se construit sans contenu masqué."
+
+msgid "Animation preview"
+msgstr "Aperçu de l'animation"
+
+msgid "Replaying plays an element once when one of its Motion settings changes."
+msgstr "Le rejeu joue l'animation d'un élément une fois quand l'un de ses réglages Motion change."
+
+msgid "Replay on change"
+msgstr "Rejouer à la modification"
+
+msgid "Never animate"
+msgstr "Ne jamais animer"
+
+msgid "For sites that used the former animation snippet of the agency."
+msgstr "Pour les sites qui utilisaient l'ancien snippet d'animation de l'agence."
+
+msgid "Former class names"
+msgstr "Anciens noms de classes"
+
+msgid "Keeps the classes of the former snippet working until the content is moved to the lm- classes. Turn it off once the migration is done."
+msgstr "Garde les classes de l'ancien snippet fonctionnelles jusqu'à ce que le contenu passe aux classes lm-. À désactiver une fois la migration terminée."

@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Lümia Tools 2.1.1-dev.1\n"
+"Project-Id-Version: Lümia Tools 2.1.1-dev.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/lumia-tools\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-10T21:33:02+00:00\n"
+"POT-Creation-Date: 2026-10-11T14:04:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -193,6 +193,7 @@ msgid "No notifications"
 msgstr ""
 
 #: includes/Admin/Admin.php:601
+#: includes/Modules/Motion/settings-template.php:48
 msgid "Lümia"
 msgstr ""
 
@@ -249,20 +250,20 @@ msgstr ""
 msgid "Invalid parameters."
 msgstr ""
 
-#: includes/Core/Activator.php:103
+#: includes/Core/Activator.php:104
 #: includes/Core/Plugin.php:160
 msgid "Migration from Studio Kyne Mini Tools complete. You can delete the old plugin."
 msgstr ""
 
 #. translators: %s: identifier of the migration step that failed, e.g. post_meta.
-#: includes/Core/Activator.php:108
+#: includes/Core/Activator.php:109
 #: includes/Core/Plugin.php:115
 #, php-format
 msgid "The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it."
 msgstr ""
 
 #. translators: %s: database error message.
-#: includes/Core/Activator.php:112
+#: includes/Core/Activator.php:113
 #: includes/Core/Plugin.php:123
 #, php-format
 msgid "Database error: %s"
@@ -406,6 +407,19 @@ msgstr ""
 
 #: includes/Core/Modules.php:119
 msgid "Configure email sending"
+msgstr ""
+
+#: includes/Core/Modules.php:124
+#: includes/Core/Modules.php:126
+msgid "Motion"
+msgstr ""
+
+#: includes/Core/Modules.php:125
+msgid "Entrance and scroll animations for Bricks, adjustable per element."
+msgstr ""
+
+#: includes/Core/Modules.php:127
+msgid "Animate Bricks elements"
 msgstr ""
 
 #: includes/Core/Plugin.php:127
@@ -2646,6 +2660,7 @@ msgid "Balanced"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/settings-template.php:102
+#: includes/Modules/Motion/settings-template.php:42
 msgid "Fast"
 msgstr ""
 
@@ -4308,6 +4323,264 @@ msgstr ""
 
 #: includes/Modules/MenuCreator/settings-template.php:197
 msgid "Save (Ctrl/Cmd+S) — Ctrl+Z undoes, Ctrl+Y redoes"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:25
+msgid "Bricks is not the active theme"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:26
+msgid "Motion adds its animations to the elements of Bricks. Nothing is loaded on this site until the Bricks theme is active, and there is nothing to configure."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:43
+msgid "Normal"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:44
+msgid "Slow"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:49
+msgid "Smooth"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:50
+msgid "Snappy"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:51
+msgid "Bouncy"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:52
+msgid "Linear"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:53
+msgid "Custom"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:57
+msgid "Top"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:58
+msgid "Center"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:59
+msgid "Bottom"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:63
+msgid "Fade"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:64
+msgid "Reveal"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:65
+msgid "Blur in"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:66
+msgid "Scale in"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:67
+msgid "Scale and blur in"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:68
+msgid "Text lines"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:69
+msgid "Text words"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:70
+msgid "Text characters"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:71
+msgid "Counter"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:75
+msgid "Start edge"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:76
+msgid "Start position"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:77
+msgid "End edge"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:78
+msgid "End position"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:79
+msgid "Delay (s)"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:80
+msgid "Duration (s)"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:81
+msgid "Stagger (s)"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:82
+msgid "Distance (px)"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:83
+msgid "Blur (px)"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:84
+msgid "Scale"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:85
+msgid "Starting opacity"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:86
+msgid "Starting value"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:90
+msgid "Distance (%)"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:110
+msgid "Motion module sections"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:111
+msgid "Animations"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:112
+msgid "Scrolling"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:113
+msgid "Builder"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:114
+#: includes/Modules/Motion/settings-template.php:347
+msgid "Compatibility"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:126
+msgid "Pace and curve"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:127
+msgid "How animations move by default. Each element can override them in the Bricks builder."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:133
+msgid "Tempo"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:134
+msgid "Fast shortens durations and staggers by 30%, slow lengthens them by 40%. Delays are never scaled."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:147
+msgid "Easing curve"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:148
+msgid "The Lümia curve starts held back and lands very softly. Smooth, snappy and bouncy are springs with increasing overshoot."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:161
+msgid "Custom curve"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:162
+msgid "Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the Lümia curve."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:189
+msgid "Reference values"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:190
+msgid "Used by every element of an effect that does not set its own value. The start edge is the part of the element that triggers the animation; the start position is how far down the screen that edge must be (98% is almost at the bottom). Effects that follow the scroll also have an end."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:252
+msgid "The underline effect has no reference value: it is styled with the CSS variables --lm-underline-thickness, --lm-underline-gap, --lm-underline-color and --lm-underline-duration."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:264
+#: includes/Modules/Motion/settings-template.php:271
+msgid "Smooth scrolling"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:265
+msgid "Eases the mouse wheel on desktop. Touch screens keep their native scrolling."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:272
+msgid "Loaded on every public page, with or without animation, so the scroll feels the same everywhere."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:290
+msgid "Intensity"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:291
+msgid "Between 0.01 and 1. A low value glides for longer, 1 follows the wheel with no easing."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:318
+msgid "Builder preview"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:319
+msgid "Elements always appear in their final state in the builder, so the page can be built without hidden content."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:325
+msgid "Animation preview"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:326
+msgid "Replaying plays an element once when one of its Motion settings changes."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:330
+msgid "Replay on change"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:331
+msgid "Never animate"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:348
+msgid "For sites that used the former animation snippet of the agency."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:354
+msgid "Former class names"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:355
+msgid "Keeps the classes of the former snippet working until the content is moved to the lm- classes. Turn it off once the migration is done."
 msgstr ""
 
 #: includes/Modules/Security/HardeningService.php:122
