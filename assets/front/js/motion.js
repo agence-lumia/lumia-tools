@@ -64,7 +64,9 @@
   // Inline properties an entrance effect writes; put back as they were once it is over.
   var ANIMATED = ["transform", "opacity", "filter", "willChange"];
   var BUILDER = !!config.builder;
-  var REPLAY = BUILDER && config.preview === "replay";
+  var PREVIEW_ON = BUILDER && config.preview === "replay";
+  var replayOn = false; // PREVIEW_ON, and the visitor has not asked for reduced motion (set per matchMedia branch)
+  var destroyHooks = [];
   // Seconds a text scrub takes when it is replayed in the builder: 0 to 1, whatever its length.
   var PREVIEW_SCRUB_S = 1.2;
   // The builder canvas: every element with a Bricks class, whether the PHP marker saw it or not.
@@ -1272,7 +1274,7 @@
         if (!animate || entry.above || seen) {
           settle(item);
           // Builder: the element changed since the last read, or just got its effect.
-          if (REPLAY && !entry.above && before !== undefined && before !== signature) {
+          if (replayOn && !entry.above && before !== undefined && before !== signature) {
             replay(item);
           }
           return;
@@ -1431,6 +1433,8 @@
       function (context) {
         // Reduced motion, or the builder canvas: every element in its final state, nothing hidden.
         animate = !!context.conditions.motion && !config.builder;
+        // The canvas honours reduced motion too: no replay, every change shows its final state.
+        replayOn = PREVIEW_ON && !!context.conditions.motion;
         current = context;
         running = true;
         var built = false;
@@ -1467,12 +1471,34 @@
     running = false;
     teardown();
     unlisten();
+    var hooks = destroyHooks;
+    destroyHooks = [];
+    hooks.forEach(function (hook) {
+      try {
+        hook();
+      } catch (error) {
+        report("a destroy hook failed.", error);
+      }
+    });
   }
 
   window.lumiaMotion = {
     refresh: refresh,
     scan: scan,
     destroy: destroy,
+    // Whether a node sits in an element that is playing now: its own changes (split text, the
+    // digits of a counter) are not changes of the page. Used by motion-builder.js.
+    playing: function (node) {
+      return items.some(function (item) {
+        return item.state === "playing" && item.el.contains(node);
+      });
+    },
+    // Runs fn once, when the engine is destroyed (the builder script stops its observers).
+    onDestroy: function (fn) {
+      if (typeof fn === "function") {
+        destroyHooks.push(fn);
+      }
+    },
     _debug: {
       items: function () {
         return items.map(function (item) {
@@ -1487,12 +1513,6 @@
       },
       stats: function () {
         return { scans: stats.scans, replays: stats.replays };
-      },
-      // Whether a node sits in an element that is playing now (its own mutations are not changes).
-      playing: function (node) {
-        return items.some(function (item) {
-          return item.state === "playing" && item.el.contains(node);
-        });
       },
     },
   };

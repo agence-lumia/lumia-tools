@@ -99,10 +99,18 @@ export default async function () {
 	// ---------------------------------------------------------------- load
 	const { page, canvas } = await openBuilder( 'lm-e2e-basic', 'basichd' );
 
+	// Wait for the scans to stop (unchanged for 500 ms, within 15 s): the count then is the whole load.
+	let loaded = await stats( canvas );
+	for ( let quiet = 0, waited = 0; quiet < 500 && waited < 15000; waited += 100 ) {
+		await sleep( 100 );
+		const now = await stats( canvas );
+		quiet = now.scans === loaded.scans ? quiet + 100 : 0;
+		loaded = now;
+	}
 	const calls = await canvas.evaluate( () => window.__lmCalls );
-	const loaded = await stats( canvas );
 	assert( calls >= 10, `Bricks called lumiaMotionBuilder ${ calls } times: the builder script is not declared or not loaded` );
-	assert( loaded.scans <= 3, `${ calls } calls of lumiaMotionBuilder gave ${ loaded.scans } scans, expected at most 3` );
+	assert( loaded.scans >= 1, 'the canvas never scanned after load' );
+	assert( loaded.scans * 10 <= calls && loaded.scans <= 6, `${ calls } calls of lumiaMotionBuilder gave ${ loaded.scans } scans, expected at most one per ten calls and six in all` );
 	assert( loaded.replays === 0, `${ loaded.replays } replay(s) on load, expected none` );
 	console.log( `load: ${ calls } calls of lumiaMotionBuilder, ${ loaded.scans } scan(s)` );
 
@@ -116,6 +124,19 @@ export default async function () {
 		}, id );
 		assert( shown.opacity === '1' && shown.filter === 'none' && ( shown.transform === 'none' || shown.transform === 'matrix(1, 0, 0, 1, 0, 0)' ), `${ id } is not in its final state on load: ${ JSON.stringify( shown ) }` );
 	}
+
+	// Grouping, deterministically: 180 calls in one tick make exactly one scan.
+	await sleep( 600 );
+	const beforeGroup = ( await stats( canvas ) ).scans;
+	await canvas.evaluate( () => {
+		const els = [ ...document.querySelectorAll( '.brxe-heading' ) ];
+		for ( let i = 0; i < 180; i++ ) {
+			window.lumiaMotionBuilder( els[ i % els.length ] );
+		}
+	} );
+	await sleep( 400 );
+	const grouped = ( await stats( canvas ) ).scans - beforeGroup;
+	assert( grouped === 1, `180 synchronous calls of lumiaMotionBuilder made ${ grouped } scan(s), expected exactly 1` );
 
 	// ---------------------------------------------------------------- a setting changes: one replay
 	await select( page, canvas, 'bpre30' );
@@ -137,6 +158,23 @@ export default async function () {
 	const after = await itemOf( canvas, 'brxe-bpre30' );
 	assert( after.signature !== before.signature, 'the signature of bpre30 did not follow the change' );
 	assert( ( await stats( canvas ) ).replays === base + 1, 'more than one replay for one change' );
+
+	// Reduced motion: the canvas shows the change at once, no replay.
+	await page.emulateMedia( { reducedMotion: 'reduce' } );
+	await sleep( 600 );
+	{
+		const b = ( await stats( canvas ) ).replays;
+		await startAt.fill( '45' );
+		await startAt.press( 'Tab' );
+		await canvas.waitForFunction( ( sig ) => window.lumiaMotion._debug.items().find( ( i ) => i.id === 'brxe-bpre30' ).signature !== sig, ( await itemOf( canvas, 'brxe-bpre30' ) ).signature, { timeout: 2000 } ).catch( () => {
+			throw new Error( 'reduced motion: the signature of bpre30 did not follow the change' );
+		} );
+		await sleep( 800 );
+		assert( ( await stats( canvas ) ).replays === b, 'reduced motion: the canvas replayed an element' );
+		await waitFinal( canvas, 'brxe-bpre30', 'reduced motion' );
+	}
+	await page.emulateMedia( { reducedMotion: 'no-preference' } );
+	await sleep( 600 );
 
 	// ---------------------------------------------------------------- a new element gets an effect
 	const known = await canvas.evaluate( () => [ ...document.querySelectorAll( '.brxe-heading' ) ].map( ( e ) => e.id ) );
@@ -346,6 +384,22 @@ export default async function () {
 	} ).map( ( i ) => i.id ) );
 	assert( hidden.length === 0, `elements left hidden or playing in the canvas: ${ hidden.join( ', ' ) }` );
 	assert( page.errors.length === 0, `page errors: ${ page.errors.join( ' | ' ) }` );
+
+	// destroy(): the builder script lets go of its observers and stops scanning.
+	await canvas.evaluate( () => {
+		window.__disconnects = 0;
+		const original = MutationObserver.prototype.disconnect;
+		MutationObserver.prototype.disconnect = function () {
+			window.__disconnects++;
+			return original.call( this );
+		};
+		window.lumiaMotion.destroy();
+	} );
+	assert( ( await canvas.evaluate( () => window.__disconnects ) ) >= 1, 'destroy() did not disconnect the builder observers' );
+	const afterDestroy = await stats( canvas );
+	await canvas.evaluate( () => window.lumiaMotionBuilder( document.body ) );
+	await sleep( 400 );
+	assert( ( await stats( canvas ) ).scans === afterDestroy.scans, 'a scan ran after destroy()' );
 	await page.context().close();
 
 	// ---------------------------------------------------------------- "never animate"

@@ -22,6 +22,7 @@
   var timer = 0;
   var firstRequest = 0;
   var observer = null;
+  var stopped = false;
 
   function engine() {
     return window.lumiaMotion && typeof window.lumiaMotion.scan === "function" ? window.lumiaMotion : null;
@@ -38,6 +39,9 @@
 
   // Waits for a pause of GROUP_MS in the requests, but not for more than MAX_WAIT_MS in all.
   function request() {
+    if (stopped) {
+      return;
+    }
     var now = Date.now();
     if (!firstRequest) {
       firstRequest = now;
@@ -50,10 +54,10 @@
   // counter) changes the page; it is not a change of the settings.
   function ours(record) {
     var motion = engine();
-    if (!motion || !motion._debug || typeof motion._debug.playing !== "function") {
+    if (!motion || typeof motion.playing !== "function") {
       return false;
     }
-    return motion._debug.playing(record.target);
+    return motion.playing(record.target);
   }
 
   function onMutations(records) {
@@ -66,7 +70,7 @@
   }
 
   function observe() {
-    if (observer || typeof MutationObserver !== "function") {
+    if (observer || stopped || typeof MutationObserver !== "function") {
       return;
     }
     observer = new MutationObserver(onMutations);
@@ -79,6 +83,22 @@
     observe();
     request();
   };
+
+  // The engine is destroyed: nothing left to read the page for.
+  function stop() {
+    stopped = true;
+    clearTimeout(timer);
+    timer = 0;
+    firstRequest = 0;
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  }
+
+  if (engine() && typeof window.lumiaMotion.onDestroy === "function") {
+    window.lumiaMotion.onDestroy(stop);
+  }
 
   // The panel can change a stylesheet before Bricks has rendered any element of the page.
   if (document.body) {
