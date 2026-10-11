@@ -1196,7 +1196,8 @@
    * @param {Element|Document} scope   Where to look.
    * @param {boolean}          recheck Known items are read again and rebuilt when their effect or signature changed.
    * @param {boolean}          quiet   What is on screen is shown at once instead of making its entrance
-   *                                   (a refresh, a switch of reduced motion; not the first build, not new content).
+   *                                   (a refresh, a switch of reduced motion, a first build on a page already
+   *                                   seen; not a normal first build, not new content).
    * @return {boolean} Whether an item was created or removed.
    */
   function sync(scope, recheck, quiet) {
@@ -1425,6 +1426,12 @@
     }
     ScrollTrigger.config({ ignoreMobileResize: true });
 
+    // The page has been seen already when the safety showed it (a slow phone: the engine starts
+    // after 3 s) or when nothing pre-hid it (the head script ran after the load, as a "delay JS
+    // until interaction" optimiser does): what is on screen stays as it is, what is below still
+    // makes its entrance.
+    var seenAlready = root.classList.contains("lm-ready") || !root.classList.contains("lm-js");
+
     media.add(
       {
         motion: "(prefers-reduced-motion: no-preference)",
@@ -1439,9 +1446,10 @@
         running = true;
         var built = false;
         try {
-          // The first build makes the entrances of what is on screen; a later one (reduced
-          // motion switched during the visit) shows it as it is.
-          built = build(context, document, false, branches++ > 0);
+          // The first build makes the entrances of what is on screen, unless the page was seen
+          // before the engine started; a later one (reduced motion switched during the visit)
+          // shows it as it is.
+          built = build(context, document, false, branches++ > 0 || seenAlready);
         } catch (error) {
           report("start failed: elements shown as they end.", error);
         }

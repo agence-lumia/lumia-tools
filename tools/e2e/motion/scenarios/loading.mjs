@@ -2,7 +2,7 @@
 // ScrollTrigger on an animated page, SplitText only for a text effect, no foreign host, the
 // 3 s safety that makes everything visible when the engine does not start, the builder
 // windows, and the former snippet still being active.
-import { newPage, login, pageUrl, assert, snippet, BASE } from '../lib.mjs';
+import { newPage, login, pageUrl, assert, snippet, items, BASE } from '../lib.mjs';
 
 const HOST = new URL( BASE ).host;
 const GSAP_FILES = /gsap|ScrollTrigger|SplitText|\/motion\.js(\?|$)/i;
@@ -28,6 +28,35 @@ async function load( page, slug, query = '' ) {
 	const res = await page.goto( pageUrl( slug, query ), { waitUntil: 'load' } );
 	assert( res && res.status() === 200, `${ slug }: status ${ res && res.status() }` );
 	return urls;
+}
+
+/**
+ * Init script: every frame once the page is visible (lm-ready, or no lm-js at all), the lowest opacity of
+ * the entrance elements on screen. window.lmSeen = { frames, ids, low: ['id opacity', ...] } (opacity < 0.9).
+ */
+function sampleOnScreen() {
+	window.lmSeen = { frames: 0, ids: [], low: [] };
+	const tick = () => {
+		const root = document.documentElement;
+		if ( document.body && ( root.classList.contains( 'lm-ready' ) || ! root.classList.contains( 'lm-js' ) ) && document.readyState !== 'loading' ) {
+			window.lmSeen.frames++;
+			document.querySelectorAll( '[data-lm~="enter"]' ).forEach( ( node ) => {
+				const r = node.getBoundingClientRect();
+				if ( r.width === 0 || r.bottom <= 0 || r.top >= window.innerHeight ) {
+					return;
+				}
+				if ( ! window.lmSeen.ids.includes( node.id ) ) {
+					window.lmSeen.ids.push( node.id );
+				}
+				const o = parseFloat( getComputedStyle( node ).opacity );
+				if ( o < 0.9 && window.lmSeen.low.length < 50 ) {
+					window.lmSeen.low.push( `${ node.id } ${ o }` );
+				}
+			} );
+		}
+		requestAnimationFrame( tick );
+	};
+	requestAnimationFrame( tick );
 }
 
 const globals = ( page ) => page.evaluate( () => ( {
@@ -109,6 +138,93 @@ export default async function () {
 		const late = await state();
 		assert( late.ready, 'safety: <html> has no lm-ready after 3.2 s without the engine' );
 		assert( late.opacities.every( ( o ) => o === '1' ), `safety: an element is still hidden (opacity ${ late.opacities.join( ',' ) })` );
+	}
+
+	// The engine starts after the safety (a slow phone, a script delayed by an optimiser): what is on screen
+	// has been seen and must not be hidden again; what is below the screen still makes its entrance.
+	{
+		const page = await newPage();
+		await page.route( /\/motion\.js(\?|$)/, async ( route ) => {
+			await new Promise( ( r ) => setTimeout( r, 3500 ) );
+			await route.continue();
+		} );
+		await page.addInitScript( sampleOnScreen );
+		await load( page, 'lm-e2e-basic' );
+		await page.waitForFunction( () => window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 8000 } );
+		await page.waitForTimeout( 1500 );
+		const seen = await page.evaluate( () => window.lmSeen );
+		assert( seen.frames > 30 && seen.ids.length > 0, `late start: ${ seen.frames } frames sampled over ${ seen.ids.join( ',' ) || 'no element' } (nothing proved)` );
+		assert( seen.low.length === 0, `late start: on-screen element hidden again after lm-ready: ${ seen.low.slice( 0, 5 ).join( ', ' ) }` );
+		const below = ( await items( page ) ).find( ( i ) => i.id === 'brxe-bpre01' );
+		assert( below && below.state === 'pending', `late start: the element below the screen is ${ below && below.state } (expected pending, to make its entrance)` );
+		await page.evaluate( () => {
+			window.lmMoving = 0;
+			const node = document.getElementById( 'brxe-bpre01' );
+			const tick = () => {
+				const o = parseFloat( getComputedStyle( node ).opacity );
+				if ( o > 0 && o < 1 ) {
+					window.lmMoving++;
+				}
+				requestAnimationFrame( tick );
+			};
+			requestAnimationFrame( tick );
+			window.scrollTo( 0, node.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.25 );
+		} );
+		await page.waitForFunction( () => window.lumiaMotion._debug.items().find( ( i ) => i.id === 'brxe-bpre01' ).state === 'done', null, { timeout: 5000 } ).catch( () => {
+			throw new Error( 'late start: the element below the screen never played' );
+		} );
+		assert( await page.evaluate( () => window.lmMoving ) >= 3, 'late start: the element below the screen did not animate' );
+		assert( page.errors.length === 0, `late start: page errors: ${ page.errors.join( ' | ' ) }` );
+		await page.context().close();
+	}
+
+	// Every script run after the load, as a "delay JS until interaction" optimiser does: the head script then
+	// pre-hides nothing, and the engine starts on a page already seen.
+	{
+		const page = await newPage();
+		await page.route( '**/*', async ( route ) => {
+			if ( route.request().resourceType() !== 'document' ) {
+				return route.continue();
+			}
+			const res = await route.fetch();
+			// Executable scripts only (no type, or a JavaScript one): the parser keeps the first type attribute.
+			const body = ( await res.text() ).replace( /<script(?![^>]*\stype=["'](?!text\/javascript)[^"']*["'])/g, '<script type="lm/delayed"' );
+			return route.fulfill( { response: res, body } );
+		} );
+		await page.addInitScript( sampleOnScreen );
+		await load( page, 'lm-e2e-basic' );
+		assert( await page.evaluate( () => document.querySelectorAll( 'script[type="lm/delayed"]' ).length > 0 ), 'delayed scripts: no script was delayed (nothing proved)' );
+		await page.waitForTimeout( 300 );
+		// The optimiser: every delayed script in document order, an external one only once the previous has loaded.
+		await page.evaluate( async () => {
+			for ( const old of [ ...document.querySelectorAll( 'script[type="lm/delayed"]' ) ] ) {
+				const s = document.createElement( 'script' );
+				for ( const a of old.attributes ) {
+					if ( a.name !== 'type' ) {
+						s.setAttribute( a.name, a.value );
+					}
+				}
+				if ( old.src ) {
+					await new Promise( ( resolve ) => {
+						s.onload = s.onerror = resolve;
+						old.replaceWith( s );
+					} );
+				} else {
+					s.textContent = old.textContent;
+					old.replaceWith( s );
+				}
+			}
+		} );
+		await page.waitForFunction( () => window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 5000 } );
+		await page.waitForTimeout( 2500 );
+		const state = await page.evaluate( () => ( { seen: window.lmSeen, js: document.documentElement.classList.contains( 'lm-js' ) } ) );
+		assert( state.seen.frames > 30 && state.seen.ids.length > 0, `delayed scripts: ${ state.seen.frames } frames sampled (nothing proved)` );
+		assert( state.seen.low.length === 0, `delayed scripts: on-screen element hidden after the load: ${ state.seen.low.slice( 0, 5 ).join( ', ' ) }` );
+		assert( ! state.js, 'delayed scripts: the head script added lm-js after the load' );
+		const below = ( await items( page ) ).find( ( i ) => i.id === 'brxe-bpre01' );
+		assert( below && below.state === 'pending', `delayed scripts: the element below the screen is ${ below && below.state } (expected pending)` );
+		assert( page.errors.length === 0, `delayed scripts: page errors: ${ page.errors.join( ' | ' ) }` );
+		await page.context().close();
 	}
 
 	// Builder: the main window gets the builder stylesheet only; the canvas gets the engine.

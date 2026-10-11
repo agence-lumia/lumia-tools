@@ -89,6 +89,10 @@ final class Assets {
 	 * engine has not added `lm-ready` after SAFETY_MS (blocked file, script error, slow
 	 * network), this timer does, and everything becomes visible. Not printed in the builder
 	 * canvas: its engine shows every element as it ends, so there is nothing to pre-hide.
+	 *
+	 * Only while the document is still loading: run later (an optimiser that delays scripts
+	 * until the first interaction), it would hide a page the visitor is already reading. The
+	 * engine reads the same two classes and leaves what is on screen as it is.
 	 */
 	public function print_head_script(): void {
 		// The canvas never pre-hides: its engine shows every element as it ends.
@@ -97,7 +101,7 @@ final class Assets {
 		}
 
 		wp_print_inline_script_tag(
-			"var d=document.documentElement;d.classList.add('lm-js');setTimeout(function(){d.classList.add('lm-ready')}," . (int) self::SAFETY_MS . ');'
+			"(function(d){if(document.readyState!=='loading'){return;}d.classList.add('lm-js');setTimeout(function(){d.classList.add('lm-ready')}," . (int) self::SAFETY_MS . ');})(document.documentElement);'
 		);
 	}
 
