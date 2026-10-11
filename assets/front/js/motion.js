@@ -77,6 +77,8 @@
   var lastWidth = window.innerWidth;
   var listening = false;
   var branches = 0; // matchMedia branches run so far
+  var endWatch = null; // ScrollTrigger at the end of the page, see watchPageEnd()
+  var END_MARGIN = 2; // px: the end of the page as ScrollTrigger rounds it
 
   /* ================================================================
    * HELPERS
@@ -248,6 +250,7 @@
       signature: core.signature(options),
       state: "pending",
       trigger: null,
+      tweens: [],
       inline: saveInline(entry.el),
     };
     items.push(item);
@@ -320,6 +323,7 @@
   function enterFinish() {
     var item = lookup(this.targets()[0]);
     if (item && item.state === "playing" && --item.running <= 0) {
+      item.tweens = [];
       restoreInline(item);
       item.state = "done";
     }
@@ -359,6 +363,7 @@
       return item.el;
     });
     gsap.set(targets, { willChange: willChange(from) });
+    var tweens = [];
 
     if (moves) {
       var move = {
@@ -370,7 +375,7 @@
       Object.keys(from.move).forEach(function (key) {
         move[key] = key === "scale" ? 1 : 0;
       });
-      gsap.to(targets, move);
+      tweens.push(gsap.to(targets, move));
     }
 
     var look = {
@@ -383,12 +388,90 @@
     if (from.look.filter) {
       look.filter = "blur(0px)";
     }
-    gsap.to(targets, look);
+    tweens.push(gsap.to(targets, look));
+
+    // Each item keeps the lot's tweens, to stop its own part of them and nothing else.
+    lot.forEach(function (item) {
+      item.tweens = tweens;
+    });
+  }
+
+  /* An entrance whose start lies at or past the end of the page (an element near the
+   * bottom of a short page, a footer) would never fire: ScrollTrigger cannot scroll
+   * there. After every refresh, such items play once the visitor reaches the end of the
+   * page, or at once when they are already there or the page does not scroll. */
+
+  function unreachable() {
+    var max = ScrollTrigger.maxScroll(window);
+    var late = items.filter(function (item) {
+      return item.family === "enter" && item.state === "pending" && item.trigger && item.trigger.start >= max;
+    });
+    return { max: max, late: late };
+  }
+
+  function playLate(late) {
+    var groups = {};
+    late.forEach(function (item) {
+      (groups[item.signature] = groups[item.signature] || []).push(item);
+    });
+    Object.keys(groups).forEach(function (signature) {
+      var group = groups[signature];
+      try {
+        enterPlay(
+          group[0].options,
+          group.map(function (item) {
+            return item.el;
+          })
+        );
+      } catch (error) {
+        report("animation failed: elements shown as they end.", error);
+        group.forEach(settle);
+      }
+    });
+  }
+
+  function onTriggersRefreshed() {
+    if (!running || !animate) {
+      return;
+    }
+    var found = unreachable();
+    if (found.late.length && window.scrollY >= found.max - END_MARGIN) {
+      playLate(found.late);
+    }
+  }
+
+  function onPageEnd() {
+    playLate(unreachable().late);
+  }
+
+  // One trigger for the whole page, at its end; created with the first entrance.
+  function watchPageEnd() {
+    if (endWatch) {
+      return;
+    }
+    endWatch = ScrollTrigger.create({
+      start: function () {
+        return Math.max(0, ScrollTrigger.maxScroll(window) - END_MARGIN);
+      },
+      end: "max",
+      onEnter: onPageEnd,
+    });
+    ScrollTrigger.addEventListener("refresh", onTriggersRefreshed);
+  }
+
+  function unwatchPageEnd() {
+    if (!endWatch) {
+      return;
+    }
+    endWatch.kill();
+    endWatch = null;
+    ScrollTrigger.removeEventListener("refresh", onTriggersRefreshed);
   }
 
   var enter = {
     // Sets the start state of the new pending items and watches them, one batch per signature.
     start: function (list) {
+      watchPageEnd();
       var groups = {};
       var order = [];
       list.forEach(function (item) {
@@ -448,7 +531,11 @@
         item.trigger.kill();
         item.trigger = null;
       }
-      gsap.killTweensOf(item.el);
+      // Only the engine's own tweens, and only this element's part of a lot.
+      (item.tweens || []).forEach(function (tween) {
+        tween.kill(item.el);
+      });
+      item.tweens = [];
       restoreInline(item);
     },
 
@@ -576,6 +663,7 @@
   function teardown() {
     items.slice().forEach(kill);
     items = [];
+    unwatchPageEnd();
   }
 
   // Runs outside the matchMedia context: the engine tracks its own tweens and triggers,
@@ -629,8 +717,14 @@
     }, RESIZE_MS);
   }
 
+  // New content changes the height of the page, hence every start below it: ScrollTrigger
+  // 3.15 does not notice a height change by itself (it refreshes on load and resize only).
   function onContent() {
-    scan(document);
+    if (!running) {
+      return;
+    }
+    build(current, document, false, false);
+    ScrollTrigger.refresh();
   }
 
   function onPopupOpen() {

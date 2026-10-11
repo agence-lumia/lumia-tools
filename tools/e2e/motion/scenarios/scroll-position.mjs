@@ -16,6 +16,32 @@ const ready = ( page ) => page.waitForFunction(
 
 const scrollY = ( page ) => page.evaluate( () => window.scrollY );
 
+/** Resolves with scrollY once it has not moved for 2 frames (3 s at most). */
+const stable = ( page ) => page.evaluate( () => new Promise( ( resolve ) => {
+	const t0 = performance.now();
+	let last = NaN;
+	let same = 0;
+	const tick = () => {
+		const y = window.scrollY;
+		same = y === last ? same + 1 : 0;
+		last = y;
+		if ( same >= 2 || performance.now() - t0 > 3000 ) {
+			resolve( y );
+		} else {
+			requestAnimationFrame( tick );
+		}
+	};
+	requestAnimationFrame( tick );
+} ) );
+
+/** Asserts every item above the screen is final and visible, and that there is at least one. */
+async function abovePassed( page, label ) {
+	const passed = await above( page );
+	assert( passed.length > 0, `${ label }: no item above the screen at ${ AT }, the check would prove nothing` );
+	const wrong = passed.filter( ( p ) => p.state !== 'final' || p.opacity !== '1' );
+	assert( wrong.length === 0, `${ label }: items above the screen not final and visible: ${ JSON.stringify( wrong ) }` );
+}
+
 /** Items whose element is above the screen, with their state and computed opacity. */
 const above = ( page ) => page.evaluate( () => window.lumiaMotion._debug.items()
 	.map( ( i ) => ( { i, node: document.getElementById( i.id ) } ) )
@@ -28,31 +54,35 @@ async function run( width, smooth ) {
 	if ( smooth ) {
 		await injectSmoothScroll( page );
 	}
+	// Tells a page restored from the back-forward cache from a page loaded again.
+	await page.addInitScript( () => {
+		window.addEventListener( 'pageshow', ( e ) => {
+			window.lmRestored = e.persisted;
+		} );
+	} );
 
 	// Reload in the middle of the page.
 	await page.goto( pageUrl( SLUG ), { waitUntil: 'load' } );
 	await ready( page );
 	await page.evaluate( ( y ) => window.scrollTo( 0, y ), AT );
-	await page.waitForTimeout( 400 );
-	assert( Math.abs( ( await scrollY( page ) ) - AT ) <= 1, `${ label }: could not scroll to ${ AT } (${ await scrollY( page ) })` );
+	const scrolled = await stable( page );
+	assert( Math.abs( scrolled - AT ) <= 1, `${ label }: could not scroll to ${ AT } (${ scrolled })` );
 	await page.reload( { waitUntil: 'load' } );
 	await ready( page );
-	await page.waitForTimeout( 800 );
-	const afterReload = await scrollY( page );
+	const afterReload = await stable( page );
 	assert( Math.abs( afterReload - AT ) <= 5, `${ label }: reload moved the page to ${ afterReload } (expected ${ AT })` );
 	assert( ( await items( page ) ).length > 0, `${ label }: the engine built no item` );
-	const passed = await above( page );
-	assert( passed.length > 0, `${ label }: no item above the screen at ${ AT }, the check would prove nothing` );
-	const wrong = passed.filter( ( p ) => p.state !== 'final' || p.opacity !== '1' );
-	assert( wrong.length === 0, `${ label }: items above the screen not final and visible: ${ JSON.stringify( wrong ) }` );
+	await abovePassed( page, `${ label }, reload` );
 
 	// Another page, then back.
 	await page.goto( pageUrl( 'lm-e2e-smoke' ), { waitUntil: 'load' } );
 	await page.goBack( { waitUntil: 'load' } );
 	await ready( page );
-	await page.waitForTimeout( 800 );
-	const afterBack = await scrollY( page );
+	const afterBack = await stable( page );
+	const restored = await page.evaluate( () => window.lmRestored === true );
+	console.log( `info scroll-position: ${ label }: back button ${ restored ? 'restored the page from the back-forward cache' : 'loaded the page again' }` );
 	assert( Math.abs( afterBack - AT ) <= 5, `${ label }: back button moved the page to ${ afterBack } (expected ${ AT })` );
+	await abovePassed( page, `${ label }, back button` );
 
 	// Anchor on another page: the target lands under the header height (--navbar-height).
 	await page.goto( pageUrl( SLUG ), { waitUntil: 'load' } );
@@ -62,7 +92,7 @@ async function run( width, smooth ) {
 		// The site header overlaps the link at the top of the page: what is tested is the navigation, not the pointer.
 		page.locator( '#lmanchor' ).evaluate( ( a ) => a.click() ),
 	] );
-	await page.waitForTimeout( 800 );
+	await stable( page );
 	const anchor = await page.evaluate( () => {
 		// The variable may be a clamp() or rem: measure it.
 		const probe = document.createElement( 'div' );

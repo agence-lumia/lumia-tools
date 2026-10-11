@@ -90,32 +90,60 @@ async function desktop() {
 	}
 	assert( fb.state === 'pending', `fast/bouncy: state ${ fb.state } before scrolling to it` );
 
-	// Every frame of its animation: opacity never above 1, never a negative blur.
-	await page.evaluate( () => {
-		const node = document.getElementById( 'brxe-bprefb' );
-		window.lmSamples = [];
-		const tick = () => {
-			window.lmSamples.push( { o: node.style.opacity, f: node.style.filter, t: node.style.transform } );
-			if ( ! window.lmStopSampling ) {
-				requestAnimationFrame( tick );
-			}
+	// An element removed from the page loses its item and its trigger on refresh (still pending here).
+	const removal = await page.evaluate( () => {
+		const count = () => ScrollTrigger.getAll().length;
+		const before = count();
+		document.getElementById( 'brxe-bblur' ).remove();
+		window.lumiaMotion.refresh();
+		return {
+			before,
+			after: count(),
+			detached: ScrollTrigger.getAll().filter( ( t ) => t.trigger && ! t.trigger.isConnected ).length,
+			item: window.lumiaMotion._debug.items().some( ( i ) => i.id === 'brxe-bblur' ),
 		};
-		requestAnimationFrame( tick );
+	} );
+	assert( ! removal.item, 'removed element: its item survived refresh()' );
+	assert( removal.detached === 0, `removed element: ${ removal.detached } trigger(s) still watch a detached element` );
+	assert( removal.after === removal.before - 1, `removed element: ${ removal.before } triggers before, ${ removal.after } after (expected one less)` );
+
+	// Every frame of two overshooting animations: opacity never above 1, blur never below 0.
+	await page.evaluate( () => {
+		window.lmSamples = {};
+		for ( const id of [ 'brxe-bprefb', 'brxe-bblurb' ] ) {
+			const node = document.getElementById( id );
+			const list = ( window.lmSamples[ id ] = [] );
+			const tick = () => {
+				list.push( { o: node.style.opacity, f: node.style.filter, t: node.style.transform } );
+				if ( ! window.lmStopSampling ) {
+					requestAnimationFrame( tick );
+				}
+			};
+			requestAnimationFrame( tick );
+		}
 	} );
 	await reveal( page, 'brxe-bprefb' );
-	const samples = await page.evaluate( () => {
+	await reveal( page, 'brxe-bblurb' );
+	const sampled = await page.evaluate( () => {
 		window.lmStopSampling = true;
 		return window.lmSamples;
 	} );
-	const moving = samples.filter( ( s ) => s.o !== '' && parseFloat( s.o ) > 0 && parseFloat( s.o ) < 1 );
-	assert( moving.length >= 3, `fast/bouncy: ${ moving.length } frames in motion out of ${ samples.length } (expected an animation)` );
-	const over = samples.filter( ( s ) => s.o !== '' && parseFloat( s.o ) > 1 );
-	assert( over.length === 0, `fast/bouncy: opacity above 1 (${ over.map( ( s ) => s.o ).join( ', ' ) })` );
-	const negative = samples.filter( ( s ) => s.f.includes( 'blur(-' ) );
-	assert( negative.length === 0, `fast/bouncy: negative blur (${ negative.map( ( s ) => s.f ).join( ', ' ) })` );
-	const fbEnd = await look( page, 'brxe-bprefb' );
-	assert( fbEnd.opacity === '1', `fast/bouncy: opacity ${ fbEnd.opacity } at the end` );
-	assert( fbEnd.style === '', `fast/bouncy: inline styles left at the end: "${ fbEnd.style }"` );
+	for ( const [ id, samples ] of Object.entries( sampled ) ) {
+		const moving = samples.filter( ( s ) => s.o !== '' && parseFloat( s.o ) > 0 && parseFloat( s.o ) < 1 );
+		assert( moving.length >= 3, `${ id }: ${ moving.length } frames in motion out of ${ samples.length } (expected an animation)` );
+		const over = samples.filter( ( s ) => s.o !== '' && parseFloat( s.o ) > 1 );
+		assert( over.length === 0, `${ id }: opacity above 1 (${ over.map( ( s ) => s.o ).join( ', ' ) })` );
+		const negative = samples.filter( ( s ) => s.f.includes( 'blur(-' ) );
+		assert( negative.length === 0, `${ id }: negative blur (${ negative.map( ( s ) => s.f ).join( ', ' ) })` );
+		const end = await look( page, id );
+		assert( end.opacity === '1', `${ id }: opacity ${ end.opacity } at the end` );
+		assert( end.style === '', `${ id }: inline styles left at the end: "${ end.style }"` );
+	}
+	// The bouncy blur really moved through intermediate blur values, and its transform overshot.
+	const blurring = sampled[ 'brxe-bblurb' ].filter( ( s ) => /blur\((?!0px)[\d.]+px\)/.test( s.f ) );
+	assert( blurring.length >= 3, `brxe-bblurb: ${ blurring.length } frames with a blur in progress` );
+	const overshoot = sampled[ 'brxe-bblurb' ].filter( ( s ) => /translate(?:3d)?\(0px, -[\d.]+px/.test( s.t ) );
+	assert( overshoot.length > 0, 'brxe-bblurb: the bouncy transform never overshot (the blur check would prove nothing)' );
 
 	// Nested: the section animates, its plain heading has no item and inherits nothing.
 	const nest = byId( list, 'bnest' );
@@ -163,15 +191,114 @@ async function desktop() {
 	await reveal( page, 'lm-ajax-new' );
 	assert( ( await look( page, 'lm-ajax-new' ) ).opacity === '1', 'ajax: the inserted element is not visible after scrolling' );
 
-	// An element removed from the page loses its item on refresh.
-	await page.evaluate( () => {
-		document.getElementById( 'brxe-bblur' ).remove();
-		window.lumiaMotion.refresh();
-	} );
-	assert( ! byId( await items( page ), 'bblur' ), 'removed element: its item survived refresh()' );
+	// Reduced motion switched on during the visit: nothing left hidden or styled.
+	await page.evaluate( () => window.scrollTo( 0, 0 ) );
+	await page.emulateMedia( { reducedMotion: 'reduce' } );
+	await page.waitForTimeout( 300 );
+	const switched = await page.evaluate( () => ( {
+		pending: window.lumiaMotion._debug.items().filter( ( i ) => i.state === 'pending' ).length,
+		bad: [ ...document.querySelectorAll( '[data-lm]' ) ]
+			.filter( ( n ) => getComputedStyle( n ).opacity !== '1' || n.style.opacity + n.style.transform + n.style.filter !== '' )
+			.map( ( n ) => n.id ),
+	} ) );
+	assert( switched.pending === 0 && switched.bad.length === 0, `reduced motion switched on: ${ switched.pending } pending, hidden or styled: ${ switched.bad.join( ', ' ) }` );
 
 	assert( page.errors.length === 0, `1440: page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
+}
+
+async function breakpointSwitch() {
+	const page = await open();
+	// The presets have played and are on screen.
+	await reveal( page, 'brxe-bprefb' );
+	await page.evaluate( () => {
+		window.lmBefore = {};
+		window.lumiaMotion._debug.items().forEach( ( i ) => {
+			window.lmBefore[ i.id ] = { options: i.options, state: i.state };
+		} );
+		// Every frame of the switch: an element that had shown itself must not be hidden again.
+		window.lmDropped = [];
+		const shown = window.lumiaMotion._debug.items()
+			.filter( ( i ) => i.state === 'done' || i.state === 'final' )
+			.map( ( i ) => document.getElementById( i.id ) );
+		const tick = () => {
+			shown.forEach( ( node ) => {
+				const r = node.getBoundingClientRect();
+				const opacity = parseFloat( getComputedStyle( node ).opacity );
+				if ( r.bottom > 0 && r.top < window.innerHeight && opacity < 0.5 ) {
+					window.lmDropped.push( `${ node.id } ${ opacity }` );
+				}
+			} );
+			if ( ! window.lmStopSampling ) {
+				requestAnimationFrame( tick );
+			}
+		};
+		requestAnimationFrame( tick );
+	} );
+
+	await page.setViewportSize( { width: 390, height: 844 } );
+	await page.waitForFunction(
+		() => ( window.lumiaMotion._debug.items().find( ( i ) => i.id === 'brxe-bpremb' ) || { options: {} } ).options.start === 'top 80%',
+		null,
+		{ timeout: 3000 }
+	).catch( () => {
+		throw new Error( 'breakpoint switch: bpremb was not rebuilt with its phone start (top 80%)' );
+	} );
+	await page.waitForTimeout( 500 );
+	const after = await page.evaluate( () => {
+		window.lmStopSampling = true;
+		const rebuilt = [];
+		const kept = [];
+		window.lumiaMotion._debug.items().forEach( ( i ) => {
+			const before = window.lmBefore[ i.id ];
+			( before && before.options === i.options ? kept : rebuilt ).push( i.id );
+		} );
+		const gone = Object.keys( window.lmBefore ).filter( ( id ) => ! window.lumiaMotion._debug.items().some( ( i ) => i.id === id ) );
+		return { rebuilt, kept, gone, dropped: window.lmDropped };
+	} );
+	assert( after.rebuilt.join() === 'brxe-bpremb', `breakpoint switch: rebuilt ${ after.rebuilt.join( ', ' ) || 'nothing' } (expected brxe-bpremb only)` );
+	assert( after.gone.join() === 'brxe-bblur', `breakpoint switch: removed ${ after.gone.join( ', ' ) || 'nothing' } (expected brxe-bblur, set to none on phones)` );
+	assert( after.dropped.length === 0, `breakpoint switch: shown elements hidden again: ${ after.dropped.slice( 0, 5 ).join( ', ' ) }` );
+	const bpremb = byId( await items( page ), 'bpremb' );
+	assert( bpremb.state === 'final', `breakpoint switch: bpremb had played, its rebuilt item is ${ bpremb.state }` );
+	assert( page.errors.length === 0, `breakpoint switch: page errors: ${ page.errors.join( ' | ' ) }` );
+	await page.context().close();
+}
+
+/** A page too short for its last elements to reach their start (30%, and the preset's 60%). */
+async function shortPage() {
+	for ( const height of [ 900, 1400 ] ) {
+		const page = await newPage( { width: 1440, height } );
+		const res = await page.goto( pageUrl( 'lm-e2e-short' ), { waitUntil: 'load' } );
+		assert( res && res.status() === 200, `lm-e2e-short: status ${ res && res.status() }` );
+		await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ) && window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 5000 } );
+		const geometry = await page.evaluate( () => {
+			const max = document.documentElement.scrollHeight - window.innerHeight;
+			const reach = ( id, at ) => document.getElementById( id ).getBoundingClientRect().top + window.scrollY - window.innerHeight * at;
+			return { max, starts: [ reach( 'brxe-shrt30', 0.3 ), reach( 'brxe-shrtpr', 0.6 ) ] };
+		} );
+		const label = `short page, ${ height } px high (${ geometry.max > 0 ? `scrollable to ${ geometry.max }` : 'not scrollable' })`;
+		assert( height === 1400 ? geometry.max <= 0 : geometry.max > 0, `${ label }: unexpected page height` );
+		assert( geometry.starts.every( ( start ) => start > Math.max( geometry.max, 0 ) ), `${ label }: the starts ${ geometry.starts.join( ', ' ) } are reachable, the check would prove nothing` );
+
+		const built = ( await items( page ) ).filter( ( i ) => i.id === 'brxe-shrt30' || i.id === 'brxe-shrtpr' );
+		assert( built.length === 2, `${ label }: ${ built.length } item(s) for the last two elements (expected 2)` );
+		assert(
+			built.map( ( i ) => i.options.start ).join() === 'top 30%,top 60%',
+			`${ label }: starts ${ built.map( ( i ) => i.options.start ).join( ', ' ) } (expected top 30%, top 60%)`
+		);
+
+		await page.evaluate( () => window.scrollTo( 0, document.documentElement.scrollHeight ) );
+		const shown = await page.waitForFunction(
+			() => [ 'brxe-shrt30', 'brxe-shrtpr' ].every( ( id ) => getComputedStyle( document.getElementById( id ) ).opacity === '1' ),
+			null,
+			{ timeout: 4000 }
+		).then( () => true, () => false );
+		const states = ( await items( page ) ).filter( ( i ) => i.id.startsWith( 'brxe-shrt' ) ).map( ( i ) => `${ i.id }:${ i.state }` );
+		assert( shown, `${ label }: the last elements are still hidden at the bottom of the page (${ states.join( ', ' ) })` );
+		assert( page.errors.length === 0, `${ label }: page errors: ${ page.errors.join( ' | ' ) }` );
+		await page.context().close();
+	}
 }
 
 async function debugLog() {
@@ -235,7 +362,9 @@ async function legacyOff() {
 }
 
 export default async function () {
+	await shortPage();
 	await desktop();
+	await breakpointSwitch();
 	await debugLog();
 	await phone();
 	await reduced();

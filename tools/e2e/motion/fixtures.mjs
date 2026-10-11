@@ -93,6 +93,8 @@ PAGES[ 'lm-e2e-basic' ] = {
 			heading( 'Preset at 30%', { _lmStartAt: '30' }, { id: 'bpre30', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset at 80% on phones', { '_lmStartAt:mobile_portrait': '80' }, { id: 'bpremb', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset, fast and bouncy', { _lmTempo: 'fast', _lmEase: 'bouncy' }, { id: 'bprefb', classes: [ 'lm-e2e-preset' ] } ),
+			// A bouncy curve overshoots: the blur must still never go below 0.
+			heading( 'Blur in, bouncy', { _lmEffect: 'blur-in', _lmEase: 'bouncy' }, { id: 'bblurb' } ),
 			spacer( 1200 ),
 		] ),
 		// An animated section: its heading has no setting and must not inherit any.
@@ -116,6 +118,19 @@ PAGES[ 'lm-e2e-basic' ] = {
 			),
 			heading( 'Former class name', {}, { id: 'bskfd', classes: [ 'sk-fade' ] } ),
 			spacer( 2600 ),
+		] ),
+	],
+};
+
+// A page too short for its last elements to reach their start: 30% and the preset's 60%.
+PAGES[ 'lm-e2e-short' ] = {
+	title: 'LM E2E short',
+	elements: [
+		section( [
+			heading( 'Short page', { tag: 'h1' }, { id: 'shorth' } ),
+			spacer( 900 ),
+			heading( 'Last but one, preset at 30%', { _lmStartAt: '30' }, { id: 'shrt30', classes: [ 'lm-e2e-preset' ] } ),
+			heading( 'Last, preset at 60%', {}, { id: 'shrtpr', classes: [ 'lm-e2e-preset' ] } ),
 		] ),
 	],
 };
