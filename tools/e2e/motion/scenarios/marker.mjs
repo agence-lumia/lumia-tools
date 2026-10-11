@@ -2,8 +2,15 @@ import { newPage, pageUrl, assert } from '../lib.mjs';
 
 const START_AT = '--lm-start-at';
 
+/** A page whose engine is blocked: the scenario reads the markup the server rendered, and the engine adds inline styles of its own. */
+async function serverMarkup( o ) {
+	const page = await newPage( o );
+	await page.route( /\/motion\.js(\?|$)/, ( route ) => route.abort() );
+	return page;
+}
+
 export default async function () {
-	const page = await newPage();
+	const page = await serverMarkup();
 	const res = await page.goto( pageUrl( 'lm-e2e-marker' ), { waitUntil: 'load' } );
 	assert( res && res.status() === 200, `status ${ res && res.status() }` );
 
@@ -71,7 +78,7 @@ export default async function () {
 		assert( item.value === '30%', `loop item, desktop: ${ START_AT }=${ item.value }` );
 		assert( ! item.style, `loop item with breakpoints should have no inline style, has "${ item.style }"` );
 	}
-	const phone = await newPage( { width: 400, height: 800 } );
+	const phone = await serverMarkup( { width: 400, height: 800 } );
 	await phone.goto( pageUrl( 'lm-e2e-marker' ), { waitUntil: 'load' } );
 	const small = await phone.evaluate( ( prop ) => [ ...document.querySelectorAll( '.brxe-mkbp' ) ].map( ( node ) => getComputedStyle( node ).getPropertyValue( prop ).trim() ), START_AT );
 	assert( small.length === 3 && small.every( ( v ) => v === '10%' ), `loop item, mobile: ${ START_AT }=${ small.join( ',' ) } (expected 10% x3)` );

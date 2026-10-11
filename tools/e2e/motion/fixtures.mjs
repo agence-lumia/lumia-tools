@@ -10,7 +10,7 @@ import { OUT, wp, pluginPath } from './lib.mjs';
  */
 export const CLASSES = {
 	// Bricks stores a number control with a fixed unit as a bare string; the unit is added in the CSS.
-	'lm-e2e-preset': { _lmEffect: 'fade', _lmStartAt: '60' },
+	'lm-e2e-preset': { _lmEffect: 'reveal', _lmStartAt: '60' },
 };
 
 /** Posts the query loops need: published when missing (by slug), never modified. */
@@ -80,9 +80,57 @@ PAGES[ 'lm-e2e-none' ] = {
 	elements: [ section( [ heading( 'No animation', { tag: 'h1' }, { id: 'nonehd' } ), text( 'Plain text', {}, { id: 'nonetx' } ) ] ) ],
 };
 
+// Entrance effects (enter, scroll-position, loading): more than 6000 px tall, so a reload at 3000 has room below.
 PAGES[ 'lm-e2e-basic' ] = {
 	title: 'LM E2E basic',
-	elements: [ section( [ heading( 'Fade on load', { tag: 'h1' }, { id: 'basichd', classes: [ 'lm-fade' ] } ) ] ) ],
+	elements: [
+		section( [
+			heading( 'Fade on load', { tag: 'h1' }, { id: 'basichd', classes: [ 'lm-fade' ] } ),
+			text( '<a id="lmanchor" href="/lm-e2e-anchor/#target">Go to the target of the anchor page</a>', {}, { id: 'basiclk' } ),
+			spacer( 1200 ),
+			// Four presets in a row: the class gives reveal at 60%, three of them adjust it.
+			heading( 'Preset', {}, { id: 'bpre01', classes: [ 'lm-e2e-preset' ] } ),
+			heading( 'Preset at 30%', { _lmStartAt: '30' }, { id: 'bpre30', classes: [ 'lm-e2e-preset' ] } ),
+			heading( 'Preset at 80% on phones', { '_lmStartAt:mobile_portrait': '80' }, { id: 'bpremb', classes: [ 'lm-e2e-preset' ] } ),
+			heading( 'Preset, fast and bouncy', { _lmTempo: 'fast', _lmEase: 'bouncy' }, { id: 'bprefb', classes: [ 'lm-e2e-preset' ] } ),
+			spacer( 1200 ),
+		] ),
+		// An animated section: its heading has no setting and must not inherit any.
+		section( [ heading( 'Nested heading, no setting', {}, { id: 'bnesth' } ) ], { id: 'bnest', classes: [ 'lm-fade' ] } ),
+		section( [
+			spacer( 800 ),
+			heading( 'Blur in, none on phones', { _lmEffect: 'blur-in', '_lmEffect:mobile_portrait': 'none' }, { id: 'bblur' } ),
+			heading( 'Two effect classes', {}, { id: 'bdual', classes: [ 'lm-fade', 'lm-reveal' ] } ),
+			// Values typed straight into the content, as the builder would never write them.
+			heading(
+				'Invalid values',
+				{
+					_lmEffect: 'blur-in',
+					_lmTempo: 'exact',
+					_lmDuration: 'abc',
+					_lmStart: 'foo;bar',
+					_lmEase: 'custom',
+					_lmEaseCustom: 'cubic-bezier(2,0,0,1)',
+				},
+				{ id: 'binval' }
+			),
+			heading( 'Former class name', {}, { id: 'bskfd', classes: [ 'sk-fade' ] } ),
+			spacer( 2600 ),
+		] ),
+	],
+};
+
+// Anchor target 3000 px down, reached from the link of lm-e2e-basic.
+PAGES[ 'lm-e2e-anchor' ] = {
+	title: 'LM E2E anchor',
+	elements: [
+		section( [
+			heading( 'Anchor page', { tag: 'h1' }, { id: 'anchhd' } ),
+			spacer( 3000 ),
+			el( 'div', { _cssId: 'target', _height: '200px' }, [ heading( 'Target', {}, { id: 'anchtt' } ) ], { id: 'anchtg' } ),
+			spacer( 3000 ),
+		] ),
+	],
 };
 
 PAGES[ 'lm-e2e-text' ] = {

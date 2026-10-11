@@ -111,6 +111,15 @@ html {
 	scroll-behavior: auto !important;
 }
 
+/* Scroll anchoring must never pick an element the engine moves. Measured on a reload at
+ * 3000 px: Chrome anchored on a blur-in heading and moved the page by its 20 px start offset
+ * (3019 instead of 3000, one reload out of two). Other elements still anchor the page. */
+@media (prefers-reduced-motion: no-preference) {
+	[data-lm~="enter"] {
+		overflow-anchor: none;
+	}
+}
+
 /* Without Lenis, an anchor lands below the fixed header. With Lenis, its anchors option
  * applies the same offset. */
 html:not(.lenis) [id] {

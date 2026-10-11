@@ -377,7 +377,15 @@
   var INTERNAL_START = { edge: "top", at: "98%" };
   var INTERNAL_END = { edge: "top", at: "-120%" };
   var EDGES = ["top", "center", "bottom"];
-  var POSITION_RE = /^[a-z0-9%+\-. ]{1,40}$/i;
+  // A ScrollTrigger position: one or two tokens, each an edge keyword or a length, with an
+  // optional "+=" / "-=" offset ("top 80%", "top+=50 center", "+=500"). Stricter than the
+  // character set the settings screen accepts: "foo" passes that one but means nothing here.
+  var POSITION_LENGTH = "(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|%)?";
+  var POSITION_OFFSET = "[+-]=" + POSITION_LENGTH;
+  var POSITION_TOKEN =
+    "(?:(?:top|center|bottom|left|right)(?:" + POSITION_OFFSET + ")?|-?" + POSITION_LENGTH + "(?:" + POSITION_OFFSET + ")?|" + POSITION_OFFSET + ")";
+  var POSITION_RE = new RegExp("^" + POSITION_TOKEN + "(?: +" + POSITION_TOKEN + ")?$", "i");
+  var POSITION_MAX = 40;
   var AT_RE = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:%|px)?$/i;
   var NUMBER_RE = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(ms|s|px|%|deg)?$/i;
   var TIME_SETTINGS = ["duration", "delay", "stagger"];
@@ -448,7 +456,7 @@
   function pickPosition(name, raw, settings, internal, warnings) {
     var full = text(raw[name]);
     if (full !== "") {
-      if (POSITION_RE.test(full)) {
+      if (full.length <= POSITION_MAX && POSITION_RE.test(full)) {
         return full;
       }
       warnings.push("Invalid " + name + " position " + JSON.stringify(full) + ": reference value used.");

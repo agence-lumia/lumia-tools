@@ -86,6 +86,34 @@ export function wp( ...args ) {
 	}
 }
 
+/**
+ * Runs fn with top-level keys of the Motion settings replaced, then puts the option back
+ * exactly as it was (deleted again when it did not exist: the module then uses its defaults).
+ * Values are JSON: pass booleans as booleans, the sanitizer only takes true/1/'1'/'on' as on.
+ */
+export async function withMotionSettings( patch, fn ) {
+	const KEY = 'lumia_module_motion';
+	let before = null;
+	try {
+		before = wp( 'option', 'get', KEY, '--format=json' );
+	} catch ( e ) {
+		if ( ! /Could not get/.test( e.message ) ) {
+			throw e;
+		}
+	}
+	const current = before ? JSON.parse( before ) : {};
+	wp( 'option', 'update', KEY, JSON.stringify( { ...current, ...patch } ), '--format=json' );
+	try {
+		return await fn();
+	} finally {
+		if ( before === null ) {
+			wp( 'option', 'delete', KEY );
+		} else {
+			wp( 'option', 'update', KEY, before, '--format=json' );
+		}
+	}
+}
+
 /** Path of a repository file as seen by WP-CLI (for eval-file). */
 export function pluginPath( rel ) {
 	return `${ PLUGIN_DIR }/${ rel.replace( /^\//, '' ) }`;
