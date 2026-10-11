@@ -15,3 +15,7 @@ tools/e2e-images/out/
 
 # Language tooling: WP-CLI phar downloaded on demand (tools/i18n/wp.sh)
 tools/i18n/.cache/
+
+# Motion scenarios: playwright-core cache, captures and generated fixtures (tools/e2e/motion/run.sh)
+tools/e2e/motion/.cache/
+tools/e2e/motion/out/
