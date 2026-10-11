@@ -13,7 +13,8 @@
  *   `lenis` class of <html>.
  * - Popups and menus: while a Bricks popup is open, or a menu that locks the page
  *   (body.no-scroll: off-canvas, mobile menu), the page behind does not scroll, and they
- *   scroll natively (data-lenis-prevent).
+ *   scroll natively (data-lenis-prevent). A menu is marked only while it locks the page:
+ *   the bar of a desktop nav is part of the page, and the wheel over it goes through Lenis.
  * - Desktop only (syncTouch off): touch devices keep their native, inertial scroll.
  * - Stands down: with reduced motion (native scroll), and when the former Motion snippet
  *   (its global is named in window.lumiaMotionScroll.legacyGlobal) owns the page.
@@ -31,9 +32,12 @@
   var DEFAULT_LERP = 0.1;
   var BRICKS_POPUP_OPEN = "bricks/popup/open";
   var BRICKS_POPUP_CLOSE = "bricks/popup/close";
-  // What scrolls by itself inside a popup or a menu. Marked when it locks the page, so an
-  // element added after the load is covered too.
-  var NATIVE_SCROLL = ".brx-popup, .brxe-offcanvas, .brx-nav-nested-items, .bricks-mobile-menu-wrapper";
+  // What scrolls by itself inside a popup or an off-canvas: marked at load, and again when it
+  // locks the page, so an element added after the load is covered too.
+  var NATIVE_SCROLL = ".brx-popup, .brxe-offcanvas";
+  // Menus: the same nodes are the bar of a desktop nav, part of the page. Marked only while the
+  // page is locked (the mobile menu is open), unmarked when it is unlocked.
+  var MENU_SCROLL = ".brx-nav-nested-items, .bricks-mobile-menu-wrapper";
 
   var gsap = window.gsap;
   var ScrollTrigger = window.ScrollTrigger;
@@ -100,6 +104,8 @@
   /* ================================================================
    * INSTANCE
    * ================================================================ */
+
+  var destroyed = false; // set when this file stands down for the former snippet
 
   var lenis = new Lenis({
     lerp: intensity(),
@@ -169,6 +175,10 @@
       INPUTS.forEach(function (name) {
         window.removeEventListener(name, onInput);
       });
+      // Stood down meanwhile (the former snippet showed up at load): its scroll, not ours.
+      if (destroyed) {
+        return;
+      }
       if (!moved) {
         lenis.scrollTo(target, { immediate: true, force: true, offset: anchors.offset });
       }
@@ -203,10 +213,28 @@
     return (event && event.detail && event.detail.popupElement) || null;
   }
 
+  var markedMenus = []; // menus this file marked: the only ones it unmarks
+
   function markNativeScroll() {
     Array.prototype.forEach.call(document.querySelectorAll(NATIVE_SCROLL), function (node) {
       node.setAttribute("data-lenis-prevent", "");
     });
+  }
+
+  function markMenus() {
+    Array.prototype.forEach.call(document.querySelectorAll(MENU_SCROLL), function (node) {
+      if (!node.hasAttribute("data-lenis-prevent")) {
+        node.setAttribute("data-lenis-prevent", "");
+        markedMenus.push(node);
+      }
+    });
+  }
+
+  function unmarkMenus() {
+    markedMenus.forEach(function (node) {
+      node.removeAttribute("data-lenis-prevent");
+    });
+    markedMenus = [];
   }
 
   // Bricks puts body.no-scroll while an off-canvas ("No scroll"), the mobile menu of a nested
@@ -219,8 +247,10 @@
   function sync() {
     if (holders.length || pageLocked()) {
       markNativeScroll();
+      markMenus();
       lenis.stop();
     } else {
+      unmarkMenus();
       lenis.start();
     }
   }
@@ -254,8 +284,8 @@
     sync();
   }
 
-  // The popups and menus are in the page from the start (Bricks prints them in the footer):
-  // the attribute is set now, so they scroll natively even before their first opening.
+  // The popups and off-canvases are in the page from the start (Bricks prints them in the
+  // footer): the attribute is set now, so they scroll natively even before their first opening.
   markNativeScroll();
   document.addEventListener(BRICKS_POPUP_OPEN, onPopupOpen);
   document.addEventListener(BRICKS_POPUP_CLOSE, onPopupClose);
@@ -284,6 +314,8 @@
       if (gsap && gsap.ticker) {
         gsap.ticker.remove(tick);
       }
+      destroyed = true;
+      unmarkMenus();
       lenis.destroy();
       delete window.lumiaLenis;
     },

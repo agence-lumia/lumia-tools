@@ -301,6 +301,16 @@ PAGES[ 'lm-e2e-menu' ] = {
 				],
 				{ id: 'menunav' }
 			),
+			// A desktop nested nav (its mobile menu only below the default breakpoint): a horizontal bar that locks nothing.
+			el(
+				'nav-nested',
+				{},
+				[
+					el( 'block', { tag: 'ul', _cssClasses: 'brx-nav-nested-items' }, [ el( 'block', { tag: 'li' }, [ text( 'Desktop item', {}, { id: 'menudi1' } ) ], { id: 'menudl1' } ) ], { id: 'menudul' } ),
+					el( 'toggle', {}, [], { id: 'menudt' } ),
+				],
+				{ id: 'menudnv' }
+			),
 			spacer( 4000 ),
 		] ),
 	],

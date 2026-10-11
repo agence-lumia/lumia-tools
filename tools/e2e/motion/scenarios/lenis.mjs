@@ -325,6 +325,50 @@ async function menus() {
 	}
 }
 
+// A desktop nested nav (a horizontal bar, nothing locked): the wheel over it scrolls the page through Lenis,
+// like anywhere else. Marked data-lenis-prevent, it let the browser scroll natively under Lenis.
+// The mobile menu of the other nav, once opened, is marked and the page stays locked; closed, it is unmarked.
+async function desktopNav() {
+	const page = await newPage();
+	await load( page, 'lm-e2e-menu' );
+	await lenisReady( page );
+	const box = await page.locator( '#brxe-menudul' ).boundingBox();
+	assert( box && box.width > 0 && box.height > 0, 'desktop nav: the nested nav items are not visible at 1440 px' );
+	const marks = await page.evaluate( () => [ ...document.querySelectorAll( '.brx-nav-nested-items' ) ].map( ( n ) => `${ n.id }:${ n.hasAttribute( 'data-lenis-prevent' ) }` ) );
+	assert( marks.every( ( m ) => m.endsWith( ':false' ) ), `desktop nav: nav items marked data-lenis-prevent at load (${ marks.join( ', ' ) })` );
+
+	await page.evaluate( () => {
+		window.lmModes = [];
+		window.lumiaLenis.on( 'scroll', ( l ) => window.lmModes.push( l.isScrolling ) );
+	} );
+	await page.mouse.move( box.x + Math.min( 20, box.width / 2 ), box.y + box.height / 2 );
+	const y0 = await page.evaluate( () => window.scrollY );
+	await page.mouse.wheel( 0, 400 );
+	const samples = [];
+	for ( let i = 0; i < 6; i++ ) {
+		await page.waitForTimeout( 40 );
+		samples.push( await page.evaluate( () => window.scrollY ) );
+	}
+	const y1 = await stable( page );
+	const modes = await page.evaluate( () => [ ...new Set( window.lmModes ) ] );
+	assert( y1 > y0 + 300, `desktop nav: the wheel over the nav scrolled ${ y1 - y0 } px (expected about 400)` );
+	assert( modes.includes( 'smooth' ) && ! modes.includes( 'native' ), `desktop nav: the wheel over the nav scrolled ${ modes.join( '/' ) || 'without Lenis' } (expected smooth, through Lenis)` );
+	assert( samples.some( ( y ) => y > y0 && y < y0 + 400 ), `desktop nav: the wheel step was not spread over frames (${ samples.join( ', ' ) })` );
+
+	// The mobile menu of the other nav: marked while it locks the page, unmarked once closed.
+	await page.evaluate( () => window.lumiaLenis.scrollTo( 0, { immediate: true } ) );
+	await click( page, '#brxe-menunt' );
+	await page.waitForFunction( () => document.body.classList.contains( 'no-scroll' ), null, { timeout: 4000 } );
+	assert( await page.evaluate( () => document.getElementById( 'brxe-menuuls' ).hasAttribute( 'data-lenis-prevent' ) ), 'mobile menu: open but not marked data-lenis-prevent' );
+	await page.keyboard.press( 'Escape' );
+	await page.waitForFunction( () => ! document.body.classList.contains( 'no-scroll' ), null, { timeout: 4000 } );
+	await page.waitForFunction( () => ! window.lumiaLenis.isStopped, null, { timeout: 3000 } );
+	const after = await page.evaluate( () => [ ...document.querySelectorAll( '.brx-nav-nested-items' ) ].map( ( n ) => `${ n.id }:${ n.hasAttribute( 'data-lenis-prevent' ) }` ) );
+	assert( after.every( ( m ) => m.endsWith( ':false' ) ), `mobile menu closed: nav items still marked (${ after.join( ', ' ) })` );
+	noErrors( page, 'desktop nav' );
+	await page.context().close();
+}
+
 // The former snippet owns smooth scroll: the module does not start Lenis next to it, whether
 // its global is there before the module runs or only by the time the page has loaded.
 async function formerSnippet() {
@@ -353,6 +397,28 @@ async function formerSnippet() {
 			await page.context().close();
 		}
 	}
+
+	// Arriving on an anchor while the former snippet shows up before the load: the landing (one frame after
+	// the load) must not drive the instance that stood down.
+	const page = await newPage();
+	await page.addInitScript( ( global ) => {
+		document.addEventListener( 'DOMContentLoaded', () => {
+			window[ global ] = {};
+			window.lmCalls = 0;
+			const original = window.lumiaLenis.scrollTo.bind( window.lumiaLenis );
+			window.lumiaLenis.scrollTo = ( ...args ) => {
+				window.lmCalls++;
+				return original( ...args );
+			};
+		} );
+	}, GLOBAL );
+	await page.goto( pageUrl( 'lm-e2e-anchor' ) + '#target', { waitUntil: 'load' } );
+	await page.waitForTimeout( 600 );
+	const late = await page.evaluate( () => ( { calls: window.lmCalls, lenis: typeof window.lumiaLenis } ) );
+	assert( late.lenis === 'undefined', `former snippet, anchor landing: window.lumiaLenis is ${ late.lenis }` );
+	assert( late.calls === 0, `former snippet, anchor landing: the destroyed Lenis was asked to scroll ${ late.calls } time(s)` );
+	noErrors( page, 'former snippet, anchor landing' );
+	await page.context().close();
 }
 
 // prefers-reduced-motion: reduce: no Lenis at all, native scroll, anchors under the header by the stylesheet.
@@ -438,6 +504,7 @@ export default async function () {
 	await anchors();
 	await popups();
 	await menus();
+	await desktopNav();
 	await formerSnippet();
 	await reducedMotion();
 	await hiddenAnchor();
