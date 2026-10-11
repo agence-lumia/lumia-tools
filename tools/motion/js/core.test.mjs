@@ -581,3 +581,77 @@ test("formatCounter: intermediate values keep the format", () => {
   const q = core.parseCounter("2024");
   assert.equal(core.formatCounter(12.4, q), "12");
 });
+
+/* ------------------------------------------------------------ fix round 1 */
+
+test("resolveEase: a counter never overshoots, whatever the curve", () => {
+  const curves = [
+    ["custom", "cubic-bezier(.2,1.6,.3,1)"],
+    ["custom", "cubic-bezier(.3,-0.5,.3,1.6)"],
+    ["bouncy", ""],
+    ["snappy", ""],
+    ["smooth", ""],
+    ["lumia", ""],
+  ];
+  for (const [key, custom] of curves) {
+    const r = core.resolveEase(key, custom, "counter", false);
+    let max = -Infinity;
+    let min = Infinity;
+    for (let i = 0; i <= 1000; i++) {
+      const y = r.ease(i / 1000);
+      max = Math.max(max, y);
+      min = Math.min(min, y);
+    }
+    assert.ok(max <= 1, key + " " + custom + " peaks at " + max);
+    assert.ok(min >= 0, key + " " + custom + " dips to " + min);
+    assert.equal(r.ease(1), 1);
+  }
+  // Other families keep the overshoot on ease.
+  const e = core.resolveEase("custom", "cubic-bezier(.2,1.6,.3,1)", "enter", false);
+  let m = 0;
+  for (let i = 0; i <= 1000; i++) m = Math.max(m, e.ease(i / 1000));
+  assert.ok(m > 1);
+});
+
+test("resolve: a typed duration ignored by a non exact tempo is reported", () => {
+  const o = core.resolve("reveal", { tempo: "fast", duration: "3" }, CFG);
+  near(o.duration, 0.455, 1e-9);
+  assert.equal(o.warnings.length, 1);
+  assert.match(o.warnings[0], /duration ignored: tempo is not exact/);
+  // Nothing typed, nothing to report; exact uses it.
+  assert.deepEqual(core.resolve("reveal", { tempo: "fast" }, CFG).warnings, []);
+  assert.deepEqual(core.resolve("reveal", { tempo: "exact", duration: "3" }, CFG).warnings, []);
+  // Site tempo applies when the element has none.
+  assert.equal(core.resolve("reveal", { duration: "3" }, CFG).warnings.length, 1);
+});
+
+test("resolve: tempo is case insensitive", () => {
+  near(core.resolve("reveal", { tempo: "FAST" }, CFG).duration, 0.455, 1e-9);
+  assert.equal(core.resolve("reveal", { tempo: " Exact ", duration: "1.2" }, CFG).duration, 1.2);
+  assert.deepEqual(core.resolve("reveal", { tempo: "FAST" }, CFG).warnings, []);
+});
+
+test("resolve: durations, delays and staggers accept milliseconds", () => {
+  const o = core.resolve("reveal", { tempo: "exact", duration: "300ms", delay: "250ms", stagger: "50ms" }, CFG);
+  assert.equal(o.duration, 0.3);
+  assert.equal(o.delay, 0.25);
+  assert.equal(o.stagger, 0.05);
+  assert.deepEqual(o.warnings, []);
+  assert.equal(core.resolve("reveal", { tempo: "exact", duration: "1.5s" }, CFG).duration, 1.5);
+  // Not a time setting: milliseconds make no sense.
+  const d = core.resolve("reveal", { distance: "30ms" }, CFG);
+  assert.equal(d.distance, 48);
+  assert.equal(d.warnings.length, 1);
+});
+
+test("parseCounter: a separator touching the number outside it is left alone", () => {
+  assert.equal(core.parseCounter(".5"), null);
+  assert.equal(core.parseCounter(",5"), null);
+  assert.equal(core.parseCounter("~.5"), null);
+  assert.equal(core.parseCounter("5."), null);
+  assert.equal(core.parseCounter("Total: 5,"), null);
+  assert.equal(core.parseCounter("5.%"), null);
+  // Punctuation not touching the number is fine.
+  assert.notEqual(core.parseCounter("+150 clients."), null);
+  assert.notEqual(core.parseCounter("1,5 %"), null);
+});

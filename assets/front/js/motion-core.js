@@ -310,7 +310,8 @@
     var profile = buildProfile(key, key === "custom" ? curve : null);
     return {
       key: profile.key,
-      ease: profile.ease,
+      // A counter must not go past its final value, whatever the curve.
+      ease: family === "counter" ? profile.safeEase : profile.ease,
       safeEase: profile.safeEase,
       settle: profile.settle,
       fallback: usedFallback,
@@ -378,7 +379,8 @@
   var EDGES = ["top", "center", "bottom"];
   var POSITION_RE = /^[a-z0-9%+\-. ]{1,40}$/i;
   var AT_RE = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:%|px)?$/i;
-  var NUMBER_RE = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(?:s|px|%|deg)?$/i;
+  var NUMBER_RE = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(ms|s|px|%|deg)?$/i;
+  var TIME_SETTINGS = ["duration", "delay", "stagger"];
   var BARE_NUMBER_RE = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/;
 
   // A value as the browser hands it over: a string, or a number from the JSON configuration.
@@ -393,12 +395,20 @@
   }
 
   // NaN when the value is not a plain number; a unit suffix (1.2s, 30px, 120%) is tolerated.
-  function readNumber(value) {
+  // Milliseconds are read for time settings only and converted to seconds.
+  function readNumber(value, time) {
     if (typeof value === "number") {
       return isFinite(value) ? value : NaN;
     }
     var m = NUMBER_RE.exec(text(value));
-    return m ? parseFloat(m[1]) : NaN;
+    if (!m) {
+      return NaN;
+    }
+    var n = parseFloat(m[1]);
+    if (m[2] && m[2].toLowerCase() === "ms") {
+      return time ? n / 1000 : NaN;
+    }
+    return n;
   }
 
   function inRange(name, n) {
@@ -407,15 +417,16 @@
 
   // raw (when valid) > module settings > internal value.
   function pickNumber(name, raw, settings, warnings) {
+    var time = TIME_SETTINGS.indexOf(name) > -1;
     var typed = text(raw[name.replace(/_/g, "-")]);
     if (typed !== "") {
-      var n = readNumber(typed);
+      var n = readNumber(typed, time);
       if (inRange(name, n)) {
         return n;
       }
       warnings.push("Invalid " + name.replace(/_/g, "-") + " " + JSON.stringify(typed) + ": reference value used.");
     }
-    var configured = readNumber(settings[name]);
+    var configured = readNumber(settings[name], time);
     return inRange(name, configured) ? configured : INTERNAL[name];
   }
 
@@ -483,7 +494,7 @@
     var end = scrub ? pickPosition("end", raw, settings, INTERNAL_END, warnings) : "top -120%";
 
     var siteTempo = has(TEMPOS, config.tempo) || config.tempo === "exact" ? config.tempo : "normal";
-    var typedTempo = text(raw.tempo);
+    var typedTempo = text(raw.tempo).toLowerCase();
     var tempo = siteTempo;
     if (typedTempo !== "") {
       if (has(TEMPOS, typedTempo) || typedTempo === "exact") {
@@ -506,7 +517,12 @@
         duration = pickNumber("duration", raw, settings, warnings);
       } else {
         // The duration typed on a class is for "exact" only; other tempos scale the reference.
+        if (text(raw.duration) !== "") {
+          warnings.push("Typed duration ignored: tempo is not exact.");
+        }
         duration = pickNumber("duration", {}, settings, warnings) * factor;
+        // Unlike the duration, a typed stagger stays in force whatever the tempo: it is a spacing
+        // between items, so the tempo scales it like the reference one ("fast" tightens the lot).
         stagger *= factor;
       }
     }
@@ -676,6 +692,10 @@
     var suffix = source.slice(m.index + m[0].length);
     // A second number ("24/7", "2020 - 2024") makes the text ambiguous: leave it alone.
     if (/\d/.test(prefix) || /\d/.test(suffix)) {
+      return null;
+    }
+    // A separator hugging the number from outside (".5", "5.") is not ours to rewrite.
+    if (/[.,]$/.test(prefix) || /^[.,]/.test(suffix)) {
       return null;
     }
 
