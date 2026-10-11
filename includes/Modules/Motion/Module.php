@@ -76,7 +76,7 @@ class Module extends AbstractModule {
 		return [
 			'effects'         => Effects::reference_values(),
 			'tempo'           => 'normal',
-			'ease'            => 'lumia',
+			'ease'            => 'smooth',
 			'ease_custom'     => '',
 			'lenis'           => [
 				'enabled' => true,

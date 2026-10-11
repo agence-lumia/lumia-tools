@@ -52,7 +52,7 @@ const CFG = {
     underline: {},
   },
   tempo: "normal",
-  ease: "lumia",
+  ease: "smooth",
   easeCustom: "",
 };
 
@@ -138,7 +138,8 @@ test("spring: out-of-range bounce does not hang or throw", () => {
 test("resolveEase: counter never bounces", () => {
   assert.equal(core.resolveEase("bouncy", "", "counter", false).key, "smooth");
   assert.equal(core.resolveEase("snappy", "", "counter", false).key, "smooth");
-  assert.equal(core.resolveEase("lumia", "", "counter", false).key, "lumia");
+  assert.equal(core.resolveEase("smooth", "", "counter", false).key, "smooth");
+  assert.equal(core.resolveEase("lumia", "", "counter", false).key, "smooth");
 });
 
 test("resolveEase: scrub is linear whatever the keyword", () => {
@@ -148,9 +149,9 @@ test("resolveEase: scrub is linear whatever the keyword", () => {
   near(r.ease(0.37), 0.37, 1e-9);
 });
 
-test("resolveEase: invalid custom curve falls back to lumia", () => {
+test("resolveEase: invalid custom curve falls back to smooth", () => {
   const r = core.resolveEase("custom", "cubic-bezier(2,0,0,1)", "enter", false);
-  assert.equal(r.key, "lumia");
+  assert.equal(r.key, "smooth");
   assert.equal(r.fallback, true);
 });
 
@@ -164,7 +165,7 @@ test("resolveEase: valid custom curve is used", () => {
 
 test("resolveEase: unknown keyword uses the fallback key", () => {
   const a = core.resolveEase("nope", "", "enter", false);
-  assert.equal(a.key, "lumia");
+  assert.equal(a.key, "smooth");
   assert.equal(a.fallback, true);
   const b = core.resolveEase("nope", "", "enter", false, "smooth");
   assert.equal(b.key, "smooth");
@@ -195,18 +196,20 @@ test("resolveEase: safeEase never overshoots", () => {
   }
 });
 
-test("resolveEase: custom or garbage as fallback key becomes lumia", () => {
-  assert.equal(core.resolveEase("nope", "", "enter", false, "custom").key, "lumia");
-  assert.equal(core.resolveEase("nope", "", "enter", false, "zzz").key, "lumia");
+test("resolveEase: custom or garbage as fallback key becomes smooth", () => {
+  assert.equal(core.resolveEase("nope", "", "enter", false, "custom").key, "smooth");
+  assert.equal(core.resolveEase("nope", "", "enter", false, "zzz").key, "smooth");
 });
 
 /* ------------------------------------------------------------ tempoFactor */
 
 test("tempoFactor", () => {
-  assert.equal(core.tempoFactor("fast"), 0.7);
+  assert.equal(core.tempoFactor("very-fast"), 0.5);
+  assert.equal(core.tempoFactor("fast"), 0.75);
   assert.equal(core.tempoFactor("normal"), 1);
-  assert.equal(core.tempoFactor("slow"), 1.4);
-  assert.equal(core.tempoFactor("exact"), null);
+  assert.equal(core.tempoFactor("slow"), 1.5);
+  assert.equal(core.tempoFactor("very-slow"), 2);
+  assert.equal(core.tempoFactor("custom"), null);
   assert.equal(core.tempoFactor("whatever"), 1);
   assert.equal(core.tempoFactor(undefined), 1);
 });
@@ -215,8 +218,8 @@ test("tempoFactor", () => {
 
 test("resolve: tempo scales duration and stagger, never delay", () => {
   const o = core.resolve("slide-up", { tempo: "fast" }, CFG);
-  near(o.duration, 0.455, 1e-9);
-  near(o.stagger, 0.07, 1e-9);
+  near(o.duration, 0.4875, 1e-9);
+  near(o.stagger, 0.075, 1e-9);
   assert.equal(o.delay, 0);
   assert.equal(o.effect, "slide-up");
   assert.equal(o.family, "enter");
@@ -225,26 +228,38 @@ test("resolve: tempo scales duration and stagger, never delay", () => {
   assert.deepEqual(o.warnings, []);
 });
 
-test("resolve: exact tempo uses the typed duration, unscaled", () => {
-  assert.equal(core.resolve("slide-up", { tempo: "exact", duration: "1.2" }, CFG).duration, 1.2);
-  assert.equal(core.resolve("slide-up", { tempo: "exact", duration: "" }, CFG).duration, 0.65);
+test("resolve: custom tempo uses the typed duration, unscaled", () => {
+  assert.equal(core.resolve("slide-up", { tempo: "custom", duration: "1.2" }, CFG).duration, 1.2);
+  assert.equal(core.resolve("slide-up", { tempo: "custom", duration: "" }, CFG).duration, 0.65);
 });
 
-test("resolve: invalid exact duration falls back, with a warning", () => {
-  const o = core.resolve("slide-up", { duration: "abc", tempo: "exact" }, CFG);
+test("resolve: the legacy exact tempo is read as custom, without a warning", () => {
+  const o = core.resolve("fade", { tempo: "exact", duration: "2" }, CFG);
+  assert.equal(o.duration, 2);
+  assert.deepEqual(o.warnings, []);
+  assert.equal(core.resolve("fade", { duration: "2" }, { ...CFG, tempo: "exact" }).duration, 2);
+});
+
+test("resolve: very fast and very slow scale the reference", () => {
+  near(core.resolve("slide-up", { tempo: "very-fast" }, CFG).duration, 0.325, 1e-9);
+  near(core.resolve("slide-up", { tempo: "very-slow" }, CFG).duration, 1.3, 1e-9);
+});
+
+test("resolve: invalid custom duration falls back, with a warning", () => {
+  const o = core.resolve("slide-up", { duration: "abc", tempo: "custom" }, CFG);
   assert.equal(o.duration, 0.65);
   assert.equal(o.warnings.length, 1);
   assert.match(o.warnings[0], /duration/);
 });
 
-test("resolve: a duration set on a class is ignored when the tempo is not exact", () => {
-  near(core.resolve("slide-up", { tempo: "slow", duration: "3" }, CFG).duration, 0.91, 1e-9);
+test("resolve: a duration set on a class is ignored when the tempo is not custom", () => {
+  near(core.resolve("slide-up", { tempo: "slow", duration: "3" }, CFG).duration, 0.975, 1e-9);
 });
 
 test("resolve: empty tempo uses the site tempo", () => {
   const cfg = { ...CFG, tempo: "slow" };
-  near(core.resolve("slide-up", {}, cfg).duration, 0.91, 1e-9);
-  near(core.resolve("slide-up", { tempo: "" }, cfg).duration, 0.91, 1e-9);
+  near(core.resolve("slide-up", {}, cfg).duration, 0.975, 1e-9);
+  near(core.resolve("slide-up", { tempo: "" }, cfg).duration, 0.975, 1e-9);
 });
 
 test("resolve: delay is taken as is", () => {
@@ -252,7 +267,7 @@ test("resolve: delay is taken as is", () => {
 });
 
 test("resolve: stagger from the element is also scaled", () => {
-  near(core.resolve("slide-up", { tempo: "fast", stagger: "0.2" }, CFG).stagger, 0.14, 1e-9);
+  near(core.resolve("slide-up", { tempo: "fast", stagger: "0.2" }, CFG).stagger, 0.15, 1e-9);
 });
 
 test("resolve: blur alone has a blur and no move of its own", () => {
@@ -346,12 +361,12 @@ test("resolve: tweenDuration follows the settle time of the curve", () => {
   assert.equal(smooth.easeKey, "smooth");
   assert.equal(smooth.tweenDuration, smooth.duration * core.spring(0).settle);
   assert.ok(smooth.tweenDuration > smooth.duration);
-  const lumia = core.resolve("slide-up", { ease: "lumia" }, CFG);
-  assert.equal(lumia.tweenDuration, lumia.duration);
+  const linear = core.resolve("slide-up", { ease: "linear" }, CFG);
+  assert.equal(linear.tweenDuration, linear.duration);
 });
 
 test("resolve: ease comes from the element, then from the site", () => {
-  assert.equal(core.resolve("slide-up", {}, CFG).easeKey, "lumia");
+  assert.equal(core.resolve("slide-up", {}, CFG).easeKey, "smooth");
   assert.equal(core.resolve("slide-up", {}, { ...CFG, ease: "snappy" }).easeKey, "snappy");
   assert.equal(core.resolve("slide-up", { ease: "bouncy" }, CFG).easeKey, "bouncy");
   const custom = core.resolve(
@@ -373,11 +388,25 @@ test("resolve: bad curve falls back to the site curve, with a warning", () => {
   assert.equal(o.easeKey, "smooth");
   assert.equal(o.warnings.length, 1);
   const c = core.resolve("slide-up", { ease: "custom", "ease-custom": "cubic-bezier(2,0,0,1)" }, CFG);
-  assert.equal(c.easeKey, "lumia");
+  assert.equal(c.easeKey, "smooth");
   assert.equal(c.warnings.length, 1);
-  // The site curve itself is broken: Lumia, never a loop on "custom".
+  // The site curve itself is broken: smooth, never a loop on "custom".
   const d = core.resolve("slide-up", { ease: "nope" }, { ...CFG, ease: "custom", easeCustom: "x" });
-  assert.equal(d.easeKey, "lumia");
+  assert.equal(d.easeKey, "smooth");
+});
+
+test("resolve: the legacy lumia curve is read as smooth, without a warning", () => {
+  const o = core.resolve("fade", { ease: "lumia" }, CFG);
+  assert.equal(o.easeKey, "smooth");
+  assert.deepEqual(o.warnings, []);
+  assert.equal(core.resolve("fade", {}, { ...CFG, ease: "lumia" }).easeKey, "smooth");
+});
+
+test("springs: bouncy overshoots more than snappy, which overshoots", () => {
+  const snappy = maxOf(core.resolveEase("snappy", "", "enter", false).ease);
+  const bouncy = maxOf(core.resolveEase("bouncy", "", "enter", false).ease);
+  assert.ok(snappy > 1, "snappy " + snappy);
+  assert.ok(bouncy > snappy, "bouncy " + bouncy + " snappy " + snappy);
 });
 
 test("resolve: counter never bounces", () => {
@@ -408,7 +437,7 @@ test("resolve: never throws on garbage", () => {
   const garbage = [undefined, null, 0, "x", [], {}, NaN];
   for (const slug of [undefined, null, "", "slide-up", "words", "__proto__", "constructor"]) {
     for (const raw of garbage.concat([
-      { duration: Infinity, tempo: "exact", delay: NaN, stagger: "1e999", ease: 3 },
+      { duration: Infinity, tempo: "custom", delay: NaN, stagger: "1e999", ease: 3 },
       { start: 5, "start-at": {}, "end-at": [], blur: "-4", scale: "x", distance: "" },
     ])) {
       for (const cfg of garbage.concat([{ effects: null, tempo: 7, ease: {} }, { effects: { "slide-up": null } }])) {
@@ -429,7 +458,7 @@ test("resolve: never throws on garbage", () => {
 test("resolve: non-finite or out-of-range numbers are refused", () => {
   const o = core.resolve(
     "blur-up",
-    { delay: "-2", blur: "Infinity", distance: "NaN", tempo: "exact", duration: "0" },
+    { delay: "-2", blur: "Infinity", distance: "NaN", tempo: "custom", duration: "0" },
     CFG,
   );
   assert.equal(o.delay, 0);
@@ -440,7 +469,7 @@ test("resolve: non-finite or out-of-range numbers are refused", () => {
 });
 
 test("resolve: values with a unit suffix are accepted", () => {
-  const o = core.resolve("slide-up", { tempo: "exact", duration: "1.5s", distance: "30px" }, CFG);
+  const o = core.resolve("slide-up", { tempo: "custom", duration: "1.5s", distance: "30px" }, CFG);
   assert.equal(o.duration, 1.5);
   assert.equal(o.distance, 30);
   assert.deepEqual(o.warnings, []);
@@ -450,7 +479,7 @@ test("resolve: effect without config uses the internal defaults", () => {
   const o = core.resolve("slide-up", {}, undefined);
   assert.equal(o.duration, 0.6);
   assert.equal(o.distance, 40);
-  assert.equal(o.easeKey, "lumia");
+  assert.equal(o.easeKey, "smooth");
 });
 
 /* -------------------------------------------------------------- signature */
@@ -466,7 +495,7 @@ test("signature: same input, same signature; tempo changes it", () => {
 test("signature: ease, custom curve, position and effect change it", () => {
   const base = core.signature(core.resolve("slide-up", {}, CFG));
   const sig = (slug, raw) => core.signature(core.resolve(slug, raw, CFG));
-  assert.notEqual(base, sig("slide-up", { ease: "smooth" }));
+  assert.notEqual(base, sig("slide-up", { ease: "snappy" }));
   assert.notEqual(base, sig("slide-up", { start: "top 50%" }));
   assert.notEqual(base, sig("fade", {}));
   assert.notEqual(
@@ -637,31 +666,31 @@ test("resolveEase: a counter never overshoots, whatever the curve", () => {
   assert.ok(m > 1);
 });
 
-test("resolve: a typed duration ignored by a non exact tempo is reported", () => {
+test("resolve: a typed duration ignored by a non custom tempo is reported", () => {
   const o = core.resolve("slide-up", { tempo: "fast", duration: "3" }, CFG);
-  near(o.duration, 0.455, 1e-9);
+  near(o.duration, 0.4875, 1e-9);
   assert.equal(o.warnings.length, 1);
-  assert.match(o.warnings[0], /duration ignored: tempo is not exact/);
-  // Nothing typed, nothing to report; exact uses it.
+  assert.match(o.warnings[0], /duration ignored: tempo is not custom/);
+  // Nothing typed, nothing to report; custom uses it.
   assert.deepEqual(core.resolve("slide-up", { tempo: "fast" }, CFG).warnings, []);
-  assert.deepEqual(core.resolve("slide-up", { tempo: "exact", duration: "3" }, CFG).warnings, []);
+  assert.deepEqual(core.resolve("slide-up", { tempo: "custom", duration: "3" }, CFG).warnings, []);
   // Site tempo applies when the element has none.
   assert.equal(core.resolve("slide-up", { duration: "3" }, CFG).warnings.length, 1);
 });
 
 test("resolve: tempo is case insensitive", () => {
-  near(core.resolve("slide-up", { tempo: "FAST" }, CFG).duration, 0.455, 1e-9);
-  assert.equal(core.resolve("slide-up", { tempo: " Exact ", duration: "1.2" }, CFG).duration, 1.2);
+  near(core.resolve("slide-up", { tempo: "FAST" }, CFG).duration, 0.4875, 1e-9);
+  assert.equal(core.resolve("slide-up", { tempo: " Custom ", duration: "1.2" }, CFG).duration, 1.2);
   assert.deepEqual(core.resolve("slide-up", { tempo: "FAST" }, CFG).warnings, []);
 });
 
 test("resolve: durations, delays and staggers accept milliseconds", () => {
-  const o = core.resolve("slide-up", { tempo: "exact", duration: "300ms", delay: "250ms", stagger: "50ms" }, CFG);
+  const o = core.resolve("slide-up", { tempo: "custom", duration: "300ms", delay: "250ms", stagger: "50ms" }, CFG);
   assert.equal(o.duration, 0.3);
   assert.equal(o.delay, 0.25);
   assert.equal(o.stagger, 0.05);
   assert.deepEqual(o.warnings, []);
-  assert.equal(core.resolve("slide-up", { tempo: "exact", duration: "1.5s" }, CFG).duration, 1.5);
+  assert.equal(core.resolve("slide-up", { tempo: "custom", duration: "1.5s" }, CFG).duration, 1.5);
   // Not a time setting: milliseconds make no sense.
   const d = core.resolve("slide-up", { distance: "30ms" }, CFG);
   assert.equal(d.distance, 48);

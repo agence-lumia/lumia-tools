@@ -141,15 +141,17 @@ return [
 	'constants'                                      => static function (): void {
 		lm_assert(
 			Effects::TEMPOS === [
-				'fast'   => 0.7,
-				'normal' => 1.0,
-				'slow'   => 1.4,
+				'very-fast' => 0.5,
+				'fast'      => 0.75,
+				'normal'    => 1.0,
+				'slow'      => 1.5,
+				'very-slow' => 2.0,
 			],
 			'tempos'
 		);
-		lm_assert( Effects::TEMPO_KEYWORDS === [ 'fast', 'normal', 'slow', 'exact' ], 'tempo keywords' );
+		lm_assert( Effects::TEMPO_KEYWORDS === [ 'very-fast', 'fast', 'normal', 'slow', 'very-slow', 'custom' ], 'tempo keywords' );
 		lm_assert( Effects::EDGES === [ 'top', 'center', 'bottom' ], 'edges' );
-		lm_assert( Effects::EASES === [ 'lumia', 'smooth', 'snappy', 'bouncy', 'linear', 'custom' ], 'eases' );
+		lm_assert( Effects::EASES === [ 'smooth', 'snappy', 'bouncy', 'linear', 'custom' ], 'eases' );
 	},
 	'underline constants share their keys'           => static function (): void {
 		lm_assert(

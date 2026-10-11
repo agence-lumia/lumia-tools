@@ -23,7 +23,7 @@ $lm_defaults = static function (): array {
 	return [
 		'effects'         => Effects::reference_values(),
 		'tempo'           => 'normal',
-		'ease'            => 'lumia',
+		'ease'            => 'smooth',
 		'ease_custom'     => '',
 		'lenis'           => [
 			'enabled' => true,
@@ -152,25 +152,29 @@ return [
 		lm_assert( '-120%' === $bare['words']['end_at'], '20 must become the default -120%' );
 		lm_assert( '-35.5%' === $negative['words']['end_at'], '-35.5% must be kept' );
 	},
-	'tempo accepts fast, normal and slow'           => static function () use ( $lm_defaults ): void {
-		foreach ( [ 'fast', 'normal', 'slow' ] as $tempo ) {
+	'tempo accepts the five profiles'               => static function () use ( $lm_defaults ): void {
+		foreach ( [ 'very-fast', 'fast', 'normal', 'slow', 'very-slow' ] as $tempo ) {
 			$result = SettingsSanitizer::sanitize( [ 'tempo' => $tempo ], $lm_defaults() );
 			lm_assert( $tempo === $result['tempo'], "{$tempo} must be kept" );
 		}
 	},
-	'exact tempo is refused at the global level'    => static function () use ( $lm_defaults ): void {
-		$exact = SettingsSanitizer::sanitize( [ 'tempo' => 'exact' ], $lm_defaults() );
+	'custom tempo is refused at the global level'   => static function () use ( $lm_defaults ): void {
+		$exact = SettingsSanitizer::sanitize( [ 'tempo' => 'custom' ], $lm_defaults() );
 		$junk  = SettingsSanitizer::sanitize( [ 'tempo' => 'turbo' ], $lm_defaults() );
-		lm_assert( 'normal' === $exact['tempo'], 'exact must become normal' );
+		lm_assert( 'normal' === $exact['tempo'], 'custom must become normal' );
 		lm_assert( 'normal' === $junk['tempo'], 'an unknown tempo must become normal' );
 	},
 	'ease keywords are kept, others fall back'      => static function () use ( $lm_defaults ): void {
-		foreach ( [ 'lumia', 'smooth', 'snappy', 'bouncy', 'linear' ] as $ease ) {
+		foreach ( [ 'smooth', 'snappy', 'bouncy', 'linear' ] as $ease ) {
 			$result = SettingsSanitizer::sanitize( [ 'ease' => $ease ], $lm_defaults() );
 			lm_assert( $ease === $result['ease'], "{$ease} must be kept" );
 		}
 		$junk = SettingsSanitizer::sanitize( [ 'ease' => 'wobbly' ], $lm_defaults() );
-		lm_assert( 'lumia' === $junk['ease'], 'an unknown ease must become lumia' );
+		lm_assert( 'smooth' === $junk['ease'], 'an unknown ease must become smooth' );
+	},
+	'the legacy lumia ease is read as smooth'       => static function () use ( $lm_defaults ): void {
+		$result = SettingsSanitizer::sanitize( [ 'ease' => 'lumia' ], $lm_defaults() );
+		lm_assert( 'smooth' === $result['ease'], 'lumia must become smooth' );
 	},
 	'custom ease with an invalid curve is refused'  => static function () use ( $lm_defaults ): void {
 		$result = SettingsSanitizer::sanitize(
@@ -180,12 +184,12 @@ return [
 			],
 			$lm_defaults()
 		);
-		lm_assert( 'lumia' === $result['ease'], 'custom with x1 = 2 must become lumia' );
+		lm_assert( 'smooth' === $result['ease'], 'custom with x1 = 2 must become smooth' );
 		lm_assert( '' === $result['ease_custom'], 'the invalid curve must be cleared' );
 	},
 	'custom ease without a curve is refused'        => static function () use ( $lm_defaults ): void {
 		$result = SettingsSanitizer::sanitize( [ 'ease' => 'custom' ], $lm_defaults() );
-		lm_assert( 'lumia' === $result['ease'], 'custom without a curve must become lumia' );
+		lm_assert( 'smooth' === $result['ease'], 'custom without a curve must become smooth' );
 		lm_assert( '' === $result['ease_custom'], 'ease_custom must stay empty' );
 	},
 	'a valid custom curve is kept as typed'         => static function () use ( $lm_defaults ): void {

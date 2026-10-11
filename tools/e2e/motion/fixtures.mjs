@@ -121,7 +121,7 @@ PAGES[ 'lm-e2e-basic' ] = {
 				'Invalid values',
 				{
 					_lmEffect: 'blur-up',
-					_lmTempo: 'exact',
+					_lmTempo: 'custom',
 					_lmDuration: 'abc',
 					_lmStart: 'foo;bar',
 					_lmEase: 'custom',

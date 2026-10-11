@@ -270,7 +270,7 @@ export default async function () {
 	for ( const [ slug, text, css, check ] of [
 		[ 'words', 'Words that light up one after the other', '--lm-effect: words', 'words' ],
 		[ 'lines', 'Lines of text that rise from a mask as the heading replays after a change in the panel', '--lm-effect: lines; --lm-duration: 0.6', 'lines' ],
-		[ 'counter', '1200', '--lm-effect: counter; --lm-tempo: exact; --lm-duration: 1.2', 'counter' ],
+		[ 'counter', '1200', '--lm-effect: counter; --lm-tempo: custom; --lm-duration: 1.2', 'counter' ],
 	] ) {
 		const id = `brxe-lm${ slug.replace( /\W/g, '' ) }`;
 		await canvas.evaluate( ( [ id, text ] ) => {

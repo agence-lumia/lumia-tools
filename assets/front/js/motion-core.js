@@ -213,8 +213,11 @@
    * EASING PROFILES
    * ================================================================ */
 
-  var EASE_KEYS = ["lumia", "smooth", "snappy", "bouncy", "linear", "custom"];
-  var BOUNCE = { smooth: 0, snappy: 0.15, bouncy: 0.3 };
+  var EASE_KEYS = ["smooth", "snappy", "bouncy", "linear", "custom"];
+  var BOUNCE = { smooth: 0, snappy: 0.25, bouncy: 0.45 };
+  // Values saved by earlier trials: "lumia" became "smooth", "exact" became "custom". Read silently.
+  var LEGACY_EASE = { lumia: "smooth" };
+  var LEGACY_TEMPO = { exact: "custom" };
   var BEZIER_RE =
     /^cubic-bezier\(\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*\)$/;
   var profileCache = {};
@@ -257,9 +260,7 @@
 
     var ease;
     var settle = 1;
-    if (key === "lumia") {
-      ease = bezier(0.625, 0.05, 0, 1);
-    } else if (key === "custom") {
+    if (key === "custom") {
       ease = bezier(curve[0], curve[1], curve[2], curve[3]);
     } else if (key === "linear") {
       ease = identity;
@@ -281,7 +282,7 @@
   }
 
   function resolveEase(keyword, custom, family, scrub, fallbackKey) {
-    var fallback = EASE_KEYS.indexOf(fallbackKey) > -1 && fallbackKey !== "custom" ? fallbackKey : "lumia";
+    var fallback = EASE_KEYS.indexOf(fallbackKey) > -1 && fallbackKey !== "custom" ? fallbackKey : "smooth";
     var key;
     var curve = null;
     var usedFallback = false;
@@ -291,6 +292,9 @@
       key = "linear";
     } else {
       key = typeof keyword === "string" ? keyword.trim().toLowerCase() : "";
+      if (has(LEGACY_EASE, key)) {
+        key = LEGACY_EASE[key];
+      }
       if (EASE_KEYS.indexOf(key) === -1) {
         key = fallback;
         usedFallback = true;
@@ -323,11 +327,11 @@
    * TEMPO
    * ================================================================ */
 
-  var TEMPOS = { fast: 0.7, normal: 1, slow: 1.4 };
+  var TEMPOS = { "very-fast": 0.5, fast: 0.75, normal: 1, slow: 1.5, "very-slow": 2 };
 
-  // Multiplier of a tempo keyword; null for "exact" (unscaled); 1 for anything unknown.
+  // Multiplier of a tempo keyword; null for "custom" (unscaled); 1 for anything unknown.
   function tempoFactor(keyword) {
-    if (keyword === "exact") {
+    if (keyword === "custom") {
       return null;
     }
     return has(TEMPOS, keyword) ? TEMPOS[keyword] : 1;
@@ -503,11 +507,15 @@
     var start = pickPosition("start", raw, settings, INTERNAL_START, warnings);
     var end = scrub ? pickPosition("end", raw, settings, INTERNAL_END, warnings) : "top -120%";
 
-    var siteTempo = has(TEMPOS, config.tempo) || config.tempo === "exact" ? config.tempo : "normal";
+    var configTempo = has(LEGACY_TEMPO, config.tempo) ? LEGACY_TEMPO[config.tempo] : config.tempo;
+    var siteTempo = has(TEMPOS, configTempo) || configTempo === "custom" ? configTempo : "normal";
     var typedTempo = text(raw.tempo).toLowerCase();
+    if (has(LEGACY_TEMPO, typedTempo)) {
+      typedTempo = LEGACY_TEMPO[typedTempo];
+    }
     var tempo = siteTempo;
     if (typedTempo !== "") {
-      if (has(TEMPOS, typedTempo) || typedTempo === "exact") {
+      if (has(TEMPOS, typedTempo) || typedTempo === "custom") {
         tempo = typedTempo;
       } else {
         warnings.push("Invalid tempo " + JSON.stringify(typedTempo) + ": site tempo used.");
@@ -526,9 +534,9 @@
       if (factor === null) {
         duration = pickNumber("duration", raw, settings, warnings);
       } else {
-        // The duration typed on a class is for "exact" only; other tempos scale the reference.
+        // The duration typed on a class is for "custom" only; other tempos scale the reference.
         if (text(raw.duration) !== "") {
-          warnings.push("Typed duration ignored: tempo is not exact.");
+          warnings.push("Typed duration ignored: tempo is not custom.");
         }
         duration = pickNumber("duration", {}, settings, warnings) * factor;
         // Unlike the duration, a typed stagger stays in force whatever the tempo: it is a spacing
@@ -537,8 +545,12 @@
       }
     }
 
-    var siteEase = has(BOUNCE, config.ease) || config.ease === "lumia" || config.ease === "linear" ? config.ease : "lumia";
+    var configEase = has(LEGACY_EASE, config.ease) ? LEGACY_EASE[config.ease] : config.ease;
+    var siteEase = has(BOUNCE, configEase) || configEase === "linear" ? configEase : "smooth";
     var typedEase = text(raw.ease).toLowerCase();
+    if (has(LEGACY_EASE, typedEase)) {
+      typedEase = LEGACY_EASE[typedEase];
+    }
     var easeKeyword = typedEase !== "" ? typedEase : config.ease === "custom" ? "custom" : siteEase;
     var custom = text(raw["ease-custom"]) || text(config.easeCustom);
     var curve = resolveEase(easeKeyword, custom, family, scrub, siteEase);

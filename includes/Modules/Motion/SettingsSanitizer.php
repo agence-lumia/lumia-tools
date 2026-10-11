@@ -61,13 +61,15 @@ final class SettingsSanitizer {
 			$effects[ $slug ] = $sanitized;
 		}
 
-		$ease        = self::keyword( $input['ease'] ?? null, Effects::EASES, 'lumia', (string) ( $defaults['ease'] ?? 'lumia' ) );
+		// The "lumia" curve of the first trials became "smooth".
+		$ease_input  = 'lumia' === ( $input['ease'] ?? null ) ? 'smooth' : ( $input['ease'] ?? null );
+		$ease        = self::keyword( $ease_input, Effects::EASES, 'smooth', (string) ( $defaults['ease'] ?? 'smooth' ) );
 		$ease_custom = self::sanitize_curve( $input['ease_custom'] ?? '' );
 		if ( 'custom' === $ease && '' === $ease_custom ) {
-			$ease = 'lumia';
+			$ease = 'smooth';
 		}
 
-		// The global tempo is one of the three profiles: an exact duration only makes sense per element.
+		// The global tempo is one of the five profiles: a custom duration only makes sense per element.
 		$tempo_default = (string) ( $defaults['tempo'] ?? 'normal' );
 
 		return [

@@ -257,10 +257,12 @@ class Controls {
 				'options'     => self::options(
 					Effects::TEMPO_KEYWORDS,
 					[
-						'fast'   => __( 'Fast', 'lumia-tools' ),
-						'normal' => __( 'Normal', 'lumia-tools' ),
-						'slow'   => __( 'Slow', 'lumia-tools' ),
-						'exact'  => __( 'Exact duration', 'lumia-tools' ),
+						'very-fast' => __( 'Very fast', 'lumia-tools' ),
+						'fast'      => __( 'Fast', 'lumia-tools' ),
+						'normal'    => __( 'Normal', 'lumia-tools' ),
+						'slow'      => __( 'Slow', 'lumia-tools' ),
+						'very-slow' => __( 'Very slow', 'lumia-tools' ),
+						'custom'    => _x( 'Custom', 'tempo', 'lumia-tools' ),
 					]
 				),
 				'placeholder' => __( 'Default', 'lumia-tools' ),
@@ -274,7 +276,7 @@ class Controls {
 				'type'     => 'number',
 				'min'      => 0,
 				'step'     => 0.05,
-				'required' => [ '_lmTempo', '=', 'exact' ],
+				'required' => [ '_lmTempo', '=', 'custom' ],
 			]
 		);
 
@@ -306,7 +308,6 @@ class Controls {
 				'options'     => self::options(
 					Effects::EASES,
 					[
-						'lumia'  => __( 'Lümia', 'lumia-tools' ),
 						'smooth' => __( 'Smooth', 'lumia-tools' ),
 						'snappy' => __( 'Snappy', 'lumia-tools' ),
 						'bouncy' => __( 'Bouncy', 'lumia-tools' ),

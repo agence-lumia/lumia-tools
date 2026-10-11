@@ -83,7 +83,7 @@ async function desktop() {
 	assert( pre[ 0 ].signature === pre[ 2 ].signature, '1440: two presets with the same settings have different signatures' );
 
 	const fb = pre[ 3 ];
-	assert( near( fb.options.duration, 0.455 ), `fast/bouncy: duration=${ fb.options.duration } (expected 0.455)` );
+	assert( near( fb.options.duration, 0.4875 ), `fast/bouncy: duration=${ fb.options.duration } (expected 0.4875)` );
 	assert( fb.options.easeKey === 'bouncy', `fast/bouncy: easeKey=${ fb.options.easeKey }` );
 	for ( const i of [ 0, 1, 2 ] ) {
 		assert( fb.signature !== pre[ i ].signature, `fast/bouncy: same signature as ${ PRESETS[ i ] }` );
@@ -164,7 +164,7 @@ async function desktop() {
 	assert( inval && inval.effect === 'blur-up', `invalid: no blur-up item (${ JSON.stringify( inval ) })` );
 	assert( near( inval.options.duration, 0.8 ), `invalid: duration=${ inval.options.duration } (expected 0.8)` );
 	assert( inval.options.start === 'top 98%', `invalid: start=${ inval.options.start } (expected top 98%)` );
-	assert( inval.options.easeKey === 'lumia', `invalid: easeKey=${ inval.options.easeKey } (expected lumia)` );
+	assert( inval.options.easeKey === 'smooth', `invalid: easeKey=${ inval.options.easeKey } (expected smooth)` );
 	await reveal( page, 'brxe-binval' );
 	assert( ( await look( page, 'brxe-binval' ) ).opacity === '1', 'invalid: not visible after scrolling' );
 

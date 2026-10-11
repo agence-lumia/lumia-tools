@@ -5555,20 +5555,20 @@ msgstr "La façon dont les animations bougent par défaut. Chaque élément peut
 msgid "Tempo"
 msgstr "Rythme"
 
-msgid "Fast shortens durations and staggers by 30%, slow lengthens them by 40%. Delays are never scaled."
-msgstr "Rapide raccourcit les durées et les décalages de 30 %, lent les allonge de 40 %. Les délais ne sont jamais modifiés."
+msgid "Durations and staggers are multiplied by 0.5 (very fast), 0.75 (fast), 1 (normal), 1.5 (slow) or 2 (very slow). Delays are never scaled."
+msgstr "Les durées et les décalages sont multipliés par 0,5 (très rapide), 0,75 (rapide), 1 (normal), 1,5 (lent) ou 2 (très lent). Les délais ne sont jamais modifiés."
 
 msgid "Easing curve"
 msgstr "Courbe d'animation"
 
-msgid "The Lümia curve starts held back and lands very softly. Smooth, snappy and bouncy are springs with increasing overshoot."
-msgstr "La courbe Lümia démarre retenue et arrive très doucement. Douce, vive et rebond sont des ressorts au dépassement croissant."
+msgid "Smooth, snappy and bouncy are springs: smooth settles without overshoot, snappy overshoots slightly, bouncy overshoots more and rebounds. Linear keeps a constant speed."
+msgstr "Douce, vive et rebond sont des ressorts : douce se pose sans dépassement, vive dépasse légèrement, rebond dépasse davantage et rebondit. Linéaire garde une vitesse constante."
 
 msgid "Custom curve"
 msgstr "Courbe personnalisée"
 
-msgid "Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the Lümia curve."
-msgstr "Utilisée quand la courbe d'animation est réglée sur Personnalisée. Quatre nombres, par exemple cubic-bezier(0.2, 0.8, 0.2, 1). Le premier et le troisième doivent être compris entre 0 et 1 ; une courbe invalide revient à la courbe Lümia."
+msgid "Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the smooth curve."
+msgstr "Utilisée quand la courbe d'animation est réglée sur Personnalisée. Quatre nombres, par exemple cubic-bezier(0.2, 0.8, 0.2, 1). Le premier et le troisième doivent être compris entre 0 et 1 ; une courbe invalide revient à la courbe douce."
 
 msgid "Reference values"
 msgstr "Valeurs de référence"
@@ -5696,8 +5696,15 @@ msgstr "Position de début (ScrollTrigger)"
 msgid "End position (ScrollTrigger)"
 msgstr "Position de fin (ScrollTrigger)"
 
-msgid "Exact duration"
-msgstr "Durée exacte"
+msgid "Very fast"
+msgstr "Très rapide"
+
+msgid "Very slow"
+msgstr "Très lent"
+
+msgctxt "tempo"
+msgid "Custom"
+msgstr "Personnalisé"
 
 msgid "Duration (seconds)"
 msgstr "Durée (secondes)"

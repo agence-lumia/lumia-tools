@@ -1,6 +1,6 @@
 // The Motion panel in the Bricks builder: the group is there on a selected element, a
 // control writes its --lm-* variable on the canvas element in real time, and the
-// "Exact duration" tempo reveals the duration field.
+// "Custom" tempo reveals the duration field.
 import { newPage, login, pageUrl, assert } from '../lib.mjs';
 
 export default async function () {
@@ -42,10 +42,10 @@ export default async function () {
 		throw new Error( `--lm-start-at is "${ await read() }" ${ Date.now() - t0 } ms after typing 40, expected "40%"` );
 	} );
 
-	// "Exact duration" reveals the duration field, which is hidden before.
-	assert( ! ( await page.locator( '[data-controlkey="_lmDuration"]' ).first().isVisible() ), 'duration field visible before choosing Exact duration' );
+	// "Custom" reveals the duration field, which is hidden before.
+	assert( ! ( await page.locator( '[data-controlkey="_lmDuration"]' ).first().isVisible() ), 'duration field visible before choosing Custom' );
 	await page.locator( '[data-controlkey="_lmTempo"] .input' ).first().click();
-	await page.locator( '[data-controlkey="_lmTempo"]' ).first().getByText( 'Exact duration', { exact: true } ).click();
+	await page.locator( '[data-controlkey="_lmTempo"]' ).first().getByText( 'Custom', { exact: true } ).click();
 	await page.locator( '[data-controlkey="_lmDuration"] input' ).first().waitFor( { state: 'visible', timeout: 5000 } );
 
 	assert( page.errors.length === 0, `page errors: ${ page.errors.join( ' | ' ) }` );

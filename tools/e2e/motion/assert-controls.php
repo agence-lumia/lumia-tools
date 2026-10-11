@@ -163,7 +163,7 @@ $lm_expect   = array(
 	array( '_lmEndAt', 'unit', '%' ),
 	array( '_lmStart', 'placeholder', 'top 90%' ),
 	array( '_lmEaseCustom', 'placeholder', 'cubic-bezier(0.2, 0.8, 0.2, 1)' ),
-	array( '_lmDuration', 'required', array( '_lmTempo', '=', 'exact' ) ),
+	array( '_lmDuration', 'required', array( '_lmTempo', '=', 'custom' ) ),
 	array( '_lmEaseCustom', 'required', array( '_lmEase', '=', 'custom' ) ),
 	array( '_lmUnderlineColor', 'type', 'color' ),
 	array( '_lmHelp', 'type', 'info' ),

@@ -36,7 +36,7 @@ endif;
 $effects         = is_array( $module_settings['effects'] ?? null ) ? $module_settings['effects'] : [];
 $lenis           = is_array( $module_settings['lenis'] ?? null ) ? $module_settings['lenis'] : [];
 $tempo           = (string) ( $module_settings['tempo'] ?? 'normal' );
-$ease            = (string) ( $module_settings['ease'] ?? 'lumia' );
+$ease            = (string) ( $module_settings['ease'] ?? 'smooth' );
 $ease_custom     = (string) ( $module_settings['ease_custom'] ?? '' );
 $builder_preview = (string) ( $module_settings['builder_preview'] ?? 'replay' );
 
@@ -48,13 +48,14 @@ try {
 }
 
 $tempo_labels = [
-	'fast'   => __( 'Fast', 'lumia-tools' ),
-	'normal' => __( 'Normal', 'lumia-tools' ),
-	'slow'   => __( 'Slow', 'lumia-tools' ),
+	'very-fast' => __( 'Very fast', 'lumia-tools' ),
+	'fast'      => __( 'Fast', 'lumia-tools' ),
+	'normal'    => __( 'Normal', 'lumia-tools' ),
+	'slow'      => __( 'Slow', 'lumia-tools' ),
+	'very-slow' => __( 'Very slow', 'lumia-tools' ),
 ];
 
 $ease_labels = [
-	'lumia'  => __( 'Lümia', 'lumia-tools' ),
 	'smooth' => __( 'Smooth', 'lumia-tools' ),
 	'snappy' => __( 'Snappy', 'lumia-tools' ),
 	'bouncy' => __( 'Bouncy', 'lumia-tools' ),
@@ -141,7 +142,7 @@ $number_ranges = [
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_motion_tempo" class="lumia-option__label"><?php esc_html_e( 'Tempo', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Fast shortens durations and staggers by 30%, slow lengthens them by 40%. Delays are never scaled.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Durations and staggers are multiplied by 0.5 (very fast), 0.75 (fast), 1 (normal), 1.5 (slow) or 2 (very slow). Delays are never scaled.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<select id="lumia_motion_tempo" name="lumia_module_settings[tempo]" class="lumia-select">
@@ -155,7 +156,7 @@ $number_ranges = [
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_motion_ease" class="lumia-option__label"><?php esc_html_e( 'Easing curve', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php esc_html_e( 'The Lümia curve starts held back and lands very softly. Smooth, snappy and bouncy are springs with increasing overshoot.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Smooth, snappy and bouncy are springs: smooth settles without overshoot, snappy overshoots slightly, bouncy overshoots more and rebounds. Linear keeps a constant speed.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<select id="lumia_motion_ease" name="lumia_module_settings[ease]" class="lumia-select">
@@ -169,7 +170,7 @@ $number_ranges = [
 			<div class="lumia-option">
 				<div class="lumia-option__content">
 					<label for="lumia_motion_ease_custom" class="lumia-option__label"><?php esc_html_e( 'Custom curve', 'lumia-tools' ); ?></label>
-					<p class="lumia-option__desc"><?php esc_html_e( 'Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the Lümia curve.', 'lumia-tools' ); ?></p>
+					<p class="lumia-option__desc"><?php esc_html_e( 'Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the smooth curve.', 'lumia-tools' ); ?></p>
 				</div>
 				<div class="lumia-option__control">
 					<input

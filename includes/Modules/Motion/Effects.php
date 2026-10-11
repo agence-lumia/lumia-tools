@@ -18,16 +18,18 @@ final class Effects {
 
 	/** Tempo keywords that scale durations and delays, with their multiplier. */
 	const TEMPOS = [
-		'fast'   => 0.7,
-		'normal' => 1.0,
-		'slow'   => 1.4,
+		'very-fast' => 0.5,
+		'fast'      => 0.75,
+		'normal'    => 1.0,
+		'slow'      => 1.5,
+		'very-slow' => 2.0,
 	];
 
-	/** Every accepted tempo keyword: the three profiles plus the unscaled one. */
-	const TEMPO_KEYWORDS = [ 'fast', 'normal', 'slow', 'exact' ];
+	/** Every accepted tempo keyword: the five profiles plus the unscaled one (a typed duration). */
+	const TEMPO_KEYWORDS = [ 'very-fast', 'fast', 'normal', 'slow', 'very-slow', 'custom' ];
 
 	/** Easing keywords. */
-	const EASES = [ 'lumia', 'smooth', 'snappy', 'bouncy', 'linear', 'custom' ];
+	const EASES = [ 'smooth', 'snappy', 'bouncy', 'linear', 'custom' ];
 
 	/** Viewport edges accepted for the start and end markers. */
 	const EDGES = [ 'top', 'center', 'bottom' ];

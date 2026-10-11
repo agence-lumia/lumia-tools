@@ -35,8 +35,8 @@ Positions accept ScrollTrigger syntax only (`top 80%`, `center center`, `bottom-
 
 Two independent settings, so an element can change its timing or feel without changing its effect:
 
-- **Tempo:** `fast` ×0.7, `normal` ×1, `slow` ×1.4 on the duration and the stagger, never on the delay. `exact` uses `--lm-duration` (a typed duration is ignored otherwise; `?lmDebug` says so).
-- **Curve:** `lumia` = `cubic-bezier(0.625, 0.05, 0, 1)` (default), `smooth`, `snappy`, `bouncy` (SwiftUI-style springs, bounce 0 / 0.15 / 0.3, computed in `motion-core.js`, no dependency), `linear`, `custom` (`--lm-ease-custom`, a `cubic-bezier()` with x1 and x2 in [0, 1]; invalid → `lumia`).
+- **Tempo:** `very-fast` ×0.5, `fast` ×0.75, `normal` ×1, `slow` ×1.5, `very-slow` ×2 on the duration and the stagger, never on the delay. `custom` uses `--lm-duration` (a typed duration is ignored otherwise; `?lmDebug` says so). The value `exact` of the first trials is still read as `custom`.
+- **Curve:** `smooth` (default), `snappy`, `bouncy` (SwiftUI-style springs, bounce 0 / 0.25 / 0.45, computed in `motion-core.js`, no dependency), `linear`, `custom` (`--lm-ease-custom`, a `cubic-bezier()` with x1 and x2 in [0, 1]; invalid → `smooth`). The `lumia` curve of the first trials is still read as `smooth`.
 - Opacity and blur always use a no-overshoot variant of the curve; the counter never overshoots whatever the curve; scrub effects (`words`, `letters`) ignore tempo and curve.
 
 ## Decisions and pitfalls
