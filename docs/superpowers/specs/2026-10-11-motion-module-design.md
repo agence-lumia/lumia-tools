@@ -2,6 +2,8 @@
 
 Date : 11/10/2026 · Module : `Motion` (nouveau) · Dépôts : `agence-lumia/lumia-tools` (plugin), `sk-motion` (librairie remplacée, à archiver)
 
+**Itération 2** : les décisions de la section « Itération 2 » (fin du document) remplacent celles des sections 1 à 5 quand elles diffèrent (noms des effets, courbes, rythme, panneau, compteur, chargement).
+
 Sous-projet 1 sur 3 : **le socle**. Les effets avancés (pin, parallaxe, défilement horizontal…) et les transitions de page (View Transitions natives) auront chacun leur spec ; ils s'appuieront sur le moteur et le panneau décrits ici.
 
 ## Objectif
@@ -292,3 +294,144 @@ Le dépôt n'a pas de tests automatisés du plugin ; s'y ajoutent :
 - Transitions de page : sous-projet 3.
 - Éditeur libre de timelines (zone grise de la licence GSAP).
 - Un sélecteur d'effets en cartes dessiné dans la fenêtre du builder (API non documentée) ; la vignette dans la liste native suffit.
+
+---
+
+## Itération 2 : retours des essais en local (11/10/2026)
+
+Décisions prises après les essais sur la copie locale du lab (PR #26 ouverte, non fusionnée, module jamais déployé). **Elles remplacent** les passages correspondants des sections 1 à 5 ; en cas de contradiction, cette section fait foi. Comme aucun site n'utilise encore les noms `lm-*` de la v1, ils sont renommés **sans alias** : seuls les alias `sk-*` existent, et ils pointent vers les nouveaux noms.
+
+### A. Mesures de performance
+
+Lighthouse mobile, copie locale, gzip actif :
+
+| Page | Ancien snippet | Module v1 |
+|---|---|---|
+| Accueil | 95 / LCP 2,58 s | 89 / 3,45 s |
+| Contact | 99 / 1,97 s | 94 / 2,96 s |
+| Mentions légales (soulignement seul) | 97 | 95 |
+
+Ordinateur : 100 partout. Poids : environ 63 Ko gzip sur une page animée (ancien : 58 Ko sur toutes les pages, depuis un CDN), environ 7 Ko (Lenis) sur une page sans animation.
+
+Cause de l'écart : le snippet ne pré-masquait rien (le contenu apparaissait, puis le script le masquait et l'animait : un flash), alors que le module pré-masque en CSS. Le LCP attend donc les scripts. L'attente des polices (1,5 s) n'y est pour rien (vérifié en la retirant).
+
+**Critère de réussite ajouté** : LCP mobile de l'accueil et de la page contact au plus 0,2 s au-dessus de l'ancien snippet, mesuré dans les mêmes conditions.
+
+### B. Animations au chargement (LCP)
+
+Les éléments à effet d'entrée visibles dès l'arrivée sur la page sont animés **en CSS pur, dès la première image**, sans attendre le moteur : ils ne sont jamais à `opacity: 0` au moment où Chrome choisit le LCP, et il n'y a pas de flash.
+
+- **Détection automatique** par `Marker` au rendu : éléments à effet d'entrée situés dans le gabarit d'en-tête ou dans la **première section** du contenu. Ils reçoivent `data-lm-load` au lieu d'être pré-masqués.
+- **Réglage du panneau** « Au chargement » (`--lm-load`, avec clé `css` pour vivre sur une classe) : `auto` (défaut, la détection ci-dessus), `always` (animé au chargement où qu'il soit), `never` (toujours le chemin normal, au défilement). PHP lit la valeur de base de l'élément puis de ses classes ; les valeurs par breakpoint de ce réglage sont ignorées.
+- **Paramètres résolus côté serveur** : pour ces éléments, PHP calcule les réglages du breakpoint de base (élément > classes > valeurs globales > défauts) et les écrit en `style` inline : `--lm-load-duration` (rythme appliqué), `--lm-load-delay` (délai + rang dans le lot × décalage, le rang comptant les éléments de même signature dans la zone), `--lm-load-ease`, et les paramètres de l'effet (distance, flou, échelle). Limite assumée : les valeurs par breakpoint ne s'appliquent pas à l'animation de chargement.
+- **Courbes en CSS** : `motion.css` déclare `--lm-curve-smooth`, `--lm-curve-snappy`, `--lm-curve-bouncy` sous forme de `linear()`, **générées** depuis `motion-core.js` par un script de `tools/motion/` ; un test vérifie que les valeurs du fichier correspondent au calcul du moteur. Courbe personnalisée : le `cubic-bezier()` tel quel. Navigateur sans `linear()` : repli sur une courbe de Bézier proche (déclaration précédente).
+- Une `@keyframes` par effet d'entrée, `animation-fill-mode: both`. Mêmes garde-fous que le moteur : l'opacité et le flou ne dépassent jamais (le rebond ne s'applique qu'à la translation et à l'échelle, qui ont leur propre courbe).
+- Le moteur ignore les éléments `data-lm-load` (aucun ScrollTrigger). `prefers-reduced-motion: reduce` : aucune animation. Dans le builder : état final, le bouton « Rejouer » passe par le moteur.
+- Limite documentée : dans une première section très haute, les éléments du bas s'animent hors de l'écran. Solution : « Au chargement : jamais » sur ces éléments.
+- Aucune étape manuelle, aucune requête supplémentaire, aucun fichier généré par site.
+
+### C. Effets : noms et classes
+
+| Classe | Valeur `--lm-effect` | Anglais | Français | Ancienne classe (alias) | Réglages propres |
+|---|---|---|---|---|---|
+| `lm-fade` | `fade` | Fade | Fondu | `sk-fade` | — |
+| `lm-slide-up` | `slide-up` | Slide up | Montée | `sk-reveal` | distance |
+| `lm-blur` | `blur` | Blur | Flou | — (nouveau) | flou |
+| `lm-blur-up` | `blur-up` | Blur up | Flou montant | `sk-entry-blur` | distance, flou |
+| `lm-zoom` | `zoom` | Zoom | Zoom | `sk-scale-in` | échelle |
+| `lm-zoom-blur` | `zoom-blur` | Zoom blur | Zoom flou | `sk-scale-in-blur` | échelle, flou |
+| `lm-lines` | `lines` | Lines | Lignes | `sk-text-lines` | distance (%) |
+| `lm-words` | `words` | Words on scroll | Mots au défilement | `sk-text-highlight-words` | opacité de départ |
+| `lm-letters` | `letters` | Letters on scroll | Lettres au défilement | `sk-text-highlight-chars` | opacité de départ |
+| `lm-counter` | `counter` | Counter | Compteur | `sk-counter` | valeur de départ, largeur |
+| `lm-underline` | `underline` | Hover underline | Soulignement au survol | `sk-hover-underline` | épaisseur, écart, couleur |
+
+**Flou** (nouveau) : opacité + flou, sans translation ni échelle. Valeurs de départ : flou 12 px, 0,8 s, décalage 0,08 s (comme Flou montant), à ajuster sur le lab.
+
+Copie locale du lab : réinitialisée depuis `db.sql` avant les essais, ses classes `lm-*` de la v1 n'ont pas à être migrées.
+
+### D. Courbes
+
+La courbe Lümia (`cubic-bezier(0.625, 0.05, 0, 1)`) **quitte le module** : elle convient aux interactions d'interface (boutons, popups, menus déroulants), pas aux apparitions au défilement. Elle pourra revenir dans un sous-projet « interactions ». Un site qui la veut sur ses animations la saisit en courbe personnalisée.
+
+| Clé | Anglais | Français | Nature |
+|---|---|---|---|
+| `smooth` (défaut) | Smooth | Douce | ressort, rebond 0 |
+| `snappy` | Snappy | Vive | ressort, rebond 0,25 |
+| `bouncy` | Bouncy | Rebond | ressort, rebond 0,45 |
+| `linear` | Linear | Linéaire | vitesse constante |
+| `custom` | Custom | Personnalisée | `cubic-bezier(…)` lu dans `--lm-ease-custom` |
+
+Les rebonds de la v1 (0,15 / 0,3) étaient trop proches de Douce pour se distinguer à l'œil. 0,25 et 0,45 sont les valeurs de départ, à figer sur la page de démonstration. Valeur `lumia` rencontrée (réglage admin enregistré pendant les essais) : traitée comme `smooth`.
+
+### E. Rythme
+
+| Clé | Anglais | Français | Multiplicateur |
+|---|---|---|---|
+| `very-fast` | Very fast | Très rapide | ×0,5 |
+| `fast` | Fast | Rapide | ×0,75 |
+| `normal` (défaut) | Normal | Normal | ×1 |
+| `slow` | Slow | Lent | ×1,5 |
+| `very-slow` | Very slow | Très lent | ×2 |
+| `custom` | Custom | Personnalisé | durée exacte en secondes (`--lm-duration`) |
+
+La clé `exact` de la v1 devient `custom` (même règle : durée non multipliée, décalage toujours multiplié). Valeur `exact` rencontrée : traitée comme `custom`.
+
+### F. Panneau Bricks
+
+- **Sous-sections** (séparateurs) : Effet, Déclenchement, Durée, Sensation, Paramètres de l'effet, Soulignement (visible seulement pour cet effet, quand l'effet est posé sur l'élément ; même limite `required` qu'en v1 quand l'effet vient d'une classe).
+- **Une phrase et l'unité sous chaque champ** (`description` des contrôles), par exemple :
+  - Décalage : « temps entre deux éléments qui entrent ensemble, en s » ;
+  - Échelle : « taille de départ, de 0 à 1 : 0,9 = démarre à 90 % » ;
+  - Distance : « déplacement de départ, en px » ;
+  - Début : « l'animation part quand ce repère de l'élément atteint cette hauteur de l'écran (0 % = haut, 100 % = bas) » ;
+  - Au chargement : « auto = animé dès l'ouverture s'il est dans l'en-tête ou la première section ».
+- **Valeur héritée en grisé** dans les champs vides : `motion-builder.js` lit dans le canvas la valeur effective (classe, sinon valeur globale de l'effet) et la pose en `placeholder` à l'ouverture du panneau ; à défaut, le placeholder statique est la valeur globale de l'effet par défaut.
+- **Bouton « Rejouer »** (dans le contrôle `info` en tête du groupe) : rejoue l'animation de l'élément sélectionné dans le canvas, via `lumiaMotion.replay(id)` ajouté à l'API publique.
+- **Interrupteur « Afficher les repères »** au même endroit : affiche les marqueurs ScrollTrigger dans le canvas. Préférence du navigateur (`localStorage`), jamais enregistrée dans le contenu ni visible sur le front. Sur le front, `?lmDebug` reste.
+- **Icône du groupe** dans le rail de gauche : icône `sparkles` de Lucide posée en CSS (`motion-builder.css`) par-dessus l'icône déclarée ; icône Bricks `star` déclarée en repli si la surcharge ne tient pas.
+
+### G. Soulignement
+
+Épaisseur par défaut : `round(max(1px, 0.06em), 1px)`, soit 1 px de 14 à 18 px de texte et environ 2 px sur un titre de 32 px, toujours un nombre entier de pixels (pas de trait flou). Navigateur sans `round()` (Safari < 15.4, Chrome < 125, Firefox < 118) : 1px (déclaration précédente). Le réglage d'épaisseur reste disponible par élément et par classe. Les sites qui posent `--sk-hover-underline-thickness` gardent leur valeur.
+
+### H. Compteur : NumberFlow embarqué
+
+Une seule variante, le défilement de chiffres de NumberFlow, **embarqué tel quel** plutôt que recodé (un prototype maison laissait des résidus de chiffres voisins et un décalage en fin d'animation).
+
+- **Fichiers** : `number-flow` 0.6.2 (MIT, `lite.mjs`, `index.mjs`, `plugins.mjs`, `csp.mjs`, `group.mjs`, `ssr-*.mjs`) et `esm-env` 1.2.2 (MIT), copiés sans modification dans `assets/front/js/vendor/number-flow/` et `vendor/esm-env/`, avec licences et SHA-256 dans `docs/modules/motion.md`. Environ 7 Ko gzip.
+- **Chargement** : modules natifs de WordPress (Script Modules, carte d'import), **seulement** sur les pages qui ont un compteur :
+  - `esm-env/browser` → `true.js`, `esm-env/development` → `false.js`, `esm-env/node` → `false.js`, `esm-env` → `index.js` ;
+  - `number-flow/lite` → `lite.mjs` ;
+  - `motion-counter.mjs` (adaptateur du module) en dépend et s'enregistre auprès du moteur.
+- **Adaptateur** : n'utilise que l'API publique de la version lite (`define('lm-number-flow', NumberFlowLite)`, `formatToData`, `canAnimate`, propriétés `data` et `animated`).
+  - Format lu par `parseCounter` (préfixe, suffixe, séparateurs, décimales) et rendu **exactement** : formateur maison passé à `formatToData`, séparateurs tels qu'écrits, aucun regroupement ajouté.
+  - Le compteur remplace le texte par `<lm-number-flow>` et **le garde** après l'animation (revenir au texte décale le nombre de plusieurs pixels).
+  - Durée : durée de référence de l'effet × rythme, courbe du module passée en `linear()` (Vive et Rebond deviennent Douce : un compteur ne dépasse pas sa valeur).
+- **Largeur** (réglage `--lm-counter-width`) :
+  - `auto` (défaut) : le nombre s'élargit à mesure que les chiffres apparaissent ;
+  - `fixed` : tous les chiffres du nombre final existent dès le départ (« 0 000 » → « 1 250 ») et les chiffres ont tous la même largeur (`tabular-nums`). La largeur ne change à aucune image (mesuré : constante sur 90 images pour trois compteurs). Le rendu final est un peu plus large qu'en chiffres proportionnels.
+- **Aucun décalage de mise en page** : NumberFlow ajoute des marges pour son masque en fondu, qui agrandissaient la ligne (61,6 → 84 px). Règle de `motion.css`, vérifiée stable sur toute l'animation :
+
+  ```css
+  lm-number-flow {
+  	line-height: inherit;
+  	vertical-align: top;
+  	margin-block: calc(-2 * round(nearest, calc(var(--number-flow-mask-height, .25em) / 2), 1px));
+  }
+  ```
+
+- **Accessibilité** : NumberFlow expose la valeur par `ElementInternals` (`ariaLabel`). **Référencement** : le HTML servi contient le nombre en texte ; à vérifier pendant l'implémentation que le rendu de Google lit la valeur dans le shadow DOM, sinon garder une copie du texte masquée visuellement.
+- **Replis** : `canAnimate` faux, `prefers-reduced-motion`, ou module non chargé → le texte d'origine reste, à sa valeur finale.
+
+### I. Page de démonstration
+
+Le générateur de la page `motion-demo` (courbes, rythmes, décalage, effets, textes, compteurs, soulignement) entre dans `tools/e2e/motion/` : il produit une page Bricks à partir des effets et réglages courants, appliquée par `setup.php` comme les autres jeux d'essai. Il sert à figer les rebonds et les valeurs de référence avec l'utilisateur, sur la copie locale puis sur le lab.
+
+### J. Tests ajoutés
+
+- Courbes CSS générées identiques au calcul de `motion-core.js` (test unitaire).
+- Chargement : un élément à effet d'entrée dans la première section n'est jamais sous `opacity: 0.5` sur la première image capturée ; `never` le fait passer au défilement ; `always` l'anime hors de la première section.
+- Lighthouse mobile accueil et contact (critère A), avant fusion.
+- Compteur : largeur visuelle constante en `fixed`, hauteur de ligne constante dans les deux modes, valeur finale et séparateurs identiques au HTML, aucun script de compteur sur une page sans compteur.
+- Alias : chaque classe `sk-*` produit l'effet de sa nouvelle classe ; `migrate --apply` renomme vers les nouveaux noms.
