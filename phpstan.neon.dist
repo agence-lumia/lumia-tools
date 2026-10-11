@@ -12,5 +12,7 @@ parameters:
         - includes/Modules/*/settings-template.php
     bootstrapFiles:
         - tools/phpstan-bootstrap.php
+    stubFiles:
+        - tools/phpstan-bricks.stub
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true

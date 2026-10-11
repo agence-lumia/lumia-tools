@@ -5641,3 +5641,96 @@ msgstr "Anciens noms de classes"
 
 msgid "Keeps the classes of the former snippet working until the content is moved to the lm- classes. Turn it off once the migration is done."
 msgstr "Garde les classes de l'ancien snippet fonctionnelles jusqu'à ce que le contenu passe aux classes lm-. À désactiver une fois la migration terminée."
+
+msgid "Effect"
+msgstr "Effet"
+
+msgid "Not set"
+msgstr "Non défini"
+
+msgid "Start: element edge"
+msgstr "Début : repère de l'élément"
+
+msgid "Start at (%)"
+msgstr "Début à (%)"
+
+msgid "End: element edge"
+msgstr "Fin : repère de l'élément"
+
+msgid "End at (%)"
+msgstr "Fin à (%)"
+
+msgid "Advanced"
+msgstr "Avancé"
+
+msgid "Start position (ScrollTrigger)"
+msgstr "Position de début (ScrollTrigger)"
+
+msgid "End position (ScrollTrigger)"
+msgstr "Position de fin (ScrollTrigger)"
+
+msgid "Exact duration"
+msgstr "Durée exacte"
+
+msgid "Duration (seconds)"
+msgstr "Durée (secondes)"
+
+msgid "Delay (seconds)"
+msgstr "Délai (secondes)"
+
+msgid "Stagger (seconds)"
+msgstr "Décalage (secondes)"
+
+msgid "Easing"
+msgstr "Courbe"
+
+msgid "Custom easing"
+msgstr "Courbe personnalisée"
+
+msgid "Effect settings"
+msgstr "Paramètres de l'effet"
+
+msgid "Distance"
+msgstr "Distance"
+
+msgid "Pixels, or percent of the line height for the line-by-line text effect."
+msgstr "Pixels, ou pourcentage de la hauteur de ligne pour l'effet de texte ligne par ligne."
+
+msgid "Blur (pixels)"
+msgstr "Flou (pixels)"
+
+msgid "Start scale"
+msgstr "Échelle de départ"
+
+msgid "Start opacity"
+msgstr "Opacité de départ"
+
+msgid "Counter start value"
+msgstr "Valeur de départ du compteur"
+
+msgid "Underline thickness"
+msgstr "Épaisseur du soulignement"
+
+msgid "Underline gap"
+msgstr "Écart du soulignement"
+
+msgid "Underline color"
+msgstr "Couleur du soulignement"
+
+msgid "One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP)."
+msgstr "Un seul effet par élément : avec deux classes Motion, la première l'emporte. Une valeur posée pour l'ordinateur vaut aussi pour mobile, sauf si vous réglez mobile. Sur le titre principal visible dès l'arrivée, préférez un effet de texte (LCP)."
+
+msgid "Text by lines"
+msgstr "Texte par lignes"
+
+msgid "Text by words"
+msgstr "Texte par mots"
+
+msgid "Text by characters"
+msgstr "Texte par caractères"
+
+msgid "Underline"
+msgstr "Soulignement"
+
+msgid "Off"
+msgstr "Désactivé"

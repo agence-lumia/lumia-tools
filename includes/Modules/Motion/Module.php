@@ -23,6 +23,8 @@ class Module extends AbstractModule {
 		if ( ! self::is_bricks_active() ) {
 			return;
 		}
+
+		( new Controls() )->hook();
 	}
 
 	/**

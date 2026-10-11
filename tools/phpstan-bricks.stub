@@ -1,0 +1,55 @@
+<?php
+/**
+ * PHPStan stubs for the Bricks theme, which is licensed and not part of the repository.
+ * They declare only what the Motion module calls, with the signatures read in Bricks 2.4.2.
+ * Tooling file only: never loaded by the plugin (listed under `stubFiles` in phpstan.neon;
+ * the `.stub` extension also keeps it out of PHPCS).
+ */
+
+namespace {
+	function bricks_is_builder(): bool {}
+
+	function bricks_is_builder_main(): bool {}
+
+	function bricks_is_builder_iframe(): bool {}
+}
+
+namespace Bricks {
+	/**
+	 * Registry of the Bricks elements.
+	 */
+	class Elements {
+		/** @var array<string, array<string, mixed>> Registered elements, by name. */
+		public static $elements = [];
+
+		public static function register_element( string $file, string $element_name = '', string $element_class_name = '' ): void {}
+	}
+
+	class Helpers {
+		/**
+		 * @param array<int, array<string, mixed>> $global_classes Every global class.
+		 * @return array{response: mixed, timestamp: int, user_id: int}
+		 */
+		public static function save_global_classes_in_db( $global_classes ) {}
+
+		/**
+		 * @param array<string, mixed> $element Element data.
+		 * @param string               $key     Key to return, or an empty string for the whole element.
+		 * @return mixed False when the element is not global.
+		 */
+		public static function get_global_element( $element = [], $key = '' ) {}
+	}
+
+	class Query {
+		/**
+		 * @param string $element_id Element that is set to loop.
+		 * @param string $query_id   Query to check.
+		 */
+		public static function is_looping( $element_id = '', $query_id = '' ): bool {}
+	}
+
+	class Database {
+		/** @var array<string, mixed> Global data (classes, elements, components...). */
+		public static $global_data = [];
+	}
+}

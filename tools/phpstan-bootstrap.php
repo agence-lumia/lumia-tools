@@ -19,5 +19,12 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 		public static function error( string $message, bool $halt = true ): void {}
 
 		public static function add_command( string $name, object $handler ): void {}
+
+		/**
+		 * @param string               $command Command to run, without the leading `wp`.
+		 * @param array<string, mixed> $options Options of the call.
+		 * @return mixed
+		 */
+		public static function runcommand( string $command, array $options = [] ) {}
 	}
 }

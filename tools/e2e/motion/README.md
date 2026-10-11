@@ -26,6 +26,7 @@ Au premier lancement, `playwright-core` (sans navigateur) est installé dans `.c
 tools/e2e/motion/run.sh setup            # crée ou remplace les pages lm-e2e-* (idempotent)
 tools/e2e/motion/run.sh smoke enter      # scénarios nommés
 tools/e2e/motion/run.sh all              # tous les scénarios
+"$LM_E2E_WP" eval-file /var/www/html/wp-content/plugins/lumia-tools/tools/e2e/motion/assert-controls.php --user=local-admin   # contrôles du panneau Bricks, sans navigateur
 ```
 
 Chaque scénario est `scenarios/<nom>.mjs` et exporte `default async function ()` ; il
