@@ -54,6 +54,27 @@ foreach ( array_unique( $lm_wanted ) as $lm_name ) {
 }
 update_option( 'bricks_global_classes', $lm_classes );
 
+// Posts for the query loops: published when missing, left alone otherwise.
+foreach ( $lm_payload['posts'] ?? array() as $lm_post ) {
+	if ( get_page_by_path( $lm_post['slug'], OBJECT, 'post' ) ) {
+		continue;
+	}
+	$lm_new_id = wp_insert_post(
+		array(
+			'post_type'    => 'post',
+			'post_status'  => 'publish',
+			'post_title'   => $lm_post['title'],
+			'post_name'    => $lm_post['slug'],
+			'post_content' => 'Fixture post for the Motion query loop scenarios.',
+		),
+		true
+	);
+	if ( is_wp_error( $lm_new_id ) ) {
+		WP_CLI::error( $lm_new_id->get_error_message() );
+	}
+	WP_CLI::log( sprintf( '%s #%d', $lm_post['slug'], $lm_new_id ) );
+}
+
 foreach ( $lm_payload['pages'] as $lm_page ) {
 	$lm_elements = array();
 	foreach ( $lm_page['elements'] as $lm_el ) {

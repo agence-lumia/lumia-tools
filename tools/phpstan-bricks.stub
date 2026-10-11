@@ -2,8 +2,9 @@
 /**
  * PHPStan stubs for the Bricks theme, which is licensed and not part of the repository.
  * They declare only what the Motion module calls, with the signatures read in Bricks 2.4.2.
- * Tooling file only: never loaded by the plugin (listed under `stubFiles` in phpstan.neon;
- * the `.stub` extension also keeps it out of PHPCS).
+ * Tooling file only: never loaded by the plugin. It is listed under `scanFiles` in
+ * phpstan.neon.dist (the classes exist nowhere else for the analysis); the `.stub`
+ * extension also keeps it out of PHPCS.
  */
 
 namespace {
@@ -27,6 +28,17 @@ namespace Bricks {
 		public static function register_element( string $file, string $element_name = '', string $element_class_name = '' ): void {}
 	}
 
+	/**
+	 * Base class of the elements: the properties read by the render_attributes filter.
+	 */
+	abstract class Element {
+		/** @var array<string, mixed>|null Element data (id, name, cid, parentComponent, global...). */
+		public $element;
+
+		/** @var array<string, mixed>|null Settings of the element. */
+		public $settings;
+	}
+
 	class Helpers {
 		/**
 		 * @param array<int, array<string, mixed>> $global_classes Every global class.
@@ -48,6 +60,17 @@ namespace Bricks {
 		 * @param string $query_id   Query to check.
 		 */
 		public static function is_looping( $element_id = '', $query_id = '' ): bool {}
+
+		/**
+		 * @return string|false ID of the innermost query being looped, false when none.
+		 */
+		public static function is_any_looping() {}
+
+		/**
+		 * @param string $query Query ID, or an empty string for the current one.
+		 * @return string|false ID of the element that holds the loop.
+		 */
+		public static function get_query_element_id( $query = '' ) {}
 	}
 
 	class Database {

@@ -8,7 +8,13 @@ import { OUT, wp, pluginPath } from './lib.mjs';
  * a class referenced by an element but absent here is created empty when missing,
  * and left untouched when it exists.
  */
-export const CLASSES = {};
+export const CLASSES = {
+	// Bricks stores a number control with a fixed unit as a bare string; the unit is added in the CSS.
+	'lm-e2e-preset': { _lmEffect: 'fade', _lmStartAt: '60' },
+};
+
+/** Posts the query loops need: published when missing (by slug), never modified. */
+export const POSTS = [ 1, 2, 3 ].map( ( n ) => ( { slug: `lm-e2e-post-${ n }`, title: `LM E2E post ${ n }` } ) );
 
 /** Pages by slug: { title, elements: [node] } (post_type 'page' unless set). */
 export const PAGES = {};
@@ -35,6 +41,39 @@ PAGES[ 'lm-e2e-smoke' ] = {
 	elements: [ section( [ heading( 'Smoke test', { tag: 'h1' }, { id: 'smokeh' } ) ] ) ],
 };
 
+PAGES[ 'lm-e2e-marker' ] = {
+	title: 'LM E2E marker',
+	elements: [
+		section( [
+			heading( 'Fade by class', {}, { id: 'mkfade', classes: [ 'lm-fade' ] } ),
+			heading( 'Words by setting', { _lmEffect: 'text-words' }, { id: 'mkword' } ),
+			text( '1200', {}, { id: 'mkcnt', classes: [ 'sk-counter' ] } ),
+			heading( 'No effect', {}, { id: 'mkplain' } ),
+			// Outside a loop: the element ID selector (1,0,0) beats the class (0,2,0).
+			heading( 'Preset outside the loop', { _lmStartAt: '30' }, { id: 'mkout', classes: [ 'lm-e2e-preset' ] } ),
+			// Inside a loop: the class selector is all the element has, so the inline style must win.
+			el(
+				'block',
+				{ hasLoop: true, query: { objectType: 'post', post_type: [ 'post' ], posts_per_page: 3 } },
+				[
+					heading( '{post_title}', { _lmStartAt: '30' }, { id: 'mkitem', classes: [ 'lm-e2e-preset' ] } ),
+					heading( '{post_title}', {}, { id: 'mkbare', classes: [ 'lm-e2e-preset' ] } ),
+					// Inside a loop the element rule (0,3,0) already beats the class: its breakpoint values must survive.
+					heading( '{post_title}', { _lmStartAt: '30', '_lmStartAt:mobile_portrait': '10' }, { id: 'mkbp', classes: [ 'lm-e2e-preset' ] } ),
+				],
+				{ id: 'mkloop' }
+			),
+			// The element that holds the loop: its rule (0,2,0) ties with the class and loses by source order.
+			el(
+				'block',
+				{ hasLoop: true, query: { objectType: 'post', post_type: [ 'post' ], posts_per_page: 3 }, _lmStartAt: '30' },
+				[ heading( '{post_title}', {}, { id: 'mkselfh' } ) ],
+				{ id: 'mkself', classes: [ 'lm-e2e-preset' ] }
+			),
+		] ),
+	],
+};
+
 /** Flattens a node tree into Bricks' element list. */
 function flatten( nodes, slug ) {
 	const out = [];
@@ -53,6 +92,7 @@ function flatten( nodes, slug ) {
 export async function setup() {
 	const payload = {
 		classes: CLASSES,
+		posts: POSTS,
 		pages: Object.entries( PAGES ).map( ( [ slug, p ] ) => ( {
 			slug,
 			title: p.title,

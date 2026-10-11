@@ -25,6 +25,7 @@ class Module extends AbstractModule {
 		}
 
 		( new Controls() )->hook();
+		Marker::hook( ! empty( $this->get_settings()['legacy_classes'] ) );
 	}
 
 	/**
