@@ -75,6 +75,7 @@ Allow-list of files that may contain a legacy name in code or data (anything els
 - `includes/Modules/Smtp/Crypto.php` (legacy key-derivation context, needed to re-encrypt)
 - `includes/Modules/ImageOptimizer/Module.php` (`LEGACY_BACKUP_DIR`)
 - `includes/Modules/Motion/Legacy.php` (the `sk-*` classes, `--sk-hover-underline-*` variables, `StudioKyneMotion` global and "SK Motion" snippet name of the former snippet)
+- `tools/motion/` and `tools/e2e/motion/` (tests and fixtures of the Motion migration, never shipped)
 - `includes/Core/Plugin.php` (the hold branch)
 - `includes/Core/Activator.php`
 - `uninstall.php`
