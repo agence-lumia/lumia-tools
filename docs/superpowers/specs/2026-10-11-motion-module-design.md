@@ -11,7 +11,7 @@ Remplacer le snippet FluentSnippets « SK Motion » (librairie `@studiokyne/sk-m
 Critères de réussite :
 
 1. Une animation se pose en un clic (classe globale), comme aujourd'hui.
-2. Début, fin, durée, délai, décalage et paramètres propres à l'effet se règlent sur **un élément**, sur **une classe** (préréglage valable partout) ou **globalement** (valeurs de référence), avec des valeurs par breakpoint.
+2. Début, fin, rythme, courbe, délai, décalage et paramètres propres à l'effet se règlent sur **un élément**, sur **une classe** (préréglage valable partout) ou **globalement** (valeurs de référence), avec des valeurs par breakpoint.
 3. Le réglage se voit en direct dans le builder.
 4. Aucun script d'animation n'est chargé sur une page sans animation ; aucune ressource tierce (CDN) n'est appelée.
 5. Rafraîchir au milieu d'une page, revenir en arrière ou suivre un lien `#ancre` laisse le visiteur où il doit être, sans contenu invisible.
@@ -56,7 +56,7 @@ Constats associés, vérifiés dans le code de Bricks 2.4.2 :
 - Bricks appelle les fonctions déclarées par `bricks/elements/{name}/scripts` à chaque montage / re-rendu : environ 180 appels au chargement du builder sur l'accueil d'agence-lumia.com.
 - Aucun événement « Bricks prêt ». Événements utiles : `bricks/ajax/query_result/displayed`, `bricks/ajax/load_page/completed`, `bricks/ajax/pagination/completed`, `bricks/ajax/popup/loaded`, `bricks/popup/open`, `bricks/popup/close`.
 
-**Conventions des sites** : `--cubic-bezier` (`cubic-bezier(0.625, 0.05, 0, 1)` ou `0.63`, la courbe « smoothKyne » de SK Motion), `--cubic-bezier-slow` et `--navbar-height` (61 à 102 px) existent sur les 8 sites vérifiés (agence-lumia.com par le lab, boilerplate, facpa, orphee, resetyou, maison-aline, neo-nat ; coyac : seulement `--navbar-height`). `--navbar-height` existe partout (il sert aussi au calcul des héros) mais sa valeur change d'un site à l'autre : le module la lit, il ne la suppose jamais.
+**Conventions des sites** : `--cubic-bezier` (`cubic-bezier(0.625, 0.05, 0, 1)` ou `0.63`, la courbe « smoothKyne » de SK Motion), `--cubic-bezier-slow` et `--navbar-height` (61 à 102 px) existent sur les 8 sites vérifiés (agence-lumia.com par le lab, boilerplate, facpa, orphee, resetyou, maison-aline, neo-nat ; coyac : seulement `--navbar-height`). `--navbar-height` existe partout (il sert aussi au calcul des héros) mais sa valeur change d'un site à l'autre : le module la lit, il ne la suppose jamais. Les courbes, elles, ne sont **pas** lues sur le site : le module embarque ses propres profils (voir « Profils de mouvement »), pour fonctionner à l'identique sur un site sans ces variables.
 
 **Usage réel** (agence-lumia.com, contenu des pages) : `sk-entry-blur` ×205, `sk-fade` ×164, `sk-hover-underline` ×59, `sk-text-highlight-chars` ×11 ; les 10 classes `sk-*` existent comme classes globales **verrouillées et vides** (simples marqueurs).
 
@@ -72,7 +72,7 @@ Constats associés, vérifiés dans le code de Bricks 2.4.2 :
 | Librairies | GSAP 3.15.0 (core, ScrollTrigger, SplitText), Lenis 1.3.26. Fichiers officiels non modifiés, versions épinglées. Lenis 2 (en préversion) réévalué à sa sortie stable. |
 | Chargement | Seulement sur les pages qui contiennent un élément animé ; SplitText seulement s'il y a un effet de texte ; Lenis seulement si activé. |
 | Retour en haut | Supprimé. Le module neutralise `html { scroll-behavior: smooth }` quand il est actif. |
-| Courbe | Par défaut la variable du site `--cubic-bezier`, repli `0.625, 0.05, 0, 1`. |
+| Mouvement | Deux réglages indépendants de l'effet : le **rythme** (rapide, normal, lent ou durée exacte) et la **courbe** (profils intégrés au module, inspirés des ressorts d'Apple, plus la courbe Lümia actuelle). Aucune dépendance aux variables `--cubic-bezier` des sites. |
 | Ancres | Décalage = `--navbar-height` du site (repli 0). |
 | Aperçu builder | État final affiché par défaut ; l'animation d'un élément se rejoue quand un de ses réglages Motion change. |
 | Démo dans la liste | Vignette CSS animée dans les options de l'effet si le rendu reste propre ; bonus d'interface, pas un critère de la v1. |
@@ -93,7 +93,7 @@ Constats associés, vérifiés dans le code de Bricks 2.4.2 :
 | `lm-counter` | `sk-counter` | compteur jusqu'à la valeur écrite dans le HTML | valeur de départ |
 | `lm-underline` | `sk-hover-underline` | soulignement au survol (CSS seul) | épaisseur, écart, couleur |
 
-Réglages communs aux effets d'entrée : début, durée, délai, décalage entre éléments d'un même lot (stagger), courbe. Effets en scrub (texte surligné) : début et fin. Les valeurs par défaut reprennent celles du snippet d'agence-lumia.com (`reveal` 48 px / 0,65 s, `entryBlur` 20 px / 12 px / 0,8 s, etc.), à ajuster sur le lab.
+Réglages communs aux effets d'entrée : début, rythme, courbe, délai, décalage entre éléments d'un même lot (stagger). Effets en scrub (texte surligné) : début et fin. Les valeurs par défaut reprennent celles du snippet d'agence-lumia.com (`reveal` 48 px / 0,65 s, `entryBlur` 20 px / 12 px / 0,8 s, etc.), à ajuster sur le lab.
 
 Un effet par élément. Si un élément porte deux classes d'effet, la première dans l'ordre de `class` l'emporte ; le moteur l'écrit en console en mode debug et le panneau affiche un avertissement (contrôle `info` conditionnel).
 
@@ -112,11 +112,12 @@ Chaque contrôle porte `'css' => [ [ 'property' => '--lm-…', 'selector' => '' 
 | Début : position dans l'écran | `number`, `%` | `--lm-start-at` | `90%` |
 | Fin (effets en scrub) | idem, deux contrôles | `--lm-end-edge`, `--lm-end-at` | |
 | Position avancée | `text` (syntaxe ScrollTrigger) | `--lm-start`, `--lm-end` | prioritaire sur les deux précédents si renseigné |
-| Durée | `number`, s | `--lm-duration` | |
+| Rythme | `select` : Rapide, Normal, Lent, Durée exacte | `--lm-tempo` | `fast`, `normal`, `slow`, `exact` |
+| Durée exacte | `number`, s, visible si « Durée exacte » | `--lm-duration` | |
 | Délai | `number`, s | `--lm-delay` | |
 | Décalage | `number`, s | `--lm-stagger` | |
-| Courbe | `select` : Site (`--cubic-bezier`), Lente (`--cubic-bezier-slow`), Linéaire, Personnalisée | `--lm-ease` | `var(--cubic-bezier)`, `linear`, ou `cubic-bezier(…)` |
-| Courbe personnalisée | `text`, visible si « Personnalisée » | `--lm-ease` | |
+| Courbe | `select` : Lümia, Douce, Vive, Rebond, Linéaire, Personnalisée | `--lm-ease` | `lumia`, `smooth`, `snappy`, `bouncy`, `linear`, `custom` |
+| Courbe personnalisée | `text`, visible si « Personnalisée » | `--lm-ease-custom` | `cubic-bezier(…)` |
 | Distance, flou, échelle, opacité de départ | `number`, visibles selon l'effet (`required`) | `--lm-distance`, `--lm-blur`, `--lm-scale`, `--lm-from-opacity` | |
 | Aide | `info` | — | rappel : « une valeur posée ici pour l'ordinateur vaut aussi pour mobile, sauf si vous réglez mobile » |
 
@@ -182,8 +183,31 @@ Le moteur ne lit **pas** l'effet dans `data-lm` : l'effet réel vient toujours d
 - Effets de texte : SplitText créé avec `autoSplit: true` et l'animation **créée et retournée dans `onSplit()`**, pour survivre au redécoupage ; `mask: 'lines'` retiré (`revert`) à la fin des effets non scrubbés. `aria: 'auto'` gardé seulement sur les titres ; sur les autres balises, `aria: 'hidden'` + texte d'origine conservé pour les lecteurs d'écran (copie visuellement masquée), à confirmer pendant l'implémentation.
 - Compteur : départ à la valeur réglée, arrivée à la valeur du HTML, **format d'origine respecté** (séparateurs tels qu'écrits, pas de regroupement ajouté). Balisage interne conservé si le nombre est dans un nœud texte unique.
 - `will-change` posé au départ d'une animation et retiré à la fin.
-- Courbe : `--lm-ease` calculé, analysé en `cubic-bezier(a, b, c, d)` puis converti par une petite fonction de Bézier propre au moteur (pas de `CustomEase`), mise en cache par valeur.
+- Rythme et courbe : voir « Profils de mouvement » ci-dessous.
 - `prefers-reduced-motion: reduce` : aucun masquage, aucune animation, compteur à sa valeur finale ; géré par `gsap.matchMedia()` pour suivre un changement en cours de visite.
+
+### Profils de mouvement
+
+L'effet décrit **ce qui bouge** (opacité, translation, flou, échelle) ; le rythme et la courbe décrivent **comment**. Les deux se règlent séparément : on peut ralentir ou rendre plus vif un seul élément sans changer d'effet, et la même cascade s'applique (élément > classe > valeurs globales, par breakpoint).
+
+**Rythme** (`--lm-tempo`) : multiplicateur de la durée de référence de l'effet et de son décalage (stagger) — Rapide ×0,7, Normal ×1, Lent ×1,4. « Durée exacte » utilise `--lm-duration` en secondes, sans multiplicateur. Le délai n'est jamais multiplié. Deux variables distinctes plutôt qu'un seul contrôle : une classe peut fixer une durée exacte et un élément repasser en « Rapide » sans conflit.
+
+**Courbe** (`--lm-ease`), profils intégrés au moteur :
+
+| Profil | Valeur | Nature | Rendu |
+|---|---|---|---|
+| Lümia (défaut) | `lumia` | `cubic-bezier(0.625, 0.05, 0, 1)` | la courbe « smoothKyne » de SK Motion : départ retenu, arrivée très douce. Défaut pour que les sites migrés gardent exactement leur rendu. |
+| Douce | `smooth` | ressort, rebond 0 | arrivée naturelle sans dépassement (équivalent de `.smooth` de SwiftUI) |
+| Vive | `snappy` | ressort, rebond 0,15 | démarrage franc, très léger dépassement (`.snappy`) |
+| Rebond | `bouncy` | ressort, rebond 0,3 | dépassement visible (`.bouncy`), pour les échelles et les éléments ponctuels |
+| Linéaire | `linear` | — | vitesse constante |
+| Personnalisée | `custom` | `cubic-bezier(…)` lu dans `--lm-ease-custom` | courbe libre ; valeur invalide → profil par défaut + message en mode debug |
+
+Les rebonds 0 / 0,15 / 0,3 sont des valeurs de départ, à comparer sur le lab côte à côte avec Lümia avant de figer.
+
+Ressorts : même paramétrage que SwiftUI, une **durée perçue** et un **rebond** (amortissement = 1 − rebond). Le moteur calcule la réponse d'un ressort amorti, en échantillonne la courbe (une fois par profil, mise en cache) et la passe à GSAP comme fonction de courbe : pas de `CustomEase`, pas de dépendance. La durée réglée (rythme compris) est la durée perçue ; la stabilisation du ressort peut prolonger légèrement le tween, sans décaler l'élément suivant du lot. Les courbes de Bézier passent par une petite fonction de Bézier propre au moteur, elle aussi mise en cache par valeur.
+
+Garde-fous : les dépassements ne s'appliquent qu'aux propriétés où ils ont un sens (translation, échelle) ; l'opacité est bornée à 1 et le flou à 0. Le **compteur** n'utilise jamais de ressort avec rebond (afficher 101 puis 100 serait faux) : `snappy` et `bouncy` y deviennent `smooth`. Les **effets en scrub** suivent le défilement : rythme et courbe y sont ignorés (contrôles masqués quand l'effet est un scrub).
 
 ### Défilement doux (Lenis)
 
@@ -210,12 +234,13 @@ Optionnel (réglage du module, défaut : actif comme aujourd'hui), ordinateur se
 Page de réglages standard (design system du plugin, `AbstractModule`) :
 
 - Valeurs de référence par effet (durée, délai, décalage, distance, flou, échelle, opacité de départ, début, fin).
+- Rythme et courbe par défaut du site (défaut : Normal, Lümia).
 - Défilement doux Lenis : actif / inactif, intensité (`lerp`).
 - Compatibilité SK Motion : active / inactive.
 - Aperçu dans le builder : rejouer à la modification (défaut) / ne jamais animer.
 - Bloc « Migration » : nombre d'éléments utilisant encore une classe `sk-*`, lien vers la commande.
 
-`save_settings()` valide chaque valeur (bornes numériques, positions ScrollTrigger limitées à `[a-z0-9%+\-. ]`, courbe limitée à `cubic-bezier(…)` ou `var(--[a-z0-9-]+)`).
+`save_settings()` valide chaque valeur (bornes numériques, positions ScrollTrigger limitées à `[a-z0-9%+\-. ]`, rythme et courbe limités à leurs mots-clés, courbe personnalisée limitée à `cubic-bezier(…)` à quatre nombres).
 
 ## 6. Migration des sites (`wp lumia motion migrate`)
 
@@ -248,13 +273,14 @@ Le dépôt n'a pas de tests automatisés du plugin ; s'y ajoutent :
   - rafraîchissement au milieu de la page, retour arrière, ancre depuis une autre page, à 1440 et 390 px, avec et sans Lenis, avec et sans `scroll-behavior: smooth` du thème ;
   - aucun élément `data-lm` sous `opacity: 0.5` dans l'écran 2 s après le chargement ; moteur bloqué volontairement → tout visible après 3 s ;
   - `prefers-reduced-motion` ;
+  - rythme et courbe : un élément en « Rapide » / « Rebond » dans un lot réglé par sa classe garde sa propre durée et sa courbe ; compteur en « Rebond » sans dépassement ; opacité jamais au-dessus de 1 ;
   - page sans animation : aucun script du module chargé ;
   - migration : `--dry-run` puis `--apply` sur une copie d'agence-lumia.com, mêmes animations avant et après.
 - Contrôle manuel sur iPhone (Safari) et sur le lab avant agence-lumia.com.
 
 ## 9. Déploiement
 
-1. Lab (`lab.dev.agence-lumia.com`) : module activé, snippet désactivé, migration, réglage des valeurs de référence avec l'utilisateur.
+1. Lab (`lab.dev.agence-lumia.com`) : module activé, snippet désactivé, migration, réglage des valeurs de référence avec l'utilisateur, dont une page de comparaison des courbes (même effet en Lümia, Douce, Vive, Rebond, côte à côte) pour figer les rebonds et le profil par défaut.
 2. agence-lumia.com, puis le boilerplate (classes `lm-*` créées, aucune classe `sk-*`), puis les sites clients un par un.
 3. Dépôt `sk-motion` et paquet npm `@studiokyne/sk-motion` : archivés et dépréciés quand plus aucun site ne charge le CDN.
 
