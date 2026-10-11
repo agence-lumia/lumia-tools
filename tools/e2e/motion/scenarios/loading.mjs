@@ -98,7 +98,7 @@ export default async function () {
 		assert( config.builder === false, `config.builder=${ config.builder }` );
 		assert( config.preview === 'replay', `config.preview=${ config.preview }` );
 		assert( config.tempo === 'normal' && config.ease === 'smooth', `config tempo=${ config.tempo } ease=${ config.ease }` );
-		assert( config.effects && config.effects.slide-up && config.effects.slide-up.distance === 48, 'config.effects.slide-up.distance is not 48' );
+		assert( config.effects && config.effects[ 'slide-up' ] && config.effects[ 'slide-up' ].distance === 48, 'config.effects.slide-up.distance is not 48' );
 		assert( config.classes[ 'lm-fade' ] === 'fade' && config.classes[ 'lm-words' ] === 'words', 'config.classes does not map lm-fade / lm-words' );
 		assert( config.aliases[ 'sk-fade' ] === 'fade', `config.aliases['sk-fade']=${ config.aliases[ 'sk-fade' ] }` );
 		assert( typeof config.legacyGlobal === 'string' && config.legacyGlobal !== '', 'config.legacyGlobal is empty' );
