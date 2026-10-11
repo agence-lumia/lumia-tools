@@ -9,7 +9,7 @@ Requires WordPress 6.9+ and PHP 8.0+. The interface is in English and ships with
 - Modular architecture: enable only the modules you need
 - Modern, fast custom admin interface
 - Updates through GitHub (Stable and Dev channels)
-- Ten modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP
+- Eleven modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP, Motion
 
 ## Installation
 
@@ -109,6 +109,14 @@ In Settings > Updates:
 - Presets for common providers (Brevo, Mailgun, SendGrid, Postmark, SES, Mailjet, OVHcloud, Hostinger, Gmail, Microsoft 365)
 - Test email with the SMTP transcript, and a log of every email sent (purged on a schedule)
 - The password is encrypted at rest and never part of the settings export. Credentials can instead be defined in `wp-config.php` (`LUMIA_SMTP_USER`, `LUMIA_SMTP_PASSWORD`, `LUMIA_BREVO_API_KEY`, and `LUMIA_ENCRYPTION_KEY` to pin the encryption key)
+
+### Motion
+
+- Entrance, text, counter and underline effects for Bricks, from a global class (`lm-fade`, `lm-reveal`…) or the Motion group of any element
+- Per-element settings through `--lm-*` CSS variables (element > class > module defaults), breakpoints included
+- Built-in tempo (fast, normal, slow, exact) and curves (Lümia curve, Apple-style springs, linear, custom)
+- Loaded only on the pages that use an effect; GSAP and Lenis bundled, no CDN; optional Lenis smooth scrolling
+- Live preview and effect thumbnails in the builder; `wp lumia motion migrate` for sites using the former snippet
 
 ## Architecture
 
