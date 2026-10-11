@@ -85,4 +85,5 @@ The scan ignores revisions, trashed posts and auto-drafts; published FluentSnipp
 
 - `composer motion:test` — pure PHP (catalog, sanitizer, marker, class manager, legacy underline CSS, uninstall keys), no WordPress (`tools/motion/php/bricks-stubs.php` stands in for the two Bricks classes the loop test calls).
 - `node --test tools/motion/js/*.test.mjs` — curves, springs, settings resolution, counter.
+- `node tools/motion/js/build-curves.mjs --check` — the `--lm-curve-*` / `--lm-settle-*` tokens of `motion.css` (between `lm-curves:start` and `lm-curves:end`) are generated from the engine springs (`cssLinear()`); run it without `--check` to rewrite the block after changing a spring. The plain declaration (`cubic-bezier(0.22, 1, 0.36, 1)`) is the fallback of browsers without `linear()`. Also run by `curves.test.mjs`.
 - `tools/e2e/motion/run.sh` — Playwright scenarios against a local Bricks site (Bricks is licensed, so not in CI); see `tools/e2e/motion/README.md`.

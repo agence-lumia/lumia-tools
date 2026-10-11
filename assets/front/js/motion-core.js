@@ -210,6 +210,64 @@
   }
 
   /* ================================================================
+   * CSS linear() EXPORT (spring -> CSS easing, for the generated tokens)
+   * ================================================================ */
+
+  var LINEAR_TOLERANCE = 0.002;
+
+  function round(value, decimals) {
+    var f = Math.pow(10, decimals);
+    return Math.round(value * f) / f;
+  }
+
+  // The spring over its whole settle time as a CSS linear() easing, plus the tween length
+  // divided by the perceived duration. Stops carry an explicit position (simplification
+  // removes some, so the remaining ones are no longer evenly spaced).
+  function cssLinear(bounce, points) {
+    var sp = spring(bounce);
+    var count = typeof points === "number" && isFinite(points) ? Math.max(3, Math.floor(points)) : 40;
+    var xs = [];
+    var ys = [];
+    for (var i = 0; i < count; i++) {
+      xs.push(i / (count - 1));
+      ys.push(round(sp.ease(i / (count - 1)), 4));
+    }
+    ys[count - 1] = 1;
+
+    // From the last kept stop, go as far as every skipped stop stays within the tolerance of the straight line.
+    var kept = [0];
+    var from = 0;
+    while (from < count - 1) {
+      var to = from + 1;
+      for (var j = from + 2; j < count; j++) {
+        var ok = true;
+        for (var k = from + 1; k < j; k++) {
+          var line = ys[from] + ((ys[j] - ys[from]) * (xs[k] - xs[from])) / (xs[j] - xs[from]);
+          if (Math.abs(ys[k] - line) > LINEAR_TOLERANCE) {
+            ok = false;
+            break;
+          }
+        }
+        if (!ok) {
+          break;
+        }
+        to = j;
+      }
+      kept.push(to);
+      from = to;
+    }
+
+    var parts = kept.map(function (index) {
+      if (index === 0 || index === count - 1) {
+        return String(ys[index]);
+      }
+      return ys[index] + " " + round(xs[index] * 100, 2) + "%";
+    });
+
+    return { linear: "linear(" + parts.join(", ") + ")", settle: sp.settle };
+  }
+
+  /* ================================================================
    * EASING PROFILES
    * ================================================================ */
 
@@ -748,6 +806,7 @@
   return {
     bezier: bezier,
     spring: spring,
+    cssLinear: cssLinear,
     resolveEase: resolveEase,
     tempoFactor: tempoFactor,
     resolve: resolve,

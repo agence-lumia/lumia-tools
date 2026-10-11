@@ -25,6 +25,18 @@ if ( ! function_exists( '__' ) ) {
 	}
 }
 
+if ( ! function_exists( '_x' ) ) {
+	/**
+	 * Contextual translation stand-in.
+	 *
+	 * @param string $text    Text.
+	 * @param string $context Context.
+	 */
+	function _x( string $text, string $context ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		return $text;
+	}
+}
+
 if ( ! function_exists( 'esc_html__' ) ) {
 	/**
 	 * Translation and escaping stand-in.
