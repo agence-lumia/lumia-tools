@@ -95,10 +95,10 @@ jobs:
         with:
           node-version: '22'
 
-      # The folder only exists from the engine task on: skip until then.
+      # Files are listed through the shell: since Node 21, a directory argument
+      # is no longer searched, it is loaded as a module and fails.
       - name: JavaScript unit tests
-        run: |
-          if [ -d tools/motion/js ]; then node --test tools/motion/js/; fi
+        run: node --test tools/motion/js/*.test.mjs
 
   build:
     name: Release zip
