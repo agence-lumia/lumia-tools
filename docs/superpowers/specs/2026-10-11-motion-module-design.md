@@ -95,7 +95,7 @@ Constats associés, vérifiés dans le code de Bricks 2.4.2 :
 
 Réglages communs aux effets d'entrée : début, rythme, courbe, délai, décalage entre éléments d'un même lot (stagger). Effets en scrub (texte surligné) : début et fin. Les valeurs par défaut reprennent celles du snippet d'agence-lumia.com (`reveal` 48 px / 0,65 s, `entryBlur` 20 px / 12 px / 0,8 s, etc.), à ajuster sur le lab.
 
-Un effet par élément. Si un élément porte deux classes d'effet, la première dans l'ordre de `class` l'emporte ; le moteur l'écrit en console en mode debug et le panneau affiche un avertissement (contrôle `info` conditionnel).
+Un effet par élément. Si un élément porte deux classes d'effet, la première dans l'ordre de `class` l'emporte ; le moteur l'écrit en console en mode debug, et l'aide du panneau le rappelle (ligne fixe : les conditions `required` de Bricks ne voient pas les classes, un avertissement conditionnel est impossible).
 
 ## 2. Intégration Bricks
 
@@ -132,15 +132,17 @@ Les propriétés personnalisées s'héritent : une section qui porte `--lm-end` 
 /* … une règle par variable --lm-* */
 ```
 
+Exception : les variables du soulignement (`--lm-underline-*`) restent héritables, car le pseudo-élément `::after` qui les lit les hérite de son élément.
+
 `syntax: '*'` ne demande pas de valeur initiale. Support : Chrome 85, Safari 16.4, Firefox 128 ; un navigateur plus ancien hérite (dégradation acceptée). À vérifier en premier pendant l'implémentation, dans le canvas comme sur le front.
 
 ### Valeurs globales
 
 Les valeurs de référence de l'admin **ne passent pas** par `:root` (elles ne s'hériteraient pas, justement) : elles sont transmises au moteur en JSON (`wp_add_inline_script`), avec une table par effet. Ordre de résolution d'un réglage, pour un élément : variable calculée sur l'élément (élément > classe, par la cascade de Bricks) → valeur globale de l'effet → valeur par défaut du code.
 
-### Composants et éléments globaux
+### Composants, éléments globaux et boucles de requête
 
-Leur sélecteur (`.brxe-{id}`, 0,1,0) perd contre celui de la classe (0,2,0). Pour eux seuls, le filtre `bricks/element/render_attributes` recopie les réglages `_lm*` **de l'élément** dans un attribut `style` (`--lm-end: …`), qui l'emporte sur toute règle. Les valeurs par breakpoint de l'élément sont alors perdues pour ces deux cas (seule la valeur de base est recopiée) ; limite documentée dans `docs/modules/motion.md`.
+Leur sélecteur (`.brxe-{id}`, 0,1,0) perd contre celui de la classe (0,2,0). C'est aussi le cas des éléments rendus dans une boucle de requête (`Query::is_looping()`, vu dans `includes/elements/base.php` de Bricks 2.4.2). Pour eux seuls, le filtre `bricks/element/render_attributes` recopie les réglages `_lm*` **de l'élément** dans un attribut `style` (`--lm-end: …`), qui l'emporte sur toute règle. Les valeurs par breakpoint de l'élément sont alors perdues pour ces trois cas (seule la valeur de base est recopiée) ; limite documentée dans `docs/modules/motion.md`.
 
 ### Classes
 
@@ -211,7 +213,7 @@ Garde-fous : les dépassements ne s'appliquent qu'aux propriétés où ils ont u
 
 ### Défilement doux (Lenis)
 
-Optionnel (réglage du module, défaut : actif comme aujourd'hui), ordinateur seulement (`syncTouch: false`). Branché sur le ticker GSAP selon la doc Lenis (`lenis.on('scroll', ScrollTrigger.update)`, `lagSmoothing(0)`), `lenis.css` chargé, `anchors: { offset: -navbarHeight }` lu sur `--navbar-height`, `stopInertiaOnNavigate: true`. Popups et menus hors-canevas Bricks : `lenis.stop()` / `start()` sur `bricks/popup/open` / `close`, et `data-lenis-prevent` posé sur les conteneurs de popup. Sans Lenis, les ancres utilisent `scroll-margin-top: var(--navbar-height)` (règle de `motion.css` sur `[id]`).
+Optionnel (réglage du module, défaut : actif comme aujourd'hui), ordinateur seulement (`syncTouch: false`). Quand il est actif, il est chargé sur **toutes** les pages publiques, avec ou sans animation (petit script `motion-scroll.js`, horloge propre de Lenis quand GSAP est absent) : sinon le défilement changerait de sensation d'une page à l'autre. Branché sur le ticker GSAP selon la doc Lenis (`lenis.on('scroll', ScrollTrigger.update)`, `lagSmoothing(0)`), `lenis.css` chargé, `anchors: { offset: -navbarHeight }` lu sur `--navbar-height`, `stopInertiaOnNavigate: true`. Popups et menus hors-canevas Bricks : `lenis.stop()` / `start()` sur `bricks/popup/open` / `close`, et `data-lenis-prevent` posé sur les conteneurs de popup. Sans Lenis, les ancres utilisent `scroll-margin-top: var(--navbar-height)` (règle de `motion.css` sur `[id]`).
 
 ### Cycle de vie
 
