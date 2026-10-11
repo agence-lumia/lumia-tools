@@ -80,22 +80,30 @@ final class Legacy {
 	}
 
 	/**
-	 * CSS that makes the legacy underline variables feed the new ones.
+	 * CSS that lets the legacy underline variables still style the underline.
 	 *
-	 * An element carrying the legacy class and the legacy variables keeps its
-	 * look; the engine stylesheet only knows the `--lm-underline-*` names.
+	 * The fallbacks sit on the drawing rules of motion.css, same selectors and same
+	 * declarations, each value reading `--lm-underline-*`, then `--sk-hover-underline-*`, then
+	 * the reference value. They do not depend on the legacy class: once the migration has
+	 * renamed it, the element carries `lm-underline` (or `data-lm`) and its custom CSS still
+	 * sets the legacy variables. Assigning `--lm-underline-*` on the element instead would hide
+	 * a value inherited from a wrapper. Printed after motion.css, it wins by source order.
 	 */
 	public static function underline_css(): string {
-		$declarations = '';
-		foreach ( self::UNDERLINE_VARIABLES as $key => $names ) {
-			$declarations .= sprintf(
-				"\t%s: var(%s, %s);\n",
-				$names['current'],
-				$names['legacy'],
+		$value = static function ( string $key ): string {
+			return sprintf(
+				'var(%s, var(%s, %s))',
+				self::UNDERLINE_VARIABLES[ $key ]['current'],
+				self::UNDERLINE_VARIABLES[ $key ]['legacy'],
 				self::UNDERLINE_DEFAULTS[ $key ]
 			);
-		}
+		};
 
-		return ".sk-hover-underline {\n" . $declarations . '}';
+		$box  = '.lm-underline,[data-lm~="underline"]';
+		$line = '.lm-underline::after,[data-lm~="underline"]::after';
+
+		return $box . '{padding-bottom:calc(' . $value( 'gap' ) . ' * 0.45)}'
+			. $line . '{bottom:calc(-1 * ' . $value( 'gap' ) . ');height:' . $value( 'thickness' ) . ';background-color:' . $value( 'color' ) . ';transition-duration:' . $value( 'duration' ) . '}'
+			. '@media (prefers-reduced-motion: reduce){' . $box . '{padding-bottom:' . $value( 'gap' ) . '}}';
 	}
 }

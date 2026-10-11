@@ -73,6 +73,16 @@ PAGES[ 'lm-e2e-marker' ] = {
 			// Names typed in the "CSS classes" field (no global class): the former one counts while the compatibility setting is on.
 			heading( 'Former name typed', { _cssClasses: 'sk-fade' }, { id: 'mkrwsk' } ),
 			heading( 'Name typed', { _cssClasses: 'hero lm-reveal' }, { id: 'mkrwlm' } ),
+			// Underline after the migration: the element carries lm-underline, its custom CSS still sets a former variable.
+			// Bricks 2.4 stores custom CSS against the element ID selector (what the builder writes for %root%).
+			text( 'Former gap', { _cssClasses: 'lm-underline', _cssCustom: '#brxe-mkulgp { --sk-hover-underline-gap: 3px; }' }, { id: 'mkulgp' } ),
+			// A wrapper restyles the underlines in it: an element with the former class inherits the colour.
+			el(
+				'block',
+				{ _cssCustom: '#brxe-mkulwr { --lm-underline-color: rgb(255, 0, 0); }' },
+				[ text( 'Inherited colour', {}, { id: 'mkulin', classes: [ 'sk-hover-underline' ] } ) ],
+				{ id: 'mkulwr' }
+			),
 		] ),
 	],
 };

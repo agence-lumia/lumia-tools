@@ -143,13 +143,8 @@ return [
 			'UNDERLINE_VARIABLES and UNDERLINE_DEFAULTS keys differ'
 		);
 	},
-	'underline css'                                  => static function (): void {
-		$css = Legacy::underline_css();
-		lm_assert( strpos( $css, '.sk-hover-underline' ) === 0, 'selector' );
-		lm_assert( strpos( $css, '--lm-underline-thickness: var(--sk-hover-underline-thickness, 2px)' ) !== false, 'thickness' );
-		lm_assert( strpos( $css, '--lm-underline-gap: var(--sk-hover-underline-gap, 0.12em)' ) !== false, 'gap' );
-		lm_assert( strpos( $css, '--lm-underline-color: var(--sk-hover-underline-color, currentColor)' ) !== false, 'color' );
-		lm_assert( strpos( $css, '--lm-underline-duration: var(--sk-hover-underline-duration, 0.4s)' ) !== false, 'duration' );
+	'legacy engine and snippet names'                => static function (): void {
+		// The underline CSS is tested in LegacyTest.php.
 		lm_assert( Legacy::ENGINE_GLOBAL === 'StudioKyneMotion' && Legacy::SNIPPET_NAME === 'SK Motion', 'legacy names' );
 	},
 ];

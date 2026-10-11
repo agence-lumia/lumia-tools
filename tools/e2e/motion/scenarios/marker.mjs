@@ -88,6 +88,15 @@ export default async function () {
 	assert( typed[ 0 ] === 'enter', `sk-fade typed in CSS classes: data-lm=${ typed[ 0 ] }` );
 	assert( typed[ 1 ] === 'enter', `lm-reveal typed in CSS classes: data-lm=${ typed[ 1 ] }` );
 
+	// Underline: a former variable still styles an element that carries the new class (the state after --apply),
+	// and a colour inherited from a wrapper is not hidden by the fallbacks.
+	const underline = await page.evaluate( () => {
+		const after = ( id ) => getComputedStyle( document.getElementById( `brxe-${ id }` ), '::after' );
+		return { gap: after( 'mkulgp' ).bottom, color: after( 'mkulin' ).backgroundColor, inheritedColor: after( 'mkulgp' ).backgroundColor };
+	} );
+	assert( underline.gap === '-3px', `--sk-hover-underline-gap: 3px on an lm-underline element: ::after bottom=${ underline.gap } (expected -3px)` );
+	assert( underline.color === 'rgb(255, 0, 0)', `--lm-underline-color inherited from a wrapper: ::after background-color=${ underline.color } (expected rgb(255, 0, 0))` );
+
 	assert( page.errors.length === 0, `page errors: ${ page.errors.join( ' | ' ) }` );
 
 	// Compatibility off: the former name typed in CSS classes is no longer an effect, the new one still is.
