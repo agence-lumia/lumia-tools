@@ -75,6 +75,53 @@ foreach ( $lm_payload['posts'] ?? array() as $lm_post ) {
 	WP_CLI::log( sprintf( '%s #%d', $lm_post['slug'], $lm_new_id ) );
 }
 
+// First pass: every post exists (page or template), so "@id:<slug>" in a setting or a meta
+// value can name another one (a popup template shows on a page, a button opens a popup).
+$lm_post_ids = array();
+foreach ( $lm_payload['pages'] as $lm_page ) {
+	$lm_existing = get_page_by_path( $lm_page['slug'], OBJECT, $lm_page['post_type'] );
+	$lm_post_id  = wp_insert_post(
+		array(
+			'ID'          => $lm_existing ? $lm_existing->ID : 0,
+			'post_type'   => $lm_page['post_type'],
+			'post_status' => 'publish',
+			'post_title'  => $lm_page['title'],
+			'post_name'   => $lm_page['slug'],
+		),
+		true
+	);
+	if ( is_wp_error( $lm_post_id ) ) {
+		WP_CLI::error( $lm_post_id->get_error_message() );
+	}
+	$lm_post_ids[ $lm_page['slug'] ] = $lm_post_id;
+}
+
+/**
+ * Replaces "@id:<slug>" by the post ID, anywhere in a value.
+ *
+ * @param mixed $value Setting or meta value.
+ * @param array $ids   Post IDs by slug.
+ * @return mixed
+ */
+function lm_e2e_resolve_ids( $value, array $ids ) {
+	if ( is_array( $value ) ) {
+		return array_map(
+			static function ( $item ) use ( $ids ) {
+				return lm_e2e_resolve_ids( $item, $ids );
+			},
+			$value
+		);
+	}
+	if ( is_string( $value ) && 0 === strpos( $value, '@id:' ) ) {
+		$slug = substr( $value, 4 );
+		if ( ! isset( $ids[ $slug ] ) ) {
+			WP_CLI::error( sprintf( 'Unknown page in "%s".', $value ) );
+		}
+		return $ids[ $slug ];
+	}
+	return $value;
+}
+
 foreach ( $lm_payload['pages'] as $lm_page ) {
 	$lm_elements = array();
 	foreach ( $lm_page['elements'] as $lm_el ) {
@@ -92,28 +139,18 @@ foreach ( $lm_payload['pages'] as $lm_page ) {
 			'name'     => $lm_el['name'],
 			'parent'   => $lm_el['parent'],
 			'children' => $lm_el['children'],
-			'settings' => $lm_settings ? $lm_settings : array(),
+			'settings' => $lm_settings ? lm_e2e_resolve_ids( $lm_settings, $lm_post_ids ) : array(),
 		);
 	}
 
-	$lm_existing = get_page_by_path( $lm_page['slug'], OBJECT, $lm_page['post_type'] );
-	$lm_post_id  = wp_insert_post(
-		array(
-			'ID'          => $lm_existing ? $lm_existing->ID : 0,
-			'post_type'   => $lm_page['post_type'],
-			'post_status' => 'publish',
-			'post_title'  => $lm_page['title'],
-			'post_name'   => $lm_page['slug'],
-		),
-		true
-	);
-	if ( is_wp_error( $lm_post_id ) ) {
-		WP_CLI::error( $lm_post_id->get_error_message() );
-	}
+	$lm_post_id = $lm_post_ids[ $lm_page['slug'] ];
 	update_post_meta( $lm_post_id, '_bricks_editor_mode', 'bricks' );
 	update_post_meta( $lm_post_id, '_bricks_page_content_2', wp_slash( $lm_elements ) );
 	foreach ( (array) $lm_page['meta'] as $lm_key => $lm_value ) {
-		update_post_meta( $lm_post_id, $lm_key, wp_slash( $lm_value ) );
+		update_post_meta( $lm_post_id, $lm_key, wp_slash( lm_e2e_resolve_ids( $lm_value, $lm_post_ids ) ) );
 	}
 	WP_CLI::log( sprintf( '%s #%d', $lm_page['slug'], $lm_post_id ) );
 }
+
+// Bricks caches the list of templates and their conditions (popups): start from a clean cache.
+wp_cache_flush();

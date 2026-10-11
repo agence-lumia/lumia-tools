@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
  *   scripts of the footer are printed at priority 20.
  *
  * Nothing is loaded in the admin. In the builder, the main window gets the builder
- * stylesheet only, and the canvas gets the engine in its builder mode.
+ * stylesheet only, and the canvas gets the engine in its builder mode (no smooth scroll).
  */
 final class Assets {
 
@@ -77,7 +77,7 @@ final class Assets {
 			wp_add_inline_style( self::HANDLE_MOTION, Legacy::underline_css() );
 		}
 
-		if ( $this->lenis_enabled() ) {
+		if ( $this->scroll_wanted() ) {
 			wp_enqueue_style( self::HANDLE_LENIS, LUMIA_ASSETS_URL . 'front/js/vendor/lenis/lenis.css', [ self::HANDLE_MOTION ], LUMIA_VERSION );
 		}
 	}
@@ -117,8 +117,7 @@ final class Assets {
 			$this->enqueue_engine( $canvas, $splitting );
 		}
 
-		// Smooth scroll is for visitors: the canvas keeps the native scroll of the builder.
-		if ( ! $canvas && $this->lenis_enabled() ) {
+		if ( $this->scroll_wanted() ) {
 			$this->enqueue_scroll( $engine );
 		}
 	}
@@ -180,10 +179,6 @@ final class Assets {
 	 * @param bool $with_gsap Whether the engine, hence GSAP, is loaded.
 	 */
 	private function enqueue_scroll( bool $with_gsap ): void {
-		if ( ! self::has_script( 'motion-scroll.js' ) ) {
-			return;
-		}
-
 		$deps = [ self::HANDLE_LENIS ];
 		if ( $with_gsap ) {
 			$deps[] = self::HANDLE_GSAP;
@@ -191,6 +186,35 @@ final class Assets {
 		}
 
 		wp_enqueue_script( self::HANDLE_SCROLL, LUMIA_ASSETS_URL . 'front/js/motion-scroll.js', $deps, LUMIA_VERSION, self::footer_args() );
+		wp_add_inline_script(
+			self::HANDLE_SCROLL,
+			'window.lumiaMotionScroll=' . wp_json_encode( [ 'lerp' => $this->lenis_lerp() ], JSON_HEX_TAG | JSON_HEX_AMP ) . ';',
+			'before'
+		);
+	}
+
+	/**
+	 * Whether smooth scroll is loaded on this request: on, script shipped, and a page visitors see.
+	 *
+	 * Never in the main window of the builder (it has no scripts of the front) nor in the
+	 * canvas, which keeps the native scroll of the builder. A handle is loaded only when its
+	 * file is there, so a file that is not shipped (yet) is never requested.
+	 */
+	private function scroll_wanted(): bool {
+		return $this->lenis_enabled()
+			&& ! is_admin()
+			&& ! self::is_builder_main()
+			&& ! self::is_builder_canvas()
+			&& self::has_script( 'motion-scroll.js' );
+	}
+
+	/**
+	 * Intensity of the smooth scroll (the `lerp` of Lenis), within the range the sanitizer allows.
+	 */
+	private function lenis_lerp(): float {
+		$lenis = $this->settings['lenis'] ?? [];
+
+		return is_array( $lenis ) && isset( $lenis['lerp'] ) ? (float) $lenis['lerp'] : 0.1;
 	}
 
 	/**

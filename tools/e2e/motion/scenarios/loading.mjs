@@ -126,10 +126,13 @@ export default async function () {
 			engine: document.querySelectorAll( 'script[src*="/front/js/"]' ).length,
 			config: typeof window.lumiaMotionConfig,
 			gsap: typeof window.gsap,
+			lenis: document.querySelectorAll( 'link[href*="lenis"], script[src*="lenis"], script[src*="motion-scroll"]' ).length,
 		} ) );
 		assert( main.builderCss === 1, `builder main: motion-builder.css linked ${ main.builderCss } times` );
 		assert( main.frontCss === 0, 'builder main: motion.css is linked' );
 		assert( main.engine === 0 && main.config === 'undefined' && main.gsap === 'undefined', `builder main: engine loaded (scripts=${ main.engine } config=${ main.config } gsap=${ main.gsap })` );
+
+		assert( main.lenis === 0, `builder main: ${ main.lenis } smooth scroll file(s) loaded` );
 
 		const canvas = page.frames().find( ( f ) => f !== page.mainFrame() );
 		assert( canvas, 'builder: no canvas frame' );
@@ -139,10 +142,13 @@ export default async function () {
 			gsap: typeof window.gsap,
 			splitText: typeof window.SplitText,
 			engine: !! window.lumiaMotion,
+			lenis: document.querySelectorAll( 'link[href*="lenis"], script[src*="lenis"], script[src*="motion-scroll"]' ).length,
+			lenisInstance: typeof window.lumiaLenis,
 		} ) );
 		assert( inner.builder === true, 'builder canvas: config.builder is not true' );
 		assert( inner.gsap === 'object' && inner.splitText !== 'undefined', `builder canvas: gsap=${ inner.gsap } SplitText=${ inner.splitText }` );
 		assert( inner.engine, 'builder canvas: the engine did not start' );
+		assert( inner.lenis === 0 && inner.lenisInstance === 'undefined', `builder canvas: smooth scroll loaded (files=${ inner.lenis } lumiaLenis=${ inner.lenisInstance })` );
 	}
 
 	// The former snippet still active: the module stays out of its way, says so, and shows the content.

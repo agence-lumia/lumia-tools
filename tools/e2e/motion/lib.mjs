@@ -149,16 +149,21 @@ export function near( a, b, eps = 1e-3 ) {
 	return Math.abs( a - b ) <= eps;
 }
 
-/** Adds html{scroll-behavior:smooth} to every HTML document of the page (the theme setting that broke reloads). */
-export async function injectSmoothScroll( page ) {
+/** Adds a stylesheet to every HTML document of the page, before any script runs. */
+export async function injectCss( page, css ) {
 	await page.route( '**/*', async ( route ) => {
 		if ( route.request().resourceType() !== 'document' ) {
 			return route.continue();
 		}
 		const res = await route.fetch();
-		const body = ( await res.text() ).replace( '</head>', '<style>html{scroll-behavior:smooth}</style></head>' );
+		const body = ( await res.text() ).replace( '</head>', `<style>${ css }</style></head>` );
 		return route.fulfill( { response: res, body } );
 	} );
+}
+
+/** Adds html{scroll-behavior:smooth} to every HTML document of the page (the theme setting that broke reloads). */
+export function injectSmoothScroll( page ) {
+	return injectCss( page, 'html{scroll-behavior:smooth}' );
 }
 
 /** Toggles a FluentSnippets snippet ('published' or 'draft') and rebuilds its index. */

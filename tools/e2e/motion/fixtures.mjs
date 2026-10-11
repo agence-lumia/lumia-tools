@@ -141,6 +141,8 @@ PAGES[ 'lm-e2e-anchor' ] = {
 	elements: [
 		section( [
 			heading( 'Anchor page', { tag: 'h1' }, { id: 'anchhd' } ),
+			// A link to the target of the same page (a click scrolls; a link from another page navigates).
+			text( '<a id="lmlocal" href="#target">Go to the target</a>', {}, { id: 'anchlk' } ),
 			spacer( 3000 ),
 			el( 'div', { _cssId: 'target', _height: '200px' }, [ heading( 'Target', {}, { id: 'anchtt' } ) ], { id: 'anchtg' } ),
 			spacer( 3000 ),
@@ -200,6 +202,54 @@ PAGES[ 'lm-e2e-counter' ] = {
 			spacer( 100 ),
 		] ),
 	],
+};
+
+// Bricks popups, real ones: two templates (content rendered in the footer, content fetched
+// when it opens) shown on two pages, one with an animated element (the engine is loaded) and
+// one without (it is not; only the AJAX popup, whose content is not in the page, is on it).
+// A button opens each popup. "@id:<slug>" is resolved by setup.php.
+const popupButton = ( label, popup, id, interaction ) => el(
+	'button',
+	{ text: label, _interactions: [ { id: interaction, trigger: 'click', action: 'show', target: 'popup', templateId: `@id:${ popup }` } ] },
+	[],
+	{ id }
+);
+
+PAGES[ 'lm-e2e-popup' ] = {
+	title: 'LM E2E popup',
+	elements: [
+		section( [
+			heading( 'Popup page', { tag: 'h1' }, { id: 'popuhd', classes: [ 'lm-fade' ] } ),
+			popupButton( 'Open the static popup', 'lm-e2e-popup-static', 'popbs1', 'popis1' ),
+			popupButton( 'Open the AJAX popup', 'lm-e2e-popup-ajax', 'popba1', 'popia1' ),
+		] ),
+	],
+};
+
+PAGES[ 'lm-e2e-popup-plain' ] = {
+	title: 'LM E2E popup plain',
+	elements: [
+		section( [
+			heading( 'Popup page without animation', { tag: 'h1' }, { id: 'popphd' } ),
+			popupButton( 'Open the AJAX popup', 'lm-e2e-popup-ajax', 'popba2', 'popia2' ),
+		] ),
+	],
+};
+
+const popupOn = ( ...slugs ) => ( { templateConditions: [ { main: 'ids', ids: slugs.map( ( slug ) => `@id:${ slug }` ) } ] } );
+
+PAGES[ 'lm-e2e-popup-static' ] = {
+	title: 'LM E2E popup static',
+	post_type: 'bricks_template',
+	meta: { _bricks_template_type: 'popup', _bricks_template_settings: popupOn( 'lm-e2e-popup' ) },
+	elements: [ el( 'block', {}, [ heading( 'Static popup title', { tag: 'h3' }, { id: 'pops1h', classes: [ 'lm-fade' ] } ) ], { id: 'pops1b' } ) ],
+};
+
+PAGES[ 'lm-e2e-popup-ajax' ] = {
+	title: 'LM E2E popup AJAX',
+	post_type: 'bricks_template',
+	meta: { _bricks_template_type: 'popup', _bricks_template_settings: { ...popupOn( 'lm-e2e-popup', 'lm-e2e-popup-plain' ), popupAjax: true } },
+	elements: [ el( 'block', {}, [ heading( 'AJAX popup title', { tag: 'h3' }, { id: 'popa1h', classes: [ 'lm-fade' ] } ) ], { id: 'popa1b' } ) ],
 };
 
 /** Flattens a node tree into Bricks' element list. */
