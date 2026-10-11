@@ -6,7 +6,7 @@ node_modules/
 dist/
 
 # Composer tooling (development only, never shipped)
-vendor/
+/vendor/
 .phpcs.cache
 
 # Docker bench: generated captures and zips (development only)
