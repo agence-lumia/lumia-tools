@@ -41,7 +41,7 @@ namespace Bricks {
 
 	class Helpers {
 		/**
-		 * @param array<int, array<string, mixed>> $global_classes Every global class.
+		 * @param array<int|string, mixed> $global_classes Every global class.
 		 * @return array{response: mixed, timestamp: int, user_id: int}
 		 */
 		public static function save_global_classes_in_db( $global_classes ) {}

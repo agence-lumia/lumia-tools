@@ -20,6 +20,11 @@ class Module extends AbstractModule {
 	 * assets each have a class of their own, started from here as they land.
 	 */
 	public function init(): void {
+		// `wp lumia motion classes|migrate`; the commands say so themselves when Bricks is not the theme.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			\WP_CLI::add_command( 'lumia motion', new Command() );
+		}
+
 		if ( ! self::is_bricks_active() ) {
 			return;
 		}
@@ -80,6 +85,20 @@ class Module extends AbstractModule {
 			'legacy_classes'  => true,
 			'builder_preview' => 'replay',
 		];
+	}
+
+	/**
+	 * Creates the missing lm-* classes in Bricks when the module is turned on.
+	 *
+	 * Nothing happens unless Bricks is the active theme. A failure is left for
+	 * `wp lumia motion classes`, which reports it: activating a module must not fail on it.
+	 */
+	public function on_activate(): void {
+		try {
+			ClassManager::create_missing();
+		} catch ( \RuntimeException $e ) {
+			return;
+		}
 	}
 
 	/**

@@ -14,7 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Lumia\Tools\Modules\Motion\ClassManager;
 use Lumia\Tools\Modules\Motion\Effects;
+use Lumia\Tools\Modules\Motion\Legacy;
 use Lumia\Tools\Modules\Motion\Module as MotionModule;
 
 if ( ! MotionModule::is_bricks_active() ) :
@@ -37,6 +39,13 @@ $tempo           = (string) ( $module_settings['tempo'] ?? 'normal' );
 $ease            = (string) ( $module_settings['ease'] ?? 'lumia' );
 $ease_custom     = (string) ( $module_settings['ease_custom'] ?? '' );
 $builder_preview = (string) ( $module_settings['builder_preview'] ?? 'replay' );
+
+// What still uses a former class: read when the screen opens, never cached (the numbers must follow the migration).
+try {
+	$legacy_usage = ClassManager::legacy_usage();
+} catch ( \Throwable $lumia_motion_error ) {
+	$legacy_usage = null;
+}
 
 $tempo_labels = [
 	'fast'   => __( 'Fast', 'lumia-tools' ),
@@ -367,6 +376,92 @@ $number_ranges = [
 					</label>
 				</div>
 			</div>
+
+		</div>
+	</div>
+
+	<div class="lumia-divider"></div>
+
+	<!-- ============================================================
+		MIGRATION OF THE FORMER CLASSES
+		============================================================ -->
+	<div class="lumia-section">
+		<div class="lumia-section__header">
+			<h2 class="lumia-section__title"><?php esc_html_e( 'Migration', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php esc_html_e( 'Moves the content from the former classes to the lm- classes. It runs once per site, from the command line, and keeps every element and its animation.', 'lumia-tools' ); ?></p>
+		</div>
+		<div class="lumia-section__content">
+
+			<?php if ( null === $legacy_usage ) : ?>
+				<div class="lumia-notice lumia-notice--warning">
+					<?php esc_html_e( 'The content could not be read to count the former classes.', 'lumia-tools' ); ?>
+				</div>
+			<?php elseif ( [] === $legacy_usage['classes'] && 0 === $legacy_usage['elements'] && [] === $legacy_usage['css_hits'] ) : ?>
+				<p class="lumia-form__help"><?php esc_html_e( 'No former class is left on this site. The compatibility setting above can be turned off.', 'lumia-tools' ); ?></p>
+			<?php else : ?>
+				<div class="lumia-option">
+					<div class="lumia-option__content">
+						<span class="lumia-option__label"><?php esc_html_e( 'Former classes', 'lumia-tools' ); ?></span>
+						<p class="lumia-option__desc"><?php esc_html_e( 'Global classes that still carry a former name.', 'lumia-tools' ); ?></p>
+					</div>
+					<div class="lumia-option__control">
+						<span class="lumia-badge lumia-badge--info"><?php echo esc_html( number_format_i18n( count( $legacy_usage['classes'] ) ) ); ?></span>
+					</div>
+				</div>
+				<div class="lumia-option">
+					<div class="lumia-option__content">
+						<span class="lumia-option__label"><?php esc_html_e( 'Elements concerned', 'lumia-tools' ); ?></span>
+						<p class="lumia-option__desc">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: number of pages, headers, footers and templates. */
+									__( 'Spread over %s pages, headers, footers or templates.', 'lumia-tools' ),
+									number_format_i18n( $legacy_usage['posts'] )
+								)
+							);
+							?>
+						</p>
+					</div>
+					<div class="lumia-option__control">
+						<span class="lumia-badge lumia-badge--info"><?php echo esc_html( number_format_i18n( $legacy_usage['elements'] ) ); ?></span>
+					</div>
+				</div>
+				<div class="lumia-option">
+					<div class="lumia-option__content">
+						<span class="lumia-option__label"><?php esc_html_e( 'To fix by hand', 'lumia-tools' ); ?></span>
+						<p class="lumia-option__desc"><?php esc_html_e( 'Custom CSS, the global CSS and snippet files that still name a former class or variable. The migration reports them and never rewrites them.', 'lumia-tools' ); ?></p>
+					</div>
+					<div class="lumia-option__control">
+						<span class="lumia-badge <?php echo [] === $legacy_usage['css_hits'] ? 'lumia-badge--success' : 'lumia-badge--warning'; ?>"><?php echo esc_html( number_format_i18n( count( $legacy_usage['css_hits'] ) ) ); ?></span>
+					</div>
+				</div>
+			<?php endif; ?>
+
+			<p class="lumia-form__help">
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: 1: a WP-CLI command that previews the migration, 2: the same command that applies it. */
+						__( 'Preview it with %1$s, which writes nothing and lists everything it found. Apply it with %2$s.', 'lumia-tools' ),
+						'<code>wp lumia motion migrate</code>',
+						'<code>wp lumia motion migrate --apply --user=&lt;admin&gt;</code>'
+					),
+					[ 'code' => [] ]
+				);
+				?>
+			</p>
+			<p class="lumia-form__help">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %s: name of the former animation snippet. */
+						__( 'Then deactivate the "%s" snippet in FluentSnippets, check the site, and turn off the compatibility setting above.', 'lumia-tools' ),
+						Legacy::SNIPPET_NAME
+					)
+				);
+				?>
+			</p>
 
 		</div>
 	</div>

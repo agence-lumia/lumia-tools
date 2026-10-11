@@ -5642,6 +5642,42 @@ msgstr "Anciens noms de classes"
 msgid "Keeps the classes of the former snippet working until the content is moved to the lm- classes. Turn it off once the migration is done."
 msgstr "Garde les classes de l'ancien snippet fonctionnelles jusqu'à ce que le contenu passe aux classes lm-. À désactiver une fois la migration terminée."
 
+msgid "Migration"
+msgstr "Migration"
+
+msgid "Moves the content from the former classes to the lm- classes. It runs once per site, from the command line, and keeps every element and its animation."
+msgstr "Fait passer le contenu des anciennes classes aux classes lm-. Elle s'exécute une fois par site, en ligne de commande, et conserve chaque élément et son animation."
+
+msgid "The content could not be read to count the former classes."
+msgstr "Le contenu n'a pas pu être lu pour compter les anciennes classes."
+
+msgid "No former class is left on this site. The compatibility setting above can be turned off."
+msgstr "Il ne reste aucune ancienne classe sur ce site. Le réglage de compatibilité ci-dessus peut être désactivé."
+
+msgid "Former classes"
+msgstr "Anciennes classes"
+
+msgid "Global classes that still carry a former name."
+msgstr "Classes globales qui portent encore un ancien nom."
+
+msgid "Elements concerned"
+msgstr "Éléments concernés"
+
+msgid "Spread over %s pages, headers, footers or templates."
+msgstr "Répartis sur %s pages, en-têtes, pieds de page ou modèles."
+
+msgid "To fix by hand"
+msgstr "À corriger à la main"
+
+msgid "Custom CSS, the global CSS and snippet files that still name a former class or variable. The migration reports them and never rewrites them."
+msgstr "CSS personnalisé, CSS global et fichiers de snippets qui nomment encore une ancienne classe ou variable. La migration les signale et ne les réécrit jamais."
+
+msgid "Preview it with %1$s, which writes nothing and lists everything it found. Apply it with %2$s."
+msgstr "Prévisualisez-la avec %1$s, qui n'écrit rien et liste tout ce qu'elle trouve. Appliquez-la avec %2$s."
+
+msgid "Then deactivate the \"%s\" snippet in FluentSnippets, check the site, and turn off the compatibility setting above."
+msgstr "Désactivez ensuite le snippet « %s » dans FluentSnippets, vérifiez le site, puis désactivez le réglage de compatibilité ci-dessus."
+
 msgid "Effect"
 msgstr "Effet"
 

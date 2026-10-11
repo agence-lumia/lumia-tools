@@ -1,0 +1,16 @@
+<?php
+/**
+ * PHPStan stub for the WP-CLI helper functions the plugin calls. WP-CLI is not part of the
+ * repository; the WP_CLI class itself is stubbed in phpstan-bootstrap.php. Tooling file only:
+ * never loaded by the plugin. Listed under `scanFiles` in phpstan.neon.dist; the `.stub`
+ * extension also keeps it out of PHPCS.
+ */
+
+namespace WP_CLI\Utils;
+
+/**
+ * @param string                         $format Output format (table, json...).
+ * @param iterable<array<string, mixed>> $items  Rows.
+ * @param string[]                       $fields Columns to print.
+ */
+function format_items( $format, $items, $fields ): void {}
