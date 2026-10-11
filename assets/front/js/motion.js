@@ -8,8 +8,8 @@
  * effect class of its class attribute. Its settings are the 18 engine variables, read
  * once when the item is built and again on refresh(), never per frame.
  *
- * Each family of effects has a builder (FAMILIES below): the entrance effects are here,
- * the text and counter families plug into the same three hooks.
+ * Each family of effects has a builder (FAMILIES below): entrance effects, text effects
+ * (SplitText) and the counter, all behind the same hooks.
  */
 (function () {
   "use strict";
@@ -43,6 +43,7 @@
   var core = window.lumiaMotionCore;
   var gsap = window.gsap;
   var ScrollTrigger = window.ScrollTrigger;
+  var SplitText = window.SplitText; // loaded only on pages with a text effect
 
   var DEBUG = /[?&]lmDebug(?:[=&]|$)/.test(window.location.search);
   var FONT_WAIT_MS = 1500;
@@ -212,8 +213,11 @@
       return "unknown effect " + JSON.stringify(effect);
     }
     if (!has(FAMILIES, options.family)) {
-      // The underline is drawn by the stylesheet; the text and counter builders come with their own files.
+      // The underline is drawn by the stylesheet.
       return options.family === "underline" ? "" : options.family + " effects are not handled by this engine";
+    }
+    if (options.family === "text" && !SplitText) {
+      return "SplitText is not loaded on this page";
     }
     return null;
   }
@@ -278,6 +282,18 @@
       report("could not show " + describe(item.el) + " in its final state.", error);
     }
     item.state = "final";
+  }
+
+  // Runs one step of an item's animation; on error the element is shown as it ends.
+  function attempt(item, step) {
+    try {
+      step(item);
+    } catch (error) {
+      report("animation failed: " + describe(item.el) + " shown as it ends.", error);
+      if (item.state !== "final") {
+        settle(item);
+      }
+    }
   }
 
   // Undoes everything the item did: the element goes back to how the page rendered it.
@@ -487,14 +503,397 @@
     },
   };
 
+  /* ================================================================
+   * FAMILY: TEXT (text-lines, text-words, text-chars)
+   * SplitText cuts the text into lines, words or characters. The animation is created and
+   * returned in onSplit(): when the text is split again (autoSplit, after a font load or a
+   * change of width), SplitText reverts the old animation and gives the new one the same
+   * time, on the new pieces. text-lines plays once, then gives the markup back untouched;
+   * text-words and text-chars follow the scroll (scrub) for as long as the page lives.
+   *
+   * Screen readers: SplitText's aria "auto" names the element after its text (aria-label)
+   * and hides the pieces. A heading may be named that way; a p or a div may not (ARIA 1.2).
+   * Its aria "hidden" hides the element itself, text included. So a heading keeps "auto";
+   * any other element gets a visually hidden copy of its content (.lm-sr) next to a box
+   * holding the split text, which SplitText hides ("hidden" on the box). Content with a
+   * link or a control is never hidden: it is split with aria "none", as it is.
+   * ================================================================ */
+
+  var HEADING = /^H[1-6]$/;
+  var FOCUSABLE = "a[href], button, input, select, textarea, iframe, [tabindex], [contenteditable]";
+  // Displays whose content can be moved into a block box without changing the layout.
+  var WRAPPABLE = /^(block|flow-root|list-item|inline-block|table-cell)$/;
+  // Scroll time of each word or character, against its stagger: GSAP's default, as in the
+  // former snippet (0.25 s apart, a word lights up over the scroll of two).
+  var SCRUB_EACH = 0.5;
+
+  // The node to split and the SplitText aria mode; moves the content into a box when needed.
+  function textTarget(item) {
+    var el = item.el;
+    if (el.querySelector(FOCUSABLE)) {
+      return { node: el, aria: "none" };
+    }
+    if (HEADING.test(el.tagName)) {
+      return { node: el, aria: "auto" };
+    }
+    if (!WRAPPABLE.test(window.getComputedStyle(el).display)) {
+      return { node: el, aria: "none" };
+    }
+    var copy = document.createElement("span");
+    var box = document.createElement("span");
+    copy.className = "lm-sr";
+    box.style.display = "block";
+    while (el.firstChild) {
+      copy.appendChild(el.firstChild.cloneNode(true));
+      box.appendChild(el.firstChild);
+    }
+    // The copy keeps the inline semantics (strong, em, lang); an id must stay unique.
+    Array.prototype.forEach.call(copy.querySelectorAll("[id]"), function (node) {
+      node.removeAttribute("id");
+    });
+    el.appendChild(copy);
+    el.appendChild(box);
+    item.copy = copy;
+    item.box = box;
+    return { node: box, aria: "hidden" };
+  }
+
+  // Puts the content back where it was, once SplitText has reverted it.
+  function unwrapText(item) {
+    var copy = item.copy;
+    var box = item.box;
+    item.copy = item.box = null;
+    if (!box) {
+      return;
+    }
+    if (box.parentNode === item.el) {
+      while (box.firstChild) {
+        item.el.insertBefore(box.firstChild, copy && copy.parentNode === item.el ? copy : box);
+      }
+      item.el.removeChild(box);
+    }
+    if (copy && copy.parentNode) {
+      copy.parentNode.removeChild(copy);
+    }
+  }
+
+  // Stops everything and gives the markup back as it was written.
+  function textReset(item) {
+    if (item.trigger) {
+      item.trigger.kill();
+      item.trigger = null;
+    }
+    var split = item.split;
+    var tweens = item.tweens || [];
+    item.split = null;
+    item.tweens = [];
+    if (split) {
+      // Also reverts the last animation returned by onSplit.
+      split.revert();
+    }
+    tweens.forEach(function (tween) {
+      tween.kill();
+    });
+    unwrapText(item);
+  }
+
+  function linesStart(item) {
+    var o = item.options;
+    var target = textTarget(item);
+    item.split = SplitText.create(target.node, {
+      type: "lines",
+      mask: "lines",
+      linesClass: "lm-line",
+      autoSplit: true,
+      aria: target.aria,
+      onSplit: function (self) {
+        var playing = item.state === "playing";
+        if (playing) {
+          gsap.set(self.lines, { willChange: "transform" });
+        }
+        // Renders the start state at once (a from tween), plays on enter.
+        var tween = gsap.from(self.lines, {
+          yPercent: o.distance,
+          duration: o.tweenDuration,
+          ease: o.ease,
+          delay: o.delay,
+          stagger: o.stagger,
+          paused: !playing,
+          onComplete: function () {
+            attempt(item, linesDone);
+          },
+        });
+        item.tweens = [tween];
+        return tween;
+      },
+    });
+    item.trigger = ScrollTrigger.create({
+      trigger: item.el,
+      start: o.start,
+      once: true,
+      markers: DEBUG,
+      onEnter: function () {
+        attempt(item, linesPlay);
+      },
+    });
+  }
+
+  function linesPlay(item) {
+    if (item.state !== "pending") {
+      return;
+    }
+    if (item.trigger) {
+      item.trigger.kill();
+      item.trigger = null;
+    }
+    // Already above the screen (a jump past it): no animation.
+    if (item.el.getBoundingClientRect().bottom < 0) {
+      settle(item);
+      return;
+    }
+    item.state = "playing";
+    gsap.set(item.split.lines, { willChange: "transform" });
+    item.tweens.forEach(function (tween) {
+      tween.play();
+    });
+  }
+
+  // The mask clips descenders and the split lines would stay in the page: give the markup back.
+  function linesDone(item) {
+    if (item.state === "playing") {
+      textReset(item);
+      item.state = "done";
+    }
+  }
+
+  function scrubStart(item) {
+    var o = item.options;
+    var chars = o.effect === "text-chars";
+    var target = textTarget(item);
+    item.state = "scrub";
+    item.split = SplitText.create(target.node, {
+      type: chars ? "words, chars" : "words",
+      wordsClass: "lm-word",
+      charsClass: "lm-char",
+      autoSplit: true,
+      aria: target.aria,
+      onSplit: function (self) {
+        var pieces = chars ? self.chars : self.words;
+        gsap.set(pieces, { opacity: o.fromOpacity });
+        var tween = gsap.to(pieces, {
+          opacity: 1,
+          ease: "none",
+          duration: SCRUB_EACH,
+          stagger: o.stagger,
+          scrollTrigger: {
+            trigger: item.el,
+            start: o.start,
+            end: o.end,
+            scrub: true,
+            invalidateOnRefresh: true,
+            markers: DEBUG,
+            // will-change only while the scroll is inside the scrub.
+            onToggle: function (st) {
+              gsap.set(pieces, st.isActive ? { willChange: "opacity" } : { clearProps: "willChange" });
+            },
+          },
+        });
+        item.trigger = tween.scrollTrigger;
+        item.tweens = [tween];
+        return tween;
+      },
+    });
+  }
+
+  var text = {
+    start: function (list) {
+      list.forEach(function (item) {
+        try {
+          if (item.options.scrub) {
+            scrubStart(item);
+          } else {
+            linesStart(item);
+          }
+        } catch (error) {
+          report("could not split " + describe(item.el) + ": shown as is.", error);
+          settle(item);
+        }
+      });
+    },
+
+    // Scrubs are never late: only text-lines items come here.
+    play: function (list) {
+      list.forEach(function (item) {
+        if (!item.options.scrub) {
+          attempt(item, linesPlay);
+        }
+      });
+    },
+
+    final: textReset,
+    kill: textReset,
+  };
+
+  /* ================================================================
+   * FAMILY: COUNTER
+   * Counts from the start value to the number written in the HTML, in the format it is
+   * written in (core.parseCounter), then puts the written text node back. The number must
+   * sit in a single text node; anything else ("24/7", digits split by markup) is left as is.
+   * While it counts, screen readers get the written text (.lm-sr) and the counting copy is
+   * hidden from them: the start value is not the value.
+   * ================================================================ */
+
+  // The text node holding the number and its format, or { reason } when there is none.
+  function counterSource(el) {
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    var found = null;
+    var node;
+    while ((node = walker.nextNode())) {
+      if (/\d/.test(node.nodeValue)) {
+        if (found) {
+          return { reason: "its digits are spread over several text nodes" };
+        }
+        found = node;
+      }
+    }
+    if (!found) {
+      return { reason: "no number in its text" };
+    }
+    var fmt = core.parseCounter(found.nodeValue);
+    if (!fmt) {
+      return { reason: "no single number in " + JSON.stringify(found.nodeValue.trim()) };
+    }
+    return { node: found, fmt: fmt };
+  }
+
+  // Replaces the text node with its copy for screen readers and the copy that counts.
+  function counterWrap(item, source) {
+    var node = source.node;
+    var copy = document.createElement("span");
+    var shown = document.createElement("span");
+    copy.className = "lm-sr";
+    copy.textContent = node.nodeValue;
+    shown.setAttribute("aria-hidden", "true");
+    node.parentNode.insertBefore(copy, node);
+    node.parentNode.insertBefore(shown, node);
+    node.parentNode.removeChild(node);
+    item.count = { node: node, fmt: source.fmt, copy: copy, shown: shown };
+  }
+
+  function counterWrite(item, value) {
+    var c = item.count;
+    c.shown.textContent = c.fmt.prefix + core.formatCounter(value, c.fmt) + c.fmt.suffix;
+  }
+
+  // Stops counting and puts the written text node back, untouched.
+  function counterReset(item) {
+    if (item.trigger) {
+      item.trigger.kill();
+      item.trigger = null;
+    }
+    (item.tweens || []).forEach(function (tween) {
+      tween.kill();
+    });
+    item.tweens = [];
+    var c = item.count;
+    item.count = null;
+    if (!c) {
+      return;
+    }
+    if (c.copy.parentNode) {
+      c.copy.parentNode.insertBefore(c.node, c.copy);
+      c.copy.parentNode.removeChild(c.copy);
+    }
+    if (c.shown.parentNode) {
+      c.shown.parentNode.removeChild(c.shown);
+    }
+  }
+
+  function counterPlay(item) {
+    if (item.state !== "pending" || !item.count) {
+      return;
+    }
+    if (item.trigger) {
+      item.trigger.kill();
+      item.trigger = null;
+    }
+    if (item.el.getBoundingClientRect().bottom < 0) {
+      settle(item);
+      return;
+    }
+    item.state = "playing";
+    var o = item.options;
+    var value = { current: o.startValue };
+    item.tweens = [
+      gsap.to(value, {
+        current: item.count.fmt.value,
+        duration: o.tweenDuration,
+        // Already the version without overshoot (core.resolve): never past the value.
+        ease: o.ease,
+        delay: o.delay,
+        onUpdate: function () {
+          counterWrite(item, value.current);
+        },
+        onComplete: function () {
+          if (item.state === "playing") {
+            counterReset(item);
+            item.state = "done";
+          }
+        },
+      }),
+    ];
+  }
+
+  var counter = {
+    start: function (list) {
+      list.forEach(function (item) {
+        try {
+          var source = counterSource(item.el);
+          if (source.reason) {
+            logOnce(item.el, describe(item.el) + " left as written: " + source.reason + ".");
+            settle(item);
+            return;
+          }
+          counterWrap(item, source);
+          counterWrite(item, item.options.startValue);
+          item.trigger = ScrollTrigger.create({
+            trigger: item.el,
+            start: item.options.start,
+            once: true,
+            markers: DEBUG,
+            onEnter: function () {
+              attempt(item, counterPlay);
+            },
+          });
+        } catch (error) {
+          report("could not prepare " + describe(item.el) + ": shown as written.", error);
+          settle(item);
+        }
+      });
+    },
+
+    play: function (list) {
+      list.forEach(function (item) {
+        attempt(item, counterPlay);
+      });
+    },
+
+    final: counterReset,
+    kill: counterReset,
+  };
+
   /* Builders by family. Each one has:
    * - start(items): animate the new pending items (they may be settled instead), each
-   *   watched by a one-shot item.trigger, or a scrub (options.scrub);
+   *   watched by a one-shot item.trigger, or a scrub (options.scrub, state "scrub", its
+   *   ScrollTrigger in item.trigger);
    * - play(items): play pending one-shot items now, whatever their trigger (see below);
+   *   optional: without it, such items are shown as they end;
    * - final(item): show the element as it ends, without animation;
    * - kill(item): undo everything (the element is removed, rebuilt or the engine destroyed). */
   var FAMILIES = {
     enter: enter,
+    text: text,
+    counter: counter,
   };
 
   /* ================================================================
@@ -526,6 +925,15 @@
       (byFamily[item.family] = byFamily[item.family] || []).push(item);
     });
     Object.keys(byFamily).forEach(function (family) {
+      // A family that cannot play on demand shows its items as they end.
+      if (typeof FAMILIES[family].play !== "function") {
+        byFamily[family].forEach(function (item) {
+          if (item.state !== "final") {
+            settle(item);
+          }
+        });
+        return;
+      }
       try {
         FAMILIES[family].play(byFamily[family]);
       } catch (error) {
@@ -539,9 +947,34 @@
     });
   }
 
+  /* A scrub whose end lies past the end of the page would stop part-way, its last words
+   * dim for good (the reference end, top -120%, is out of reach for any text in the last two
+   * screens of a page). Its end is moved to the end of the page; its start, when it lies
+   * past that too or within the last half screen, to half a screen before, so the text
+   * still lights up as the visitor scrolls down. setPositions() lasts until the next
+   * refresh, which comes back here. */
+  function fitScrubs(max) {
+    // ScrollTrigger reads an end of 0 as "no end" (its default) and rounds tiny values: a page
+    // that does not scroll gets its scrubs before 0, where they are over.
+    var end = max - END_MARGIN > 0 ? max - END_MARGIN : -1;
+    items.forEach(function (item) {
+      var t = item.trigger;
+      if (item.state !== "scrub" || !t || t.end <= end + 0.5) {
+        return;
+      }
+      var start = Math.min(t.start, Math.max(0, end - window.innerHeight / 2), end - 1);
+      try {
+        t.setPositions(start, end);
+      } catch (error) {
+        report("could not fit the scrub of " + describe(item.el) + " to the page.", error);
+      }
+    });
+  }
+
   // After every refresh, once the page has loaded: before that, an image without
   // dimensions could still push these items down (the load refresh comes back here).
   function onTriggersRefreshed() {
+    fitScrubs(ScrollTrigger.maxScroll(window));
     if (document.readyState === "complete") {
       playLate(ScrollTrigger.maxScroll(window));
     }
@@ -556,7 +989,9 @@
   // page shorter without any refresh (ignoreMobileResize): measure the end again.
   function onScrollEnd() {
     if (items.length) {
-      playLate(liveMax());
+      var max = liveMax();
+      fitScrubs(max);
+      playLate(max);
     }
   }
 
@@ -648,10 +1083,11 @@
           return;
         }
 
-        // What has already shown itself is not hidden again.
-        var seen = quiet && entry.onScreen;
+        // What has already shown itself is not hidden again. A scrub is never shown once
+        // and for all: it follows the scroll, rebuilt as a scrub.
+        var seen = !options.scrub && quiet && entry.onScreen;
         if (known) {
-          seen = seen || known.state !== "pending";
+          seen = seen || (!options.scrub && known.state !== "pending");
           kill(known);
         }
 
@@ -676,8 +1112,8 @@
     });
 
     Object.keys(fresh).forEach(function (family) {
-      watchPageEnd();
       try {
+        watchPageEnd();
         FAMILIES[family].start(fresh[family]);
       } catch (error) {
         report("could not start the " + family + " effects: shown as they end.", error);
@@ -875,6 +1311,9 @@
   }
 
   gsap.registerPlugin(ScrollTrigger);
+  if (SplitText) {
+    gsap.registerPlugin(SplitText);
+  }
   media = gsap.matchMedia();
 
   function boot() {
