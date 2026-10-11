@@ -7,6 +7,7 @@
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire( new URL( './.cache/node_modules/', import.meta.url ) );
 const { chromium } = require( 'playwright-core' );
@@ -16,7 +17,7 @@ export const USER = process.env.LM_E2E_USER || 'local-admin';
 const PASS = process.env.LM_E2E_PASS || 'local-admin';
 const WP = process.env.LM_E2E_WP || 'wp';
 const PLUGIN_DIR = ( process.env.LM_E2E_PLUGIN_DIR || '/var/www/html/wp-content/plugins/lumia-tools' ).replace( /\/$/, '' );
-export const OUT = new URL( './out/', import.meta.url ).pathname;
+export const OUT = fileURLToPath( new URL( './out/', import.meta.url ) );
 const STATE = OUT + 'state.json';
 
 let shared = null;
@@ -42,11 +43,14 @@ export async function browser() {
  * @param {object} [o] width, height, reducedMotion ('reduce'|'no-preference'), auth (reuse the login state).
  */
 export async function newPage( o = {} ) {
+	if ( o.auth && ! existsSync( STATE ) ) {
+		throw new Error( `no login state at ${ STATE }: run login first` );
+	}
 	const b = await browser();
 	const ctx = await b.newContext( {
 		viewport: { width: o.width || 1440, height: o.height || 900 },
 		reducedMotion: o.reducedMotion || 'no-preference',
-		storageState: o.auth && existsSync( STATE ) ? STATE : undefined,
+		storageState: o.auth ? STATE : undefined,
 	} );
 	const page = await ctx.newPage();
 	page.errors = [];
@@ -61,6 +65,9 @@ export async function login( page ) {
 		await page.fill( '#user_login', USER );
 		await page.fill( '#user_pass', PASS );
 		await Promise.all( [ page.waitForNavigation(), page.click( '#wp-submit' ) ] );
+	}
+	if ( ! page.url().includes( '/wp-admin/' ) || ! ( await page.locator( '#wpadminbar' ).count() ) ) {
+		throw new Error( `login failed: still at ${ page.url() } after submitting the form` );
 	}
 	await page.context().storageState( { path: STATE } );
 }

@@ -8,6 +8,8 @@
 #
 # Exit code: 0 when everything passed, 1 on the first failure, 2 on bad usage.
 
+# The node -e programs are JavaScript, not shell: no expansion wanted.
+# shellcheck disable=SC2016
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +17,7 @@ CACHE="${DIR}/.cache"
 PLAYWRIGHT_VERSION="1.64.0"
 
 if [ "$#" -eq 0 ]; then
-	sed -n '4,7p' "$0" | sed 's/^# \{0,1\}//' >&2
+	sed -n '5,7p' "$0" | sed 's/^# \{0,1\}//' >&2
 	exit 2
 fi
 
@@ -51,7 +53,13 @@ if [ "$1" = "setup" ]; then
 fi
 
 if [ "$1" = "all" ]; then
-	set -- $(ls "${DIR}/scenarios" | sed -n 's/\.mjs$//p')
+	scenarios=()
+	for f in "${DIR}"/scenarios/*.mjs; do
+		[ -e "$f" ] || continue
+		scenarios+=("$(basename "$f" .mjs)")
+	done
+	[ "${#scenarios[@]}" -gt 0 ] || { echo "error: no scenario found" >&2; exit 2; }
+	set -- "${scenarios[@]}"
 fi
 
 for name in "$@"; do

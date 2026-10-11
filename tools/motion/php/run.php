@@ -38,13 +38,33 @@ function lm_assert( bool $cond, string $msg ): void {
 	}
 }
 
+// A warning or notice raised inside a test must fail it, not scroll by unnoticed.
+set_error_handler(
+	static function ( int $severity, string $message, string $file, int $line ): bool {
+		throw new \ErrorException( $message, 0, $severity, $file, $line );
+	}
+);
+
+// Loads a test file in its own scope, so its variables cannot clobber the runner's.
+$lm_load = static function ( string $file ) {
+	return require $file;
+};
+
 $failures = 0;
+$ran      = 0;
 $files    = glob( __DIR__ . '/*Test.php' );
 
 foreach ( false === $files ? [] : $files as $file ) {
-	$tests = require $file;
+	$tests = $lm_load( $file );
+
+	if ( ! is_array( $tests ) ) {
+		++$failures;
+		echo 'FAIL ' . basename( $file ) . ": the file must return an array of name => callable\n";
+		continue;
+	}
 
 	foreach ( $tests as $name => $test ) {
+		++$ran;
 		try {
 			$test();
 			echo "ok {$name}\n";
@@ -53,6 +73,11 @@ foreach ( false === $files ? [] : $files as $file ) {
 			echo "FAIL {$name}: {$e->getMessage()}\n";
 		}
 	}
+}
+
+if ( 0 === $ran ) {
+	echo "FAIL no test ran\n";
+	exit( 1 );
 }
 
 exit( $failures > 0 ? 1 : 0 );

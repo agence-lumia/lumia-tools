@@ -85,6 +85,13 @@
 	<config name="testVersion" value="8.0-"/>
 	<rule ref="PHPCompatibilityWP"/>
 
+	<!-- False positive: the sniff reads the method name Effects::family() as the removed "fam" extension.
+	     Scoped to the Motion module (the only caller) and its tests; every other extension stays checked. -->
+	<rule ref="PHPCompatibility.Extensions.RemovedExtensions.famRemoved">
+		<exclude-pattern>*/includes/Modules/Motion/*</exclude-pattern>
+		<exclude-pattern>*/tools/motion/*</exclude-pattern>
+	</rule>
+
 	<!-- Minimum WordPress version (deprecated functions) -->
 	<config name="minimum_wp_version" value="6.9"/>
 </ruleset>

@@ -14,11 +14,6 @@ declare( strict_types=1 );
 use Lumia\Tools\Modules\Motion\Effects;
 use Lumia\Tools\Modules\Motion\Legacy;
 
-// PHPCompatibility reads the "family" method name as the removed "fam" extension (false positive).
-$lm_family = static function ( string $slug ): ?string {
-	return Effects::family( $slug ); // phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.famRemoved
-};
-
 return [
 	'catalog has the ten effects'                    => static function (): void {
 		lm_assert(
@@ -59,13 +54,13 @@ return [
 		lm_assert( Effects::slug_for_class( 'lm-fade', true ) === 'fade', 'lm-fade with legacy' );
 		lm_assert( Effects::slug_for_class( 'sk-nope', true ) === null, 'sk-nope with legacy' );
 	},
-	'families'                                       => static function () use ( $lm_family ): void {
-		lm_assert( $lm_family( 'text-words' ) === 'text', 'text-words' );
-		lm_assert( $lm_family( 'fade' ) === 'enter', 'fade' );
-		lm_assert( $lm_family( 'scale-blur-in' ) === 'enter', 'scale-blur-in' );
-		lm_assert( $lm_family( 'counter' ) === 'counter', 'counter' );
-		lm_assert( $lm_family( 'underline' ) === 'underline', 'underline' );
-		lm_assert( $lm_family( 'nope' ) === null, 'nope' );
+	'families'                                       => static function (): void {
+		lm_assert( Effects::family( 'text-words' ) === 'text', 'text-words' );
+		lm_assert( Effects::family( 'fade' ) === 'enter', 'fade' );
+		lm_assert( Effects::family( 'scale-blur-in' ) === 'enter', 'scale-blur-in' );
+		lm_assert( Effects::family( 'counter' ) === 'counter', 'counter' );
+		lm_assert( Effects::family( 'underline' ) === 'underline', 'underline' );
+		lm_assert( Effects::family( 'nope' ) === null, 'nope' );
 	},
 	'scrub effects are the two highlight texts'      => static function (): void {
 		$scrubbing = [];
@@ -123,6 +118,7 @@ return [
 		lm_assert( count( Effects::ENGINE_VARIABLES ) === 18, 'expected 18 engine variables' );
 		lm_assert( count( array_unique( Effects::ENGINE_VARIABLES ) ) === 18, 'duplicate variable' );
 		foreach ( Effects::ENGINE_VARIABLES as $name ) {
+			lm_assert( strpos( $name, 'lm-' ) === 0, "{$name} must start with lm-" );
 			lm_assert( strpos( $name, '--' ) !== 0, "{$name} must not carry the leading dashes" );
 			lm_assert( strpos( $name, 'underline' ) === false, "{$name} is an underline variable" );
 		}
@@ -140,6 +136,12 @@ return [
 		lm_assert( Effects::TEMPO_KEYWORDS === [ 'fast', 'normal', 'slow', 'exact' ], 'tempo keywords' );
 		lm_assert( Effects::EDGES === [ 'top', 'center', 'bottom' ], 'edges' );
 		lm_assert( Effects::EASES === [ 'lumia', 'smooth', 'snappy', 'bouncy', 'linear', 'custom' ], 'eases' );
+	},
+	'underline constants share their keys'           => static function (): void {
+		lm_assert(
+			array_keys( Legacy::UNDERLINE_VARIABLES ) === array_keys( Legacy::UNDERLINE_DEFAULTS ),
+			'UNDERLINE_VARIABLES and UNDERLINE_DEFAULTS keys differ'
+		);
 	},
 	'underline css'                                  => static function (): void {
 		$css = Legacy::underline_css();

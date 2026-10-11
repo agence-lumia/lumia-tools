@@ -97,7 +97,8 @@ jobs:
 
       # The folder only exists from the engine task on: skip until then.
       - name: JavaScript unit tests
-        run: '[ -d tools/motion/js ] && node --test tools/motion/js/ || true'
+        run: |
+          if [ -d tools/motion/js ]; then node --test tools/motion/js/; fi
 
   build:
     name: Release zip
