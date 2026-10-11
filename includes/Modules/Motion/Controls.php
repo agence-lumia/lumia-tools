@@ -57,9 +57,12 @@ class Controls {
 	public function add_group( $groups ): array {
 		$groups = is_array( $groups ) ? $groups : [];
 
+		// "star" is an icon of Bricks (assets/svg/builder/star.svg); motion-builder.css covers it with
+		// the Lucide sparkles and leaves it as the fallback.
 		$groups[ self::GROUP ] = [
 			'title' => __( 'Motion', 'lumia-tools' ),
 			'tab'   => 'style',
+			'icon'  => 'star',
 		];
 
 		return $groups;
@@ -145,11 +148,17 @@ class Controls {
 	}
 
 	/**
-	 * The 25 controls, keyed by Bricks control key.
+	 * The controls, keyed by Bricks control key, in the order of the panel.
+	 *
+	 * Six sections, each opened by a separator: Effect, Trigger, Timing, Feel, Effect
+	 * settings, Underline. Bricks shows the controls of a group in array order, so a
+	 * control added to a section goes in that section's method.
 	 *
 	 * The parameters of an effect have no `required` condition on the effect: a
 	 * condition only sees the settings of the element, not the effect brought by a
-	 * class, so the parameters are all shown, under a separator.
+	 * class, so the parameters are all shown. The underline section is the exception
+	 * (three controls of no use to any other effect): it shows when the element itself
+	 * sets the underline effect.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -163,7 +172,31 @@ class Controls {
 			return $cache[ $locale ];
 		}
 
+		$controls = array_merge(
+			self::effect_section(),
+			self::trigger_section(),
+			self::timing_section(),
+			self::feel_section(),
+			self::settings_section(),
+			self::underline_section()
+		);
+
+		$cache[ $locale ] = $controls;
+
+		return $controls;
+	}
+
+	/**
+	 * Effect: the effect, then the help with the Replay button and the markers checkbox.
+	 *
+	 * The button and the checkbox are handled by motion-panel.js (main builder window).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function effect_section(): array {
 		$controls = [];
+
+		$controls['_lmEffectSep'] = self::separator( __( 'Effect', 'lumia-tools' ) );
 
 		$controls['_lmEffect'] = self::variable(
 			'--lm-effect',
@@ -172,6 +205,48 @@ class Controls {
 				'type'        => 'select',
 				'options'     => self::effect_options(),
 				'placeholder' => __( 'Not set', 'lumia-tools' ),
+			]
+		);
+
+		$controls['_lmHelp'] = self::plain(
+			[
+				'type'    => 'info',
+				'content' => esc_html__( 'One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP).', 'lumia-tools' )
+					. '<span class="lm-panel-tools">'
+					. '<button type="button" class="lm-panel-replay">' . esc_html__( 'Replay', 'lumia-tools' ) . '</button>'
+					. '<label><input type="checkbox" class="lm-panel-markers"> ' . esc_html__( 'Show markers', 'lumia-tools' ) . '</label>'
+					. '</span>',
+			]
+		);
+
+		return $controls;
+	}
+
+	/**
+	 * Trigger: when the animation plays (on load, start and end positions).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function trigger_section(): array {
+		$controls = [];
+
+		$controls['_lmTriggerSep'] = self::separator( __( 'Trigger', 'lumia-tools' ) );
+
+		$controls['_lmLoad'] = self::variable(
+			'--lm-load',
+			[
+				'label'       => __( 'On load', 'lumia-tools' ),
+				'type'        => 'select',
+				'options'     => self::options(
+					LoadAnimation::MODES,
+					[
+						'auto'   => __( 'Auto', 'lumia-tools' ),
+						'always' => __( 'Always', 'lumia-tools' ),
+						'never'  => __( 'Never', 'lumia-tools' ),
+					]
+				),
+				'placeholder' => __( 'Auto', 'lumia-tools' ),
+				'description' => __( 'Auto: animated as soon as the page opens when the element is in the header or the first section. Always: on load wherever it is. Never: always on scroll. Breakpoint values are ignored.', 'lumia-tools' ),
 			]
 		);
 
@@ -197,10 +272,11 @@ class Controls {
 		$controls['_lmStartAt'] = self::variable(
 			'--lm-start-at',
 			[
-				'label' => __( 'Start at (%)', 'lumia-tools' ),
-				'type'  => 'number',
-				'unit'  => '%',
-				'step'  => 1,
+				'label'       => __( 'Start at (%)', 'lumia-tools' ),
+				'type'        => 'number',
+				'unit'        => '%',
+				'step'        => 1,
+				'description' => __( 'The animation starts when this edge of the element reaches this height of the screen (0% = top, 100% = bottom).', 'lumia-tools' ),
 			]
 		);
 
@@ -217,35 +293,11 @@ class Controls {
 		$controls['_lmEndAt'] = self::variable(
 			'--lm-end-at',
 			[
-				'label' => __( 'End at (%)', 'lumia-tools' ),
-				'type'  => 'number',
-				'unit'  => '%',
-				'step'  => 1,
-			]
-		);
-
-		$controls['_lmLoad'] = self::variable(
-			'--lm-load',
-			[
-				'label'       => __( 'On load', 'lumia-tools' ),
-				'type'        => 'select',
-				'options'     => self::options(
-					LoadAnimation::MODES,
-					[
-						'auto'   => __( 'Auto', 'lumia-tools' ),
-						'always' => __( 'Always', 'lumia-tools' ),
-						'never'  => __( 'Never', 'lumia-tools' ),
-					]
-				),
-				'placeholder' => __( 'Auto', 'lumia-tools' ),
-				'description' => __( 'Auto = animated from the first frame when the element is in the header or the first section. Always = animated on load wherever it is. Never = always animated on scroll. Breakpoint values are ignored.', 'lumia-tools' ),
-			]
-		);
-
-		$controls['_lmAdvancedSep'] = self::plain(
-			[
-				'label' => __( 'Advanced', 'lumia-tools' ),
-				'type'  => 'separator',
+				'label'       => __( 'End at (%)', 'lumia-tools' ),
+				'type'        => 'number',
+				'unit'        => '%',
+				'step'        => 1,
+				'description' => __( 'Words and letters only: the text is fully revealed when this edge of the element reaches this height of the screen.', 'lumia-tools' ),
 			]
 		);
 
@@ -255,6 +307,7 @@ class Controls {
 				'label'       => __( 'Start position (ScrollTrigger)', 'lumia-tools' ),
 				'type'        => 'text',
 				'placeholder' => 'top 90%',
+				'description' => __( 'Advanced: replaces the start edge and height above.', 'lumia-tools' ),
 			]
 		);
 
@@ -264,8 +317,22 @@ class Controls {
 				'label'       => __( 'End position (ScrollTrigger)', 'lumia-tools' ),
 				'type'        => 'text',
 				'placeholder' => 'top -120%',
+				'description' => __( 'Advanced: replaces the end edge and height above.', 'lumia-tools' ),
 			]
 		);
+
+		return $controls;
+	}
+
+	/**
+	 * Timing: tempo, exact duration, delay, stagger.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function timing_section(): array {
+		$controls = [];
+
+		$controls['_lmTimingSep'] = self::separator( __( 'Timing', 'lumia-tools' ) );
 
 		$controls['_lmTempo'] = self::variable(
 			'--lm-tempo',
@@ -290,33 +357,52 @@ class Controls {
 		$controls['_lmDuration'] = self::variable(
 			'--lm-duration',
 			[
-				'label'    => __( 'Duration (seconds)', 'lumia-tools' ),
-				'type'     => 'number',
-				'min'      => 0,
-				'step'     => 0.05,
-				'required' => [ '_lmTempo', '=', 'custom' ],
+				'label'       => __( 'Duration', 'lumia-tools' ),
+				'type'        => 'number',
+				'min'         => 0,
+				'step'        => 0.05,
+				'placeholder' => self::reference_placeholder( 'duration' ),
+				'description' => __( 'Exact duration, in seconds.', 'lumia-tools' ),
+				'required'    => [ '_lmTempo', '=', 'custom' ],
 			]
 		);
 
 		$controls['_lmDelay'] = self::variable(
 			'--lm-delay',
 			[
-				'label' => __( 'Delay (seconds)', 'lumia-tools' ),
-				'type'  => 'number',
-				'min'   => 0,
-				'step'  => 0.05,
+				'label'       => __( 'Delay', 'lumia-tools' ),
+				'type'        => 'number',
+				'min'         => 0,
+				'step'        => 0.05,
+				'placeholder' => self::reference_placeholder( 'delay' ),
+				'description' => __( 'Wait before the animation, in seconds.', 'lumia-tools' ),
 			]
 		);
 
 		$controls['_lmStagger'] = self::variable(
 			'--lm-stagger',
 			[
-				'label' => __( 'Stagger (seconds)', 'lumia-tools' ),
-				'type'  => 'number',
-				'min'   => 0,
-				'step'  => 0.01,
+				'label'       => __( 'Stagger', 'lumia-tools' ),
+				'type'        => 'number',
+				'min'         => 0,
+				'step'        => 0.01,
+				'placeholder' => self::reference_placeholder( 'stagger' ),
+				'description' => __( 'Time between two elements that enter together, in seconds.', 'lumia-tools' ),
 			]
 		);
+
+		return $controls;
+	}
+
+	/**
+	 * Feel: the easing curve.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function feel_section(): array {
+		$controls = [];
+
+		$controls['_lmFeelSep'] = self::separator( __( 'Feel', 'lumia-tools' ) );
 
 		$controls['_lmEase'] = self::variable(
 			'--lm-ease',
@@ -347,12 +433,18 @@ class Controls {
 			]
 		);
 
-		$controls['_lmParamsSep'] = self::plain(
-			[
-				'label' => __( 'Effect settings', 'lumia-tools' ),
-				'type'  => 'separator',
-			]
-		);
+		return $controls;
+	}
+
+	/**
+	 * Effect settings: the values a given effect starts from.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function settings_section(): array {
+		$controls = [];
+
+		$controls['_lmParamsSep'] = self::separator( __( 'Effect settings', 'lumia-tools' ) );
 
 		$controls['_lmDistance'] = self::variable(
 			'--lm-distance',
@@ -361,47 +453,76 @@ class Controls {
 				'type'        => 'number',
 				'min'         => 0,
 				'step'        => 1,
-				'description' => __( 'Pixels, or percent of the line height for the line-by-line text effect.', 'lumia-tools' ),
+				'placeholder' => self::reference_placeholder( 'distance' ),
+				'description' => __( 'Starting offset, in px. Lines: percent of the line height.', 'lumia-tools' ),
 			]
 		);
 
 		$controls['_lmBlur'] = self::variable(
 			'--lm-blur',
 			[
-				'label' => __( 'Blur (pixels)', 'lumia-tools' ),
-				'type'  => 'number',
-				'min'   => 0,
-				'step'  => 1,
+				'label'       => __( 'Blur', 'lumia-tools' ),
+				'type'        => 'number',
+				'min'         => 0,
+				'step'        => 1,
+				'placeholder' => self::reference_placeholder( 'blur' ),
+				'description' => __( 'Starting blur, in px.', 'lumia-tools' ),
 			]
 		);
 
 		$controls['_lmScale'] = self::variable(
 			'--lm-scale',
 			[
-				'label' => __( 'Start scale', 'lumia-tools' ),
-				'type'  => 'number',
-				'min'   => 0,
-				'step'  => 0.01,
+				'label'       => __( 'Start scale', 'lumia-tools' ),
+				'type'        => 'number',
+				'min'         => 0,
+				'step'        => 0.01,
+				'placeholder' => self::reference_placeholder( 'scale' ),
+				'description' => __( 'Starting size from 0 to 1: 0.9 starts at 90%.', 'lumia-tools' ),
 			]
 		);
 
 		$controls['_lmFromOpacity'] = self::variable(
 			'--lm-from-opacity',
 			[
-				'label' => __( 'Start opacity', 'lumia-tools' ),
-				'type'  => 'number',
-				'min'   => 0,
-				'max'   => 1,
-				'step'  => 0.01,
+				'label'       => __( 'Start opacity', 'lumia-tools' ),
+				'type'        => 'number',
+				'min'         => 0,
+				'max'         => 1,
+				'step'        => 0.01,
+				'placeholder' => self::reference_placeholder( 'from_opacity' ),
+				'description' => __( 'Starting opacity of the words or letters, from 0 to 1.', 'lumia-tools' ),
 			]
 		);
 
 		$controls['_lmStartValue'] = self::variable(
 			'--lm-start-value',
 			[
-				'label' => __( 'Counter start value', 'lumia-tools' ),
-				'type'  => 'number',
-				'step'  => 1,
+				'label'       => __( 'Counter start value', 'lumia-tools' ),
+				'type'        => 'number',
+				'step'        => 1,
+				'placeholder' => self::reference_placeholder( 'start_value' ),
+				'description' => __( 'Number the counter starts from.', 'lumia-tools' ),
+			]
+		);
+
+		return $controls;
+	}
+
+	/**
+	 * Underline: shown when the element itself sets the underline effect.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function underline_section(): array {
+		$underline = [ '_lmEffect', '=', 'underline' ];
+		$controls  = [];
+
+		$controls['_lmUnderlineSep'] = self::plain(
+			[
+				'label'    => __( 'Underline', 'lumia-tools' ),
+				'type'     => 'separator',
+				'required' => $underline,
 			]
 		);
 
@@ -412,6 +533,7 @@ class Controls {
 				'type'        => 'number',
 				'units'       => true,
 				'description' => __( 'Line thickness. Empty = scales with the text size (1 px for body text, about 2 px on a 32 px title).', 'lumia-tools' ),
+				'required'    => $underline,
 			]
 		);
 
@@ -423,27 +545,60 @@ class Controls {
 				'units'       => true,
 				'placeholder' => '0.12em',
 				'description' => __( 'Include the unit, e.g. 0.12em.', 'lumia-tools' ),
+				'required'    => $underline,
 			]
 		);
 
 		$controls['_lmUnderlineColor'] = self::variable(
 			'--lm-underline-color',
 			[
-				'label' => __( 'Underline color', 'lumia-tools' ),
-				'type'  => 'color',
+				'label'    => __( 'Underline color', 'lumia-tools' ),
+				'type'     => 'color',
+				'required' => $underline,
 			]
 		);
-
-		$controls['_lmHelp'] = self::plain(
-			[
-				'type'    => 'info',
-				'content' => esc_html__( 'One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP).', 'lumia-tools' ),
-			]
-		);
-
-		$cache[ $locale ] = $controls;
 
 		return $controls;
+	}
+
+	/**
+	 * Static placeholder of a number field: the reference value of the default effect (fade),
+	 * else of the first effect of the catalog that has the setting.
+	 *
+	 * In the builder, motion-panel.js replaces it with the value the selected element really
+	 * inherits (its class, else the site value of its effect); this one shows when the canvas
+	 * cannot tell (no effect on the element, engine not ready).
+	 *
+	 * @param string $setting Setting key in Effects::reference_values().
+	 */
+	private static function reference_placeholder( string $setting ): string {
+		$values = Effects::reference_values();
+		$order  = array_unique( array_merge( [ 'fade' ], array_keys( $values ) ) );
+
+		foreach ( $order as $slug ) {
+			$value = $values[ $slug ][ $setting ] ?? null;
+			if ( is_float( $value ) || is_int( $value ) ) {
+				// 0.45 -> "0.45", 48.0 -> "48".
+				return rtrim( rtrim( number_format( (float) $value, 3, '.', '' ), '0' ), '.' );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * A section title (writes nothing).
+	 *
+	 * @param string $label Translated title.
+	 * @return array<string, mixed>
+	 */
+	private static function separator( string $label ): array {
+		return self::plain(
+			[
+				'label' => $label,
+				'type'  => 'separator',
+			]
+		);
 	}
 
 	/**

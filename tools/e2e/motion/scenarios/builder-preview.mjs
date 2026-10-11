@@ -9,6 +9,9 @@
 //    by its computed --lm-effect and replayed; text scrubs replay 0 to 1 in 1.2 s and the
 //    counter counts again;
 //  - with the "never animate" setting nothing replays, the signature is still kept up to date;
+//  - the API of the panel: replay(id) plays one element (false for an unknown id or under
+//    reduced motion), inspect(id) gives the inherited values before the tempo factor,
+//    markers(on) draws one start marker per item and removes them;
 //  - the effect list shows animated thumbnails (14 x 14 px, one animation per effect, none
 //    under reduced motion). Capture for a visual check: out/effects-list.png.
 //
@@ -171,10 +174,37 @@ export default async function () {
 		} );
 		await sleep( 800 );
 		assert( ( await stats( canvas ) ).replays === b, 'reduced motion: the canvas replayed an element' );
+		assert( ( await canvas.evaluate( () => window.lumiaMotion.replay( 'bpre30' ) ) ) === false, 'reduced motion: replay(id) played the element' );
 		await waitFinal( canvas, 'brxe-bpre30', 'reduced motion' );
 	}
 	await page.emulateMedia( { reducedMotion: 'no-preference' } );
 	await sleep( 600 );
+
+	// ---------------------------------------------------------------- the API of the panel
+	{
+		const b = ( await stats( canvas ) ).replays;
+		assert( ( await canvas.evaluate( () => window.lumiaMotion.replay( 'nope00' ) ) ) === false, 'replay() of an unknown id returned true' );
+		assert( ( await canvas.evaluate( () => window.lumiaMotion.replay( 'bpre30' ) ) ) === true, 'replay() of bpre30 returned false' );
+		assert( ( await stats( canvas ) ).replays === b + 1, `replay(id): replays went from ${ b } to ${ ( await stats( canvas ) ).replays }` );
+		await waitFinal( canvas, 'brxe-bpre30', 'replay(id)' );
+
+		const seen = await canvas.evaluate( () => [ window.lumiaMotion.inspect( 'bpre01' ), window.lumiaMotion.inspect( 'nope00' ) ] );
+		assert( seen[ 1 ] === null, 'inspect() of an unknown id is not null' );
+		const o = seen[ 0 ];
+		assert( o && o.effect === 'slide-up' && o.tempo === 'normal' && o.easeKey === 'smooth', `inspect(bpre01): ${ JSON.stringify( o ) }` );
+		assert( Math.abs( o.stagger - 0.15 ) < 1e-9 && o.distance === 48 && o.delay === 0, `inspect(bpre01) does not give the class stagger and the slide-up values: ${ JSON.stringify( o ) }` );
+		// bprefb is "fast": the time values are given as a field holds them, before the tempo factor.
+		const fast = await canvas.evaluate( () => window.lumiaMotion.inspect( 'bprefb' ) );
+		assert( fast.tempo === 'fast' && Math.abs( fast.stagger - 0.15 ) < 1e-9, `inspect(bprefb) scaled the stagger by the tempo: ${ JSON.stringify( fast ) }` );
+
+		const marks = ( on ) => canvas.evaluate( ( on ) => {
+			window.lumiaMotion.markers( on );
+			return document.querySelectorAll( '.gsap-marker-start' ).length;
+		}, on );
+		const items = ( await canvas.evaluate( () => window.lumiaMotion._debug.items().length ) );
+		assert( ( await marks( true ) ) === items, `markers(true) drew ${ await canvas.evaluate( () => document.querySelectorAll( '.gsap-marker-start' ).length ) } start markers for ${ items } items` );
+		assert( ( await marks( false ) ) === 0, 'markers(false) left markers in the canvas' );
+	}
 
 	// ---------------------------------------------------------------- a new element gets an effect
 	const known = await canvas.evaluate( () => [ ...document.querySelectorAll( '.brxe-heading' ) ].map( ( e ) => e.id ) );

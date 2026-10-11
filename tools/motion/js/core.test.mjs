@@ -228,6 +228,13 @@ test("resolve: tempo scales duration and stagger, never delay", () => {
   assert.deepEqual(o.warnings, []);
 });
 
+test("resolve: gives the tempo it used (typed, else the site one)", () => {
+  assert.equal(core.resolve("slide-up", { tempo: "fast" }, CFG).tempo, "fast");
+  assert.equal(core.resolve("slide-up", {}, CFG).tempo, "normal");
+  assert.equal(core.resolve("slide-up", { tempo: "exact" }, CFG).tempo, "custom");
+  assert.equal(core.resolve("slide-up", { tempo: "nope" }, { ...CFG, tempo: "slow" }).tempo, "slow");
+});
+
 test("resolve: custom tempo uses the typed duration, unscaled", () => {
   assert.equal(core.resolve("slide-up", { tempo: "custom", duration: "1.2" }, CFG).duration, 1.2);
   assert.equal(core.resolve("slide-up", { tempo: "custom", duration: "" }, CFG).duration, 0.65);

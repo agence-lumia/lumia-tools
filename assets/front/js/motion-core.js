@@ -622,6 +622,8 @@
       scrub: scrub,
       start: start,
       end: end,
+      // The tempo in force (typed, else the site one); scrubs ignore it.
+      tempo: tempo,
       duration: duration,
       tweenDuration: duration * curve.settle,
       delay: delay,

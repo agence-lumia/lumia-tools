@@ -9,6 +9,8 @@
  * - the panel writes its changes as CSS in a <style> of the <head>, and Bricks renders
  *   elements again in the <body>: a MutationObserver on both asks for a read as well.
  *
+ * The ScrollTrigger markers the panel can show are left out: drawing them is not a change.
+ *
  * A read is lumiaMotion.scan(). It finds the elements by their computed --lm-effect (an
  * element added in the builder has no data-lm), and replays the ones whose settings changed
  * (the "Animation preview" setting of the module; "off" replays nothing).
@@ -60,9 +62,25 @@
     return motion.playing(record.target);
   }
 
+  // The ScrollTrigger markers ("Show markers" in the panel) are added to and removed from the
+  // body: drawing them is not a change of the page, and reading the page again would draw them
+  // again.
+  function isMarker(node) {
+    var name = node && node.nodeType === 1 && typeof node.className === "string" ? node.className : "";
+    return name.indexOf("gsap-marker") === 0;
+  }
+
+  function onlyMarkers(record) {
+    if (record.type !== "childList") {
+      return false;
+    }
+    var nodes = Array.prototype.slice.call(record.addedNodes).concat(Array.prototype.slice.call(record.removedNodes));
+    return nodes.length > 0 && nodes.every(isMarker);
+  }
+
   function onMutations(records) {
     for (var i = 0; i < records.length; i++) {
-      if (!ours(records[i])) {
+      if (!ours(records[i]) && !onlyMarkers(records[i])) {
         request();
         return;
       }

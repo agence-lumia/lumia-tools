@@ -66,6 +66,12 @@
   var BUILDER = !!config.builder;
   var PREVIEW_ON = BUILDER && config.preview === "replay";
   var replayOn = false; // PREVIEW_ON, and the visitor has not asked for reduced motion (set per matchMedia branch)
+  var motionOk = false; // the visitor has not asked for reduced motion (set per matchMedia branch)
+  // Builder only: the ScrollTrigger markers asked by the panel ("Show markers"), a preference of
+  // the browser kept by motion-panel.js in the main window (same origin, same storage).
+  var MARKERS_KEY = "lmMotionMarkers";
+  var markersOn = BUILDER && readMarkersPref();
+  var markerTriggers = []; // triggers that only draw markers: nothing follows the scroll in the canvas
   var destroyHooks = [];
   // Seconds a text scrub takes when it is replayed in the builder: 0 to 1, whatever its length.
   var PREVIEW_SCRUB_S = 1.2;
@@ -119,6 +125,14 @@
     return el.classList.length ? name + "." + Array.prototype.join.call(el.classList, ".") : name;
   }
 
+  function readMarkersPref() {
+    try {
+      return window.localStorage.getItem(MARKERS_KEY) === "1";
+    } catch (error) {
+      return false;
+    }
+  }
+
   function log(message) {
     if (DEBUG && window.console && console.info) {
       console.info("Lumia Motion: " + message);
@@ -164,6 +178,23 @@
     var id = (el.dataset && el.dataset.scriptId) || el.id || "";
     var index = el.getAttribute("data-query-loop-index");
     return id && index ? id + ":" + index : id;
+  }
+
+  // Whether an element is the Bricks element of this id (the key of a loop item counts too).
+  function isBricksId(el, id) {
+    var base = builderKey(el).split(":")[0];
+    return base === id || base === "brxe-" + id;
+  }
+
+  // The canvas element of a Bricks id: its data-script-id (printed in the builder), else #brxe-<id>.
+  function elementOf(id) {
+    var list = document.querySelectorAll("[data-script-id]");
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].getAttribute("data-script-id") === id) {
+        return list[i];
+      }
+    }
+    return document.getElementById("brxe-" + id);
   }
 
   // The canvas: an element added there has no data-lm (the marker ran when the page was
@@ -1315,10 +1346,49 @@
     return changed;
   }
 
+  function clearMarkers() {
+    markerTriggers.forEach(function (trigger) {
+      try {
+        trigger.kill();
+      } catch (error) {
+        report("could not remove a marker.", error);
+      }
+    });
+    markerTriggers = [];
+  }
+
+  // Builder: one marker-only trigger per item, at its start (and its end for a scrub). Drawn
+  // again whenever the items change; they follow nothing and play nothing.
+  function drawMarkers() {
+    clearMarkers();
+    if (!BUILDER || !markersOn || !running) {
+      return;
+    }
+    items.forEach(function (item) {
+      var scrub = !!item.options.scrub;
+      try {
+        markerTriggers.push(
+          ScrollTrigger.create({
+            trigger: item.el,
+            start: item.options.start,
+            end: scrub ? item.options.end : item.options.start,
+            // A one-shot effect has a start only: its end marker is drawn transparent.
+            markers: { startColor: "green", endColor: scrub ? "red" : "transparent", fontSize: "12px", indent: 0 },
+          })
+        );
+      } catch (error) {
+        report("could not draw the markers of " + describe(item.el) + ".", error);
+      }
+    });
+    // No ScrollTrigger.refresh(): each trigger measures itself when it is created, and a full
+    // refresh adds a measuring node to the body, which the builder script would take for a change.
+  }
+
   function teardown() {
     items.slice().forEach(kill);
     items = [];
     unwatchPageEnd();
+    clearMarkers();
   }
 
   // Runs outside the matchMedia context: the engine tracks its own tweens and triggers,
@@ -1327,6 +1397,9 @@
     var changed = false;
     var run = function () {
       changed = sync(scope, recheck, quiet);
+      if (changed && markersOn) {
+        drawMarkers();
+      }
     };
     if (context && context.ignore) {
       context.ignore(run);
@@ -1446,7 +1519,8 @@
         // Reduced motion, or the builder canvas: every element in its final state, nothing hidden.
         animate = !!context.conditions.motion && !config.builder;
         // The canvas honours reduced motion too: no replay, every change shows its final state.
-        replayOn = PREVIEW_ON && !!context.conditions.motion;
+        motionOk = !!context.conditions.motion;
+        replayOn = PREVIEW_ON && motionOk;
         current = context;
         running = true;
         var built = false;
@@ -1511,6 +1585,69 @@
       if (typeof fn === "function") {
         destroyHooks.push(fn);
       }
+    },
+    // Builder (the Replay button of the panel): plays the element of this Bricks id once, every
+    // item of a query loop included. False when it is not an animated item of the canvas, or
+    // under reduced motion (the element stays as it ends).
+    replay: function (id) {
+      if (!BUILDER || !running || !motionOk || typeof id !== "string" || id === "") {
+        return false;
+      }
+      var found = items.filter(function (item) {
+        return isBricksId(item.el, id);
+      });
+      found.forEach(function (item) {
+        // From its final state, whatever it was doing: a replay still playing is cut short.
+        settle(item);
+        replay(item);
+      });
+      return found.length > 0;
+    },
+    // Builder (the "Show markers" checkbox): draws or removes the ScrollTrigger markers.
+    markers: function (on) {
+      if (!BUILDER) {
+        return;
+      }
+      markersOn = !!on;
+      if (markersOn) {
+        drawMarkers();
+      } else {
+        clearMarkers();
+      }
+    },
+    // Builder (placeholders of the panel): the values the element of this Bricks id gets when its
+    // fields are empty, or null when it has no effect. Time values are given before the tempo
+    // factor, as a field holds them (the tempo scales what is typed there too).
+    inspect: function (id) {
+      if (!BUILDER || typeof id !== "string" || id === "") {
+        return null;
+      }
+      var el = elementOf(id);
+      if (!el) {
+        return null;
+      }
+      var entry = read(el);
+      if (entry.effect === "" || entry.effect === "none" || !has(SLUGS, entry.effect)) {
+        return null;
+      }
+      var o = core.resolve(entry.effect, entry.raw, config);
+      var factor = o.scrub ? null : core.tempoFactor(o.tempo);
+      var unscale = function (value) {
+        return factor ? value / factor : value;
+      };
+      return {
+        effect: o.effect,
+        duration: unscale(o.duration),
+        delay: o.delay,
+        stagger: unscale(o.stagger),
+        distance: o.distance,
+        blur: o.blur,
+        scale: o.scale,
+        fromOpacity: o.fromOpacity,
+        startValue: o.startValue,
+        tempo: o.tempo,
+        easeKey: o.easeKey,
+      };
     },
     _debug: {
       items: function () {

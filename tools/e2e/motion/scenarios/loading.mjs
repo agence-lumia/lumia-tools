@@ -239,7 +239,9 @@ export default async function () {
 		const main = await page.evaluate( () => ( {
 			builderCss: document.querySelectorAll( 'link[href*="/front/css/motion-builder.css"]' ).length,
 			frontCss: document.querySelectorAll( 'link[href*="/front/css/motion.css"]' ).length,
-			engine: document.querySelectorAll( 'script[src*="/front/js/"]' ).length,
+			// The panel script is the only Motion script of the main window.
+			engine: [ ...document.querySelectorAll( 'script[src*="/front/js/"]' ) ].filter( ( s ) => ! s.src.includes( '/front/js/motion-panel.js' ) ).length,
+			panel: document.querySelectorAll( 'script[src*="/front/js/motion-panel.js"]' ).length,
 			config: typeof window.lumiaMotionConfig,
 			gsap: typeof window.gsap,
 			lenis: document.querySelectorAll( 'link[href*="lenis"], script[src*="lenis"], script[src*="motion-scroll"]' ).length,
@@ -248,6 +250,7 @@ export default async function () {
 		assert( main.frontCss === 0, 'builder main: motion.css is linked' );
 		assert( main.engine === 0 && main.config === 'undefined' && main.gsap === 'undefined', `builder main: engine loaded (scripts=${ main.engine } config=${ main.config } gsap=${ main.gsap })` );
 
+		assert( main.panel === 1, `builder main: motion-panel.js loaded ${ main.panel } times` );
 		assert( main.lenis === 0, `builder main: ${ main.lenis } smooth scroll file(s) loaded` );
 
 		const canvas = page.frames().find( ( f ) => f !== page.mainFrame() );

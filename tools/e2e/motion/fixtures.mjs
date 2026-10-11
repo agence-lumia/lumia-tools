@@ -11,7 +11,8 @@ import { OUT, wp, pluginPath } from './lib.mjs';
 export const CLASSES = {
 	// Bricks stores a number control with a fixed unit as a bare string; the unit is added in the CSS.
 	// "Never" on load: the presets sit in first sections and test the engine.
-	'lm-e2e-preset': { _lmEffect: 'slide-up', _lmStartAt: '60', _lmLoad: 'never' },
+	// The stagger is read back as the placeholder of the empty Stagger field (builder-panel).
+	'lm-e2e-preset': { _lmEffect: 'slide-up', _lmStartAt: '60', _lmLoad: 'never', _lmStagger: '0.15' },
 };
 
 /** Posts the query loops need: published when missing (by slug), never modified. */

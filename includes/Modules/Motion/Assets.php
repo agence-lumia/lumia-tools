@@ -16,7 +16,8 @@ defined( 'ABSPATH' ) || exit;
  *   scripts of the footer are printed at priority 20.
  *
  * Nothing is loaded in the admin. In the builder, the main window gets the builder
- * stylesheet only, and the canvas gets the engine in its builder mode (no smooth scroll).
+ * stylesheet and the panel script (Replay, markers, inherited placeholders), and the canvas
+ * gets the engine in its builder mode (no smooth scroll).
  */
 final class Assets {
 
@@ -28,6 +29,7 @@ final class Assets {
 	const HANDLE_MOTION        = 'lumia-motion';
 	const HANDLE_BUILDER       = 'lumia-motion-builder';
 	const HANDLE_SCROLL        = 'lumia-motion-scroll';
+	const HANDLE_PANEL         = 'lumia-motion-panel';
 
 	/** Seconds after which the safety makes every element visible when the engine did not start. */
 	const SAFETY_MS = 3000;
@@ -106,10 +108,19 @@ final class Assets {
 	}
 
 	/**
-	 * Scripts: the engine and its libraries when the page needs them, smooth scroll when it is on.
+	 * Scripts: the engine and its libraries when the page needs them, smooth scroll when it is on;
+	 * the panel script alone in the main window of the builder.
 	 */
 	public function enqueue_scripts(): void {
-		if ( is_admin() || self::is_builder_main() ) {
+		if ( is_admin() ) {
+			return;
+		}
+
+		if ( self::is_builder_main() ) {
+			if ( self::has_script( 'motion-panel.js' ) ) {
+				wp_enqueue_script( self::HANDLE_PANEL, LUMIA_ASSETS_URL . 'front/js/motion-panel.js', [], LUMIA_VERSION, self::footer_args() );
+			}
+
 			return;
 		}
 

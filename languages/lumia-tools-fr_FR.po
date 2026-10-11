@@ -5687,9 +5687,6 @@ msgstr "Fin : repère de l'élément"
 msgid "End at (%)"
 msgstr "Fin à (%)"
 
-msgid "Advanced"
-msgstr "Avancé"
-
 msgid "Start position (ScrollTrigger)"
 msgstr "Position de début (ScrollTrigger)"
 
@@ -5706,15 +5703,6 @@ msgctxt "tempo"
 msgid "Custom"
 msgstr "Personnalisé"
 
-msgid "Duration (seconds)"
-msgstr "Durée (secondes)"
-
-msgid "Delay (seconds)"
-msgstr "Délai (secondes)"
-
-msgid "Stagger (seconds)"
-msgstr "Décalage (secondes)"
-
 msgid "Easing"
 msgstr "Courbe"
 
@@ -5730,20 +5718,11 @@ msgstr "Auto"
 msgid "Always"
 msgstr "Toujours"
 
-msgid "Auto = animated from the first frame when the element is in the header or the first section. Always = animated on load wherever it is. Never = always animated on scroll. Breakpoint values are ignored."
-msgstr "Auto = animé dès la première image s'il est dans l'en-tête ou la première section. Toujours = animé au chargement où qu'il soit. Jamais = toujours animé au défilement. Les valeurs par breakpoint sont ignorées."
-
 msgid "Effect settings"
 msgstr "Paramètres de l'effet"
 
 msgid "Distance"
 msgstr "Distance"
-
-msgid "Pixels, or percent of the line height for the line-by-line text effect."
-msgstr "Pixels, ou pourcentage de la hauteur de ligne pour l'effet de texte ligne par ligne."
-
-msgid "Blur (pixels)"
-msgstr "Flou (pixels)"
 
 msgid "Start scale"
 msgstr "Échelle de départ"
@@ -5774,6 +5753,72 @@ msgstr "Épaisseur du trait. Vide = suit la taille du texte (1 px pour le texte 
 
 msgid "Include the unit, e.g. 0.12em."
 msgstr "Indiquez l'unité, par exemple 0.12em."
+
+msgid "Replay"
+msgstr "Rejouer"
+
+msgid "Show markers"
+msgstr "Afficher les repères"
+
+msgid "Trigger"
+msgstr "Déclenchement"
+
+msgid "Auto: animated as soon as the page opens when the element is in the header or the first section. Always: on load wherever it is. Never: always on scroll. Breakpoint values are ignored."
+msgstr "Auto : animé dès l'ouverture de la page s'il est dans l'en-tête ou la première section. Toujours : au chargement où qu'il soit. Jamais : toujours au défilement. Les valeurs par breakpoint sont ignorées."
+
+msgid "The animation starts when this edge of the element reaches this height of the screen (0% = top, 100% = bottom)."
+msgstr "L'animation démarre quand ce repère de l'élément atteint cette hauteur de l'écran (0 % = haut, 100 % = bas)."
+
+msgid "Words and letters only: the text is fully revealed when this edge of the element reaches this height of the screen."
+msgstr "Mots et lettres uniquement : le texte est entièrement révélé quand ce repère de l'élément atteint cette hauteur de l'écran."
+
+msgid "Advanced: replaces the start edge and height above."
+msgstr "Avancé : remplace le repère et la hauteur de début ci-dessus."
+
+msgid "Advanced: replaces the end edge and height above."
+msgstr "Avancé : remplace le repère et la hauteur de fin ci-dessus."
+
+msgid "Timing"
+msgstr "Durée"
+
+msgid "Duration"
+msgstr "Durée"
+
+msgid "Exact duration, in seconds."
+msgstr "Durée exacte, en secondes."
+
+msgid "Delay"
+msgstr "Délai"
+
+msgid "Wait before the animation, in seconds."
+msgstr "Attente avant l'animation, en secondes."
+
+msgid "Stagger"
+msgstr "Décalage"
+
+msgid "Time between two elements that enter together, in seconds."
+msgstr "Temps entre deux éléments qui entrent ensemble, en secondes."
+
+msgid "Feel"
+msgstr "Sensation"
+
+msgid "Starting offset, in px. Lines: percent of the line height."
+msgstr "Déplacement de départ, en px. Lignes : pourcentage de la hauteur de ligne."
+
+msgid "Starting blur, in px."
+msgstr "Flou de départ, en px."
+
+msgid "Starting size from 0 to 1: 0.9 starts at 90%."
+msgstr "Taille de départ, de 0 à 1 : 0,9 démarre à 90 %."
+
+msgid "Starting opacity of the words or letters, from 0 to 1."
+msgstr "Opacité de départ des mots ou des lettres, de 0 à 1."
+
+msgid "Number the counter starts from."
+msgstr "Nombre de départ du compteur."
+
+msgid "Underline"
+msgstr "Soulignement"
 
 msgid "Slide up"
 msgstr "Montée"

@@ -1,6 +1,6 @@
 <?php
 /**
- * Checks the Motion panel on the Bricks elements: the 25 controls, the group, the
+ * Checks the Motion panel on the Bricks elements: the controls in their six sections, the group, the
  * script and the `css` keys that make a control write a --lm-* variable.
  * Run through `wp eval-file assert-controls.php` on the local bench; exits 1 on the
  * first failure. Local bench only, never shipped.
@@ -11,19 +11,23 @@ if ( ! defined( 'WP_CLI' ) ) {
 }
 
 $lm_keys = array(
+	'_lmEffectSep',
 	'_lmEffect',
+	'_lmHelp',
+	'_lmTriggerSep',
+	'_lmLoad',
 	'_lmStartEdge',
 	'_lmStartAt',
 	'_lmEndEdge',
 	'_lmEndAt',
-	'_lmLoad',
-	'_lmAdvancedSep',
 	'_lmStart',
 	'_lmEnd',
+	'_lmTimingSep',
 	'_lmTempo',
 	'_lmDuration',
 	'_lmDelay',
 	'_lmStagger',
+	'_lmFeelSep',
 	'_lmEase',
 	'_lmEaseCustom',
 	'_lmParamsSep',
@@ -32,20 +36,29 @@ $lm_keys = array(
 	'_lmScale',
 	'_lmFromOpacity',
 	'_lmStartValue',
+	'_lmUnderlineSep',
 	'_lmUnderlineThickness',
 	'_lmUnderlineGap',
 	'_lmUnderlineColor',
-	'_lmHelp',
 );
+$lm_count = count( $lm_keys );
 
+// The six sections, in this order.
+$lm_separators = array( '_lmEffectSep', '_lmTriggerSep', '_lmTimingSep', '_lmFeelSep', '_lmParamsSep', '_lmUnderlineSep' );
+
+// Controls that must explain themselves, with their unit.
+$lm_described = array( '_lmLoad', '_lmStartAt', '_lmEndAt', '_lmDuration', '_lmDelay', '_lmStagger', '_lmDistance', '_lmBlur', '_lmScale', '_lmFromOpacity', '_lmStartValue', '_lmUnderlineThickness', '_lmUnderlineGap' );
+
+// Number fields whose empty value shows the inherited one: a static placeholder as fallback.
+$lm_placeholders = array( '_lmDuration', '_lmDelay', '_lmStagger', '_lmDistance', '_lmBlur', '_lmScale', '_lmFromOpacity', '_lmStartValue' );
 // Controls that write a variable, and the variable they write.
 $lm_variables = array(
 	'_lmEffect'             => '--lm-effect',
+	'_lmLoad'               => '--lm-load',
 	'_lmStartEdge'          => '--lm-start-edge',
 	'_lmStartAt'            => '--lm-start-at',
 	'_lmEndEdge'            => '--lm-end-edge',
 	'_lmEndAt'              => '--lm-end-at',
-	'_lmLoad'               => '--lm-load',
 	'_lmStart'              => '--lm-start',
 	'_lmEnd'                => '--lm-end',
 	'_lmTempo'              => '--lm-tempo',
@@ -110,8 +123,17 @@ foreach ( $lm_elements as $lm_name ) {
 			$lm_fail( "{$lm_name}: control {$lm_key} is missing." );
 		}
 	}
-	if ( count( array_intersect( array_keys( $lm_controls ), $lm_keys ) ) !== 25 ) {
-		$lm_fail( "{$lm_name}: expected exactly 25 Motion controls." );
+	// Exactly these Motion controls, in this order (the panel shows them in array order).
+	$lm_ours = array_values(
+		array_filter(
+			array_keys( $lm_controls ),
+			static function ( $key ) {
+				return 0 === strpos( (string) $key, '_lm' );
+			}
+		)
+	);
+	if ( $lm_ours !== $lm_keys ) {
+		$lm_fail( "{$lm_name}: expected the {$lm_count} Motion controls in section order, got " . implode( ', ', $lm_ours ) . '.' );
 	}
 	foreach ( $lm_keys as $lm_key ) {
 		if ( 'lm_motion' !== ( $lm_controls[ $lm_key ]['group'] ?? null ) ) {
@@ -127,7 +149,7 @@ foreach ( $lm_elements as $lm_name ) {
 			$lm_fail( "{$lm_name}: {$lm_key} must write {$lm_variable} on the element itself." );
 		}
 	}
-	foreach ( array( '_lmHelp', '_lmAdvancedSep', '_lmParamsSep' ) as $lm_key ) {
+	foreach ( array_merge( array( '_lmHelp' ), $lm_separators ) as $lm_key ) {
 		if ( isset( $lm_controls[ $lm_key ]['css'] ) ) {
 			$lm_fail( "{$lm_name}: {$lm_key} must not have a css key." );
 		}
@@ -136,6 +158,10 @@ foreach ( $lm_elements as $lm_name ) {
 	$lm_groups = apply_filters( "bricks/elements/{$lm_name}/control_groups", array() );
 	if ( 'style' !== ( $lm_groups['lm_motion']['tab'] ?? null ) || '' === ( $lm_groups['lm_motion']['title'] ?? '' ) ) {
 		$lm_fail( "{$lm_name}: the lm_motion group is missing or has no title." );
+	}
+	// A Bricks icon name (assets/svg/builder/star.svg): the fallback under the sparkles of motion-builder.css.
+	if ( 'star' !== ( $lm_groups['lm_motion']['icon'] ?? null ) ) {
+		$lm_fail( "{$lm_name}: the lm_motion group must declare the star icon." );
 	}
 
 	// The builder script is declared for builder requests only: on the front end it would make
@@ -175,6 +201,68 @@ foreach ( $lm_expect as $lm_row ) {
 		$lm_fail( "{$lm_row[0]}: wrong {$lm_row[1]}." );
 	}
 }
+// Sections: separators with a label, the underline one only for the underline effect.
+foreach ( $lm_separators as $lm_key ) {
+	if ( 'separator' !== ( $lm_controls[ $lm_key ]['type'] ?? null ) || '' === ( $lm_controls[ $lm_key ]['label'] ?? '' ) ) {
+		$lm_fail( "{$lm_key}: must be a separator with a label." );
+	}
+}
+foreach ( array( '_lmUnderlineSep', '_lmUnderlineThickness', '_lmUnderlineGap', '_lmUnderlineColor' ) as $lm_key ) {
+	if ( array( '_lmEffect', '=', 'underline' ) !== ( $lm_controls[ $lm_key ]['required'] ?? null ) ) {
+		$lm_fail( "{$lm_key}: must require the underline effect." );
+	}
+}
+foreach ( $lm_described as $lm_key ) {
+	if ( ! is_string( $lm_controls[ $lm_key ]['description'] ?? null ) || '' === trim( $lm_controls[ $lm_key ]['description'] ) ) {
+		$lm_fail( "{$lm_key}: the description is empty." );
+	}
+}
+$lm_units = array(
+	'_lmStagger'     => 'Time between two elements that enter together, in seconds.',
+	'_lmScale'       => 'Starting size from 0 to 1: 0.9 starts at 90%.',
+	'_lmDistance'    => 'Starting offset, in px.',
+	'_lmBlur'        => 'Starting blur, in px.',
+	'_lmFromOpacity' => 'Starting opacity of the words or letters, from 0 to 1.',
+	'_lmStartAt'     => 'The animation starts when this edge of the element reaches this height of the screen (0% = top, 100% = bottom).',
+	'_lmDelay'       => 'Wait before the animation, in seconds.',
+	'_lmDuration'    => 'Exact duration, in seconds.',
+	'_lmLoad'        => 'Auto: animated as soon as the page opens when the element is in the header or the first section.',
+);
+// Checked in English only: the bench may run in another locale.
+if ( 0 === strpos( determine_locale(), 'en' ) ) {
+	foreach ( $lm_units as $lm_key => $lm_sentence ) {
+		if ( false === strpos( $lm_controls[ $lm_key ]['description'], $lm_sentence ) ) {
+			$lm_fail( "{$lm_key}: the description does not say \"{$lm_sentence}\"." );
+		}
+	}
+}
+foreach ( $lm_placeholders as $lm_key ) {
+	if ( ! is_numeric( $lm_controls[ $lm_key ]['placeholder'] ?? null ) ) {
+		$lm_fail( "{$lm_key}: the static placeholder must be a number." );
+	}
+}
+// Static placeholders are the reference values of the default effect (fade), else of the first effect with the setting.
+$lm_static = array(
+	'_lmDuration'    => '0.45',
+	'_lmDelay'       => '0',
+	'_lmStagger'     => '0.06',
+	'_lmDistance'    => '48',
+	'_lmBlur'        => '12',
+	'_lmScale'       => '0.9',
+	'_lmFromOpacity' => '0.08',
+	'_lmStartValue'  => '0',
+);
+foreach ( $lm_static as $lm_key => $lm_value ) {
+	if ( $lm_value !== $lm_controls[ $lm_key ]['placeholder'] ) {
+		$lm_fail( "{$lm_key}: placeholder \"{$lm_controls[ $lm_key ]['placeholder']}\", expected \"{$lm_value}\"." );
+	}
+}
+// The help carries the Replay button and the markers checkbox read by motion-panel.js.
+$lm_help = (string) ( $lm_controls['_lmHelp']['content'] ?? '' );
+if ( false === strpos( $lm_help, '<button type="button" class="lm-panel-replay">' ) || false === strpos( $lm_help, '<input type="checkbox" class="lm-panel-markers">' ) ) {
+	$lm_fail( '_lmHelp: the Replay button or the markers checkbox is missing.' );
+}
+
 foreach ( array( '_lmStartAt', '_lmEndAt' ) as $lm_key ) {
 	if ( 'number' !== $lm_controls[ $lm_key ]['type'] ) {
 		$lm_fail( "{$lm_key}: must be a number." );
