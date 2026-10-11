@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-11T21:39:21+00:00\n"
+"POT-Creation-Date: 2026-10-11T21:49:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -4488,81 +4488,81 @@ msgstr ""
 msgid "Underline thickness"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:397
-msgid "Include the unit, e.g. 2px."
+#: includes/Modules/Motion/Controls.php:396
+msgid "Line thickness. Empty = scales with the text size (1 px for body text, about 2 px on a 32 px title)."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:404
+#: includes/Modules/Motion/Controls.php:403
 msgid "Underline gap"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:408
+#: includes/Modules/Motion/Controls.php:407
 msgid "Include the unit, e.g. 0.12em."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:415
+#: includes/Modules/Motion/Controls.php:414
 msgid "Underline color"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:423
+#: includes/Modules/Motion/Controls.php:422
 msgid "One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP)."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:461
+#: includes/Modules/Motion/Controls.php:460
 #: includes/Modules/Motion/settings-template.php:73
 msgid "Fade"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:462
+#: includes/Modules/Motion/Controls.php:461
 #: includes/Modules/Motion/settings-template.php:74
 msgid "Slide up"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:463
+#: includes/Modules/Motion/Controls.php:462
 #: includes/Modules/Motion/settings-template.php:75
 msgid "Blur"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:464
+#: includes/Modules/Motion/Controls.php:463
 #: includes/Modules/Motion/settings-template.php:76
 msgid "Blur up"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:465
+#: includes/Modules/Motion/Controls.php:464
 #: includes/Modules/Motion/settings-template.php:77
 msgid "Zoom"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:466
+#: includes/Modules/Motion/Controls.php:465
 #: includes/Modules/Motion/settings-template.php:78
 msgid "Zoom blur"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:467
+#: includes/Modules/Motion/Controls.php:466
 #: includes/Modules/Motion/settings-template.php:79
 msgid "Lines"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:468
+#: includes/Modules/Motion/Controls.php:467
 #: includes/Modules/Motion/settings-template.php:80
 msgid "Words on scroll"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:469
+#: includes/Modules/Motion/Controls.php:468
 #: includes/Modules/Motion/settings-template.php:81
 msgid "Letters on scroll"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:470
+#: includes/Modules/Motion/Controls.php:469
 #: includes/Modules/Motion/settings-template.php:82
 msgid "Counter"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:471
+#: includes/Modules/Motion/Controls.php:470
 msgid "Hover underline"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:482
+#: includes/Modules/Motion/Controls.php:481
 msgid "Off"
 msgstr ""
 

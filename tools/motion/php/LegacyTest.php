@@ -62,6 +62,15 @@ return [
 		lm_assert( ( $line['transition-duration'] ?? '' ) === $v( 'duration' ), 'transition-duration: ' . ( $line['transition-duration'] ?? 'none' ) );
 		lm_assert( ( $still['padding-bottom'] ?? '' ) === $v( 'gap' ), 'reduced motion padding-bottom: ' . ( $still['padding-bottom'] ?? 'none' ) );
 	},
+	'underline thickness follows the text size, with a 1px fallback first' => static function (): void {
+		$css  = Legacy::underline_css();
+		$wide = 'var(--lm-underline-thickness, var(--sk-hover-underline-thickness, round(max(1px, 0.06em), 1px)))';
+		$thin = 'var(--lm-underline-thickness, var(--sk-hover-underline-thickness, 1px))';
+		lm_assert( false !== strpos( $css, 'round(max(1px, 0.06em), 1px)' ), 'no round() thickness: ' . $css );
+		$at_thin = strpos( $css, 'height:' . $thin . ';' );
+		$at_wide = strpos( $css, 'height:' . $wide . ';' );
+		lm_assert( false !== $at_thin && false !== $at_wide && $at_thin < $at_wide, 'the 1px fallback must come before round(): ' . $css );
+	},
 	'underline fallbacks never set the lm variables' => static function (): void {
 		// Setting --lm-underline-* on the element would hide a value inherited from a wrapper.
 		lm_assert( 1 !== preg_match( '/--lm-underline-[a-z]+\s*:/', Legacy::underline_css() ), 'an --lm-underline-* variable is assigned: ' . Legacy::underline_css() );
@@ -76,7 +85,7 @@ return [
 	'underline fallbacks mirror the drawing of the stylesheet' => static function (): void {
 		// Same values as motion.css when no variable is set: the stylesheet and the fallbacks must not drift.
 		$sheet = (string) file_get_contents( dirname( __DIR__, 3 ) . '/assets/front/css/motion.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file, not a URL.
-		foreach ( [ 'calc(var(--lm-underline-gap, 0.12em) * 0.45)', 'calc(-1 * var(--lm-underline-gap, 0.12em))', 'var(--lm-underline-thickness, 2px)', 'var(--lm-underline-color, currentColor)', 'var(--lm-underline-duration, 0.4s)', 'padding-bottom: var(--lm-underline-gap, 0.12em)' ] as $needle ) {
+		foreach ( [ 'calc(var(--lm-underline-gap, 0.12em) * 0.45)', 'calc(-1 * var(--lm-underline-gap, 0.12em))', 'var(--lm-underline-thickness, 1px)', 'var(--lm-underline-thickness, round(max(1px, 0.06em), 1px))', 'var(--lm-underline-color, currentColor)', 'var(--lm-underline-duration, 0.4s)', 'padding-bottom: var(--lm-underline-gap, 0.12em)' ] as $needle ) {
 			lm_assert( false !== strpos( $sheet, $needle ), 'motion.css no longer has ' . $needle . ': update Legacy::underline_css()' );
 		}
 	},

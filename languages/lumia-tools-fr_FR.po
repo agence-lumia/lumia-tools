@@ -5757,8 +5757,8 @@ msgstr "Un seul effet par élément : avec deux classes Motion, la première l'e
 msgid "Off"
 msgstr "Désactivé"
 
-msgid "Include the unit, e.g. 2px."
-msgstr "Indiquez l'unité, par exemple 2px."
+msgid "Line thickness. Empty = scales with the text size (1 px for body text, about 2 px on a 32 px title)."
+msgstr "Épaisseur du trait. Vide = suit la taille du texte (1 px pour le texte courant, environ 2 px sur un titre de 32 px)."
 
 msgid "Include the unit, e.g. 0.12em."
 msgstr "Indiquez l'unité, par exemple 0.12em."

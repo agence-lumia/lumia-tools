@@ -186,7 +186,8 @@ html:not(.lenis) [id] {
 	left: 0;
 	right: 0;
 	bottom: calc(-1 * var(--lm-underline-gap, 0.12em));
-	height: var(--lm-underline-thickness, 2px);
+	height: var(--lm-underline-thickness, 1px);
+	height: var(--lm-underline-thickness, round(max(1px, 0.06em), 1px));
 	border-radius: 999px;
 	background-color: var(--lm-underline-color, currentColor);
 	pointer-events: none;

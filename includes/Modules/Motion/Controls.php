@@ -393,8 +393,7 @@ class Controls {
 				'label'       => __( 'Underline thickness', 'lumia-tools' ),
 				'type'        => 'number',
 				'units'       => true,
-				'placeholder' => '2px',
-				'description' => __( 'Include the unit, e.g. 2px.', 'lumia-tools' ),
+				'description' => __( 'Line thickness. Empty = scales with the text size (1 px for body text, about 2 px on a 32 px title).', 'lumia-tools' ),
 			]
 		);
 

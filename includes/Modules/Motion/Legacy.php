@@ -49,11 +49,14 @@ final class Legacy {
 
 	/** Reference value of each underline setting, used when neither variable is set. */
 	const UNDERLINE_DEFAULTS = [
-		'thickness' => '2px',
+		'thickness' => 'round(max(1px, 0.06em), 1px)',
 		'gap'       => '0.12em',
 		'color'     => 'currentColor',
 		'duration'  => '0.4s',
 	];
+
+	/** Thickness for browsers without CSS round(): declared first, so the line above overrides it where round() works. */
+	const UNDERLINE_THICKNESS_FALLBACK = '1px';
 
 	/** JavaScript global exposed by the former snippet. */
 	const ENGINE_GLOBAL = 'StudioKyneMotion';
@@ -102,8 +105,15 @@ final class Legacy {
 		$box  = '.lm-underline,[data-lm~="underline"]';
 		$line = '.lm-underline::after,[data-lm~="underline"]::after';
 
+		$thin = sprintf(
+			'var(%s, var(%s, %s))',
+			self::UNDERLINE_VARIABLES['thickness']['current'],
+			self::UNDERLINE_VARIABLES['thickness']['legacy'],
+			self::UNDERLINE_THICKNESS_FALLBACK
+		);
+
 		return $box . '{padding-bottom:calc(' . $value( 'gap' ) . ' * 0.45)}'
-			. $line . '{bottom:calc(-1 * ' . $value( 'gap' ) . ');height:' . $value( 'thickness' ) . ';background-color:' . $value( 'color' ) . ';transition-duration:' . $value( 'duration' ) . '}'
+			. $line . '{bottom:calc(-1 * ' . $value( 'gap' ) . ');height:' . $thin . ';height:' . $value( 'thickness' ) . ';background-color:' . $value( 'color' ) . ';transition-duration:' . $value( 'duration' ) . '}'
 			. '@media (prefers-reduced-motion: reduce){' . $box . '{padding-bottom:' . $value( 'gap' ) . '}}';
 	}
 }
