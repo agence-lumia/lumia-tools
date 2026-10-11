@@ -270,11 +270,16 @@ return [
 		$second = SettingsSanitizer::sanitize( $first, $lm_defaults() );
 		lm_assert( $first === $second, 'sanitizing a sanitized value must change nothing' );
 	},
-	'is_position checks the character set'          => static function (): void {
-		lm_assert( SettingsSanitizer::is_position( 'top 80%' ), 'top 80% is a position' );
-		lm_assert( SettingsSanitizer::is_position( 'center 50.5%' ), 'center 50.5% is a position' );
+	'is_position reads a ScrollTrigger position'    => static function (): void {
+		// Shared with the JS core test (tools/motion/js): both sides accept and refuse the same values.
+		$cases = json_decode( (string) file_get_contents( dirname( __DIR__ ) . '/positions.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file.
+		foreach ( $cases['valid'] as $value ) {
+			lm_assert( SettingsSanitizer::is_position( $value ), '"' . $value . '" is a position' );
+		}
+		foreach ( $cases['invalid'] as $value ) {
+			lm_assert( ! SettingsSanitizer::is_position( $value ), '"' . $value . '" is not a position' );
+		}
 		lm_assert( ! SettingsSanitizer::is_position( '' ), 'empty is not a position' );
-		lm_assert( ! SettingsSanitizer::is_position( 'foo;bar' ), 'a semicolon is not allowed' );
 		lm_assert( ! SettingsSanitizer::is_position( "top 80%\n" ), 'a trailing newline is not allowed' );
 		lm_assert( ! SettingsSanitizer::is_position( str_repeat( 'a', 41 ) ), '41 characters is too long' );
 	},

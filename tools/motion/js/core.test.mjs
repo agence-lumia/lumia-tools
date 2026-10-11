@@ -294,13 +294,15 @@ test("resolve: injected position is refused with a warning", () => {
 });
 
 test("resolve: an advanced position must read as a ScrollTrigger position", () => {
+  // Shared with the PHP sanitizer test: both sides accept and refuse the same values.
   // "--lm-start: foo;bar" typed in the content reaches the browser as "foo" (the CSS stops at ";").
-  for (const bad of ["foo", "top foo", "top 50% 20%", "50%%", "top +50", "-= 10"]) {
+  const cases = require("../positions.json");
+  for (const bad of cases.invalid.concat(["foo"])) {
     const o = core.resolve("reveal", { start: bad }, CFG);
     assert.equal(o.start, "top 98%", JSON.stringify(bad));
     assert.equal(o.warnings.length, 1, JSON.stringify(bad));
   }
-  for (const good of ["top 50%", "center center", "top+=50 center", "top bottom-=100px", "80% 20px", "-10% top", "TOP 40%"]) {
+  for (const good of cases.valid) {
     assert.equal(core.resolve("reveal", { start: good }, CFG).start, good, JSON.stringify(good));
   }
   // A relative end ("+=500": 500 px after the start) is a ScrollTrigger position too.

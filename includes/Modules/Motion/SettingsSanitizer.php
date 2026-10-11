@@ -85,12 +85,25 @@ final class SettingsSanitizer {
 	}
 
 	/**
-	 * Whether a value is a ScrollTrigger-style position ("top 80%", "center bottom").
+	 * Whether a value is a ScrollTrigger position ("top 80%", "top+=50 center", "+=500").
+	 *
+	 * One or two tokens, each an edge keyword or a length (px or %), with an optional
+	 * "+=" / "-=" offset; 40 characters at most. Same rule as POSITION_RE in
+	 * assets/front/js/motion-core.js: tools/motion/positions.json holds the cases both
+	 * test suites check.
 	 *
 	 * @param string $v Value to test.
 	 */
 	public static function is_position( string $v ): bool {
-		return 1 === preg_match( '/^[a-z0-9%+\-. ]{1,40}$/iD', $v );
+		if ( strlen( $v ) > 40 ) {
+			return false;
+		}
+
+		$length = '(?:\d+(?:\.\d+)?|\.\d+)(?:px|%)?';
+		$offset = '[+-]=' . $length;
+		$token  = '(?:(?:top|center|bottom|left|right)(?:' . $offset . ')?|-?' . $length . '(?:' . $offset . ')?|' . $offset . ')';
+
+		return 1 === preg_match( '/^' . $token . '(?: +' . $token . ')?$/iD', $v );
 	}
 
 	/**

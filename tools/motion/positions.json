@@ -1,0 +1,30 @@
+{
+	"_comment": "ScrollTrigger positions shared by the JS core test (tools/motion/js) and the PHP sanitizer test (tools/motion/php): both sides must accept and refuse the same values.",
+	"valid": [
+		"top",
+		"top 80%",
+		"top 50%",
+		"center 50.5%",
+		"center center",
+		"bottom-=100",
+		"top+=50 center",
+		"top bottom-=100px",
+		"80% 20px",
+		"-10% top",
+		"TOP 40%",
+		"+=500",
+		"top -120%"
+	],
+	"invalid": [
+		"foo",
+		"top foo",
+		"top 50% 20%",
+		"50%%",
+		"top +50",
+		"-= 10",
+		"foo;bar",
+		"top 50%; alert(1)",
+		"top 50vh",
+		"top+=100000000000000000000000000000000000"
+	]
+}

@@ -378,8 +378,9 @@
   var INTERNAL_END = { edge: "top", at: "-120%" };
   var EDGES = ["top", "center", "bottom"];
   // A ScrollTrigger position: one or two tokens, each an edge keyword or a length, with an
-  // optional "+=" / "-=" offset ("top 80%", "top+=50 center", "+=500"). Stricter than the
-  // character set the settings screen accepts: "foo" passes that one but means nothing here.
+  // optional "+=" / "-=" offset ("top 80%", "top+=50 center", "+=500"); "foo" is refused.
+  // Same rule as SettingsSanitizer::is_position(): tools/motion/positions.json holds the
+  // cases both test suites check.
   var POSITION_LENGTH = "(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|%)?";
   var POSITION_OFFSET = "[+-]=" + POSITION_LENGTH;
   var POSITION_TOKEN =
