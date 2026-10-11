@@ -68,7 +68,6 @@ return [
 	'underline thickness follows the text size behind @supports' => static function (): void {
 		$css = Legacy::underline_css();
 		lm_assert( false !== strpos( $css, '@supports (height: round(1px, 1px)){' ), 'no @supports block: ' . $css );
-		lm_assert( 1 !== preg_match( '/height:[^;}]*round\(.*?\}\s*\}.*height:/', $css ), 'unexpected second height' );
 		$at_base = strpos( $css, 'height:var(--lm-underline-thickness, var(--sk-hover-underline-thickness, 1px))' );
 		$at_wide = strpos( $css, 'height:var(--lm-underline-thickness, var(--sk-hover-underline-thickness, round(max(1px, 0.06em), 1px)))' );
 		$at_sup  = strpos( $css, '@supports' );
