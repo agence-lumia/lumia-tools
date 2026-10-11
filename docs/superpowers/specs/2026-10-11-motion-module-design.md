@@ -142,7 +142,7 @@ Les valeurs de référence de l'admin **ne passent pas** par `:root` (elles ne s
 
 ### Composants, éléments globaux et boucles de requête
 
-Leur sélecteur (`.brxe-{id}`, 0,1,0) perd contre celui de la classe (0,2,0). C'est aussi le cas des éléments rendus dans une boucle de requête (`Query::is_looping()`, vu dans `includes/elements/base.php` de Bricks 2.4.2). Pour eux seuls, le filtre `bricks/element/render_attributes` recopie les réglages `_lm*` **de l'élément** dans un attribut `style` (`--lm-end: …`), qui l'emporte sur toute règle. Les valeurs par breakpoint de l'élément sont alors perdues pour ces trois cas (seule la valeur de base est recopiée) ; limite documentée dans `docs/modules/motion.md`.
+Leur sélecteur (`.brxe-{id}`, 0,1,0) perd contre celui de la classe (0,2,0). Dans une boucle de requête, c'est différent (mesuré sur Bricks 2.4.2) : les enfants de la boucle ont une règle `.brxe-loop .brxe-{id}.brxe-{type}` (0,3,0) qui bat déjà la classe, breakpoints compris ; seul l'élément qui **porte** la boucle (`hasLoop`, 0,2,0) fait égalité et perd par l'ordre des feuilles. Pour les composants, les éléments globaux et l'élément porteur d'une boucle seulement, le filtre `bricks/element/render_attributes` recopie les réglages `_lm*` **de l'élément** dans un attribut `style` (`--lm-end: …`), qui l'emporte sur toute règle. Les valeurs par breakpoint de l'élément sont alors perdues pour ces trois cas (seule la valeur de base est recopiée) ; limite documentée dans `docs/modules/motion.md`. Les enfants d'une boucle ne reçoivent pas de style inline : il écraserait leurs valeurs par breakpoint.
 
 ### Classes
 
