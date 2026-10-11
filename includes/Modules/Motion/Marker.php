@@ -106,7 +106,8 @@ final class Marker {
 		if ( array() === $families ) {
 			// Every element counts for the load zone: an unmarked section holds the marked ones.
 			if ( ! $builder ) {
-				LoadAnimation::observe( $data, self::render_area() );
+				[ $area, $depth, $outer ] = self::render_context();
+				LoadAnimation::observe( $data, $area, $depth, $outer );
 			}
 
 			return $attributes;
@@ -129,7 +130,8 @@ final class Marker {
 		// The builder canvas shows the final state and replays through the engine: never in CSS.
 		// Attributes already completed (the filter run twice) keep their rank in the lot.
 		if ( ! $builder && ! isset( $attributes['_root']['data-lm-load'] ) ) {
-			$load = self::load_attributes( $data, $settings, $classes, self::render_area(), self::$legacy );
+			[ $area, $depth, $outer ] = self::render_context();
+			$load                     = self::load_attributes( $data, $settings, $classes, $area, self::$legacy, $depth, $outer );
 			if ( array() !== $load ) {
 				$attributes['_root']['data-lm-load'] = $load['data-lm-load'];
 				$attributes['_root']['style']        = self::merge_style( $attributes['_root']['style'] ?? null, $load['style'] );
@@ -151,10 +153,12 @@ final class Marker {
 	 * @param array<int, array{name?: mixed, settings?: mixed}|array<mixed>> $classes          Global classes, as name and settings.
 	 * @param string                                                         $area             Bricks render area.
 	 * @param bool                                                           $legacy           Whether the legacy class names count.
+	 * @param int                                                            $depth            Number of nested renders (1 = top level).
+	 * @param string                                                         $outer_area       Area of the outermost render, '' when unknown.
 	 * @return array<string, string> `data-lm-load` and `style`, or nothing.
 	 */
-	public static function load_attributes( array $element, array $element_settings, array $classes, string $area, bool $legacy ): array {
-		$in_zone = LoadAnimation::observe( $element, $area );
+	public static function load_attributes( array $element, array $element_settings, array $classes, string $area, bool $legacy, int $depth = 1, string $outer_area = '' ): array {
+		$in_zone = LoadAnimation::observe( $element, $area, $depth, $outer_area );
 
 		$slug = LoadAnimation::effect( $element_settings, $classes, $legacy );
 		if ( null === $slug || Effects::FAMILY_ENTER !== Effects::family( $slug ) ) {
@@ -170,19 +174,25 @@ final class Marker {
 	}
 
 	/**
-	 * Bricks area being rendered: header, content, footer, popup...
+	 * Bricks render context: current area, nesting depth and area of the outermost render.
 	 *
 	 * Bricks 2.4.2 sets `Frontend::$area` in `Frontend::render_data()` for the tree it renders,
-	 * and puts the outer area back after a nested render (template element, popup).
+	 * and puts the outer area back after a nested render (template element, popup). Each
+	 * render_data() pushes `[ 'source_area' => ... ]` on `Frontend::$render_context_stack`: a Template
+	 * element in the header renders its section template with the area `content` at depth 2.
+	 *
+	 * @return array{0: string, 1: int, 2: string}
 	 */
-	private static function render_area(): string {
-		if ( ! class_exists( '\Bricks\Frontend' ) || ! property_exists( '\Bricks\Frontend', 'area' ) ) {
-			return 'content';
+	public static function render_context(): array {
+		if ( ! class_exists( '\Bricks\Frontend' ) ) {
+			return [ 'content', 1, '' ];
 		}
 
-		$area = \Bricks\Frontend::$area;
+		$area  = property_exists( '\Bricks\Frontend', 'area' ) && is_string( \Bricks\Frontend::$area ) ? \Bricks\Frontend::$area : 'content';
+		$stack = property_exists( '\Bricks\Frontend', 'render_context_stack' ) && is_array( \Bricks\Frontend::$render_context_stack ) ? array_values( \Bricks\Frontend::$render_context_stack ) : [];
+		$outer = is_array( $stack[0] ?? null ) && is_string( $stack[0]['source_area'] ?? null ) ? $stack[0]['source_area'] : '';
 
-		return is_string( $area ) ? $area : 'content';
+		return [ $area, max( 1, count( $stack ) ), $outer ];
 	}
 
 	/**

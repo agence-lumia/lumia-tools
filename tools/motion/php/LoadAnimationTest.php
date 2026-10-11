@@ -179,6 +179,123 @@ return [
 			'second root again'
 		);
 	},
+	'a template nested in the header never takes the first root' => static function (): void {
+		LoadAnimation::reset();
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'hdr001',
+					'parent' => 0,
+				],
+				'header',
+				1,
+				'header'
+			) === true,
+			'header root'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'hdrtpl',
+					'parent' => 'hdr001',
+				],
+				'header',
+				1,
+				'header'
+			) === true,
+			'template element in the header'
+		);
+		// The section template of the Template element: area content, rendered inside the header render.
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'mega01',
+					'parent' => 0,
+				],
+				'content',
+				2,
+				'header'
+			) === true,
+			'nested root counts as header'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'mega02',
+					'parent' => 'mega01',
+				],
+				'content',
+				2,
+				'header'
+			) === true,
+			'nested child counts as header'
+		);
+		// The real content.
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'sec001',
+					'parent' => 0,
+				],
+				'content',
+				1,
+				'content'
+			) === true,
+			'real first root'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'hd0001',
+					'parent' => 'sec001',
+				],
+				'content',
+				1,
+				'content'
+			) === true,
+			'real first root child'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'sec002',
+					'parent' => 0,
+				],
+				'content',
+				1,
+				'content'
+			) === false,
+			'second root'
+		);
+	},
+	'a nested content render never takes the first root'  => static function (): void {
+		LoadAnimation::reset();
+		// A tree rendered inside another content render (reading time in a loop, Template element) first.
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'nest01',
+					'parent' => 0,
+				],
+				'content',
+				2,
+				'content'
+			) === false,
+			'nested root'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'sec001',
+					'parent' => 0,
+				],
+				'content',
+				1,
+				'content'
+			) === true,
+			'top-level first root'
+		);
+	},
 	'a component child follows its instance'              => static function (): void {
 		LoadAnimation::reset();
 		lm_assert(

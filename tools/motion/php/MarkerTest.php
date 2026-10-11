@@ -210,4 +210,27 @@ return [
 			'a component'
 		);
 	},
+	'the render context reads the nesting of Bricks'  => static function (): void {
+		require_once __DIR__ . '/bricks-stubs.php';
+
+		\Bricks\Frontend::$area                 = 'header';
+		\Bricks\Frontend::$render_context_stack = [
+			[
+				'source_area'    => 'header',
+				'source_post_id' => 10,
+			],
+		];
+		lm_assert( Marker::render_context() === [ 'header', 1, 'header' ], 'header render' );
+
+		// A Template element in the header: its section template renders as content, one level deeper.
+		\Bricks\Frontend::$area                   = 'content';
+		\Bricks\Frontend::$render_context_stack[] = [
+			'source_area'    => 'content',
+			'source_post_id' => 20,
+		];
+		lm_assert( Marker::render_context() === [ 'content', 2, 'header' ], 'nested template' );
+
+		\Bricks\Frontend::$render_context_stack = [];
+		lm_assert( Marker::render_context() === [ 'content', 1, '' ], 'no render_data in progress' );
+	},
 ];

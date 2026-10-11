@@ -1,6 +1,6 @@
 <?php
 /**
- * Minimal Bricks stand-ins for the tests of Marker::uses_class_selector().
+ * Minimal Bricks stand-ins for the tests of Marker::uses_class_selector() and Marker::render_context().
  *
  * Only what that method calls, with a state the tests set by hand. Loaded by the test that
  * needs it, after the tests that must run without any Bricks class. Development only, never
@@ -87,5 +87,27 @@ if ( ! class_exists( '\Bricks\Helpers' ) ) {
 		public static function get_global_element( $element = [], $key = '' ) {
 			return '';
 		}
+	}
+}
+
+if ( ! class_exists( '\Bricks\Frontend' ) ) {
+	/**
+	 * Frontend stand-in: the render area and the render context stack, set by the test.
+	 */
+	class Frontend {
+
+		/**
+		 * Area being rendered.
+		 *
+		 * @var string
+		 */
+		public static $area = 'content';
+
+		/**
+		 * One entry per render_data() in progress, outermost first.
+		 *
+		 * @var array<int, array{source_area: string, source_post_id: int}>
+		 */
+		public static $render_context_stack = [];
 	}
 }

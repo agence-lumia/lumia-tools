@@ -145,10 +145,16 @@ final class LoadAnimation {
 	 * children, so a child is in the zone when its parent is. A component child points to its
 	 * instance through `parentComponent`.
 	 *
-	 * @param array<mixed, mixed> $element Element data (id, parent, parentComponent).
-	 * @param string              $area    Bricks render area: header, content, footer, popup...
+	 * A nested render (a Template element: Bricks renders its tree with its own area, `content` for
+	 * a section template) never claims the first root: placed in the header, it would take the slot
+	 * of the real first section. Inside an outer header render, its elements count as header.
+	 *
+	 * @param array<mixed, mixed> $element    Element data (id, parent, parentComponent).
+	 * @param string              $area       Bricks render area: header, content, footer, popup...
+	 * @param int                 $depth      Number of nested renders (1 = top-level render).
+	 * @param string              $outer_area Area of the outermost render, '' when unknown.
 	 */
-	public static function observe( array $element, string $area ): bool {
+	public static function observe( array $element, string $area, int $depth = 1, string $outer_area = '' ): bool {
 		$id = self::id( $element['id'] ?? null );
 		if ( '' === $id ) {
 			return false;
@@ -158,7 +164,7 @@ final class LoadAnimation {
 			return true;
 		}
 
-		if ( 'header' === $area ) {
+		if ( 'header' === $area || 'header' === $outer_area ) {
 			self::$zone[ $id ] = true;
 
 			return true;
@@ -172,7 +178,7 @@ final class LoadAnimation {
 		$in     = false;
 
 		if ( '' === $parent || '0' === $parent ) {
-			if ( null === self::$first_root ) {
+			if ( null === self::$first_root && $depth <= 1 ) {
 				self::$first_root = $id;
 				$in               = true;
 			}
