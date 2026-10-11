@@ -3,8 +3,403 @@
  *
  * Styles of the Motion panel: the thumbnails of the effect list. The animated pages are
  * rendered in the canvas, which loads motion.css instead.
+ *
+ * Each option of the effect select starts with <span class="lm-thumb lm-thumb--SLUG">
+ * (Controls::effect_options()). A thumbnail is 14 x 14 px, drawn in CSS only, and shows its
+ * effect on a loop: the element itself carries the animation (one @keyframes per effect),
+ * so a stylesheet that loses the animation leaves the final state, which is what the
+ * rules without animation draw. Under reduced motion nothing moves.
+ *
+ * --lm-thumb-t is the progress of the text, counter and underline thumbnails: 1 at the
+ * start state, 0 at the end. Registered so that it can be animated; inherited, because the
+ * pieces are drawn by the pseudo-elements of the thumbnail.
  */
 
-:root {
-	--lm-builder: 1;
+@property --lm-thumb-t {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --lm-thumb-n {
+	syntax: "<integer>";
+	inherits: true;
+	initial-value: 9;
+}
+
+.lm-thumb {
+	position: relative;
+	display: inline-block;
+	flex: none;
+	box-sizing: border-box;
+	width: 14px;
+	height: 14px;
+	margin-right: 6px;
+	vertical-align: middle;
+	overflow: hidden;
+	color: inherit;
+	animation-duration: 2.8s;
+	animation-timing-function: cubic-bezier(0.625, 0.05, 0, 1);
+	animation-iteration-count: infinite;
+}
+
+/* ----------------------------------------------------------------
+ * Entrance effects: a square that makes the entrance, held, then starts over.
+ * ---------------------------------------------------------------- */
+
+.lm-thumb--fade,
+.lm-thumb--reveal,
+.lm-thumb--blur-in,
+.lm-thumb--scale-in,
+.lm-thumb--scale-blur-in {
+	border: 3px solid transparent;
+	border-radius: 5px;
+	background: currentColor;
+	background-clip: padding-box;
+	/* The blur and the move leave the 14 px box. */
+	overflow: visible;
+}
+
+.lm-thumb--fade {
+	animation-name: lm-thumb-fade;
+}
+
+.lm-thumb--reveal {
+	animation-name: lm-thumb-reveal;
+}
+
+.lm-thumb--blur-in {
+	animation-name: lm-thumb-blur-in;
+}
+
+.lm-thumb--scale-in {
+	animation-name: lm-thumb-scale-in;
+}
+
+.lm-thumb--scale-blur-in {
+	animation-name: lm-thumb-scale-blur-in;
+}
+
+@keyframes lm-thumb-fade {
+	0%,
+	8% {
+		opacity: 0;
+	}
+
+	40%,
+	82% {
+		opacity: 1;
+	}
+
+	100% {
+		opacity: 0;
+	}
+}
+
+@keyframes lm-thumb-reveal {
+	0%,
+	8% {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	40%,
+	82% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	100% {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
+
+@keyframes lm-thumb-blur-in {
+	0%,
+	8% {
+		opacity: 0;
+		filter: blur(3px);
+		transform: translateY(4px);
+	}
+
+	40%,
+	82% {
+		opacity: 1;
+		filter: blur(0);
+		transform: translateY(0);
+	}
+
+	100% {
+		opacity: 0;
+		filter: blur(3px);
+		transform: translateY(4px);
+	}
+}
+
+@keyframes lm-thumb-scale-in {
+	0%,
+	8% {
+		opacity: 0;
+		transform: scale(0.4);
+	}
+
+	40%,
+	82% {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	100% {
+		opacity: 0;
+		transform: scale(0.4);
+	}
+}
+
+@keyframes lm-thumb-scale-blur-in {
+	0%,
+	8% {
+		opacity: 0;
+		filter: blur(3px);
+		transform: scale(0.4);
+	}
+
+	40%,
+	82% {
+		opacity: 1;
+		filter: blur(0);
+		transform: scale(1);
+	}
+
+	100% {
+		opacity: 0;
+		filter: blur(3px);
+		transform: scale(0.4);
+	}
+}
+
+/* ----------------------------------------------------------------
+ * Text: lines rise from below, words and characters light up one after the other.
+ * ---------------------------------------------------------------- */
+
+.lm-thumb--text-lines::before,
+.lm-thumb--text-lines::after,
+.lm-thumb--text-words::before,
+.lm-thumb--text-words::after,
+.lm-thumb--text-chars::before,
+.lm-thumb--text-chars::after,
+.lm-thumb--underline::before,
+.lm-thumb--underline::after {
+	content: "";
+	position: absolute;
+	display: block;
+}
+
+.lm-thumb--text-lines {
+	animation-name: lm-thumb-text-lines;
+}
+
+/* Two full lines and a short one, from the bottom of the box (the box is the mask). */
+.lm-thumb--text-lines::before {
+	top: 2px;
+	left: 1px;
+	width: 12px;
+	height: 2px;
+	border-radius: 1px;
+	background: currentColor;
+	box-shadow: 0 4px 0 currentColor;
+	transform: translateY(calc(var(--lm-thumb-t) * 14px));
+}
+
+.lm-thumb--text-lines::after {
+	top: 10px;
+	left: 1px;
+	width: 7px;
+	height: 2px;
+	border-radius: 1px;
+	background: currentColor;
+	transform: translateY(calc(var(--lm-thumb-t) * 14px));
+}
+
+@keyframes lm-thumb-text-lines {
+	0%,
+	8% {
+		--lm-thumb-t: 1;
+	}
+
+	45%,
+	82% {
+		--lm-thumb-t: 0;
+	}
+
+	100% {
+		--lm-thumb-t: 1;
+	}
+}
+
+/* Words and characters: the dim text, and the same text on top, uncovered step by step. */
+.lm-thumb--text-words::before,
+.lm-thumb--text-words::after,
+.lm-thumb--text-chars::before,
+.lm-thumb--text-chars::after {
+	inset: 0;
+}
+
+.lm-thumb--text-words::before,
+.lm-thumb--text-words::after {
+	background:
+		linear-gradient(currentColor, currentColor) 1px 3px / 4px 2px no-repeat,
+		linear-gradient(currentColor, currentColor) 6px 3px / 3px 2px no-repeat,
+		linear-gradient(currentColor, currentColor) 10px 3px / 3px 2px no-repeat,
+		linear-gradient(currentColor, currentColor) 1px 8px / 3px 2px no-repeat,
+		linear-gradient(currentColor, currentColor) 5px 8px / 5px 2px no-repeat;
+}
+
+.lm-thumb--text-chars::before,
+.lm-thumb--text-chars::after {
+	background:
+		repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 2px) 1px 3px / 12px 2px no-repeat,
+		repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 2px) 1px 8px / 8px 2px no-repeat;
+}
+
+.lm-thumb--text-words::before,
+.lm-thumb--text-chars::before {
+	opacity: 0.25;
+}
+
+.lm-thumb--text-words::after,
+.lm-thumb--text-chars::after {
+	clip-path: inset(0 calc(var(--lm-thumb-t) * 100%) 0 0);
+}
+
+.lm-thumb--text-words {
+	animation-name: lm-thumb-text-words;
+}
+
+.lm-thumb--text-chars {
+	animation-name: lm-thumb-text-chars;
+}
+
+@keyframes lm-thumb-text-words {
+	0%,
+	8% {
+		--lm-thumb-t: 1;
+		animation-timing-function: steps(4, jump-end);
+	}
+
+	50%,
+	84% {
+		--lm-thumb-t: 0;
+	}
+
+	100% {
+		--lm-thumb-t: 1;
+	}
+}
+
+@keyframes lm-thumb-text-chars {
+	0%,
+	8% {
+		--lm-thumb-t: 1;
+		animation-timing-function: steps(12, jump-end);
+	}
+
+	55%,
+	84% {
+		--lm-thumb-t: 0;
+	}
+
+	100% {
+		--lm-thumb-t: 1;
+	}
+}
+
+/* ----------------------------------------------------------------
+ * Counter: a digit that counts up.
+ * ---------------------------------------------------------------- */
+
+.lm-thumb--counter {
+	counter-reset: lm-thumb-count var(--lm-thumb-n);
+	animation-name: lm-thumb-counter;
+}
+
+.lm-thumb--counter::before {
+	content: counter(lm-thumb-count);
+	position: absolute;
+	inset: 0;
+	display: block;
+	font: 700 12px / 14px ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+	text-align: center;
+}
+
+@keyframes lm-thumb-counter {
+	0%,
+	8% {
+		--lm-thumb-n: 0;
+		animation-timing-function: linear;
+	}
+
+	55%,
+	84% {
+		--lm-thumb-n: 9;
+	}
+
+	100% {
+		--lm-thumb-n: 0;
+	}
+}
+
+/* ----------------------------------------------------------------
+ * Underline: a word, and the line that is drawn under it from the left.
+ * ---------------------------------------------------------------- */
+
+.lm-thumb--underline {
+	animation-name: lm-thumb-underline;
+}
+
+.lm-thumb--underline::before {
+	top: 2px;
+	left: 1px;
+	width: 12px;
+	height: 5px;
+	border-radius: 1px;
+	background: currentColor;
+	opacity: 0.5;
+}
+
+.lm-thumb--underline::after {
+	top: 10px;
+	left: 1px;
+	width: 12px;
+	height: 2px;
+	border-radius: 1px;
+	background: currentColor;
+	transform: scaleX(calc(1 - var(--lm-thumb-t)));
+	transform-origin: left center;
+}
+
+@keyframes lm-thumb-underline {
+	0%,
+	8% {
+		--lm-thumb-t: 1;
+	}
+
+	45%,
+	82% {
+		--lm-thumb-t: 0;
+	}
+
+	100% {
+		--lm-thumb-t: 1;
+	}
+}
+
+/* ----------------------------------------------------------------
+ * Reduced motion: the final state of every thumbnail, still.
+ * ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.lm-thumb[class*="lm-thumb--"] {
+		animation: none;
+	}
 }

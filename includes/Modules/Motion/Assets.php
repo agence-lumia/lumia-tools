@@ -87,10 +87,12 @@ final class Assets {
 	 *
 	 * `lm-js` switches the pre-hide of the stylesheet on; `lm-ready` switches it off. If the
 	 * engine has not added `lm-ready` after SAFETY_MS (blocked file, script error, slow
-	 * network), this timer does, and everything becomes visible.
+	 * network), this timer does, and everything becomes visible. Not printed in the builder
+	 * canvas: its engine shows every element as it ends, so there is nothing to pre-hide.
 	 */
 	public function print_head_script(): void {
-		if ( is_admin() || self::is_builder_main() ) {
+		// The canvas never pre-hides: its engine shows every element as it ends.
+		if ( is_admin() || self::is_builder_main() || self::is_builder_canvas() ) {
 			return;
 		}
 

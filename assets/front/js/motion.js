@@ -10,6 +10,11 @@
  *
  * Each family of effects has a builder (FAMILIES below): entrance effects, text effects
  * (SplitText) and the counter, all behind the same hooks.
+ *
+ * In the Bricks canvas (config.builder) nothing is hidden and nothing follows the scroll:
+ * every element is in its final state. motion-builder.js calls scan(), which reads the page
+ * again; an element whose settings changed since the last read plays once (preview hook of
+ * its family), unless the site setting says "never animate" (config.preview).
  */
 (function () {
   "use strict";
@@ -58,6 +63,12 @@
   var BRICKS_POPUP_OPEN = "bricks/popup/open";
   // Inline properties an entrance effect writes; put back as they were once it is over.
   var ANIMATED = ["transform", "opacity", "filter", "willChange"];
+  var BUILDER = !!config.builder;
+  var REPLAY = BUILDER && config.preview === "replay";
+  // Seconds a text scrub takes when it is replayed in the builder: 0 to 1, whatever its length.
+  var PREVIEW_SCRUB_S = 1.2;
+  // The builder canvas: every element with a Bricks class, whether the PHP marker saw it or not.
+  var BUILDER_SELECTOR = '[data-lm], [class*="brxe-"]';
 
   var VARIABLES = Array.isArray(config.variables) ? config.variables : [];
   var CLASSES = isObject(config.classes) ? config.classes : {};
@@ -80,6 +91,11 @@
   var branches = 0; // matchMedia branches run so far
   var endWatch = null; // ScrollTrigger at the end of the page, see watchPageEnd()
   var END_MARGIN = 2; // px: the end of the page as ScrollTrigger rounds it
+  var stats = { scans: 0, replays: 0 };
+  // Builder only: what each element looked like at the last read, by element id (its
+  // signature, "" when it had no effect). Bricks renders an element again as a new node
+  // when a setting changes, so the id is the only thing that survives.
+  var lastSeen = {};
 
   /* ================================================================
    * HELPERS
@@ -141,7 +157,44 @@
     return null;
   }
 
+  // The key of an element across renders in the builder, or "" when it has none.
+  function builderKey(el) {
+    var id = (el.dataset && el.dataset.scriptId) || el.id || "";
+    var index = el.getAttribute("data-query-loop-index");
+    return id && index ? id + ":" + index : id;
+  }
+
+  // The canvas: an element added there has no data-lm (the marker ran when the page was
+  // rendered), so any Bricks element whose computed --lm-effect or class gives an effect is
+  // a candidate, and so is every known item (to notice an effect that was taken away). The
+  // others are noted as seen without effect: an effect given to them later is a change.
+  function builderCandidates(scope) {
+    var list = [];
+    var nodes = [];
+    if (scope && scope.nodeType === 1 && scope.matches && scope.matches(BUILDER_SELECTOR)) {
+      nodes.push(scope);
+    }
+    if (scope && scope.querySelectorAll) {
+      Array.prototype.push.apply(nodes, scope.querySelectorAll(BUILDER_SELECTOR));
+    }
+    nodes.forEach(function (el) {
+      var effect = window.getComputedStyle(el).getPropertyValue("--lm-effect").trim();
+      if (effect !== "" || el.hasAttribute("data-lm") || lookup(el) || classEffect(el) !== "") {
+        list.push(el);
+        return;
+      }
+      var key = builderKey(el);
+      if (key) {
+        lastSeen[key] = "";
+      }
+    });
+    return list;
+  }
+
   function candidates(scope) {
+    if (BUILDER) {
+      return builderCandidates(scope);
+    }
     var list = [];
     if (scope && scope.nodeType === 1 && scope.matches && scope.matches(SELECTOR)) {
       list.push(scope);
@@ -294,6 +347,18 @@
         settle(item);
       }
     }
+  }
+
+  // Builder: plays an item once, from its start state to its final one. The element is final
+  // (settled) when this is called, and ends final again; a change that comes first kills the
+  // item, which puts the element back as it ends.
+  function replay(item) {
+    var family = FAMILIES[item.family];
+    if (typeof family.preview !== "function") {
+      return;
+    }
+    stats.replays++;
+    attempt(item, family.preview);
   }
 
   // Undoes everything the item did: the element goes back to how the page rendered it.
@@ -485,6 +550,14 @@
       });
     },
 
+    // Builder: the entrance, from the start state, now.
+    preview: function (item) {
+      var from = enterFrom(item.options);
+      gsap.set(item.el, Object.assign({}, from.move, from.look));
+      item.state = "pending";
+      enterPlay(item.options, [item.el]);
+    },
+
     final: function (item) {
       if (item.trigger) {
         item.trigger.kill();
@@ -643,9 +716,13 @@
     unwrapText(item);
   }
 
-  function linesStart(item) {
+  // live: the builder preview, which plays at once and follows no scroll.
+  function linesStart(item, live) {
     var o = item.options;
     var target = textTarget(item);
+    if (live) {
+      item.state = "playing";
+    }
     splitText(item, target.node, {
       type: "lines",
       mask: "lines",
@@ -673,6 +750,9 @@
         return tween;
       }),
     });
+    if (live) {
+      return;
+    }
     item.trigger = ScrollTrigger.create({
       trigger: item.el,
       start: o.start,
@@ -712,11 +792,12 @@
     }
   }
 
-  function scrubStart(item) {
+  // live: the builder preview, 0 to 1 over PREVIEW_SCRUB_S, then the text as written.
+  function scrubStart(item, live) {
     var o = item.options;
     var chars = o.effect === "text-chars";
     var target = textTarget(item);
-    item.state = "scrub";
+    item.state = live ? "playing" : "scrub";
     splitText(item, target.node, {
       type: chars ? "words, chars" : "words",
       wordsClass: "lm-word",
@@ -726,6 +807,21 @@
       onSplit: onSplitOf(item, function (self) {
         var pieces = chars ? self.chars : self.words;
         gsap.set(pieces, { opacity: o.fromOpacity });
+        if (live) {
+          var preview = gsap.to(pieces, {
+            opacity: 1,
+            ease: "none",
+            duration: SCRUB_EACH,
+            stagger: o.stagger,
+          });
+          // A stagger makes a timeline: duration() scales it to the time asked.
+          preview.duration(PREVIEW_SCRUB_S);
+          preview.eventCallback("onComplete", function () {
+            attempt(item, linesDone);
+          });
+          item.tweens = [preview];
+          return preview;
+        }
         var tween = gsap.to(pieces, {
           opacity: 1,
           ease: "none",
@@ -774,6 +870,15 @@
           attempt(item, linesPlay);
         }
       });
+    },
+
+    // Builder: plays the effect once, whatever the scroll.
+    preview: function (item) {
+      if (item.options.scrub) {
+        scrubStart(item, true);
+      } else {
+        linesStart(item, true);
+      }
     },
 
     final: textReset,
@@ -923,6 +1028,18 @@
       });
     },
 
+    // Builder: counts again from the start value.
+    preview: function (item) {
+      var source = counterSource(item.el);
+      if (source.reason) {
+        return;
+      }
+      counterWrap(item, source);
+      counterWrite(item, item.options.startValue);
+      item.state = "pending";
+      counterPlay(item);
+    },
+
     final: counterReset,
     kill: counterReset,
   };
@@ -933,6 +1050,7 @@
    *   ScrollTrigger in item.trigger);
    * - play(items): play pending one-shot items now, whatever their trigger (see below);
    *   optional: without it, such items are shown as they end;
+   * - preview(item): builder only, an item shown as it ends plays once, now, and ends final;
    * - final(item): show the element as it ends, without animation;
    * - kill(item): undo everything (the element is removed, rebuilt or the engine destroyed). */
   var FAMILIES = {
@@ -1108,11 +1226,17 @@
     entries.forEach(function (entry) {
       var el = entry.el;
       var known = lookup(el);
+      // Builder: what this element looked like at the last read ("" = no effect, undefined = never seen).
+      var key = BUILDER ? builderKey(el) : "";
+      var before = key ? lastSeen[key] : undefined;
       try {
         var options = entry.effect === "" || entry.effect === "none" ? null : core.resolve(entry.effect, entry.raw, config);
         var reason = skipReason(entry.effect, options);
 
         if (reason !== null) {
+          if (key) {
+            lastSeen[key] = "";
+          }
           if (known) {
             kill(known);
             changed = true;
@@ -1124,6 +1248,9 @@
         }
 
         var signature = core.signature(options);
+        if (key) {
+          lastSeen[key] = signature;
+        }
         if (known && known.effect === entry.effect && known.signature === signature) {
           return;
         }
@@ -1144,6 +1271,10 @@
         changed = true;
         if (!animate || entry.above || seen) {
           settle(item);
+          // Builder: the element changed since the last read, or just got its effect.
+          if (REPLAY && !entry.above && before !== undefined && before !== signature) {
+            replay(item);
+          }
           return;
         }
         (fresh[item.family] = fresh[item.family] || []).push(item);
@@ -1199,12 +1330,22 @@
 
   var current = null; // context of the active matchMedia branch
 
+  // Nothing follows the scroll in the builder: no trigger to measure again.
+  function measure() {
+    if (!BUILDER) {
+      ScrollTrigger.refresh();
+    }
+  }
+
+  // In the builder a scan reads the known elements again too: that is how a change made in
+  // the panel is noticed (the stylesheet changed, not the page).
   function scan(scope) {
     if (!running) {
       return;
     }
-    if (build(current, scope || document, false, false)) {
-      ScrollTrigger.refresh();
+    stats.scans++;
+    if (build(current, scope || document, BUILDER, false)) {
+      measure();
     }
   }
 
@@ -1213,7 +1354,7 @@
       return;
     }
     if (build(current, document, true, true)) {
-      ScrollTrigger.refresh();
+      measure();
     }
   }
 
@@ -1239,13 +1380,13 @@
     if (!running) {
       return;
     }
-    build(current, document, false, false);
-    ScrollTrigger.refresh();
+    build(current, document, BUILDER, false);
+    measure();
   }
 
   function onPopupOpen() {
     if (running) {
-      ScrollTrigger.refresh();
+      measure();
     }
   }
 
@@ -1302,7 +1443,7 @@
         }
         ready();
         if (built) {
-          ScrollTrigger.refresh();
+          measure();
         }
         return function () {
           running = false;
@@ -1342,6 +1483,15 @@
             options: item.options,
             state: item.state,
           };
+        });
+      },
+      stats: function () {
+        return { scans: stats.scans, replays: stats.replays };
+      },
+      // Whether a node sits in an element that is playing now (its own mutations are not changes).
+      playing: function (node) {
+        return items.some(function (item) {
+          return item.state === "playing" && item.el.contains(node);
         });
       },
     },
