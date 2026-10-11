@@ -12,6 +12,8 @@ namespace {
 	function bricks_is_builder_main(): bool {}
 
 	function bricks_is_builder_iframe(): bool {}
+
+	function bricks_is_builder_call(): bool {}
 }
 
 namespace Bricks {

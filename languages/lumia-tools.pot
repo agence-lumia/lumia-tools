@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-11T14:24:42+00:00\n"
+"POT-Creation-Date: 2026-10-11T14:30:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -193,7 +193,7 @@ msgid "No notifications"
 msgstr ""
 
 #: includes/Admin/Admin.php:601
-#: includes/Modules/Motion/Controls.php:264
+#: includes/Modules/Motion/Controls.php:302
 #: includes/Modules/Motion/settings-template.php:48
 msgid "Lümia"
 msgstr ""
@@ -2662,7 +2662,7 @@ msgid "Balanced"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/settings-template.php:102
-#: includes/Modules/Motion/Controls.php:218
+#: includes/Modules/Motion/Controls.php:253
 #: includes/Modules/Motion/settings-template.php:42
 msgid "Fast"
 msgstr ""
@@ -3043,10 +3043,10 @@ msgid "Color"
 msgstr ""
 
 #: includes/Modules/Media/Module.php:346
-#: includes/Modules/Motion/Controls.php:153
-#: includes/Modules/Motion/Controls.php:173
-#: includes/Modules/Motion/Controls.php:223
-#: includes/Modules/Motion/Controls.php:271
+#: includes/Modules/Motion/Controls.php:186
+#: includes/Modules/Motion/Controls.php:206
+#: includes/Modules/Motion/Controls.php:259
+#: includes/Modules/Motion/Controls.php:310
 msgid "Default"
 msgstr ""
 
@@ -4332,212 +4332,220 @@ msgstr ""
 msgid "Save (Ctrl/Cmd+S) — Ctrl+Z undoes, Ctrl+Y redoes"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:134
+#: includes/Modules/Motion/Controls.php:164
 msgid "Effect"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:137
+#: includes/Modules/Motion/Controls.php:167
 msgid "Not set"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:142
+#: includes/Modules/Motion/Controls.php:174
 #: includes/Modules/Motion/settings-template.php:57
 msgid "Top"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:143
+#: includes/Modules/Motion/Controls.php:175
 #: includes/Modules/Motion/settings-template.php:58
 msgid "Center"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:144
+#: includes/Modules/Motion/Controls.php:176
 #: includes/Modules/Motion/settings-template.php:59
 msgid "Bottom"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:150
+#: includes/Modules/Motion/Controls.php:183
 msgid "Start: element edge"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:160
+#: includes/Modules/Motion/Controls.php:193
 msgid "Start at (%)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:170
+#: includes/Modules/Motion/Controls.php:203
 msgid "End: element edge"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:180
+#: includes/Modules/Motion/Controls.php:213
 msgid "End at (%)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:189
+#: includes/Modules/Motion/Controls.php:222
 msgid "Advanced"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:197
+#: includes/Modules/Motion/Controls.php:230
 msgid "Start position (ScrollTrigger)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:206
+#: includes/Modules/Motion/Controls.php:239
 msgid "End position (ScrollTrigger)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:215
+#: includes/Modules/Motion/Controls.php:248
 #: includes/Modules/Motion/settings-template.php:133
 msgid "Tempo"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:219
+#: includes/Modules/Motion/Controls.php:254
 #: includes/Modules/Motion/settings-template.php:43
 msgid "Normal"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:220
+#: includes/Modules/Motion/Controls.php:255
 #: includes/Modules/Motion/settings-template.php:44
 msgid "Slow"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:221
+#: includes/Modules/Motion/Controls.php:256
 msgid "Exact duration"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:230
+#: includes/Modules/Motion/Controls.php:266
 msgid "Duration (seconds)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:241
+#: includes/Modules/Motion/Controls.php:277
 msgid "Delay (seconds)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:251
+#: includes/Modules/Motion/Controls.php:287
 msgid "Stagger (seconds)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:261
+#: includes/Modules/Motion/Controls.php:297
 msgid "Easing"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:265
+#: includes/Modules/Motion/Controls.php:303
 #: includes/Modules/Motion/settings-template.php:49
 msgid "Smooth"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:266
+#: includes/Modules/Motion/Controls.php:304
 #: includes/Modules/Motion/settings-template.php:50
 msgid "Snappy"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:267
+#: includes/Modules/Motion/Controls.php:305
 #: includes/Modules/Motion/settings-template.php:51
 msgid "Bouncy"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:268
+#: includes/Modules/Motion/Controls.php:306
 #: includes/Modules/Motion/settings-template.php:52
 msgid "Linear"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:269
+#: includes/Modules/Motion/Controls.php:307
 #: includes/Modules/Motion/settings-template.php:53
 msgid "Custom"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:278
+#: includes/Modules/Motion/Controls.php:317
 msgid "Custom easing"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:287
+#: includes/Modules/Motion/Controls.php:326
 msgid "Effect settings"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:295
+#: includes/Modules/Motion/Controls.php:334
 msgid "Distance"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:299
+#: includes/Modules/Motion/Controls.php:338
 msgid "Pixels, or percent of the line height for the line-by-line text effect."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:306
+#: includes/Modules/Motion/Controls.php:345
 msgid "Blur (pixels)"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:316
+#: includes/Modules/Motion/Controls.php:355
 msgid "Start scale"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:326
+#: includes/Modules/Motion/Controls.php:365
 msgid "Start opacity"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:337
+#: includes/Modules/Motion/Controls.php:376
 msgid "Counter start value"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:346
+#: includes/Modules/Motion/Controls.php:385
 msgid "Underline thickness"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:356
+#: includes/Modules/Motion/Controls.php:389
+msgid "Include the unit, e.g. 2px."
+msgstr ""
+
+#: includes/Modules/Motion/Controls.php:396
 msgid "Underline gap"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:366
+#: includes/Modules/Motion/Controls.php:400
+msgid "Include the unit, e.g. 0.12em."
+msgstr ""
+
+#: includes/Modules/Motion/Controls.php:407
 msgid "Underline color"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:374
+#: includes/Modules/Motion/Controls.php:415
 msgid "One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP)."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:391
+#: includes/Modules/Motion/Controls.php:453
 #: includes/Modules/Motion/settings-template.php:63
 msgid "Fade"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:392
+#: includes/Modules/Motion/Controls.php:454
 #: includes/Modules/Motion/settings-template.php:64
 msgid "Reveal"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:393
+#: includes/Modules/Motion/Controls.php:455
 #: includes/Modules/Motion/settings-template.php:65
 msgid "Blur in"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:394
+#: includes/Modules/Motion/Controls.php:456
 #: includes/Modules/Motion/settings-template.php:66
 msgid "Scale in"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:395
+#: includes/Modules/Motion/Controls.php:457
 #: includes/Modules/Motion/settings-template.php:67
 msgid "Scale and blur in"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:396
+#: includes/Modules/Motion/Controls.php:458
 msgid "Text by lines"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:397
+#: includes/Modules/Motion/Controls.php:459
 msgid "Text by words"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:398
+#: includes/Modules/Motion/Controls.php:460
 msgid "Text by characters"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:399
+#: includes/Modules/Motion/Controls.php:461
 #: includes/Modules/Motion/settings-template.php:71
 msgid "Counter"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:400
+#: includes/Modules/Motion/Controls.php:462
 msgid "Underline"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:411
+#: includes/Modules/Motion/Controls.php:473
 msgid "Off"
 msgstr ""
 

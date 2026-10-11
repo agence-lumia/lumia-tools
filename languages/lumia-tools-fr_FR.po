@@ -5734,3 +5734,9 @@ msgstr "Soulignement"
 
 msgid "Off"
 msgstr "Désactivé"
+
+msgid "Include the unit, e.g. 2px."
+msgstr "Indiquez l'unité, par exemple 2px."
+
+msgid "Include the unit, e.g. 0.12em."
+msgstr "Indiquez l'unité, par exemple 0.12em."

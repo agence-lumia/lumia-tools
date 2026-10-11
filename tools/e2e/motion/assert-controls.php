@@ -70,8 +70,28 @@ if ( ! class_exists( '\Bricks\Elements' ) || ! class_exists( '\Lumia\Tools\Modul
 	$lm_fail( 'Bricks or Lumia\Tools\Modules\Motion\Controls is not loaded.' );
 }
 
+// The module hooked its Controls instance at init 100, after Bricks registered its elements.
+global $wp_filter;
+$lm_hooked = false;
+foreach ( $wp_filter['init']->callbacks[100] ?? array() as $lm_callback ) {
+	if ( is_array( $lm_callback['function'] ) && $lm_callback['function'][0] instanceof \Lumia\Tools\Modules\Motion\Controls && 'register' === $lm_callback['function'][1] ) {
+		$lm_hooked = true;
+	}
+}
+if ( ! $lm_hooked ) {
+	$lm_fail( 'Controls::register() is not hooked on init at priority 100.' );
+}
+
 // An element registered by third-party code, as an add-on does during init.
 $lm_file = sys_get_temp_dir() . '/lm-test-element.php';
+// Removed on every exit path, WP_CLI::error() included.
+register_shutdown_function(
+	static function () use ( $lm_file ): void {
+		if ( file_exists( $lm_file ) ) {
+			unlink( $lm_file );
+		}
+	}
+);
 file_put_contents(
 	$lm_file,
 	"<?php\nnamespace Bricks;\nclass Lm_Test_Element extends Element {\n\tpublic \$category = 'general';\n\tpublic \$name = 'lm-test-element';\n\tpublic function get_label() {\n\t\treturn 'LM test';\n\t}\n}\n"
@@ -116,13 +136,21 @@ foreach ( $lm_elements as $lm_name ) {
 		$lm_fail( "{$lm_name}: the lm_motion group is missing or has no title." );
 	}
 
-	$lm_scripts = apply_filters( "bricks/elements/{$lm_name}/scripts", array() );
+	// The builder script is declared for builder requests only: on the front end it would make
+	// Bricks print a data-script-id attribute on every element.
+	$lm_scripts = apply_filters( "bricks/elements/{$lm_name}/scripts", array( 'bricksSwiper' ) );
+	if ( array( 'bricksSwiper' ) !== array_values( $lm_scripts ) ) {
+		$lm_fail( "{$lm_name}: outside the builder the scripts must be left untouched." );
+	}
+	$_GET['bricks'] = 'run'; // Simulated builder request (BRICKS_BUILDER_PARAM).
+	$lm_scripts     = apply_filters( "bricks/elements/{$lm_name}/scripts", array() );
+	$lm_twice       = apply_filters( "bricks/elements/{$lm_name}/scripts", array( 'bricksSwiper', 'lumiaMotionBuilder' ) );
+	unset( $_GET['bricks'] );
 	if ( ! in_array( 'lumiaMotionBuilder', $lm_scripts, true ) ) {
-		$lm_fail( "{$lm_name}: the lumiaMotionBuilder script is missing." );
+		$lm_fail( "{$lm_name}: the lumiaMotionBuilder script is missing in the builder." );
 	}
 	// Scripts already declared by the element are kept, and ours is not added twice.
-	$lm_scripts = apply_filters( "bricks/elements/{$lm_name}/scripts", array( 'bricksSwiper', 'lumiaMotionBuilder' ) );
-	if ( array( 'bricksSwiper', 'lumiaMotionBuilder' ) !== array_values( $lm_scripts ) ) {
+	if ( array( 'bricksSwiper', 'lumiaMotionBuilder' ) !== array_values( $lm_twice ) ) {
 		$lm_fail( "{$lm_name}: existing scripts must be kept and ours not duplicated." );
 	}
 }
@@ -151,6 +179,12 @@ foreach ( array( '_lmStartAt', '_lmEndAt' ) as $lm_key ) {
 	}
 }
 
+foreach ( array( '_lmUnderlineGap', '_lmUnderlineThickness' ) as $lm_key ) {
+	if ( empty( $lm_controls[ $lm_key ]['description'] ) || true !== $lm_controls[ $lm_key ]['units'] ) {
+		$lm_fail( "{$lm_key}: must carry units and a description telling to include the unit." );
+	}
+}
+
 // Effect options: every catalog effect plus none, each with a thumbnail span.
 $lm_options = $lm_controls['_lmEffect']['options'] ?? array();
 foreach ( array_merge( array_keys( \Lumia\Tools\Modules\Motion\Effects::catalog() ), array( 'none' ) ) as $lm_slug ) {
@@ -173,11 +207,12 @@ if ( \Lumia\Tools\Modules\Motion\Controls::variable_map() !== $lm_variables ) {
 }
 
 // Through Bricks itself: the real loader merges our controls with the element's own.
+$_GET['bricks'] = 'run';
 \Bricks\Elements::load_element( 'heading' );
+unset( $_GET['bricks'] );
 $lm_loaded = \Bricks\Elements::$elements['heading'] ?? array();
 if ( ! isset( $lm_loaded['controls']['_lmEffect'], $lm_loaded['controls']['text'], $lm_loaded['controlGroups']['lm_motion'] ) || ! in_array( 'lumiaMotionBuilder', (array) $lm_loaded['scripts'], true ) ) {
 	$lm_fail( 'Bricks did not load the Motion panel on the heading element.' );
 }
 
-unlink( $lm_file );
 WP_CLI::success( 'ok' );

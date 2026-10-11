@@ -15,6 +15,8 @@ export default async function () {
 	assert( canvas, 'no canvas frame in the builder' );
 	const heading = canvas.locator( '#brxe-smokeh' );
 	await heading.waitFor( { timeout: 30000 } );
+	// The builder script makes Bricks print data-script-id on the elements it renders in the canvas.
+	assert( await heading.getAttribute( 'data-script-id' ), 'the canvas heading has no data-script-id' );
 	await heading.click();
 
 	await page.getByText( 'Style', { exact: true } ).first().click();

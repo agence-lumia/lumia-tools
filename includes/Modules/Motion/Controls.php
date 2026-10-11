@@ -78,10 +78,13 @@ class Controls {
 	}
 
 	/**
-	 * Filter callback: declares the builder script, once.
+	 * Filter callback: declares the builder script, once, for builder requests only.
 	 *
 	 * Bricks calls the function of this name on the canvas window each time the
-	 * element is mounted or re-rendered, and skips it when it does not exist.
+	 * element is mounted or re-rendered, and skips it when it does not exist. A
+	 * non-empty list also makes Bricks print a `data-script-id` attribute on every
+	 * element it renders, so the front end must not get it: it is added only for the
+	 * builder (main window, canvas) and its AJAX / REST element renders.
 	 *
 	 * @param mixed $scripts Scripts of the element.
 	 * @return array<int, mixed>
@@ -89,11 +92,29 @@ class Controls {
 	public function add_script( $scripts ): array {
 		$scripts = is_array( $scripts ) ? $scripts : [];
 
+		if ( ! self::is_builder_request() ) {
+			return $scripts;
+		}
+
 		if ( ! in_array( self::BUILDER_SCRIPT, $scripts, true ) ) {
 			$scripts[] = self::BUILDER_SCRIPT;
 		}
 
 		return $scripts;
+	}
+
+	/**
+	 * Whether the request comes from the Bricks builder.
+	 *
+	 * The builder page itself (`?bricks=run`, canvas included) or one of its AJAX /
+	 * REST calls, such as the render of an element added during the session.
+	 */
+	private static function is_builder_request(): bool {
+		if ( function_exists( 'bricks_is_builder' ) && bricks_is_builder() ) {
+			return true;
+		}
+
+		return function_exists( 'bricks_is_builder_call' ) && bricks_is_builder_call();
 	}
 
 	/**
@@ -126,6 +147,15 @@ class Controls {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public static function definitions(): array {
+		// Bricks loads every element, about a hundred, on each request: build the list once
+		// per locale (the labels are translated).
+		static $cache = [];
+
+		$locale = determine_locale();
+		if ( isset( $cache[ $locale ] ) ) {
+			return $cache[ $locale ];
+		}
+
 		$controls = [];
 
 		$controls['_lmEffect'] = self::variable(
@@ -138,11 +168,14 @@ class Controls {
 			]
 		);
 
-		$edges = [
-			'top'    => __( 'Top', 'lumia-tools' ),
-			'center' => __( 'Center', 'lumia-tools' ),
-			'bottom' => __( 'Bottom', 'lumia-tools' ),
-		];
+		$edges = self::options(
+			Effects::EDGES,
+			[
+				'top'    => __( 'Top', 'lumia-tools' ),
+				'center' => __( 'Center', 'lumia-tools' ),
+				'bottom' => __( 'Bottom', 'lumia-tools' ),
+			]
+		);
 
 		$controls['_lmStartEdge'] = self::variable(
 			'--lm-start-edge',
@@ -214,12 +247,15 @@ class Controls {
 			[
 				'label'       => __( 'Tempo', 'lumia-tools' ),
 				'type'        => 'select',
-				'options'     => [
-					'fast'   => __( 'Fast', 'lumia-tools' ),
-					'normal' => __( 'Normal', 'lumia-tools' ),
-					'slow'   => __( 'Slow', 'lumia-tools' ),
-					'exact'  => __( 'Exact duration', 'lumia-tools' ),
-				],
+				'options'     => self::options(
+					Effects::TEMPO_KEYWORDS,
+					[
+						'fast'   => __( 'Fast', 'lumia-tools' ),
+						'normal' => __( 'Normal', 'lumia-tools' ),
+						'slow'   => __( 'Slow', 'lumia-tools' ),
+						'exact'  => __( 'Exact duration', 'lumia-tools' ),
+					]
+				),
 				'placeholder' => __( 'Default', 'lumia-tools' ),
 			]
 		);
@@ -260,14 +296,17 @@ class Controls {
 			[
 				'label'       => __( 'Easing', 'lumia-tools' ),
 				'type'        => 'select',
-				'options'     => [
-					'lumia'  => __( 'Lümia', 'lumia-tools' ),
-					'smooth' => __( 'Smooth', 'lumia-tools' ),
-					'snappy' => __( 'Snappy', 'lumia-tools' ),
-					'bouncy' => __( 'Bouncy', 'lumia-tools' ),
-					'linear' => __( 'Linear', 'lumia-tools' ),
-					'custom' => __( 'Custom', 'lumia-tools' ),
-				],
+				'options'     => self::options(
+					Effects::EASES,
+					[
+						'lumia'  => __( 'Lümia', 'lumia-tools' ),
+						'smooth' => __( 'Smooth', 'lumia-tools' ),
+						'snappy' => __( 'Snappy', 'lumia-tools' ),
+						'bouncy' => __( 'Bouncy', 'lumia-tools' ),
+						'linear' => __( 'Linear', 'lumia-tools' ),
+						'custom' => __( 'Custom', 'lumia-tools' ),
+					]
+				),
 				'placeholder' => __( 'Default', 'lumia-tools' ),
 			]
 		);
@@ -347,6 +386,7 @@ class Controls {
 				'type'        => 'number',
 				'units'       => true,
 				'placeholder' => '2px',
+				'description' => __( 'Include the unit, e.g. 2px.', 'lumia-tools' ),
 			]
 		);
 
@@ -357,6 +397,7 @@ class Controls {
 				'type'        => 'number',
 				'units'       => true,
 				'placeholder' => '0.12em',
+				'description' => __( 'Include the unit, e.g. 0.12em.', 'lumia-tools' ),
 			]
 		);
 
@@ -375,7 +416,28 @@ class Controls {
 			]
 		);
 
+		$cache[ $locale ] = $controls;
+
 		return $controls;
+	}
+
+	/**
+	 * Select options for a list of keywords, in the order of the list.
+	 *
+	 * The keys come from the constants of Effects, so a keyword added there shows up
+	 * in the panel; a keyword without a label falls back to its own name.
+	 *
+	 * @param string[]              $keywords Keywords, from an Effects constant.
+	 * @param array<string, string> $labels   Translated label of each keyword.
+	 * @return array<string, string>
+	 */
+	private static function options( array $keywords, array $labels ): array {
+		$options = [];
+		foreach ( $keywords as $keyword ) {
+			$options[ $keyword ] = $labels[ $keyword ] ?? $keyword;
+		}
+
+		return $options;
 	}
 
 	/**
