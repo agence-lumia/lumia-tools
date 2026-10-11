@@ -15,6 +15,9 @@ defined( 'ABSPATH' ) || exit;
  * query loop items) also get their own Motion settings as an inline `style`, which beats
  * any rule: without it a class preset would override the element.
  *
+ * Entrance effects of the first screen also get `data-lm-load` and their resolved values
+ * (LoadAnimation): the stylesheet plays them from the first frame, the engine skips them.
+ *
  * The pure parts (families, inline_style) call no WordPress function except through
  * Controls::definitions(), so tools/motion/php/MarkerTest.php runs them with stand-ins.
  */
@@ -58,10 +61,12 @@ final class Marker {
 	/**
 	 * Registers the filter that marks the elements.
 	 *
-	 * @param bool $legacy Whether the legacy class names also count.
+	 * @param bool                 $legacy      Whether the legacy class names also count.
+	 * @param array<string, mixed> $load_config Module values of the load animations (LoadAnimation::config_from()).
 	 */
-	public static function hook( bool $legacy = true ): void {
+	public static function hook( bool $legacy = true, array $load_config = [] ): void {
 		self::$legacy = $legacy;
+		LoadAnimation::configure( $load_config );
 
 		add_filter( 'bricks/element/render_attributes', [ self::class, 'filter_attributes' ], 10, 3 );
 	}
@@ -93,9 +98,17 @@ final class Marker {
 		}
 
 		$settings = $element->settings;
-		$families = self::families( $settings, self::classes_of( $settings ), self::$legacy );
+		$data     = is_array( $element->element ) ? $element->element : [];
+		$classes  = self::classes_of( $settings );
+		$families = self::families( $settings, $classes, self::$legacy );
+		$builder  = self::is_builder();
 
 		if ( array() === $families ) {
+			// Every element counts for the load zone: an unmarked section holds the marked ones.
+			if ( ! $builder ) {
+				LoadAnimation::observe( $data, self::render_area() );
+			}
+
 			return $attributes;
 		}
 
@@ -105,7 +118,6 @@ final class Marker {
 
 		$attributes['_root']['data-lm'] = implode( ' ', $families );
 
-		$data = is_array( $element->element ) ? $element->element : [];
 		if ( self::uses_class_selector( $data ) ) {
 			$inline = self::inline_style( $settings );
 			if ( '' !== $inline ) {
@@ -114,7 +126,76 @@ final class Marker {
 			}
 		}
 
+		// The builder canvas shows the final state and replays through the engine: never in CSS.
+		// Attributes already completed (the filter run twice) keep their rank in the lot.
+		if ( ! $builder && ! isset( $attributes['_root']['data-lm-load'] ) ) {
+			$load = self::load_attributes( $data, $settings, $classes, self::render_area(), self::$legacy );
+			if ( array() !== $load ) {
+				$attributes['_root']['data-lm-load'] = $load['data-lm-load'];
+				$attributes['_root']['style']        = self::merge_style( $attributes['_root']['style'] ?? null, $load['style'] );
+			}
+		}
+
 		return $attributes;
+	}
+
+	/**
+	 * Load-animation attributes of an element, or an empty array when the engine plays it.
+	 *
+	 * Records the element in the load zone (LoadAnimation::observe()), then: an entrance effect
+	 * set to "always", or to "auto" (the default) inside the zone, plays in CSS on load; "never",
+	 * any other family, or no base effect, does not.
+	 *
+	 * @param array<mixed, mixed>                                            $element          Element data (id, parent...).
+	 * @param array<string, mixed>                                           $element_settings Element settings.
+	 * @param array<int, array{name?: mixed, settings?: mixed}|array<mixed>> $classes          Global classes, as name and settings.
+	 * @param string                                                         $area             Bricks render area.
+	 * @param bool                                                           $legacy           Whether the legacy class names count.
+	 * @return array<string, string> `data-lm-load` and `style`, or nothing.
+	 */
+	public static function load_attributes( array $element, array $element_settings, array $classes, string $area, bool $legacy ): array {
+		$in_zone = LoadAnimation::observe( $element, $area );
+
+		$slug = LoadAnimation::effect( $element_settings, $classes, $legacy );
+		if ( null === $slug || Effects::FAMILY_ENTER !== Effects::family( $slug ) ) {
+			return [];
+		}
+
+		$mode = LoadAnimation::mode( $element_settings, $classes );
+		if ( 'never' === $mode || ( 'auto' === $mode && ! $in_zone ) ) {
+			return [];
+		}
+
+		return LoadAnimation::attributes( $slug, LoadAnimation::merged_settings( $element_settings, $classes ), LoadAnimation::config() );
+	}
+
+	/**
+	 * Bricks area being rendered: header, content, footer, popup...
+	 *
+	 * Bricks 2.4.2 sets `Frontend::$area` in `Frontend::render_data()` for the tree it renders,
+	 * and puts the outer area back after a nested render (template element, popup).
+	 */
+	private static function render_area(): string {
+		if ( ! class_exists( '\Bricks\Frontend' ) || ! property_exists( '\Bricks\Frontend', 'area' ) ) {
+			return 'content';
+		}
+
+		$area = \Bricks\Frontend::$area;
+
+		return is_string( $area ) ? $area : 'content';
+	}
+
+	/**
+	 * Whether the request renders for the builder (canvas, main window, or one of its AJAX / REST calls).
+	 */
+	private static function is_builder(): bool {
+		foreach ( [ 'bricks_is_builder', 'bricks_is_builder_iframe', 'bricks_is_builder_call' ] as $test ) {
+			if ( function_exists( $test ) && $test() ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

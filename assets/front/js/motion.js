@@ -259,10 +259,15 @@
     return { el: el, effect: effect, raw: raw, above: rect.bottom < 0, onScreen: rect.top < window.innerHeight };
   }
 
-  // Why an effect is not built, or "" when it is.
-  function skipReason(effect, options) {
+  // Why an effect is not built, or null when it is ("" = skipped without a message).
+  function skipReason(effect, options, el) {
     if (effect === "" || effect === "none") {
       return effect === "none" ? "effect set to none" : "no effect";
+    }
+    // Played by the stylesheet from the first frame (first screen, see Marker): no trigger, no
+    // initial state. The canvas never gets the attribute: the builder replays through the engine.
+    if (el && el.hasAttribute("data-lm-load")) {
+      return "load";
     }
     if (!has(SLUGS, effect)) {
       return "unknown effect " + JSON.stringify(effect);
@@ -1234,7 +1239,7 @@
       var before = key ? lastSeen[key] : undefined;
       try {
         var options = entry.effect === "" || entry.effect === "none" ? null : core.resolve(entry.effect, entry.raw, config);
-        var reason = skipReason(entry.effect, options);
+        var reason = skipReason(entry.effect, options, el);
 
         if (reason !== null) {
           if (key) {

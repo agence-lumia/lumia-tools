@@ -1,6 +1,6 @@
 <?php
 /**
- * Checks the Motion panel on the Bricks elements: the 24 controls, the group, the
+ * Checks the Motion panel on the Bricks elements: the 25 controls, the group, the
  * script and the `css` keys that make a control write a --lm-* variable.
  * Run through `wp eval-file assert-controls.php` on the local bench; exits 1 on the
  * first failure. Local bench only, never shipped.
@@ -16,6 +16,7 @@ $lm_keys = array(
 	'_lmStartAt',
 	'_lmEndEdge',
 	'_lmEndAt',
+	'_lmLoad',
 	'_lmAdvancedSep',
 	'_lmStart',
 	'_lmEnd',
@@ -44,6 +45,7 @@ $lm_variables = array(
 	'_lmStartAt'            => '--lm-start-at',
 	'_lmEndEdge'            => '--lm-end-edge',
 	'_lmEndAt'              => '--lm-end-at',
+	'_lmLoad'               => '--lm-load',
 	'_lmStart'              => '--lm-start',
 	'_lmEnd'                => '--lm-end',
 	'_lmTempo'              => '--lm-tempo',
@@ -108,8 +110,8 @@ foreach ( $lm_elements as $lm_name ) {
 			$lm_fail( "{$lm_name}: control {$lm_key} is missing." );
 		}
 	}
-	if ( count( array_intersect( array_keys( $lm_controls ), $lm_keys ) ) !== 24 ) {
-		$lm_fail( "{$lm_name}: expected exactly 24 Motion controls." );
+	if ( count( array_intersect( array_keys( $lm_controls ), $lm_keys ) ) !== 25 ) {
+		$lm_fail( "{$lm_name}: expected exactly 25 Motion controls." );
 	}
 	foreach ( $lm_keys as $lm_key ) {
 		if ( 'lm_motion' !== ( $lm_controls[ $lm_key ]['group'] ?? null ) ) {

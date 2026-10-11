@@ -32,7 +32,10 @@ class Module extends AbstractModule {
 		$settings = $this->get_settings();
 
 		( new Controls() )->hook();
-		Marker::hook( ! empty( $settings['legacy_classes'] ) );
+		Marker::hook(
+			! empty( $settings['legacy_classes'] ),
+			LoadAnimation::config_from( SettingsSanitizer::sanitize( $settings, static::get_defaults() ) )
+		);
 		( new Assets( $settings ) )->hook();
 	}
 

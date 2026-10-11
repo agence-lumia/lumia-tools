@@ -10,7 +10,8 @@ import { OUT, wp, pluginPath } from './lib.mjs';
  */
 export const CLASSES = {
 	// Bricks stores a number control with a fixed unit as a bare string; the unit is added in the CSS.
-	'lm-e2e-preset': { _lmEffect: 'slide-up', _lmStartAt: '60' },
+	// "Never" on load: the presets sit in first sections and test the engine.
+	'lm-e2e-preset': { _lmEffect: 'slide-up', _lmStartAt: '60', _lmLoad: 'never' },
 };
 
 /** Posts the query loops need: published when missing (by slug), never modified. */
@@ -98,7 +99,8 @@ PAGES[ 'lm-e2e-basic' ] = {
 	title: 'LM E2E basic',
 	elements: [
 		section( [
-			heading( 'Fade on load', { tag: 'h1' }, { id: 'basichd', classes: [ 'lm-fade' ] } ),
+			// The first section of this page tests the engine: its effects are never played in CSS on load.
+			heading( 'Fade on load', { tag: 'h1', _lmLoad: 'never' }, { id: 'basichd', classes: [ 'lm-fade' ] } ),
 			text( '<a id="lmanchor" href="/lm-e2e-anchor/#target">Go to the target of the anchor page</a>', {}, { id: 'basiclk' } ),
 			spacer( 1200 ),
 			// Four presets in a row: the class gives slide-up at 60%, three of them adjust it.
@@ -107,7 +109,7 @@ PAGES[ 'lm-e2e-basic' ] = {
 			heading( 'Preset at 80% on phones', { '_lmStartAt:mobile_portrait': '80' }, { id: 'bpremb', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset, fast and bouncy', { _lmTempo: 'fast', _lmEase: 'bouncy' }, { id: 'bprefb', classes: [ 'lm-e2e-preset' ] } ),
 			// A bouncy curve overshoots: the blur must still never go below 0.
-			heading( 'Blur in, bouncy', { _lmEffect: 'blur-up', _lmEase: 'bouncy' }, { id: 'bblurb' } ),
+			heading( 'Blur in, bouncy', { _lmEffect: 'blur-up', _lmEase: 'bouncy', _lmLoad: 'never' }, { id: 'bblurb' } ),
 			spacer( 1200 ),
 		] ),
 		// An animated section: its heading has no setting and must not inherit any.
@@ -134,6 +136,26 @@ PAGES[ 'lm-e2e-basic' ] = {
 			heading( 'Former name typed', { _cssClasses: 'sk-fade' }, { id: 'brawsk' } ),
 			heading( 'Name typed', { _cssClasses: 'lm-slide-up' }, { id: 'brawlm' } ),
 			spacer( 2600 ),
+		] ),
+	],
+};
+
+// Load animations (load): the first section plays in CSS from the first frame, except the element
+// set to "never"; in the tall second section, only the element set to "always" does.
+PAGES[ 'lm-e2e-load' ] = {
+	title: 'LM E2E load',
+	elements: [
+		section( [
+			heading( 'Hero heading', { tag: 'h1' }, { id: 'ldhead', classes: [ 'lm-blur-up' ] } ),
+			text( 'Hero text', {}, { id: 'ldtext', classes: [ 'lm-fade' ] } ),
+			text( 'Hero text, second of the lot', {}, { id: 'ldtxt2', classes: [ 'lm-fade' ] } ),
+			heading( 'Never on load', { _lmLoad: 'never' }, { id: 'ldnevr', classes: [ 'lm-fade' ] } ),
+		] ),
+		section( [
+			spacer( 2000 ),
+			heading( 'Always on load', { _lmEffect: 'slide-up', _lmLoad: 'always' }, { id: 'ldalws' } ),
+			heading( 'Auto, below the first section', {}, { id: 'ldlate', classes: [ 'lm-fade' ] } ),
+			spacer( 1000 ),
 		] ),
 	],
 };

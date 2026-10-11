@@ -5721,6 +5721,18 @@ msgstr "Courbe"
 msgid "Custom easing"
 msgstr "Courbe personnalisée"
 
+msgid "On load"
+msgstr "Au chargement"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Always"
+msgstr "Toujours"
+
+msgid "Auto = animated from the first frame when the element is in the header or the first section. Always = animated on load wherever it is. Never = always animated on scroll. Breakpoint values are ignored."
+msgstr "Auto = animé dès la première image s'il est dans l'en-tête ou la première section. Toujours = animé au chargement où qu'il soit. Jamais = toujours animé au défilement. Les valeurs par breakpoint sont ignorées."
+
 msgid "Effect settings"
 msgstr "Paramètres de l'effet"
 

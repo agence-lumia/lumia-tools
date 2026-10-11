@@ -145,7 +145,7 @@ class Controls {
 	}
 
 	/**
-	 * The 24 controls, keyed by Bricks control key.
+	 * The 25 controls, keyed by Bricks control key.
 	 *
 	 * The parameters of an effect have no `required` condition on the effect: a
 	 * condition only sees the settings of the element, not the effect brought by a
@@ -221,6 +221,24 @@ class Controls {
 				'type'  => 'number',
 				'unit'  => '%',
 				'step'  => 1,
+			]
+		);
+
+		$controls['_lmLoad'] = self::variable(
+			'--lm-load',
+			[
+				'label'       => __( 'On load', 'lumia-tools' ),
+				'type'        => 'select',
+				'options'     => self::options(
+					LoadAnimation::MODES,
+					[
+						'auto'   => __( 'Auto', 'lumia-tools' ),
+						'always' => __( 'Always', 'lumia-tools' ),
+						'never'  => __( 'Never', 'lumia-tools' ),
+					]
+				),
+				'placeholder' => __( 'Auto', 'lumia-tools' ),
+				'description' => __( 'Auto = animated from the first frame when the element is in the header or the first section. Always = animated on load wherever it is. Never = always animated on scroll. Breakpoint values are ignored.', 'lumia-tools' ),
 			]
 		);
 

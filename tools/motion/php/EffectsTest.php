@@ -129,14 +129,15 @@ return [
 		}
 	},
 	'engine variables'                               => static function (): void {
-		lm_assert( count( Effects::ENGINE_VARIABLES ) === 18, 'expected 18 engine variables' );
-		lm_assert( count( array_unique( Effects::ENGINE_VARIABLES ) ) === 18, 'duplicate variable' );
+		lm_assert( count( Effects::ENGINE_VARIABLES ) === 19, 'expected 19 engine variables' );
+		lm_assert( count( array_unique( Effects::ENGINE_VARIABLES ) ) === 19, 'duplicate variable' );
 		foreach ( Effects::ENGINE_VARIABLES as $name ) {
 			lm_assert( strpos( $name, 'lm-' ) === 0, "{$name} must start with lm-" );
 			lm_assert( strpos( $name, '--' ) !== 0, "{$name} must not carry the leading dashes" );
 			lm_assert( strpos( $name, 'underline' ) === false, "{$name} is an underline variable" );
 		}
 		lm_assert( in_array( 'lm-ease-custom', Effects::ENGINE_VARIABLES, true ), 'lm-ease-custom' );
+		lm_assert( in_array( 'lm-load', Effects::ENGINE_VARIABLES, true ), 'lm-load' );
 	},
 	'constants'                                      => static function (): void {
 		lm_assert(

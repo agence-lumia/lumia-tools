@@ -58,6 +58,7 @@ final class Effects {
 		'lm-scale',
 		'lm-from-opacity',
 		'lm-start-value',
+		'lm-load',
 	];
 
 	/**

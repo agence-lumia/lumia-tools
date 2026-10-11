@@ -101,6 +101,11 @@
 	inherits: false;
 }
 
+@property --lm-load {
+	syntax: '*';
+	inherits: false;
+}
+
 /* ================================================================
  * CURVES
  * Generated from the engine springs: run node tools/motion/js/build-curves.mjs, never edit by
@@ -158,8 +163,97 @@ html:not(.lenis) [id] {
  * ================================================================ */
 
 @media (prefers-reduced-motion: no-preference) {
-	.lm-js:not(.lm-ready) [data-lm~="enter"] {
+	.lm-js:not(.lm-ready) [data-lm~="enter"]:not([data-lm-load]) {
 		opacity: 0;
+	}
+}
+
+/* ================================================================
+ * LOAD ANIMATIONS
+ * Entrance effects of the first screen (data-lm-load, set by Marker) play here from the first
+ * frame instead of waiting for the engine, which leaves them alone. The values are resolved at
+ * render time and written inline: --lm-load-duration, --lm-load-move-duration (the duration
+ * times the settle factor of a spring), --lm-load-delay (delay + rank in the lot x stagger),
+ * --lm-load-ease (transform: overshoot allowed), --lm-load-safe-ease (opacity and blur: never
+ * past their end), --lm-distance, --lm-blur, --lm-scale.
+ *
+ * Opacity starts at 0.01, not 0: Chrome does not count a paint at opacity 0 for the LCP.
+ * Keyframes give the start only: the end is the element's own value, so an author's opacity,
+ * filter or transform is where the animation lands. Fill "backwards" holds the start during the
+ * delay; past the end the animation stops applying, so hover transitions keep working.
+ * ================================================================ */
+
+@keyframes lm-load-fade {
+	from {
+		opacity: 0.01;
+	}
+}
+
+@keyframes lm-load-blur {
+	from {
+		filter: blur(var(--lm-blur));
+	}
+}
+
+@keyframes lm-load-slide-up-move {
+	from {
+		transform: translateY(var(--lm-distance));
+	}
+}
+
+@keyframes lm-load-blur-up-move {
+	from {
+		transform: translateY(var(--lm-distance));
+	}
+}
+
+@keyframes lm-load-zoom-move {
+	from {
+		transform: scale(var(--lm-scale));
+	}
+}
+
+@keyframes lm-load-zoom-blur-move {
+	from {
+		transform: scale(var(--lm-scale));
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	[data-lm-load="fade"] {
+		animation: lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="blur"] {
+		animation:
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards,
+			lm-load-blur var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="slide-up"] {
+		animation:
+			lm-load-slide-up-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="blur-up"] {
+		animation:
+			lm-load-blur-up-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards,
+			lm-load-blur var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="zoom"] {
+		animation:
+			lm-load-zoom-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="zoom-blur"] {
+		animation:
+			lm-load-zoom-blur-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards,
+			lm-load-blur var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
 	}
 }
 
