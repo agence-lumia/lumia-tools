@@ -74,6 +74,22 @@ PAGES[ 'lm-e2e-marker' ] = {
 	],
 };
 
+// Loading scenario: a page with no animation, one with a class effect, one with a text effect.
+PAGES[ 'lm-e2e-none' ] = {
+	title: 'LM E2E none',
+	elements: [ section( [ heading( 'No animation', { tag: 'h1' }, { id: 'nonehd' } ), text( 'Plain text', {}, { id: 'nonetx' } ) ] ) ],
+};
+
+PAGES[ 'lm-e2e-basic' ] = {
+	title: 'LM E2E basic',
+	elements: [ section( [ heading( 'Fade on load', { tag: 'h1' }, { id: 'basichd', classes: [ 'lm-fade' ] } ) ] ) ],
+};
+
+PAGES[ 'lm-e2e-text' ] = {
+	title: 'LM E2E text',
+	elements: [ section( [ heading( 'Words one by one', { tag: 'h1', _lmEffect: 'text-words' }, { id: 'texthd' } ) ] ) ],
+};
+
 /** Flattens a node tree into Bricks' element list. */
 function flatten( nodes, slug ) {
 	const out = [];

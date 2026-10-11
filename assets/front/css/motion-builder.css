@@ -1,0 +1,10 @@
+/*
+ * Lumia Tools - Motion, Bricks builder (main window only).
+ *
+ * Styles of the Motion panel: the thumbnails of the effect list. The animated pages are
+ * rendered in the canvas, which loads motion.css instead.
+ */
+
+:root {
+	--lm-builder: 1;
+}
