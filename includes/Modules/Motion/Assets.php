@@ -188,7 +188,13 @@ final class Assets {
 		wp_enqueue_script( self::HANDLE_SCROLL, LUMIA_ASSETS_URL . 'front/js/motion-scroll.js', $deps, LUMIA_VERSION, self::footer_args() );
 		wp_add_inline_script(
 			self::HANDLE_SCROLL,
-			'window.lumiaMotionScroll=' . wp_json_encode( [ 'lerp' => $this->lenis_lerp() ], JSON_HEX_TAG | JSON_HEX_AMP ) . ';',
+			'window.lumiaMotionScroll=' . wp_json_encode(
+				[
+					'lerp'         => $this->lenis_lerp(),
+					'legacyGlobal' => Legacy::ENGINE_GLOBAL,
+				],
+				JSON_HEX_TAG | JSON_HEX_AMP
+			) . ';',
 			'before'
 		);
 	}

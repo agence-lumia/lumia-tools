@@ -11,9 +11,12 @@
  *   (--navbar-height) above the target. Lenis owns same-page anchors, so the stylesheet
  *   rule that does the same without Lenis (scroll-margin-top) is switched off by the
  *   `lenis` class of <html>.
- * - Popups: while a Bricks popup is open the page behind it does not scroll, and the
- *   popup scrolls natively (data-lenis-prevent).
+ * - Popups and menus: while a Bricks popup is open, or a menu that locks the page
+ *   (body.no-scroll: off-canvas, mobile menu), the page behind does not scroll, and they
+ *   scroll natively (data-lenis-prevent).
  * - Desktop only (syncTouch off): touch devices keep their native, inertial scroll.
+ * - Stands down: with reduced motion (native scroll), and when the former Motion snippet
+ *   (its global is named in window.lumiaMotionScroll.legacyGlobal) owns the page.
  */
 (function () {
   "use strict";
@@ -28,9 +31,30 @@
   var DEFAULT_LERP = 0.1;
   var BRICKS_POPUP_OPEN = "bricks/popup/open";
   var BRICKS_POPUP_CLOSE = "bricks/popup/close";
+  // What scrolls by itself inside a popup or a menu. Marked when it locks the page, so an
+  // element added after the load is covered too.
+  var NATIVE_SCROLL = ".brx-popup, .brxe-offcanvas, .brx-nav-nested-items, .bricks-mobile-menu-wrapper";
 
   var gsap = window.gsap;
   var ScrollTrigger = window.ScrollTrigger;
+  var settings = window.lumiaMotionScroll || {};
+
+  // The former Motion snippet runs its own smooth scroll: two instances would fight over the
+  // scroll position. Its global is named by the plugin, not here.
+  function formerSnippetLoaded() {
+    return !!(settings.legacyGlobal && window[settings.legacyGlobal]);
+  }
+
+  // Reduced motion: the visitor asked for no animated movement, so the scroll stays native.
+  // <html> never gets the `lenis` class, and the stylesheet's scroll-margin-top places anchors.
+  function reducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  // window.lenis is set by the constructor of any Lenis on the page.
+  if (formerSnippetLoaded() || window.lenis || reducedMotion()) {
+    return;
+  }
 
   /* ================================================================
    * SETTINGS
@@ -39,8 +63,7 @@
   // window.lumiaMotionScroll = { lerp } is printed by the plugin from the sanitized settings;
   // a missing or hand-edited value falls back to the Lenis default.
   function intensity() {
-    var config = window.lumiaMotionScroll;
-    var lerp = config && typeof config.lerp === "number" ? config.lerp : DEFAULT_LERP;
+    var lerp = typeof settings.lerp === "number" ? settings.lerp : DEFAULT_LERP;
     return lerp >= 0.01 && lerp <= 1 ? lerp : DEFAULT_LERP;
   }
 
@@ -88,11 +111,13 @@
   });
   window.lumiaLenis = lenis;
 
+  // GSAP gives seconds, Lenis wants milliseconds.
+  function tick(time) {
+    lenis.raf(time * 1000);
+  }
+
   if (gsap && gsap.ticker) {
-    // GSAP gives seconds, Lenis wants milliseconds.
-    gsap.ticker.add(function (time) {
-      lenis.raf(time * 1000);
-    });
+    gsap.ticker.add(tick);
     // Without it GSAP skips the frames it thinks were lost, and Lenis stutters after a slow one.
     gsap.ticker.lagSmoothing(0);
     if (ScrollTrigger && typeof ScrollTrigger.update === "function") {
@@ -126,7 +151,8 @@
     } catch (error) {
       return;
     }
-    if (!target) {
+    // A target without a box (display:none) was not scrolled to by the browser either.
+    if (!target || !target.getClientRects().length) {
       return;
     }
 
@@ -164,16 +190,39 @@
   landOnAnchor();
 
   /* ================================================================
-   * BRICKS POPUPS
+   * BRICKS POPUPS AND MENUS
    * ================================================================ */
 
   // Popups holding the scroll. An event without a popup (a script that fires it by hand)
   // counts as one popup of its own.
   var ANONYMOUS = {};
   var holders = [];
+  var observer = null;
 
   function popupOf(event) {
     return (event && event.detail && event.detail.popupElement) || null;
+  }
+
+  function markNativeScroll() {
+    Array.prototype.forEach.call(document.querySelectorAll(NATIVE_SCROLL), function (node) {
+      node.setAttribute("data-lenis-prevent", "");
+    });
+  }
+
+  // Bricks puts body.no-scroll while an off-canvas ("No scroll"), the mobile menu of a nested
+  // nav or of a nav menu, or a popup is open. Only the first two fire no event.
+  function pageLocked() {
+    return !!document.body && document.body.classList.contains("no-scroll");
+  }
+
+  // Stopped while a popup holds the scroll or the page is locked, running otherwise.
+  function sync() {
+    if (holders.length || pageLocked()) {
+      markNativeScroll();
+      lenis.stop();
+    } else {
+      lenis.start();
+    }
   }
 
   // A popup the visitor can scroll the page behind (the Bricks "body scroll" option) or a
@@ -194,7 +243,7 @@
     if (holders.indexOf(key) === -1) {
       holders.push(key);
     }
-    lenis.stop();
+    sync();
   }
 
   function onPopupClose(event) {
@@ -202,16 +251,42 @@
     if (index !== -1) {
       holders.splice(index, 1);
     }
-    if (holders.length === 0) {
-      lenis.start();
-    }
+    sync();
   }
 
-  // The popups are in the page from the start (Bricks prints them in the footer): the
-  // attribute is set now, so a popup scrolls natively even before its first opening.
-  Array.prototype.forEach.call(document.querySelectorAll(".brx-popup"), function (popup) {
-    popup.setAttribute("data-lenis-prevent", "");
-  });
+  // The popups and menus are in the page from the start (Bricks prints them in the footer):
+  // the attribute is set now, so they scroll natively even before their first opening.
+  markNativeScroll();
   document.addEventListener(BRICKS_POPUP_OPEN, onPopupOpen);
   document.addEventListener(BRICKS_POPUP_CLOSE, onPopupClose);
+  if (window.MutationObserver && document.body) {
+    observer = new MutationObserver(sync);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  }
+  sync();
+
+  /* ================================================================
+   * STANDING DOWN
+   * ================================================================ */
+
+  // The former snippet may load after this file: look again once the page has loaded.
+  window.addEventListener(
+    "load",
+    function () {
+      if (!formerSnippetLoaded()) {
+        return;
+      }
+      document.removeEventListener(BRICKS_POPUP_OPEN, onPopupOpen);
+      document.removeEventListener(BRICKS_POPUP_CLOSE, onPopupClose);
+      if (observer) {
+        observer.disconnect();
+      }
+      if (gsap && gsap.ticker) {
+        gsap.ticker.remove(tick);
+      }
+      lenis.destroy();
+      delete window.lumiaLenis;
+    },
+    { once: true }
+  );
 })();

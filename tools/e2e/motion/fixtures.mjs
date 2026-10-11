@@ -145,6 +145,8 @@ PAGES[ 'lm-e2e-anchor' ] = {
 			text( '<a id="lmlocal" href="#target">Go to the target</a>', {}, { id: 'anchlk' } ),
 			spacer( 3000 ),
 			el( 'div', { _cssId: 'target', _height: '200px' }, [ heading( 'Target', {}, { id: 'anchtt' } ) ], { id: 'anchtg' } ),
+			// An anchor the browser cannot scroll to: it has no box.
+			el( 'div', { _cssId: 'lmhidden', _display: 'none' }, [ text( 'Hidden', {}, { id: 'anchhx' } ) ], { id: 'anchhid' } ),
 			spacer( 3000 ),
 		] ),
 	],
@@ -250,6 +252,42 @@ PAGES[ 'lm-e2e-popup-ajax' ] = {
 	post_type: 'bricks_template',
 	meta: { _bricks_template_type: 'popup', _bricks_template_settings: { ...popupOn( 'lm-e2e-popup', 'lm-e2e-popup-plain' ), popupAjax: true } },
 	elements: [ el( 'block', {}, [ heading( 'AJAX popup title', { tag: 'h3' }, { id: 'popa1h', classes: [ 'lm-fade' ] } ) ], { id: 'popa1b' } ) ],
+};
+
+// Menus that lock the page with body.no-scroll and fire no popup event: an offcanvas with
+// "No scroll (body)" and a nested nav whose mobile menu is always shown. Tall, to have room to scroll.
+PAGES[ 'lm-e2e-menu' ] = {
+	title: 'LM E2E menu',
+	elements: [
+		section( [
+			heading( 'Menu page', { tag: 'h1' }, { id: 'menuhd' } ),
+			el(
+				'button',
+				{ text: 'Open the offcanvas', _interactions: [ { id: 'menui1', trigger: 'click', action: 'toggleOffCanvas', offCanvasSelector: '#brxe-menuoff' } ] },
+				[],
+				{ id: 'menubo' }
+			),
+			el(
+				'offcanvas',
+				{ noScrollBody: true },
+				[
+					el( 'block', { _cssClasses: 'brx-offcanvas-inner' }, [ text( 'Offcanvas content', {}, { id: 'menuoct' } ), el( 'toggle', { ariaLabel: 'Close' }, [], { id: 'menuoft' } ) ], { id: 'menuoin' } ),
+					el( 'block', { _cssClasses: 'brx-offcanvas-backdrop' }, [], { id: 'menuobk' } ),
+				],
+				{ id: 'menuoff' }
+			),
+			el(
+				'nav-nested',
+				{ mobileMenu: 'always' },
+				[
+					el( 'block', { tag: 'ul', _cssClasses: 'brx-nav-nested-items' }, [ el( 'block', { tag: 'li' }, [ text( 'Item one', {}, { id: 'menuit1' } ) ], { id: 'menuli1' } ) ], { id: 'menuuls' } ),
+					el( 'toggle', {}, [], { id: 'menunt' } ),
+				],
+				{ id: 'menunav' }
+			),
+			spacer( 4000 ),
+		] ),
+	],
 };
 
 /** Flattens a node tree into Bricks' element list. */

@@ -166,10 +166,14 @@ export default async function () {
 			former: typeof window.StudioKyneMotion,
 			debug: !! ( window.lumiaMotion && window.lumiaMotion._debug && Object.keys( window.lumiaMotion._debug ).length ),
 			opacity: getComputedStyle( document.querySelector( '[data-lm~="enter"]' ) ).opacity,
+			// The former snippet runs its own smooth scroll: the module starts none next to it.
+			lenis: typeof window.lumiaLenis,
+			lenisClass: document.documentElement.classList.contains( 'lenis' ),
 		} ) );
 		assert( state.former === 'object', 'snippet: the former engine stand-in was not loaded' );
 		assert( ! state.debug, 'snippet: the Motion engine started next to the former one' );
 		assert( state.opacity === '1', `snippet: the animated element is hidden (opacity ${ state.opacity })` );
+		assert( state.lenis === 'undefined' && ! state.lenisClass, `snippet: the module started its own smooth scroll (lumiaLenis=${ state.lenis }, lenis class=${ state.lenisClass })` );
 		assert( warnings.some( ( w ) => w.includes( 'Lumia Motion' ) && w.includes( 'StudioKyneMotion' ) ), `snippet: no console warning from the module (${ warnings.join( ' | ' ) || 'none' })` );
 	} finally {
 		snippet( SNIPPET, 'draft' );

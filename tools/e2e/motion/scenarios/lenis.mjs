@@ -285,11 +285,163 @@ async function intensity() {
 	} );
 }
 
+// Menus that lock the page with body.no-scroll and fire no popup event (an offcanvas with
+// "No scroll (body)", the mobile menu of a nested nav): the page behind them must not scroll
+// under the wheel, and scrolls again once they close.
+async function menus() {
+	const cases = [
+		[ 'offcanvas', '#brxe-menubo', '.brxe-offcanvas' ],
+		[ 'nested nav', '#brxe-menunt', '.brx-nav-nested-items' ],
+	];
+	for ( const [ name, opener, prevented ] of cases ) {
+		const page = await newPage();
+		await load( page, 'lm-e2e-menu' );
+		await lenisReady( page );
+		// At the top: closing a menu gives the focus back to its opener, which scrolls the page to it (Bricks, with or without Lenis).
+		await click( page, opener );
+		await page.waitForFunction( () => document.body.classList.contains( 'no-scroll' ), null, { timeout: 4000 } ).catch( () => {
+			throw new Error( `${ name }: the menu did not lock the page (no body.no-scroll)` );
+		} );
+		await page.mouse.move( 700, 450 );
+		await page.mouse.wheel( 0, 600 );
+		await page.waitForTimeout( 900 );
+		const locked = await page.evaluate( () => ( { y: window.scrollY, stopped: window.lumiaLenis.isStopped } ) );
+		assert( locked.y === 0, `${ name }: the wheel scrolled the page behind the open menu (scrollY ${ locked.y }, expected 0)` );
+		assert( locked.stopped, `${ name }: Lenis is not stopped while the menu is open` );
+		assert( await page.evaluate( ( sel ) => document.querySelector( sel ).hasAttribute( 'data-lenis-prevent' ), prevented ), `${ name }: ${ prevented } has no data-lenis-prevent` );
+
+		await page.keyboard.press( 'Escape' );
+		await page.waitForFunction( () => ! document.body.classList.contains( 'no-scroll' ), null, { timeout: 4000 } ).catch( () => {
+			throw new Error( `${ name }: Escape did not close the menu` );
+		} );
+		await page.waitForFunction( () => ! window.lumiaLenis.isStopped, null, { timeout: 3000 } ).catch( () => {
+			throw new Error( `${ name }: Lenis is still stopped after the menu closed` );
+		} );
+		await page.mouse.wheel( 0, 600 );
+		const y = await stable( page );
+		assert( y > 400, `${ name }: the wheel does not scroll again after the menu closed (scrollY ${ y })` );
+		noErrors( page, name );
+		await page.context().close();
+	}
+}
+
+// The former snippet owns smooth scroll: the module does not start Lenis next to it, whether
+// its global is there before the module runs or only by the time the page has loaded.
+async function formerSnippet() {
+	const GLOBAL = 'StudioKyneMotion';
+	for ( const [ name, init ] of [
+		[ 'global before the module', `window.${ GLOBAL } = {};` ],
+		[ 'global after the module, before load', `document.addEventListener( 'DOMContentLoaded', () => { window.${ GLOBAL } = {}; } );` ],
+	] ) {
+		for ( const slug of [ 'lm-e2e-none', 'lm-e2e-basic' ] ) {
+			const label = `former snippet (${ name }), ${ slug }`;
+			const page = await newPage();
+			await page.addInitScript( init );
+			await load( page, slug );
+			await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 5000 } );
+			await page.waitForTimeout( 300 );
+			const state = await page.evaluate( () => ( {
+				lenis: typeof window.lumiaLenis,
+				className: [ ...document.documentElement.classList ].filter( ( c ) => c === 'lenis' || c.startsWith( 'lenis-' ) ),
+			} ) );
+			assert( state.lenis === 'undefined', `${ label }: window.lumiaLenis is ${ state.lenis }` );
+			assert( state.className.length === 0, `${ label }: <html> still has ${ state.className.join( ' ' ) }` );
+			// The page still scrolls, natively.
+			await page.mouse.move( 700, 450 );
+			await page.evaluate( () => window.scrollTo( 0, 0 ) );
+			noErrors( page, label );
+			await page.context().close();
+		}
+	}
+}
+
+// prefers-reduced-motion: reduce: no Lenis at all, native scroll, anchors under the header by the stylesheet.
+async function reducedMotion() {
+	for ( const slug of [ 'lm-e2e-none', 'lm-e2e-basic' ] ) {
+		const label = `reduced motion, ${ slug }`;
+		const page = await newPage( { reducedMotion: 'reduce' } );
+		await injectCss( page, NAVBAR_CSS );
+		await load( page, slug );
+		await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 5000 } );
+		const state = await page.evaluate( () => ( { lenis: typeof window.lumiaLenis, className: document.documentElement.classList.contains( 'lenis' ) } ) );
+		assert( state.lenis === 'undefined' && ! state.className, `${ label }: lumiaLenis=${ state.lenis } lenis class=${ state.className }` );
+		noErrors( page, label );
+		await page.context().close();
+	}
+
+	const page = await newPage( { reducedMotion: 'reduce', width: 1440, height: 800 } );
+	await injectCss( page, NAVBAR_CSS );
+	await load( page, 'lm-e2e-anchor' );
+	await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 5000 } );
+	await click( page, '#lmlocal' );
+	await stable( page );
+	const local = await targetAt( page );
+	assert( local.y > 1000 && Math.abs( local.top - local.navbar ) <= 4, `reduced motion: same-page anchor puts #target at ${ local.top } px (expected ${ local.navbar } px, scrollY ${ local.y })` );
+	await page.goto( pageUrl( 'lm-e2e-basic' ), { waitUntil: 'load' } );
+	await Promise.all( [
+		page.waitForURL( /\/lm-e2e-anchor\/#target$/, { waitUntil: 'load' } ),
+		click( page, '#lmanchor' ),
+	] );
+	await stable( page );
+	const cross = await targetAt( page );
+	assert( cross.y > 1000 && Math.abs( cross.top - cross.navbar ) <= 4, `reduced motion: anchor from another page puts #target at ${ cross.top } px (expected ${ cross.navbar } px, scrollY ${ cross.y })` );
+	noErrors( page, 'reduced motion anchors' );
+	await page.context().close();
+}
+
+// The correction after an anchor landing is for targets with a box: a hidden one (display:none) is left alone.
+async function hiddenAnchor() {
+	for ( const [ hash, calls, name ] of [ [ '#lmhidden', 0, 'a target without a box' ], [ '#target', 1, 'a visible target' ] ] ) {
+		const page = await newPage();
+		await page.addInitScript( () => {
+			document.addEventListener( 'DOMContentLoaded', () => {
+				window.lmCalls = 0;
+				const original = window.lumiaLenis.scrollTo.bind( window.lumiaLenis );
+				window.lumiaLenis.scrollTo = ( ...args ) => {
+					window.lmCalls++;
+					return original( ...args );
+				};
+			} );
+		} );
+		await page.goto( pageUrl( 'lm-e2e-anchor' ) + hash, { waitUntil: 'load' } );
+		await lenisReady( page );
+		await page.waitForTimeout( 600 );
+		const made = await page.evaluate( () => window.lmCalls );
+		assert( ( calls === 0 ) === ( made === 0 ), `landing on ${ name }: Lenis.scrollTo called ${ made } time(s) (expected ${ calls === 0 ? 'none' : 'at least one' })` );
+		noErrors( page, `landing on ${ name }` );
+		await page.context().close();
+	}
+}
+
+// A reload in the middle of a page keeps the position when Lenis runs its own clock (no engine on the page), at both widths.
+async function reloadWithoutEngine() {
+	for ( const width of [ 1440, 390 ] ) {
+		const label = `reload without the engine, ${ width } px`;
+		const page = await newPage( { width, height: width > 500 ? 900 : 844 } );
+		await load( page, 'lm-e2e-anchor' );
+		await lenisReady( page );
+		assert( await page.evaluate( () => window.lumiaLenis.options.autoRaf === true && typeof window.gsap === 'undefined' ), `${ label }: the page is not on the Lenis clock` );
+		await page.evaluate( () => window.lumiaLenis.scrollTo( 3000, { immediate: true } ) );
+		assert( near( await stable( page ), 3000, 2 ), `${ label }: could not scroll to 3000` );
+		await page.reload( { waitUntil: 'load' } );
+		await lenisReady( page );
+		const after = await stable( page );
+		assert( Math.abs( after - 3000 ) <= 5, `${ label }: reload moved the page to ${ after } (expected 3000)` );
+		noErrors( page, label );
+		await page.context().close();
+	}
+}
+
 export default async function () {
 	await plainPage();
 	await animatedPage();
 	await anchors();
 	await popups();
+	await menus();
+	await formerSnippet();
+	await reducedMotion();
+	await hiddenAnchor();
+	await reloadWithoutEngine();
 	await lenisOff();
 	await intensity();
 }
