@@ -18,12 +18,13 @@ use Lumia\Tools\Modules\Motion\Legacy;
  *
  * @param string $css      CSS text.
  * @param string $selector Selector, as written.
- * @param string $media    Media query that wraps the rule, '' for none.
+ * @param string $media    Condition of the at-rule that wraps the rule, '' for none.
+ * @param string $at_rule  At-rule keyword, @media or @supports.
  * @return array<string, string>|null Null when there is no such rule.
  */
-function lm_legacy_rule( string $css, string $selector, string $media = '' ): ?array {
+function lm_legacy_rule( string $css, string $selector, string $media = '', string $at_rule = '@media' ): ?array {
 	if ( '' !== $media ) {
-		$start = strpos( $css, '@media ' . $media );
+		$start = strpos( $css, $at_rule . ' ' . $media );
 		if ( false === $start ) {
 			return null;
 		}
@@ -57,19 +58,21 @@ return [
 		};
 		lm_assert( ( $box['padding-bottom'] ?? '' ) === 'calc(' . $v( 'gap' ) . ' * 0.45)', 'padding-bottom: ' . ( $box['padding-bottom'] ?? 'none' ) );
 		lm_assert( ( $line['bottom'] ?? '' ) === 'calc(-1 * ' . $v( 'gap' ) . ')', 'bottom: ' . ( $line['bottom'] ?? 'none' ) );
-		lm_assert( ( $line['height'] ?? '' ) === $v( 'thickness' ), 'height: ' . ( $line['height'] ?? 'none' ) );
+		lm_assert( ( $line['height'] ?? '' ) === 'var(--lm-underline-thickness, var(--sk-hover-underline-thickness, 1px))', 'height: ' . ( $line['height'] ?? 'none' ) );
+		$wide = lm_legacy_rule( $css, '.lm-underline::after,[data-lm~="underline"]::after', '(height: round(1px, 1px))', '@supports' );
+		lm_assert( null !== $wide && ( $wide['height'] ?? '' ) === $v( 'thickness' ), 'supports height: ' . ( $wide['height'] ?? 'none' ) );
 		lm_assert( ( $line['background-color'] ?? '' ) === $v( 'color' ), 'background-color: ' . ( $line['background-color'] ?? 'none' ) );
 		lm_assert( ( $line['transition-duration'] ?? '' ) === $v( 'duration' ), 'transition-duration: ' . ( $line['transition-duration'] ?? 'none' ) );
 		lm_assert( ( $still['padding-bottom'] ?? '' ) === $v( 'gap' ), 'reduced motion padding-bottom: ' . ( $still['padding-bottom'] ?? 'none' ) );
 	},
-	'underline thickness follows the text size, with a 1px fallback first' => static function (): void {
-		$css  = Legacy::underline_css();
-		$wide = 'var(--lm-underline-thickness, var(--sk-hover-underline-thickness, round(max(1px, 0.06em), 1px)))';
-		$thin = 'var(--lm-underline-thickness, var(--sk-hover-underline-thickness, 1px))';
-		lm_assert( false !== strpos( $css, 'round(max(1px, 0.06em), 1px)' ), 'no round() thickness: ' . $css );
-		$at_thin = strpos( $css, 'height:' . $thin . ';' );
-		$at_wide = strpos( $css, 'height:' . $wide . ';' );
-		lm_assert( false !== $at_thin && false !== $at_wide && $at_thin < $at_wide, 'the 1px fallback must come before round(): ' . $css );
+	'underline thickness follows the text size behind @supports' => static function (): void {
+		$css = Legacy::underline_css();
+		lm_assert( false !== strpos( $css, '@supports (height: round(1px, 1px)){' ), 'no @supports block: ' . $css );
+		lm_assert( 1 !== preg_match( '/height:[^;}]*round\(.*?\}\s*\}.*height:/', $css ), 'unexpected second height' );
+		$at_base = strpos( $css, 'height:var(--lm-underline-thickness, var(--sk-hover-underline-thickness, 1px))' );
+		$at_wide = strpos( $css, 'height:var(--lm-underline-thickness, var(--sk-hover-underline-thickness, round(max(1px, 0.06em), 1px)))' );
+		$at_sup  = strpos( $css, '@supports' );
+		lm_assert( false !== $at_base && false !== $at_sup && false !== $at_wide && $at_base < $at_sup && $at_sup < $at_wide, 'order: 1px base, then @supports with round(): ' . $css );
 	},
 	'underline fallbacks never set the lm variables' => static function (): void {
 		// Setting --lm-underline-* on the element would hide a value inherited from a wrapper.
@@ -85,7 +88,7 @@ return [
 	'underline fallbacks mirror the drawing of the stylesheet' => static function (): void {
 		// Same values as motion.css when no variable is set: the stylesheet and the fallbacks must not drift.
 		$sheet = (string) file_get_contents( dirname( __DIR__, 3 ) . '/assets/front/css/motion.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file, not a URL.
-		foreach ( [ 'calc(var(--lm-underline-gap, 0.12em) * 0.45)', 'calc(-1 * var(--lm-underline-gap, 0.12em))', 'var(--lm-underline-thickness, 1px)', 'var(--lm-underline-thickness, round(max(1px, 0.06em), 1px))', 'var(--lm-underline-color, currentColor)', 'var(--lm-underline-duration, 0.4s)', 'padding-bottom: var(--lm-underline-gap, 0.12em)' ] as $needle ) {
+		foreach ( [ 'calc(var(--lm-underline-gap, 0.12em) * 0.45)', 'calc(-1 * var(--lm-underline-gap, 0.12em))', 'var(--lm-underline-thickness, 1px)', '@supports (height: round(1px, 1px))', 'height: var(--lm-underline-thickness, round(max(1px, 0.06em), 1px))', 'var(--lm-underline-color, currentColor)', 'var(--lm-underline-duration, 0.4s)', 'padding-bottom: var(--lm-underline-gap, 0.12em)' ] as $needle ) {
 			lm_assert( false !== strpos( $sheet, $needle ), 'motion.css no longer has ' . $needle . ': update Legacy::underline_css()' );
 		}
 	},

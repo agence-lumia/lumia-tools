@@ -55,7 +55,7 @@ final class Legacy {
 		'duration'  => '0.4s',
 	];
 
-	/** Thickness for browsers without CSS round(): declared first, so the line above overrides it where round() works. */
+	/** Thickness for browsers without CSS round(); the round() variant sits in an @supports block, since a second var() declaration would win everywhere and compute to auto without round(). */
 	const UNDERLINE_THICKNESS_FALLBACK = '1px';
 
 	/** JavaScript global exposed by the former snippet. */
@@ -113,7 +113,8 @@ final class Legacy {
 		);
 
 		return $box . '{padding-bottom:calc(' . $value( 'gap' ) . ' * 0.45)}'
-			. $line . '{bottom:calc(-1 * ' . $value( 'gap' ) . ');height:' . $thin . ';height:' . $value( 'thickness' ) . ';background-color:' . $value( 'color' ) . ';transition-duration:' . $value( 'duration' ) . '}'
-			. '@media (prefers-reduced-motion: reduce){' . $box . '{padding-bottom:' . $value( 'gap' ) . '}}';
+			. $line . '{bottom:calc(-1 * ' . $value( 'gap' ) . ');height:' . $thin . ';background-color:' . $value( 'color' ) . ';transition-duration:' . $value( 'duration' ) . '}'
+			. '@media (prefers-reduced-motion: reduce){' . $box . '{padding-bottom:' . $value( 'gap' ) . '}}'
+			. '@supports (height: round(1px, 1px)){' . $line . '{height:' . $value( 'thickness' ) . '}}';
 	}
 }

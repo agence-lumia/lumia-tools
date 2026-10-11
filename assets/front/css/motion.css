@@ -187,7 +187,6 @@ html:not(.lenis) [id] {
 	right: 0;
 	bottom: calc(-1 * var(--lm-underline-gap, 0.12em));
 	height: var(--lm-underline-thickness, 1px);
-	height: var(--lm-underline-thickness, round(max(1px, 0.06em), 1px));
 	border-radius: 999px;
 	background-color: var(--lm-underline-color, currentColor);
 	pointer-events: none;
@@ -195,6 +194,16 @@ html:not(.lenis) [id] {
 	transform-origin: right center;
 	transition: transform var(--lm-underline-duration, 0.4s) cubic-bezier(0.25, 1, 0.5, 1);
 	will-change: transform;
+}
+
+/* Thickness follows the text size where round() exists. A var() declaration is only invalid
+ * at computed-value time, so a second "height" would win and give "auto" elsewhere: the
+ * variant has to sit behind @supports. */
+@supports (height: round(1px, 1px)) {
+	.lm-underline::after,
+	[data-lm~="underline"]::after {
+		height: var(--lm-underline-thickness, round(max(1px, 0.06em), 1px));
+	}
 }
 
 .lm-underline:hover,
