@@ -72,6 +72,33 @@ jobs:
       - name: Check .po against the .pot and .mo against the .po
         run: php tools/i18n/build-po.php check "$RUNNER_TEMP/lumia-tools.pot" languages/lumia-tools-fr_FR.po languages/lumia-tools-fr_FR.mo
 
+  motion:
+    name: Motion tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      - name: PHP unit tests
+        run: composer motion:test
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      # The folder only exists from the engine task on: skip until then.
+      - name: JavaScript unit tests
+        run: '[ -d tools/motion/js ] && node --test tools/motion/js/ || true'
+
   build:
     name: Release zip
     runs-on: ubuntu-latest

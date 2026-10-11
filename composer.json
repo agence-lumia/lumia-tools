@@ -34,12 +34,14 @@
         "i18n:pot": "sh tools/i18n/wp.sh i18n make-pot . languages/lumia-tools.pot --slug=lumia-tools --domain=lumia-tools --exclude=vendor,tools,docs,dist",
         "i18n:mo": "sh tools/i18n/wp.sh i18n make-mo languages/",
         "i18n:check": "@php tools/i18n/build-po.php check languages/lumia-tools.pot languages/lumia-tools-fr_FR.po languages/lumia-tools-fr_FR.mo",
-        "i18n:test": "sh tools/i18n/test.sh"
+        "i18n:test": "sh tools/i18n/test.sh",
+        "motion:test": "@php tools/motion/php/run.php"
     },
     "scripts-descriptions": {
         "i18n:pot": "Regenerate languages/lumia-tools.pot from the source (WP-CLI make-pot).",
         "i18n:mo": "Compile the .po files of languages/ into .mo (WP-CLI make-mo).",
         "i18n:check": "Check the .po covers the .pot and the .mo matches the .po.",
-        "i18n:test": "Run the tests of tools/i18n/build-po.php."
+        "i18n:test": "Run the tests of tools/i18n/build-po.php.",
+        "motion:test": "Run the PHP unit tests of the Motion module (tools/motion/php)."
     }
 }
