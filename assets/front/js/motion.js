@@ -527,6 +527,53 @@
   // former snippet (0.25 s apart, a word lights up over the scroll of two).
   var SCRUB_EACH = 0.5;
 
+  // Visually hidden, read aloud, never selected. Styled inline as well as by motion.css: an
+  // "unused CSS" optimiser scans the server HTML, where .lm-sr never appears, and may drop
+  // the rule; the copy would then show next to the text it duplicates.
+  var SR_STYLE =
+    "position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;" +
+    "clip-path:inset(50%);white-space:nowrap;border:0;-webkit-user-select:none;user-select:none";
+
+  function srCopy() {
+    var copy = document.createElement("span");
+    copy.className = "lm-sr";
+    copy.style.cssText = SR_STYLE;
+    return copy;
+  }
+
+  /* onSplit of an item: records the split first, so a failure can still be reverted, then
+   * builds the animation. A failure on the first split goes up to start(), which shows the
+   * element as written; on a later split (font load, width), the same happens one tick later,
+   * once SplitText is done with that split. */
+  function onSplitOf(item, build) {
+    return function (self) {
+      item.split = self;
+      try {
+        return build(self);
+      } catch (error) {
+        if (item.splitting) {
+          throw error;
+        }
+        report("could not split " + describe(item.el) + " again: shown as written.", error);
+        setTimeout(function () {
+          if (lookup(item.el) === item && item.state !== "final") {
+            settle(item);
+          }
+        }, 0);
+      }
+    };
+  }
+
+  // Splits the target, the first onSplit included.
+  function splitText(item, node, vars) {
+    item.splitting = true;
+    try {
+      SplitText.create(node, vars);
+    } finally {
+      item.splitting = false;
+    }
+  }
+
   // The node to split and the SplitText aria mode; moves the content into a box when needed.
   function textTarget(item) {
     var el = item.el;
@@ -539,9 +586,8 @@
     if (!WRAPPABLE.test(window.getComputedStyle(el).display)) {
       return { node: el, aria: "none" };
     }
-    var copy = document.createElement("span");
+    var copy = srCopy();
     var box = document.createElement("span");
-    copy.className = "lm-sr";
     box.style.display = "block";
     while (el.firstChild) {
       copy.appendChild(el.firstChild.cloneNode(true));
@@ -600,13 +646,13 @@
   function linesStart(item) {
     var o = item.options;
     var target = textTarget(item);
-    item.split = SplitText.create(target.node, {
+    splitText(item, target.node, {
       type: "lines",
       mask: "lines",
       linesClass: "lm-line",
       autoSplit: true,
       aria: target.aria,
-      onSplit: function (self) {
+      onSplit: onSplitOf(item, function (self) {
         var playing = item.state === "playing";
         if (playing) {
           gsap.set(self.lines, { willChange: "transform" });
@@ -625,7 +671,7 @@
         });
         item.tweens = [tween];
         return tween;
-      },
+      }),
     });
     item.trigger = ScrollTrigger.create({
       trigger: item.el,
@@ -671,13 +717,13 @@
     var chars = o.effect === "text-chars";
     var target = textTarget(item);
     item.state = "scrub";
-    item.split = SplitText.create(target.node, {
+    splitText(item, target.node, {
       type: chars ? "words, chars" : "words",
       wordsClass: "lm-word",
       charsClass: "lm-char",
       autoSplit: true,
       aria: target.aria,
-      onSplit: function (self) {
+      onSplit: onSplitOf(item, function (self) {
         var pieces = chars ? self.chars : self.words;
         gsap.set(pieces, { opacity: o.fromOpacity });
         var tween = gsap.to(pieces, {
@@ -701,7 +747,7 @@
         item.trigger = tween.scrollTrigger;
         item.tweens = [tween];
         return tween;
-      },
+      }),
     });
   }
 
@@ -769,9 +815,8 @@
   // Replaces the text node with its copy for screen readers and the copy that counts.
   function counterWrap(item, source) {
     var node = source.node;
-    var copy = document.createElement("span");
+    var copy = srCopy();
     var shown = document.createElement("span");
-    copy.className = "lm-sr";
     copy.textContent = node.nodeValue;
     shown.setAttribute("aria-hidden", "true");
     node.parentNode.insertBefore(copy, node);

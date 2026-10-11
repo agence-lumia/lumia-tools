@@ -295,7 +295,88 @@ async function tallScreen() {
 	await page.context().close();
 }
 
+/** The screen reader copies, styled inline: still hidden and not selectable when an optimiser strips the .lm-sr rule. */
+async function strippedCss() {
+	const page = await newPage();
+	let stripped = 0;
+	await page.route( /\/motion\.css(\?|$)/, async ( route ) => {
+		const res = await route.fetch();
+		const body = ( await res.text() ).replace( /\.lm-sr\s*\{[^}]*\}/g, () => {
+			stripped++;
+			return '';
+		} );
+		return route.fulfill( { response: res, body } );
+	} );
+	const res = await page.goto( pageUrl( SLUG ), { waitUntil: 'load' } );
+	assert( res && res.status() === 200, `stripped CSS: status ${ res && res.status() }` );
+	await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ) && window.lumiaMotion, null, { timeout: 5000 } );
+	assert( stripped === 1, `stripped CSS: ${ stripped } .lm-sr rule(s) removed from motion.css (expected 1), the case is not reproduced` );
+	const copies = await page.evaluate( () => [ ...document.querySelectorAll( '.lm-sr' ) ].map( ( n ) => {
+		const r = n.getBoundingClientRect();
+		const cs = getComputedStyle( n );
+		return { in: n.parentElement.id, width: r.width, height: r.height, clip: cs.clipPath, select: cs.userSelect };
+	} ) );
+	assert( copies.length >= 2, `stripped CSS: ${ copies.length } screen reader copies (expected the split paragraphs)` );
+	const shown = copies.filter( ( c ) => c.width > 1 || c.height > 1 || c.clip !== 'inset(50%)' || c.select !== 'none' );
+	assert( shown.length === 0, `stripped CSS: copies visible or selectable: ${ JSON.stringify( shown ) }` );
+	assert( page.errors.length === 0, `stripped CSS: page errors: ${ page.errors.join( ' | ' ) }` );
+	await page.context().close();
+}
+
+/** An animation that cannot be built, on the first split and on a later one: the text is shown as written. */
+async function failedSplit() {
+	const LINES = [ 'brxe-txlnhd', 'brxe-txlnpp' ];
+	const settled = async ( page, label, orig ) => {
+		await page.waitForFunction( ( ids ) => ids.every( ( id ) => ( window.lumiaMotion._debug.items().find( ( i ) => i.id === id ) || {} ).state === 'final' ), LINES, { timeout: 3000 } ).catch( async () => {
+			throw new Error( `${ label }: not shown as written (${ ( await items( page ) ).filter( ( i ) => LINES.includes( i.id ) ).map( ( i ) => `${ i.id }:${ i.state }` ).join( ', ' ) })` );
+		} );
+		await untouched( page, orig, LINES, label );
+		const left = await page.evaluate( () => document.querySelectorAll( '.lm-line, .lm-line-mask' ).length );
+		assert( left === 0, `${ label }: ${ left } line or mask element(s) left in the page` );
+		assert( page.errors.length === 0, `${ label }: page errors: ${ page.errors.join( ' | ' ) }` );
+	};
+
+	// First split: gsap.from() throws inside the first onSplit.
+	{
+		const page = await newPage();
+		await page.addInitScript( () => {
+			Object.defineProperty( window, 'gsap', {
+				configurable: true,
+				get() {
+					return this.lmGsap;
+				},
+				set( value ) {
+					value.from = () => {
+						throw new Error( 'lm-e2e: from() refused' );
+					};
+					this.lmGsap = value;
+				},
+			} );
+		} );
+		await page.goto( pageUrl( SLUG ), { waitUntil: 'load' } );
+		await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ) && window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 5000 } );
+		await settled( page, 'failed first split', await originals( page ) );
+		await page.context().close();
+	}
+
+	// Later split (narrower screen): gsap.from() starts throwing after the first split.
+	{
+		const page = await open();
+		const orig = await originals( page );
+		await page.evaluate( () => {
+			window.gsap.from = () => {
+				throw new Error( 'lm-e2e: from() refused' );
+			};
+		} );
+		await page.setViewportSize( { width: 390, height: 844 } );
+		await settled( page, 'failed new split', orig );
+		await page.context().close();
+	}
+}
+
 export default async function () {
+	await strippedCss();
+	await failedSplit();
 	const reference = await reduced();
 	await lines( reference );
 	await words( reference );

@@ -213,7 +213,9 @@ html:not(.lenis) [id] {
 	display: block;
 }
 
-/* Copy of a split text kept for screen readers: hidden from the eye, read aloud. */
+/* Copy of a split text or a counter kept for screen readers: hidden from the eye, read
+ * aloud, never selected (a copy-paste would get the text twice). The engine sets the same
+ * styles inline, in case an optimiser strips this rule. */
 .lm-sr {
 	position: absolute;
 	width: 1px;
@@ -224,4 +226,6 @@ html:not(.lenis) [id] {
 	clip-path: inset(50%);
 	white-space: nowrap;
 	border: 0;
+	-webkit-user-select: none;
+	user-select: none;
 }

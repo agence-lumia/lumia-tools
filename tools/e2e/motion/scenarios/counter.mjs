@@ -79,6 +79,14 @@ async function animated( reference ) {
 	const page = await open();
 	const orig = await originals( page );
 
+	// The copy for screen readers is hidden from the eye and never selected.
+	const copy = await page.evaluate( () => {
+		const n = document.querySelector( '#brxe-cnyear .lm-sr' );
+		const r = n ? n.getBoundingClientRect() : null;
+		return n ? { width: r.width, height: r.height, select: getComputedStyle( n ).userSelect, inline: n.style.userSelect } : null;
+	} );
+	assert( copy && copy.width <= 1 && copy.height <= 1 && copy.select === 'none' && copy.inline === 'none', `cnyear: screen reader copy ${ JSON.stringify( copy ) }` );
+
 	// Pending: screen readers get the written value, not the start value on screen.
 	const pending = await aria( page );
 	for ( const id of IDS ) {
