@@ -362,7 +362,7 @@ La courbe Lümia (`cubic-bezier(0.625, 0.05, 0, 1)`) **quitte le module** : elle
 | `linear` | Linear | Linéaire | vitesse constante |
 | `custom` | Custom | Personnalisée | `cubic-bezier(…)` lu dans `--lm-ease-custom` |
 
-Les rebonds de la v1 (0,15 / 0,3) étaient trop proches de Douce pour se distinguer à l'œil. 0,25 et 0,45 sont les valeurs de départ, à figer sur la page de démonstration. Valeur `lumia` rencontrée (réglage admin enregistré pendant les essais) : traitée comme `smooth`.
+Les rebonds de la v1 (0,15 / 0,3) étaient trop proches de Douce pour se distinguer à l'œil. 0,25 et 0,45 sont les valeurs de départ, à figer sur le lab. Valeur `lumia` rencontrée (réglage admin enregistré pendant les essais) : traitée comme `smooth`.
 
 ### E. Rythme
 
@@ -424,11 +424,7 @@ Une seule variante, le défilement de chiffres de NumberFlow, **embarqué tel qu
 - **Accessibilité** : NumberFlow expose la valeur par `ElementInternals` (`ariaLabel`). **Référencement** : le HTML servi contient le nombre en texte ; à vérifier pendant l'implémentation que le rendu de Google lit la valeur dans le shadow DOM, sinon garder une copie du texte masquée visuellement.
 - **Replis** : `canAnimate` faux, `prefers-reduced-motion`, ou module non chargé → le texte d'origine reste, à sa valeur finale.
 
-### I. Page de démonstration
-
-Le générateur de la page `motion-demo` (courbes, rythmes, décalage, effets, textes, compteurs, soulignement) entre dans `tools/e2e/motion/` : il produit une page Bricks à partir des effets et réglages courants, appliquée par `setup.php` comme les autres jeux d'essai. Il sert à figer les rebonds et les valeurs de référence avec l'utilisateur, sur la copie locale puis sur le lab.
-
-### J. Tests ajoutés
+### I. Tests ajoutés
 
 - Courbes CSS générées identiques au calcul de `motion-core.js` (test unitaire).
 - Chargement : un élément à effet d'entrée dans la première section n'est jamais sous `opacity: 0.5` sur la première image capturée ; `never` le fait passer au défilement ; `always` l'anime hors de la première section.
