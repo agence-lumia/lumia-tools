@@ -98,8 +98,8 @@ export default async function () {
 		assert( config.builder === false, `config.builder=${ config.builder }` );
 		assert( config.preview === 'replay', `config.preview=${ config.preview }` );
 		assert( config.tempo === 'normal' && config.ease === 'lumia', `config tempo=${ config.tempo } ease=${ config.ease }` );
-		assert( config.effects && config.effects.reveal && config.effects.reveal.distance === 48, 'config.effects.reveal.distance is not 48' );
-		assert( config.classes[ 'lm-fade' ] === 'fade' && config.classes[ 'lm-text-words' ] === 'text-words', 'config.classes does not map lm-fade / lm-text-words' );
+		assert( config.effects && config.effects.slide-up && config.effects.slide-up.distance === 48, 'config.effects.slide-up.distance is not 48' );
+		assert( config.classes[ 'lm-fade' ] === 'fade' && config.classes[ 'lm-words' ] === 'words', 'config.classes does not map lm-fade / lm-words' );
 		assert( config.aliases[ 'sk-fade' ] === 'fade', `config.aliases['sk-fade']=${ config.aliases[ 'sk-fade' ] }` );
 		assert( typeof config.legacyGlobal === 'string' && config.legacyGlobal !== '', 'config.legacyGlobal is empty' );
 		assert( Array.isArray( config.variables ) && config.variables.length === 18 && config.variables.includes( 'lm-effect' ), 'config.variables is not the 18 engine variables' );

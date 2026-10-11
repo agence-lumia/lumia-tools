@@ -75,16 +75,17 @@ final class Effects {
 		}
 
 		$definitions = [
-			'fade'          => [ self::FAMILY_ENTER, false, [] ],
-			'reveal'        => [ self::FAMILY_ENTER, false, [ 'distance' ] ],
-			'blur-in'       => [ self::FAMILY_ENTER, false, [ 'distance', 'blur' ] ],
-			'scale-in'      => [ self::FAMILY_ENTER, false, [ 'scale' ] ],
-			'scale-blur-in' => [ self::FAMILY_ENTER, false, [ 'scale', 'blur' ] ],
-			'text-lines'    => [ self::FAMILY_TEXT, false, [ 'distance' ] ],
-			'text-words'    => [ self::FAMILY_TEXT, true, [ 'from_opacity' ] ],
-			'text-chars'    => [ self::FAMILY_TEXT, true, [ 'from_opacity' ] ],
-			'counter'       => [ self::FAMILY_COUNTER, false, [ 'start_value' ] ],
-			'underline'     => [ self::FAMILY_UNDERLINE, false, [] ],
+			'fade'      => [ self::FAMILY_ENTER, false, [] ],
+			'slide-up'  => [ self::FAMILY_ENTER, false, [ 'distance' ] ],
+			'blur'      => [ self::FAMILY_ENTER, false, [ 'blur' ] ],
+			'blur-up'   => [ self::FAMILY_ENTER, false, [ 'distance', 'blur' ] ],
+			'zoom'      => [ self::FAMILY_ENTER, false, [ 'scale' ] ],
+			'zoom-blur' => [ self::FAMILY_ENTER, false, [ 'scale', 'blur' ] ],
+			'lines'     => [ self::FAMILY_TEXT, false, [ 'distance' ] ],
+			'words'     => [ self::FAMILY_TEXT, true, [ 'from_opacity' ] ],
+			'letters'   => [ self::FAMILY_TEXT, true, [ 'from_opacity' ] ],
+			'counter'   => [ self::FAMILY_COUNTER, false, [ 'start_value' ] ],
+			'underline' => [ self::FAMILY_UNDERLINE, false, [] ],
 		];
 
 		$built = [];
@@ -138,9 +139,10 @@ final class Effects {
 		};
 
 		return [
-			'fade'          => $enter( 0.45, 0.06 ),
-			'reveal'        => $enter( 0.65, 0.1, [ 'distance' => 48.0 ] ),
-			'blur-in'       => $enter(
+			'fade'      => $enter( 0.45, 0.06 ),
+			'slide-up'  => $enter( 0.65, 0.1, [ 'distance' => 48.0 ] ),
+			'blur'      => $enter( 0.8, 0.08, [ 'blur' => 12.0 ] ),
+			'blur-up'   => $enter(
 				0.8,
 				0.08,
 				[
@@ -148,8 +150,8 @@ final class Effects {
 					'blur'     => 12.0,
 				]
 			),
-			'scale-in'      => $enter( 0.55, 0.08, [ 'scale' => 0.9 ] ),
-			'scale-blur-in' => $enter(
+			'zoom'      => $enter( 0.55, 0.08, [ 'scale' => 0.9 ] ),
+			'zoom-blur' => $enter(
 				0.7,
 				0.08,
 				[
@@ -157,17 +159,17 @@ final class Effects {
 					'blur'  => 10.0,
 				]
 			),
-			'text-lines'    => $enter( 0.95, 0.08, [ 'distance' => 120.0 ] ),
-			'text-words'    => $scrub( 0.25, 0.08 ),
-			'text-chars'    => $scrub( 0.1, 0.08 ),
-			'counter'       => [
+			'lines'     => $enter( 0.95, 0.08, [ 'distance' => 120.0 ] ),
+			'words'     => $scrub( 0.25, 0.08 ),
+			'letters'   => $scrub( 0.1, 0.08 ),
+			'counter'   => [
 				'start_edge'  => 'top',
 				'start_at'    => '98%',
 				'delay'       => 0.0,
 				'duration'    => 1.35,
 				'start_value' => 0.0,
 			],
-			'underline'     => [],
+			'underline' => [],
 		];
 	}
 

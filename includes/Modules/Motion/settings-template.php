@@ -69,15 +69,16 @@ $edge_labels = [
 ];
 
 $effect_labels = [
-	'fade'          => __( 'Fade', 'lumia-tools' ),
-	'reveal'        => __( 'Reveal', 'lumia-tools' ),
-	'blur-in'       => __( 'Blur in', 'lumia-tools' ),
-	'scale-in'      => __( 'Scale in', 'lumia-tools' ),
-	'scale-blur-in' => __( 'Scale and blur in', 'lumia-tools' ),
-	'text-lines'    => __( 'Text lines', 'lumia-tools' ),
-	'text-words'    => __( 'Text words', 'lumia-tools' ),
-	'text-chars'    => __( 'Text characters', 'lumia-tools' ),
-	'counter'       => __( 'Counter', 'lumia-tools' ),
+	'fade'      => __( 'Fade', 'lumia-tools' ),
+	'slide-up'  => __( 'Slide up', 'lumia-tools' ),
+	'blur'      => __( 'Blur', 'lumia-tools' ),
+	'blur-up'   => __( 'Blur up', 'lumia-tools' ),
+	'zoom'      => __( 'Zoom', 'lumia-tools' ),
+	'zoom-blur' => __( 'Zoom blur', 'lumia-tools' ),
+	'lines'     => __( 'Lines', 'lumia-tools' ),
+	'words'     => __( 'Words on scroll', 'lumia-tools' ),
+	'letters'   => __( 'Letters on scroll', 'lumia-tools' ),
+	'counter'   => __( 'Counter', 'lumia-tools' ),
 ];
 
 $field_labels = [
@@ -218,7 +219,7 @@ $number_ranges = [
 								$key      = (string) $key;
 								$field_id = 'lumia_motion_' . str_replace( '-', '_', $slug ) . '_' . $key;
 								$name     = 'lumia_module_settings[effects][' . $slug . '][' . $key . ']';
-								$label    = 'distance' === $key && 'text-lines' === $slug ? $distance_percent_label : ( $field_labels[ $key ] ?? $key );
+								$label    = 'distance' === $key && 'lines' === $slug ? $distance_percent_label : ( $field_labels[ $key ] ?? $key );
 								?>
 								<div class="lumia-mo__field">
 									<label for="<?php echo esc_attr( $field_id ); ?>" class="lumia-mo__label"><?php echo esc_html( $label ); ?></label>

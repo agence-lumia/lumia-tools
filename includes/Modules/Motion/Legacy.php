@@ -16,13 +16,13 @@ final class Legacy {
 	/** Legacy class name => effect slug. */
 	const CLASS_ALIASES = [
 		'sk-fade'                 => 'fade',
-		'sk-reveal'               => 'reveal',
-		'sk-entry-blur'           => 'blur-in',
-		'sk-scale-in'             => 'scale-in',
-		'sk-scale-in-blur'        => 'scale-blur-in',
-		'sk-text-lines'           => 'text-lines',
-		'sk-text-highlight-words' => 'text-words',
-		'sk-text-highlight-chars' => 'text-chars',
+		'sk-reveal'               => 'slide-up',
+		'sk-entry-blur'           => 'blur-up',
+		'sk-scale-in'             => 'zoom',
+		'sk-scale-in-blur'        => 'zoom-blur',
+		'sk-text-lines'           => 'lines',
+		'sk-text-highlight-words' => 'words',
+		'sk-text-highlight-chars' => 'letters',
 		'sk-counter'              => 'counter',
 		'sk-hover-underline'      => 'underline',
 	];

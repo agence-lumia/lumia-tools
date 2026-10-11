@@ -340,13 +340,14 @@
   // Keep in sync with Effects::catalog() (includes/Modules/Motion/Effects.php).
   var EFFECTS = {
     fade: { family: "enter", scrub: false },
-    reveal: { family: "enter", scrub: false },
-    "blur-in": { family: "enter", scrub: false },
-    "scale-in": { family: "enter", scrub: false },
-    "scale-blur-in": { family: "enter", scrub: false },
-    "text-lines": { family: "text", scrub: false },
-    "text-words": { family: "text", scrub: true },
-    "text-chars": { family: "text", scrub: true },
+    "slide-up": { family: "enter", scrub: false },
+    blur: { family: "enter", scrub: false },
+    "blur-up": { family: "enter", scrub: false },
+    zoom: { family: "enter", scrub: false },
+    "zoom-blur": { family: "enter", scrub: false },
+    lines: { family: "text", scrub: false },
+    words: { family: "text", scrub: true },
+    letters: { family: "text", scrub: true },
     counter: { family: "counter", scrub: false },
     underline: { family: "underline", scrub: false },
   };

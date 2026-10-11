@@ -34,13 +34,14 @@ const scrub = (stagger, fromOpacity) => ({
 const CFG = {
   effects: {
     fade: enter(0.45, 0.06),
-    reveal: enter(0.65, 0.1, { distance: 48 }),
-    "blur-in": enter(0.8, 0.08, { distance: 20, blur: 12 }),
-    "scale-in": enter(0.55, 0.08, { scale: 0.9 }),
-    "scale-blur-in": enter(0.7, 0.08, { scale: 0.86, blur: 10 }),
-    "text-lines": enter(0.95, 0.08, { distance: 120 }),
-    "text-words": scrub(0.25, 0.08),
-    "text-chars": scrub(0.1, 0.08),
+    "slide-up": enter(0.65, 0.1, { distance: 48 }),
+    blur: enter(0.8, 0.08, { blur: 12 }),
+    "blur-up": enter(0.8, 0.08, { distance: 20, blur: 12 }),
+    zoom: enter(0.55, 0.08, { scale: 0.9 }),
+    "zoom-blur": enter(0.7, 0.08, { scale: 0.86, blur: 10 }),
+    lines: enter(0.95, 0.08, { distance: 120 }),
+    words: scrub(0.25, 0.08),
+    letters: scrub(0.1, 0.08),
     counter: {
       start_edge: "top",
       start_at: "98%",
@@ -213,11 +214,11 @@ test("tempoFactor", () => {
 /* ---------------------------------------------------------------- resolve */
 
 test("resolve: tempo scales duration and stagger, never delay", () => {
-  const o = core.resolve("reveal", { tempo: "fast" }, CFG);
+  const o = core.resolve("slide-up", { tempo: "fast" }, CFG);
   near(o.duration, 0.455, 1e-9);
   near(o.stagger, 0.07, 1e-9);
   assert.equal(o.delay, 0);
-  assert.equal(o.effect, "reveal");
+  assert.equal(o.effect, "slide-up");
   assert.equal(o.family, "enter");
   assert.equal(o.scrub, false);
   assert.equal(o.distance, 48);
@@ -225,61 +226,68 @@ test("resolve: tempo scales duration and stagger, never delay", () => {
 });
 
 test("resolve: exact tempo uses the typed duration, unscaled", () => {
-  assert.equal(core.resolve("reveal", { tempo: "exact", duration: "1.2" }, CFG).duration, 1.2);
-  assert.equal(core.resolve("reveal", { tempo: "exact", duration: "" }, CFG).duration, 0.65);
+  assert.equal(core.resolve("slide-up", { tempo: "exact", duration: "1.2" }, CFG).duration, 1.2);
+  assert.equal(core.resolve("slide-up", { tempo: "exact", duration: "" }, CFG).duration, 0.65);
 });
 
 test("resolve: invalid exact duration falls back, with a warning", () => {
-  const o = core.resolve("reveal", { duration: "abc", tempo: "exact" }, CFG);
+  const o = core.resolve("slide-up", { duration: "abc", tempo: "exact" }, CFG);
   assert.equal(o.duration, 0.65);
   assert.equal(o.warnings.length, 1);
   assert.match(o.warnings[0], /duration/);
 });
 
 test("resolve: a duration set on a class is ignored when the tempo is not exact", () => {
-  near(core.resolve("reveal", { tempo: "slow", duration: "3" }, CFG).duration, 0.91, 1e-9);
+  near(core.resolve("slide-up", { tempo: "slow", duration: "3" }, CFG).duration, 0.91, 1e-9);
 });
 
 test("resolve: empty tempo uses the site tempo", () => {
   const cfg = { ...CFG, tempo: "slow" };
-  near(core.resolve("reveal", {}, cfg).duration, 0.91, 1e-9);
-  near(core.resolve("reveal", { tempo: "" }, cfg).duration, 0.91, 1e-9);
+  near(core.resolve("slide-up", {}, cfg).duration, 0.91, 1e-9);
+  near(core.resolve("slide-up", { tempo: "" }, cfg).duration, 0.91, 1e-9);
 });
 
 test("resolve: delay is taken as is", () => {
-  assert.equal(core.resolve("reveal", { tempo: "slow", delay: "0.3" }, CFG).delay, 0.3);
+  assert.equal(core.resolve("slide-up", { tempo: "slow", delay: "0.3" }, CFG).delay, 0.3);
 });
 
 test("resolve: stagger from the element is also scaled", () => {
-  near(core.resolve("reveal", { tempo: "fast", stagger: "0.2" }, CFG).stagger, 0.14, 1e-9);
+  near(core.resolve("slide-up", { tempo: "fast", stagger: "0.2" }, CFG).stagger, 0.14, 1e-9);
+});
+
+test("resolve: blur alone has a blur and no move of its own", () => {
+  const o = core.resolve("blur", {}, CFG);
+  assert.equal(o.effect, "blur");
+  assert.equal(o.blur, 12);
+  assert.equal(core.resolve("blur", { blur: "6" }, CFG).blur, 6);
 });
 
 test("resolve: effect-specific values", () => {
-  const b = core.resolve("blur-in", { blur: "6", distance: "30" }, CFG);
+  const b = core.resolve("blur-up", { blur: "6", distance: "30" }, CFG);
   assert.equal(b.blur, 6);
   assert.equal(b.distance, 30);
-  assert.equal(core.resolve("scale-blur-in", {}, CFG).scale, 0.86);
-  assert.equal(core.resolve("text-lines", {}, CFG).distance, 120);
-  const w = core.resolve("text-words", { "from-opacity": "0.5" }, CFG);
+  assert.equal(core.resolve("zoom-blur", {}, CFG).scale, 0.86);
+  assert.equal(core.resolve("lines", {}, CFG).distance, 120);
+  const w = core.resolve("words", { "from-opacity": "0.5" }, CFG);
   assert.equal(w.fromOpacity, 0.5);
   assert.equal(core.resolve("counter", { "start-value": "10" }, CFG).startValue, 10);
   assert.equal(core.resolve("counter", {}, CFG).startValue, 0);
 });
 
 test("resolve: start position", () => {
-  assert.equal(core.resolve("reveal", { start: "top 50%" }, CFG).start, "top 50%");
+  assert.equal(core.resolve("slide-up", { start: "top 50%" }, CFG).start, "top 50%");
   assert.equal(
-    core.resolve("reveal", { "start-edge": "center", "start-at": "80%" }, CFG).start,
+    core.resolve("slide-up", { "start-edge": "center", "start-at": "80%" }, CFG).start,
     "center 80%",
   );
-  assert.equal(core.resolve("reveal", { "start-at": "80" }, CFG).start, "top 80%");
-  assert.equal(core.resolve("reveal", {}, CFG).start, "top 98%");
-  assert.equal(core.resolve("reveal", { "start-edge": "bottom" }, CFG).start, "bottom 98%");
+  assert.equal(core.resolve("slide-up", { "start-at": "80" }, CFG).start, "top 80%");
+  assert.equal(core.resolve("slide-up", {}, CFG).start, "top 98%");
+  assert.equal(core.resolve("slide-up", { "start-edge": "bottom" }, CFG).start, "bottom 98%");
 });
 
 test("resolve: the advanced position wins over edge and at", () => {
   const o = core.resolve(
-    "reveal",
+    "slide-up",
     { start: "bottom 20%", "start-edge": "center", "start-at": "80%" },
     CFG,
   );
@@ -287,7 +295,7 @@ test("resolve: the advanced position wins over edge and at", () => {
 });
 
 test("resolve: injected position is refused with a warning", () => {
-  const o = core.resolve("reveal", { start: "top 50%; alert(1)" }, CFG);
+  const o = core.resolve("slide-up", { start: "top 50%; alert(1)" }, CFG);
   assert.equal(o.start, "top 98%");
   assert.equal(o.warnings.length, 1);
   assert.match(o.warnings[0], /start/);
@@ -298,62 +306,62 @@ test("resolve: an advanced position must read as a ScrollTrigger position", () =
   // "--lm-start: foo;bar" typed in the content reaches the browser as "foo" (the CSS stops at ";").
   const cases = require("../positions.json");
   for (const bad of cases.invalid.concat(["foo"])) {
-    const o = core.resolve("reveal", { start: bad }, CFG);
+    const o = core.resolve("slide-up", { start: bad }, CFG);
     assert.equal(o.start, "top 98%", JSON.stringify(bad));
     assert.equal(o.warnings.length, 1, JSON.stringify(bad));
   }
   for (const good of cases.valid) {
-    assert.equal(core.resolve("reveal", { start: good }, CFG).start, good, JSON.stringify(good));
+    assert.equal(core.resolve("slide-up", { start: good }, CFG).start, good, JSON.stringify(good));
   }
   // A relative end ("+=500": 500 px after the start) is a ScrollTrigger position too.
-  assert.equal(core.resolve("text-words", { end: "+=500" }, CFG).end, "+=500");
+  assert.equal(core.resolve("words", { end: "+=500" }, CFG).end, "+=500");
 });
 
 test("resolve: invalid edge or at is refused with a warning", () => {
-  const a = core.resolve("reveal", { "start-edge": "middle", "start-at": "foo;bar" }, CFG);
+  const a = core.resolve("slide-up", { "start-edge": "middle", "start-at": "foo;bar" }, CFG);
   assert.equal(a.start, "top 98%");
   assert.equal(a.warnings.length, 2);
 });
 
 test("resolve: scrub effects have an end, ignore tempo and ease", () => {
-  const o = core.resolve("text-words", {}, CFG);
+  const o = core.resolve("words", {}, CFG);
   assert.equal(o.end, "top -120%");
   assert.equal(o.scrub, true);
   assert.equal(o.family, "text");
   assert.equal(o.easeKey, "linear");
   assert.equal(o.stagger, 0.25);
-  const t = core.resolve("text-chars", { tempo: "slow", ease: "bouncy" }, CFG);
+  const t = core.resolve("letters", { tempo: "slow", ease: "bouncy" }, CFG);
   assert.equal(t.stagger, 0.1);
   assert.equal(t.easeKey, "linear");
   assert.equal(t.end, "top -120%");
   assert.equal(
-    core.resolve("text-words", { "end-edge": "center", "end-at": "20" }, CFG).end,
+    core.resolve("words", { "end-edge": "center", "end-at": "20" }, CFG).end,
     "center 20%",
   );
-  assert.equal(core.resolve("text-words", { end: "bottom 10%" }, CFG).end, "bottom 10%");
+  assert.equal(core.resolve("words", { end: "bottom 10%" }, CFG).end, "bottom 10%");
 });
 
 test("resolve: tweenDuration follows the settle time of the curve", () => {
-  const smooth = core.resolve("reveal", { ease: "smooth" }, CFG);
+  const smooth = core.resolve("slide-up", { ease: "smooth" }, CFG);
   assert.equal(smooth.easeKey, "smooth");
   assert.equal(smooth.tweenDuration, smooth.duration * core.spring(0).settle);
   assert.ok(smooth.tweenDuration > smooth.duration);
-  const lumia = core.resolve("reveal", { ease: "lumia" }, CFG);
+  const lumia = core.resolve("slide-up", { ease: "lumia" }, CFG);
   assert.equal(lumia.tweenDuration, lumia.duration);
 });
 
 test("resolve: ease comes from the element, then from the site", () => {
-  assert.equal(core.resolve("reveal", {}, CFG).easeKey, "lumia");
-  assert.equal(core.resolve("reveal", {}, { ...CFG, ease: "snappy" }).easeKey, "snappy");
-  assert.equal(core.resolve("reveal", { ease: "bouncy" }, CFG).easeKey, "bouncy");
+  assert.equal(core.resolve("slide-up", {}, CFG).easeKey, "lumia");
+  assert.equal(core.resolve("slide-up", {}, { ...CFG, ease: "snappy" }).easeKey, "snappy");
+  assert.equal(core.resolve("slide-up", { ease: "bouncy" }, CFG).easeKey, "bouncy");
   const custom = core.resolve(
-    "reveal",
+    "slide-up",
     { ease: "custom", "ease-custom": "cubic-bezier(0.2, 0.8, 0.2, 1)" },
     CFG,
   );
   assert.equal(custom.easeKey, "custom");
   const site = core.resolve(
-    "reveal",
+    "slide-up",
     {},
     { ...CFG, ease: "custom", easeCustom: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
   );
@@ -361,14 +369,14 @@ test("resolve: ease comes from the element, then from the site", () => {
 });
 
 test("resolve: bad curve falls back to the site curve, with a warning", () => {
-  const o = core.resolve("reveal", { ease: "nope" }, { ...CFG, ease: "smooth" });
+  const o = core.resolve("slide-up", { ease: "nope" }, { ...CFG, ease: "smooth" });
   assert.equal(o.easeKey, "smooth");
   assert.equal(o.warnings.length, 1);
-  const c = core.resolve("reveal", { ease: "custom", "ease-custom": "cubic-bezier(2,0,0,1)" }, CFG);
+  const c = core.resolve("slide-up", { ease: "custom", "ease-custom": "cubic-bezier(2,0,0,1)" }, CFG);
   assert.equal(c.easeKey, "lumia");
   assert.equal(c.warnings.length, 1);
   // The site curve itself is broken: Lumia, never a loop on "custom".
-  const d = core.resolve("reveal", { ease: "nope" }, { ...CFG, ease: "custom", easeCustom: "x" });
+  const d = core.resolve("slide-up", { ease: "nope" }, { ...CFG, ease: "custom", easeCustom: "x" });
   assert.equal(d.easeKey, "lumia");
 });
 
@@ -377,7 +385,7 @@ test("resolve: counter never bounces", () => {
 });
 
 test("resolve: safeEase is exposed and bounded", () => {
-  const o = core.resolve("reveal", { ease: "bouncy" }, CFG);
+  const o = core.resolve("slide-up", { ease: "bouncy" }, CFG);
   for (let i = 0; i <= 200; i++) assert.ok(o.safeEase(i / 200) <= 1);
 });
 
@@ -398,12 +406,12 @@ test("resolve: unknown slug uses the enter defaults, with a warning", () => {
 
 test("resolve: never throws on garbage", () => {
   const garbage = [undefined, null, 0, "x", [], {}, NaN];
-  for (const slug of [undefined, null, "", "reveal", "text-words", "__proto__", "constructor"]) {
+  for (const slug of [undefined, null, "", "slide-up", "words", "__proto__", "constructor"]) {
     for (const raw of garbage.concat([
       { duration: Infinity, tempo: "exact", delay: NaN, stagger: "1e999", ease: 3 },
       { start: 5, "start-at": {}, "end-at": [], blur: "-4", scale: "x", distance: "" },
     ])) {
-      for (const cfg of garbage.concat([{ effects: null, tempo: 7, ease: {} }, { effects: { reveal: null } }])) {
+      for (const cfg of garbage.concat([{ effects: null, tempo: 7, ease: {} }, { effects: { "slide-up": null } }])) {
         const o = core.resolve(slug, raw, cfg);
         assert.ok(Number.isFinite(o.duration) && o.duration >= 0);
         assert.ok(Number.isFinite(o.tweenDuration) && o.tweenDuration >= 0);
@@ -420,7 +428,7 @@ test("resolve: never throws on garbage", () => {
 
 test("resolve: non-finite or out-of-range numbers are refused", () => {
   const o = core.resolve(
-    "blur-in",
+    "blur-up",
     { delay: "-2", blur: "Infinity", distance: "NaN", tempo: "exact", duration: "0" },
     CFG,
   );
@@ -432,14 +440,14 @@ test("resolve: non-finite or out-of-range numbers are refused", () => {
 });
 
 test("resolve: values with a unit suffix are accepted", () => {
-  const o = core.resolve("reveal", { tempo: "exact", duration: "1.5s", distance: "30px" }, CFG);
+  const o = core.resolve("slide-up", { tempo: "exact", duration: "1.5s", distance: "30px" }, CFG);
   assert.equal(o.duration, 1.5);
   assert.equal(o.distance, 30);
   assert.deepEqual(o.warnings, []);
 });
 
 test("resolve: effect without config uses the internal defaults", () => {
-  const o = core.resolve("reveal", {}, undefined);
+  const o = core.resolve("slide-up", {}, undefined);
   assert.equal(o.duration, 0.6);
   assert.equal(o.distance, 40);
   assert.equal(o.easeKey, "lumia");
@@ -448,22 +456,22 @@ test("resolve: effect without config uses the internal defaults", () => {
 /* -------------------------------------------------------------- signature */
 
 test("signature: same input, same signature; tempo changes it", () => {
-  const a = core.signature(core.resolve("reveal", { tempo: "fast" }, CFG));
-  const b = core.signature(core.resolve("reveal", { tempo: "fast" }, CFG));
-  const c = core.signature(core.resolve("reveal", { tempo: "slow" }, CFG));
+  const a = core.signature(core.resolve("slide-up", { tempo: "fast" }, CFG));
+  const b = core.signature(core.resolve("slide-up", { tempo: "fast" }, CFG));
+  const c = core.signature(core.resolve("slide-up", { tempo: "slow" }, CFG));
   assert.equal(a, b);
   assert.notEqual(a, c);
 });
 
 test("signature: ease, custom curve, position and effect change it", () => {
-  const base = core.signature(core.resolve("reveal", {}, CFG));
+  const base = core.signature(core.resolve("slide-up", {}, CFG));
   const sig = (slug, raw) => core.signature(core.resolve(slug, raw, CFG));
-  assert.notEqual(base, sig("reveal", { ease: "smooth" }));
-  assert.notEqual(base, sig("reveal", { start: "top 50%" }));
+  assert.notEqual(base, sig("slide-up", { ease: "smooth" }));
+  assert.notEqual(base, sig("slide-up", { start: "top 50%" }));
   assert.notEqual(base, sig("fade", {}));
   assert.notEqual(
-    sig("reveal", { ease: "custom", "ease-custom": "cubic-bezier(0.2, 0.8, 0.2, 1)" }),
-    sig("reveal", { ease: "custom", "ease-custom": "cubic-bezier(0.3, 0.8, 0.2, 1)" }),
+    sig("slide-up", { ease: "custom", "ease-custom": "cubic-bezier(0.2, 0.8, 0.2, 1)" }),
+    sig("slide-up", { ease: "custom", "ease-custom": "cubic-bezier(0.3, 0.8, 0.2, 1)" }),
   );
 });
 
@@ -630,32 +638,32 @@ test("resolveEase: a counter never overshoots, whatever the curve", () => {
 });
 
 test("resolve: a typed duration ignored by a non exact tempo is reported", () => {
-  const o = core.resolve("reveal", { tempo: "fast", duration: "3" }, CFG);
+  const o = core.resolve("slide-up", { tempo: "fast", duration: "3" }, CFG);
   near(o.duration, 0.455, 1e-9);
   assert.equal(o.warnings.length, 1);
   assert.match(o.warnings[0], /duration ignored: tempo is not exact/);
   // Nothing typed, nothing to report; exact uses it.
-  assert.deepEqual(core.resolve("reveal", { tempo: "fast" }, CFG).warnings, []);
-  assert.deepEqual(core.resolve("reveal", { tempo: "exact", duration: "3" }, CFG).warnings, []);
+  assert.deepEqual(core.resolve("slide-up", { tempo: "fast" }, CFG).warnings, []);
+  assert.deepEqual(core.resolve("slide-up", { tempo: "exact", duration: "3" }, CFG).warnings, []);
   // Site tempo applies when the element has none.
-  assert.equal(core.resolve("reveal", { duration: "3" }, CFG).warnings.length, 1);
+  assert.equal(core.resolve("slide-up", { duration: "3" }, CFG).warnings.length, 1);
 });
 
 test("resolve: tempo is case insensitive", () => {
-  near(core.resolve("reveal", { tempo: "FAST" }, CFG).duration, 0.455, 1e-9);
-  assert.equal(core.resolve("reveal", { tempo: " Exact ", duration: "1.2" }, CFG).duration, 1.2);
-  assert.deepEqual(core.resolve("reveal", { tempo: "FAST" }, CFG).warnings, []);
+  near(core.resolve("slide-up", { tempo: "FAST" }, CFG).duration, 0.455, 1e-9);
+  assert.equal(core.resolve("slide-up", { tempo: " Exact ", duration: "1.2" }, CFG).duration, 1.2);
+  assert.deepEqual(core.resolve("slide-up", { tempo: "FAST" }, CFG).warnings, []);
 });
 
 test("resolve: durations, delays and staggers accept milliseconds", () => {
-  const o = core.resolve("reveal", { tempo: "exact", duration: "300ms", delay: "250ms", stagger: "50ms" }, CFG);
+  const o = core.resolve("slide-up", { tempo: "exact", duration: "300ms", delay: "250ms", stagger: "50ms" }, CFG);
   assert.equal(o.duration, 0.3);
   assert.equal(o.delay, 0.25);
   assert.equal(o.stagger, 0.05);
   assert.deepEqual(o.warnings, []);
-  assert.equal(core.resolve("reveal", { tempo: "exact", duration: "1.5s" }, CFG).duration, 1.5);
+  assert.equal(core.resolve("slide-up", { tempo: "exact", duration: "1.5s" }, CFG).duration, 1.5);
   // Not a time setting: milliseconds make no sense.
-  const d = core.resolve("reveal", { distance: "30ms" }, CFG);
+  const d = core.resolve("slide-up", { distance: "30ms" }, CFG);
   assert.equal(d.distance, 48);
   assert.equal(d.warnings.length, 1);
 });

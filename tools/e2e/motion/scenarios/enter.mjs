@@ -72,10 +72,10 @@ async function desktop() {
 	const hidden = await hiddenOnScreen( page );
 	assert( hidden.length === 0, `1440: hidden on screen 2 s after load: ${ hidden.join( ', ' ) }` );
 
-	// Class preset (reveal at 60%) adjusted per element.
+	// Class preset (slide-up at 60%) adjusted per element.
 	const list = await items( page );
 	const pre = PRESETS.map( ( id ) => byId( list, id ) );
-	pre.forEach( ( item, i ) => assert( item && item.effect === 'reveal', `1440: ${ PRESETS[ i ] } has no reveal item (${ JSON.stringify( item ) })` ) );
+	pre.forEach( ( item, i ) => assert( item && item.effect === 'slide-up', `1440: ${ PRESETS[ i ] } has no slide-up item (${ JSON.stringify( item ) })` ) );
 	assert( pre[ 1 ].options.start === 'top 30%', `1440: bpre30 start=${ pre[ 1 ].options.start }` );
 	for ( const i of [ 0, 2, 3 ] ) {
 		assert( pre[ i ].options.start === 'top 60%', `1440: ${ PRESETS[ i ] } start=${ pre[ i ].options.start }` );
@@ -161,7 +161,7 @@ async function desktop() {
 
 	// Invalid values: reference values, no error, visible.
 	const inval = byId( list, 'binval' );
-	assert( inval && inval.effect === 'blur-in', `invalid: no blur-in item (${ JSON.stringify( inval ) })` );
+	assert( inval && inval.effect === 'blur-up', `invalid: no blur-up item (${ JSON.stringify( inval ) })` );
 	assert( near( inval.options.duration, 0.8 ), `invalid: duration=${ inval.options.duration } (expected 0.8)` );
 	assert( inval.options.start === 'top 98%', `invalid: start=${ inval.options.start } (expected top 98%)` );
 	assert( inval.options.easeKey === 'lumia', `invalid: easeKey=${ inval.options.easeKey } (expected lumia)` );
@@ -175,7 +175,7 @@ async function desktop() {
 	assert( ( await look( page, 'brxe-bskfd' ) ).opacity === '1', 'former class: not visible after scrolling' );
 
 	// Names typed in the "CSS classes" field: an item each, still waiting below the screen, then played.
-	for ( const [ id, effect ] of [ [ 'brawsk', 'fade' ], [ 'brawlm', 'reveal' ] ] ) {
+	for ( const [ id, effect ] of [ [ 'brawsk', 'fade' ], [ 'brawlm', 'slide-up' ] ] ) {
 		const typed = byId( list, id );
 		assert( typed && typed.effect === effect, `${ id } (typed in CSS classes): effect ${ typed && typed.effect } (expected ${ effect })` );
 		assert( typed.state === 'pending', `${ id } (typed in CSS classes): state ${ typed.state } before scrolling to it (expected pending)` );
@@ -366,7 +366,7 @@ async function addressBar() {
 
 async function debugLog() {
 	const page = await open( {}, '?lmDebug' );
-	const said = page.logs.filter( ( l ) => l.includes( 'lm-fade' ) && l.includes( 'lm-reveal' ) );
+	const said = page.logs.filter( ( l ) => l.includes( 'lm-fade' ) && l.includes( 'lm-slide-up' ) );
 	assert( said.length > 0, `?lmDebug: no console message about the two effect classes (${ page.logs.join( ' | ' ) || 'no message' })` );
 	assert( page.errors.length === 0, `?lmDebug: page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();

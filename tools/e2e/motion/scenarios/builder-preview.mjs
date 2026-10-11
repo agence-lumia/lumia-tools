@@ -15,7 +15,7 @@
 // The page is never saved: every change lives in the builder session only.
 import { newPage, login, pageUrl, assert, withMotionSettings, OUT } from '../lib.mjs';
 
-const EFFECTS = [ 'fade', 'reveal', 'blur-in', 'scale-in', 'scale-blur-in', 'text-lines', 'text-words', 'text-chars', 'counter', 'underline' ];
+const EFFECTS = [ 'fade', 'slide-up', 'blur', 'blur-up', 'zoom', 'zoom-blur', 'lines', 'words', 'letters', 'counter', 'underline' ];
 
 const stats = ( canvas ) => canvas.evaluate( () => window.lumiaMotion._debug.stats() );
 const itemOf = ( canvas, id ) => canvas.evaluate( ( id ) => window.lumiaMotion._debug.items().find( ( i ) => i.id === id ) || null, id );
@@ -253,23 +253,23 @@ export default async function () {
 	await page.emulateMedia( { reducedMotion: 'no-preference' } );
 
 	const baseNew = ( await stats( canvas ) ).replays;
-	await list.getByText( 'Reveal', { exact: true } ).click();
+	await list.getByText( 'Slide up', { exact: true } ).click();
 	await canvas.waitForFunction( ( id ) => window.lumiaMotion._debug.items().some( ( i ) => i.id === id ), fresh, { timeout: 3000 } ).catch( () => {
-		throw new Error( `the new heading ${ fresh } is not an item after choosing Reveal` );
+		throw new Error( `the new heading ${ fresh } is not an item after choosing Slide up` );
 	} );
 	const created = await itemOf( canvas, fresh );
-	assert( created.effect === 'reveal', `the new heading has effect "${ created.effect }", expected reveal` );
+	assert( created.effect === 'slide-up', `the new heading has effect "${ created.effect }", expected slide-up` );
 	await canvas.waitForFunction( ( b ) => window.lumiaMotion._debug.stats().replays === b + 1, baseNew, { timeout: 1000 } ).catch( async () => {
-		throw new Error( `choosing Reveal on a new heading: replays is ${ ( await stats( canvas ) ).replays }, expected ${ baseNew + 1 }` );
+		throw new Error( `choosing Slide up on a new heading: replays is ${ ( await stats( canvas ) ).replays }, expected ${ baseNew + 1 }` );
 	} );
 	await waitFinal( canvas, fresh, 'new heading' );
-	console.log( `new heading: data-lm ${ ( await canvas.evaluate( ( id ) => document.getElementById( id ).hasAttribute( 'data-lm' ), fresh ) ) ? 'present' : 'absent' } after Reveal` );
+	console.log( `new heading: data-lm ${ ( await canvas.evaluate( ( id ) => document.getElementById( id ).hasAttribute( 'data-lm' ), fresh ) ) ? 'present' : 'absent' } after Slide up` );
 
 	// ---------------------------------------------------------------- elements the PHP marker never saw
 	// An element added to the canvas, then given an effect by a stylesheet only: no data-lm at all.
 	for ( const [ slug, text, css, check ] of [
-		[ 'text-words', 'Words that light up one after the other', '--lm-effect: text-words', 'words' ],
-		[ 'text-lines', 'Lines of text that rise from a mask as the heading replays after a change in the panel', '--lm-effect: text-lines; --lm-duration: 0.6', 'lines' ],
+		[ 'words', 'Words that light up one after the other', '--lm-effect: words', 'words' ],
+		[ 'lines', 'Lines of text that rise from a mask as the heading replays after a change in the panel', '--lm-effect: lines; --lm-duration: 0.6', 'lines' ],
 		[ 'counter', '1200', '--lm-effect: counter; --lm-tempo: exact; --lm-duration: 1.2', 'counter' ],
 	] ) {
 		const id = `brxe-lm${ slug.replace( /\W/g, '' ) }`;
@@ -358,7 +358,7 @@ export default async function () {
 		await canvas.evaluate( ( id ) => {
 			const style = document.createElement( 'style' );
 			style.id = `${ id }-css`;
-			style.textContent = `#${ id } { --lm-effect: text-chars; }`;
+			style.textContent = `#${ id } { --lm-effect: letters; }`;
 			document.head.appendChild( style );
 		}, id );
 		await canvas.waitForFunction( ( id ) => document.querySelector( `#${ id } .lm-char` ), id, { timeout: 2000 } );

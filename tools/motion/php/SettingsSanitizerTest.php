@@ -48,10 +48,10 @@ $lm_effects = static function ( array $effects, callable $defaults ): array {
 
 return [
 	'duration is clamped to 0..10'                  => static function () use ( $lm_defaults, $lm_effects ): void {
-		$high = $lm_effects( [ 'reveal' => [ 'duration' => '99' ] ], $lm_defaults );
-		$low  = $lm_effects( [ 'reveal' => [ 'duration' => '-3' ] ], $lm_defaults );
-		lm_assert( 10.0 === $high['reveal']['duration'], 'duration 99 must become 10' );
-		lm_assert( 0.0 === $low['reveal']['duration'], 'duration -3 must become 0' );
+		$high = $lm_effects( [ 'slide-up' => [ 'duration' => '99' ] ], $lm_defaults );
+		$low  = $lm_effects( [ 'slide-up' => [ 'duration' => '-3' ] ], $lm_defaults );
+		lm_assert( 10.0 === $high['slide-up']['duration'], 'duration 99 must become 10' );
+		lm_assert( 0.0 === $low['slide-up']['duration'], 'duration -3 must become 0' );
 	},
 	'delay is clamped to 0..10'                     => static function () use ( $lm_defaults, $lm_effects ): void {
 		$high = $lm_effects( [ 'fade' => [ 'delay' => '11' ] ], $lm_defaults );
@@ -66,30 +66,30 @@ return [
 		lm_assert( 0.0 === $low['fade']['stagger'], 'stagger -5 must become 0' );
 	},
 	'distance is clamped to -500..500'              => static function () use ( $lm_defaults, $lm_effects ): void {
-		$high = $lm_effects( [ 'reveal' => [ 'distance' => '900' ] ], $lm_defaults );
-		$low  = $lm_effects( [ 'reveal' => [ 'distance' => '-900' ] ], $lm_defaults );
-		$kept = $lm_effects( [ 'reveal' => [ 'distance' => '-20' ] ], $lm_defaults );
-		lm_assert( 500.0 === $high['reveal']['distance'], 'distance 900 must become 500' );
-		lm_assert( -500.0 === $low['reveal']['distance'], 'distance -900 must become -500' );
-		lm_assert( -20.0 === $kept['reveal']['distance'], 'a negative distance in range is kept' );
+		$high = $lm_effects( [ 'slide-up' => [ 'distance' => '900' ] ], $lm_defaults );
+		$low  = $lm_effects( [ 'slide-up' => [ 'distance' => '-900' ] ], $lm_defaults );
+		$kept = $lm_effects( [ 'slide-up' => [ 'distance' => '-20' ] ], $lm_defaults );
+		lm_assert( 500.0 === $high['slide-up']['distance'], 'distance 900 must become 500' );
+		lm_assert( -500.0 === $low['slide-up']['distance'], 'distance -900 must become -500' );
+		lm_assert( -20.0 === $kept['slide-up']['distance'], 'a negative distance in range is kept' );
 	},
 	'blur is clamped to 0..100'                     => static function () use ( $lm_defaults, $lm_effects ): void {
-		$high = $lm_effects( [ 'blur-in' => [ 'blur' => '500' ] ], $lm_defaults );
-		$low  = $lm_effects( [ 'blur-in' => [ 'blur' => '-1' ] ], $lm_defaults );
-		lm_assert( 100.0 === $high['blur-in']['blur'], 'blur 500 must become 100' );
-		lm_assert( 0.0 === $low['blur-in']['blur'], 'blur -1 must become 0' );
+		$high = $lm_effects( [ 'blur-up' => [ 'blur' => '500' ] ], $lm_defaults );
+		$low  = $lm_effects( [ 'blur-up' => [ 'blur' => '-1' ] ], $lm_defaults );
+		lm_assert( 100.0 === $high['blur-up']['blur'], 'blur 500 must become 100' );
+		lm_assert( 0.0 === $low['blur-up']['blur'], 'blur -1 must become 0' );
 	},
 	'scale is clamped to 0..3'                      => static function () use ( $lm_defaults, $lm_effects ): void {
-		$high = $lm_effects( [ 'scale-in' => [ 'scale' => '8' ] ], $lm_defaults );
-		$low  = $lm_effects( [ 'scale-in' => [ 'scale' => '-8' ] ], $lm_defaults );
-		lm_assert( 3.0 === $high['scale-in']['scale'], 'scale 8 must become 3' );
-		lm_assert( 0.0 === $low['scale-in']['scale'], 'scale -8 must become 0' );
+		$high = $lm_effects( [ 'zoom' => [ 'scale' => '8' ] ], $lm_defaults );
+		$low  = $lm_effects( [ 'zoom' => [ 'scale' => '-8' ] ], $lm_defaults );
+		lm_assert( 3.0 === $high['zoom']['scale'], 'scale 8 must become 3' );
+		lm_assert( 0.0 === $low['zoom']['scale'], 'scale -8 must become 0' );
 	},
 	'from_opacity is clamped to 0..1'               => static function () use ( $lm_defaults, $lm_effects ): void {
-		$high = $lm_effects( [ 'text-words' => [ 'from_opacity' => '4' ] ], $lm_defaults );
-		$low  = $lm_effects( [ 'text-chars' => [ 'from_opacity' => '-4' ] ], $lm_defaults );
-		lm_assert( 1.0 === $high['text-words']['from_opacity'], 'from_opacity 4 must become 1' );
-		lm_assert( 0.0 === $low['text-chars']['from_opacity'], 'from_opacity -4 must become 0' );
+		$high = $lm_effects( [ 'words' => [ 'from_opacity' => '4' ] ], $lm_defaults );
+		$low  = $lm_effects( [ 'letters' => [ 'from_opacity' => '-4' ] ], $lm_defaults );
+		lm_assert( 1.0 === $high['words']['from_opacity'], 'from_opacity 4 must become 1' );
+		lm_assert( 0.0 === $low['letters']['from_opacity'], 'from_opacity -4 must become 0' );
 	},
 	'start_value is clamped to +-1e9'               => static function () use ( $lm_defaults, $lm_effects ): void {
 		$high = $lm_effects( [ 'counter' => [ 'start_value' => '5e12' ] ], $lm_defaults );
@@ -106,7 +106,7 @@ return [
 	'a non numeric value falls back to the default' => static function () use ( $lm_defaults, $lm_effects ): void {
 		$effects = $lm_effects(
 			[
-				'reveal' => [
+				'slide-up' => [
 					'duration' => 'abc',
 					'delay'    => '',
 					'stagger'  => 'NaN',
@@ -116,15 +116,15 @@ return [
 			$lm_defaults
 		);
 		$lenis   = SettingsSanitizer::sanitize( [ 'lenis' => [ 'lerp' => 'fast' ] ], $lm_defaults() );
-		lm_assert( 0.65 === $effects['reveal']['duration'], 'duration abc must keep the reference value' );
-		lm_assert( 0.0 === $effects['reveal']['delay'], 'an empty delay must keep the reference value' );
-		lm_assert( 0.1 === $effects['reveal']['stagger'], 'stagger NaN must keep the reference value' );
-		lm_assert( 48.0 === $effects['reveal']['distance'], 'distance INF must keep the reference value' );
+		lm_assert( 0.65 === $effects['slide-up']['duration'], 'duration abc must keep the reference value' );
+		lm_assert( 0.0 === $effects['slide-up']['delay'], 'an empty delay must keep the reference value' );
+		lm_assert( 0.1 === $effects['slide-up']['stagger'], 'stagger NaN must keep the reference value' );
+		lm_assert( 48.0 === $effects['slide-up']['distance'], 'distance INF must keep the reference value' );
 		lm_assert( 0.1 === $lenis['lenis']['lerp'], 'lerp fast must keep the default' );
 	},
 	'a non scalar value falls back to the default'  => static function () use ( $lm_defaults, $lm_effects ): void {
-		$effects = $lm_effects( [ 'reveal' => [ 'duration' => [ '1' ] ] ], $lm_defaults );
-		lm_assert( 0.65 === $effects['reveal']['duration'], 'an array value must keep the reference value' );
+		$effects = $lm_effects( [ 'slide-up' => [ 'duration' => [ '1' ] ] ], $lm_defaults );
+		lm_assert( 0.65 === $effects['slide-up']['duration'], 'an array value must keep the reference value' );
 	},
 	'start_edge accepts the three edges only'       => static function () use ( $lm_defaults, $lm_effects ): void {
 		$bad  = $lm_effects( [ 'fade' => [ 'start_edge' => 'middle' ] ], $lm_defaults );
@@ -133,10 +133,10 @@ return [
 		lm_assert( 'bottom' === $good['fade']['start_edge'], 'bottom must be kept' );
 	},
 	'end_edge accepts the three edges only'         => static function () use ( $lm_defaults, $lm_effects ): void {
-		$bad  = $lm_effects( [ 'text-words' => [ 'end_edge' => 'left' ] ], $lm_defaults );
-		$good = $lm_effects( [ 'text-words' => [ 'end_edge' => 'center' ] ], $lm_defaults );
-		lm_assert( 'top' === $bad['text-words']['end_edge'], 'left must become top' );
-		lm_assert( 'center' === $good['text-words']['end_edge'], 'center must be kept' );
+		$bad  = $lm_effects( [ 'words' => [ 'end_edge' => 'left' ] ], $lm_defaults );
+		$good = $lm_effects( [ 'words' => [ 'end_edge' => 'center' ] ], $lm_defaults );
+		lm_assert( 'top' === $bad['words']['end_edge'], 'left must become top' );
+		lm_assert( 'center' === $good['words']['end_edge'], 'center must be kept' );
 	},
 	'start_at needs a percentage'                   => static function () use ( $lm_defaults, $lm_effects ): void {
 		$bare    = $lm_effects( [ 'fade' => [ 'start_at' => '90' ] ], $lm_defaults );
@@ -147,10 +147,10 @@ return [
 		lm_assert( '98%' === $code['fade']['start_at'], 'a value with extra characters must be refused' );
 	},
 	'end_at needs a percentage and may be negative' => static function () use ( $lm_defaults, $lm_effects ): void {
-		$bare     = $lm_effects( [ 'text-words' => [ 'end_at' => '20' ] ], $lm_defaults );
-		$negative = $lm_effects( [ 'text-words' => [ 'end_at' => '-35.5%' ] ], $lm_defaults );
-		lm_assert( '-120%' === $bare['text-words']['end_at'], '20 must become the default -120%' );
-		lm_assert( '-35.5%' === $negative['text-words']['end_at'], '-35.5% must be kept' );
+		$bare     = $lm_effects( [ 'words' => [ 'end_at' => '20' ] ], $lm_defaults );
+		$negative = $lm_effects( [ 'words' => [ 'end_at' => '-35.5%' ] ], $lm_defaults );
+		lm_assert( '-120%' === $bare['words']['end_at'], '20 must become the default -120%' );
+		lm_assert( '-35.5%' === $negative['words']['end_at'], '-35.5% must be kept' );
 	},
 	'tempo accepts fast, normal and slow'           => static function () use ( $lm_defaults ): void {
 		foreach ( [ 'fast', 'normal', 'slow' ] as $tempo ) {
@@ -229,19 +229,19 @@ return [
 	'a key foreign to the effect is ignored'        => static function () use ( $lm_defaults, $lm_effects ): void {
 		$effects = $lm_effects(
 			[
-				'fade'       => [
+				'fade'  => [
 					'distance' => '10',
 					'bogus'    => '1',
 					'end_at'   => '-10%',
 				],
-				'text-words' => [ 'duration' => '2' ],
+				'words' => [ 'duration' => '2' ],
 			],
 			$lm_defaults
 		);
 		lm_assert( ! isset( $effects['fade']['distance'] ), 'fade has no distance' );
 		lm_assert( ! isset( $effects['fade']['bogus'] ), 'a key outside the catalog must not be stored' );
 		lm_assert( ! isset( $effects['fade']['end_at'] ), 'fade is not a scrub effect' );
-		lm_assert( ! isset( $effects['text-words']['duration'] ), 'a scrub effect has no duration' );
+		lm_assert( ! isset( $effects['words']['duration'] ), 'a scrub effect has no duration' );
 	},
 	'an empty input gives the defaults'             => static function () use ( $lm_defaults ): void {
 		$result   = SettingsSanitizer::sanitize( [], $lm_defaults() );
@@ -254,7 +254,7 @@ return [
 	'the sanitized result is stable'                => static function () use ( $lm_defaults ): void {
 		$first  = SettingsSanitizer::sanitize(
 			[
-				'effects'         => [ 'reveal' => [ 'duration' => '0.8' ] ],
+				'effects'         => [ 'slide-up' => [ 'duration' => '0.8' ] ],
 				'tempo'           => 'slow',
 				'ease'            => 'custom',
 				'ease_custom'     => 'cubic-bezier(0.1, 0.2, 0.3, 0.4)',

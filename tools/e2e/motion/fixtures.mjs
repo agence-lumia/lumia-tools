@@ -10,7 +10,7 @@ import { OUT, wp, pluginPath } from './lib.mjs';
  */
 export const CLASSES = {
 	// Bricks stores a number control with a fixed unit as a bare string; the unit is added in the CSS.
-	'lm-e2e-preset': { _lmEffect: 'reveal', _lmStartAt: '60' },
+	'lm-e2e-preset': { _lmEffect: 'slide-up', _lmStartAt: '60' },
 };
 
 /** Posts the query loops need: published when missing (by slug), never modified. */
@@ -46,7 +46,7 @@ PAGES[ 'lm-e2e-marker' ] = {
 	elements: [
 		section( [
 			heading( 'Fade by class', {}, { id: 'mkfade', classes: [ 'lm-fade' ] } ),
-			heading( 'Words by setting', { _lmEffect: 'text-words' }, { id: 'mkword' } ),
+			heading( 'Words by setting', { _lmEffect: 'words' }, { id: 'mkword' } ),
 			text( '1200', {}, { id: 'mkcnt', classes: [ 'sk-counter' ] } ),
 			heading( 'No effect', {}, { id: 'mkplain' } ),
 			// Outside a loop: the element ID selector (1,0,0) beats the class (0,2,0).
@@ -72,7 +72,7 @@ PAGES[ 'lm-e2e-marker' ] = {
 			),
 			// Names typed in the "CSS classes" field (no global class): the former one counts while the compatibility setting is on.
 			heading( 'Former name typed', { _cssClasses: 'sk-fade' }, { id: 'mkrwsk' } ),
-			heading( 'Name typed', { _cssClasses: 'hero lm-reveal' }, { id: 'mkrwlm' } ),
+			heading( 'Name typed', { _cssClasses: 'hero lm-slide-up' }, { id: 'mkrwlm' } ),
 			// Underline after the migration: the element carries lm-underline, its custom CSS still sets a former variable.
 			// Bricks 2.4 stores custom CSS against the element ID selector (what the builder writes for %root%).
 			text( 'Former gap', { _cssClasses: 'lm-underline', _cssCustom: '#brxe-mkulgp { --sk-hover-underline-gap: 3px; }' }, { id: 'mkulgp' } ),
@@ -101,26 +101,26 @@ PAGES[ 'lm-e2e-basic' ] = {
 			heading( 'Fade on load', { tag: 'h1' }, { id: 'basichd', classes: [ 'lm-fade' ] } ),
 			text( '<a id="lmanchor" href="/lm-e2e-anchor/#target">Go to the target of the anchor page</a>', {}, { id: 'basiclk' } ),
 			spacer( 1200 ),
-			// Four presets in a row: the class gives reveal at 60%, three of them adjust it.
+			// Four presets in a row: the class gives slide-up at 60%, three of them adjust it.
 			heading( 'Preset', {}, { id: 'bpre01', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset at 30%', { _lmStartAt: '30' }, { id: 'bpre30', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset at 80% on phones', { '_lmStartAt:mobile_portrait': '80' }, { id: 'bpremb', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset, fast and bouncy', { _lmTempo: 'fast', _lmEase: 'bouncy' }, { id: 'bprefb', classes: [ 'lm-e2e-preset' ] } ),
 			// A bouncy curve overshoots: the blur must still never go below 0.
-			heading( 'Blur in, bouncy', { _lmEffect: 'blur-in', _lmEase: 'bouncy' }, { id: 'bblurb' } ),
+			heading( 'Blur in, bouncy', { _lmEffect: 'blur-up', _lmEase: 'bouncy' }, { id: 'bblurb' } ),
 			spacer( 1200 ),
 		] ),
 		// An animated section: its heading has no setting and must not inherit any.
 		section( [ heading( 'Nested heading, no setting', {}, { id: 'bnesth' } ) ], { id: 'bnest', classes: [ 'lm-fade' ] } ),
 		section( [
 			spacer( 800 ),
-			heading( 'Blur in, none on phones', { _lmEffect: 'blur-in', '_lmEffect:mobile_portrait': 'none' }, { id: 'bblur' } ),
-			heading( 'Two effect classes', {}, { id: 'bdual', classes: [ 'lm-fade', 'lm-reveal' ] } ),
+			heading( 'Blur in, none on phones', { _lmEffect: 'blur-up', '_lmEffect:mobile_portrait': 'none' }, { id: 'bblur' } ),
+			heading( 'Two effect classes', {}, { id: 'bdual', classes: [ 'lm-fade', 'lm-slide-up' ] } ),
 			// Values typed straight into the content, as the builder would never write them.
 			heading(
 				'Invalid values',
 				{
-					_lmEffect: 'blur-in',
+					_lmEffect: 'blur-up',
 					_lmTempo: 'exact',
 					_lmDuration: 'abc',
 					_lmStart: 'foo;bar',
@@ -132,7 +132,7 @@ PAGES[ 'lm-e2e-basic' ] = {
 			heading( 'Former class name', {}, { id: 'bskfd', classes: [ 'sk-fade' ] } ),
 			// Names typed in the "CSS classes" field, no global class.
 			heading( 'Former name typed', { _cssClasses: 'sk-fade' }, { id: 'brawsk' } ),
-			heading( 'Name typed', { _cssClasses: 'lm-reveal' }, { id: 'brawlm' } ),
+			heading( 'Name typed', { _cssClasses: 'lm-slide-up' }, { id: 'brawlm' } ),
 			spacer( 2600 ),
 		] ),
 	],
@@ -183,18 +183,18 @@ PAGES[ 'lm-e2e-text' ] = {
 	title: 'LM E2E text',
 	elements: [
 		section( [
-			heading( 'Words one by one', { tag: 'h1', _lmEffect: 'text-words' }, { id: 'texthd' } ),
+			heading( 'Words one by one', { tag: 'h1', _lmEffect: 'words' }, { id: 'texthd' } ),
 			spacer( 1200 ),
-			heading( 'Lines rise from under a mask', {}, { id: 'txlnhd', classes: [ 'lm-text-lines' ] } ),
+			heading( 'Lines rise from under a mask', {}, { id: 'txlnhd', classes: [ 'lm-lines' ] } ),
 			spacer( 1200 ),
-			text( LINES_TEXT, { tag: 'p' }, { id: 'txlnpp', classes: [ 'lm-text-lines' ] } ),
+			text( LINES_TEXT, { tag: 'p' }, { id: 'txlnpp', classes: [ 'lm-lines' ] } ),
 			spacer( 1200 ),
-			text( WORDS_TEXT, { tag: 'p' }, { id: 'txword', classes: [ 'lm-text-words' ] } ),
+			text( WORDS_TEXT, { tag: 'p' }, { id: 'txword', classes: [ 'lm-words' ] } ),
 			spacer( 1200 ),
-			heading( 'Characters light up at the end', { tag: 'h3' }, { id: 'txchar', classes: [ 'lm-text-chars' ] } ),
+			heading( 'Characters light up at the end', { tag: 'h3' }, { id: 'txchar', classes: [ 'lm-letters' ] } ),
 			spacer( 600 ),
-			text( 'Last words, started at 30%', { tag: 'p', _lmStartAt: '30' }, { id: 'txwlat', classes: [ 'lm-text-words' ] } ),
-			text( 'Last lines, started at 30%', { tag: 'p', _lmStartAt: '30' }, { id: 'txllat', classes: [ 'lm-text-lines' ] } ),
+			text( 'Last words, started at 30%', { tag: 'p', _lmStartAt: '30' }, { id: 'txwlat', classes: [ 'lm-words' ] } ),
+			text( 'Last lines, started at 30%', { tag: 'p', _lmStartAt: '30' }, { id: 'txllat', classes: [ 'lm-lines' ] } ),
 			spacer( 100 ),
 		] ),
 	],

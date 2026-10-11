@@ -374,7 +374,7 @@
   }
 
   /* ================================================================
-   * FAMILY: ENTER (fade, reveal, blur-in, scale-in, scale-blur-in)
+   * FAMILY: ENTER (fade, slide-up, blur, blur-up, zoom, zoom-blur)
    * Two tweens per lot: the transforms follow the curve, overshoot included; opacity and
    * blur follow its safe version, which never goes past 1 or below 0. Same duration,
    * delay and stagger, so both stay in step.
@@ -383,13 +383,13 @@
   function enterFrom(o) {
     var move = {};
     var look = { opacity: 0 };
-    if (o.effect === "reveal" || o.effect === "blur-in") {
+    if (o.effect === "slide-up" || o.effect === "blur-up") {
       move.y = o.distance;
     }
-    if (o.effect === "scale-in" || o.effect === "scale-blur-in") {
+    if (o.effect === "zoom" || o.effect === "zoom-blur") {
       move.scale = o.scale;
     }
-    if (o.effect === "blur-in" || o.effect === "scale-blur-in") {
+    if (o.effect === "blur" || o.effect === "blur-up" || o.effect === "zoom-blur") {
       look.filter = "blur(" + o.blur + "px)";
     }
     return { move: move, look: look };
@@ -579,12 +579,12 @@
   };
 
   /* ================================================================
-   * FAMILY: TEXT (text-lines, text-words, text-chars)
+   * FAMILY: TEXT (lines, words, letters)
    * SplitText cuts the text into lines, words or characters. The animation is created and
    * returned in onSplit(): when the text is split again (autoSplit, after a font load or a
    * change of width), SplitText reverts the old animation and gives the new one the same
-   * time, on the new pieces. text-lines plays once, then gives the markup back untouched;
-   * text-words and text-chars follow the scroll (scrub) for as long as the page lives.
+   * time, on the new pieces. lines plays once, then gives the markup back untouched;
+   * words and letters follow the scroll (scrub) for as long as the page lives.
    *
    * Screen readers: SplitText's aria "auto" names the element after its text (aria-label)
    * and hides the pieces. A heading may be named that way; a p or a div may not (ARIA 1.2).
@@ -797,7 +797,7 @@
   // live: the builder preview, 0 to 1 over PREVIEW_SCRUB_S, then the text as written.
   function scrubStart(item, live) {
     var o = item.options;
-    var chars = o.effect === "text-chars";
+    var chars = o.effect === "letters";
     var target = textTarget(item);
     item.state = live ? "playing" : "scrub";
     splitText(item, target.node, {
@@ -865,7 +865,7 @@
       });
     },
 
-    // Scrubs are never late: only text-lines items come here.
+    // Scrubs are never late: only lines items come here.
     play: function (list) {
       list.forEach(function (item) {
         if (!item.options.scrub) {

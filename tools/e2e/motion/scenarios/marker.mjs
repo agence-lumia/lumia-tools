@@ -24,7 +24,7 @@ export default async function () {
 		return out;
 	} );
 	assert( marks.mkfade === 'enter', `lm-fade class: data-lm=${ marks.mkfade }` );
-	assert( marks.mkword === 'text', `text-words setting: data-lm=${ marks.mkword }` );
+	assert( marks.mkword === 'text', `words setting: data-lm=${ marks.mkword }` );
 	assert( marks.mkcnt === 'counter', `sk-counter class: data-lm=${ marks.mkcnt }` );
 	assert( marks.mkplain === null, `plain element: data-lm=${ marks.mkplain }` );
 	assert( marks.mkout === 'enter', `class preset outside the loop: data-lm=${ marks.mkout }` );
@@ -86,7 +86,7 @@ export default async function () {
 	// Names typed in the "CSS classes" field: marked like a global class, the former one while the compatibility setting is on.
 	const typed = await page.evaluate( () => [ 'mkrwsk', 'mkrwlm' ].map( ( id ) => document.getElementById( `brxe-${ id }` ).getAttribute( 'data-lm' ) ) );
 	assert( typed[ 0 ] === 'enter', `sk-fade typed in CSS classes: data-lm=${ typed[ 0 ] }` );
-	assert( typed[ 1 ] === 'enter', `lm-reveal typed in CSS classes: data-lm=${ typed[ 1 ] }` );
+	assert( typed[ 1 ] === 'enter', `lm-slide-up typed in CSS classes: data-lm=${ typed[ 1 ] }` );
 
 	// Underline: a former variable still styles an element that carries the new class (the state after --apply),
 	// and a colour inherited from a wrapper is not hidden by the fallbacks.
@@ -105,7 +105,7 @@ export default async function () {
 		await off.goto( pageUrl( 'lm-e2e-marker' ), { waitUntil: 'load' } );
 		const marks = await off.evaluate( () => [ 'mkrwsk', 'mkrwlm' ].map( ( id ) => document.getElementById( `brxe-${ id }` ).getAttribute( 'data-lm' ) ) );
 		assert( marks[ 0 ] === null, `sk-fade typed, compatibility off: data-lm=${ marks[ 0 ] }` );
-		assert( marks[ 1 ] === 'enter', `lm-reveal typed, compatibility off: data-lm=${ marks[ 1 ] }` );
+		assert( marks[ 1 ] === 'enter', `lm-slide-up typed, compatibility off: data-lm=${ marks[ 1 ] }` );
 		await off.context().close();
 	} );
 }

@@ -153,7 +153,7 @@ async function lines( reference ) {
 		assert( moving.length >= 3, `${ id }: ${ moving.length } frame(s) with a line under its mask out of ${ list.length }` );
 		assert( landed.length + list.filter( ( f ) => f.lines === 0 ).length > 0, `${ id }: never landed` );
 	}
-	await untouched( page, orig, [ 'brxe-txlnhd', 'brxe-txlnpp' ], 'text-lines at the end' );
+	await untouched( page, orig, [ 'brxe-txlnhd', 'brxe-txlnpp' ], 'lines at the end' );
 
 	assert( page.errors.length === 0, `lines: page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
@@ -180,14 +180,14 @@ async function words( reference ) {
 	const orig = await originals( page );
 	const ID = 'brxe-txword';
 	const from = ( ( await items( page ) ).find( ( i ) => i.id === ID ) || { options: {} } ).options.fromOpacity;
-	assert( Math.abs( from - 0.08 ) < 1e-6, `text-words: starting opacity ${ from } (expected 0.08)` );
+	assert( Math.abs( from - 0.08 ) < 1e-6, `words: starting opacity ${ from } (expected 0.08)` );
 
 	// Before its start: every word at the starting opacity, no will-change.
 	const count = ( await pieces( page, ID, '.lm-word' ) ).length;
-	assert( count > 20, `text-words: ${ count } words split` );
+	assert( count > 20, `words: ${ count } words split` );
 	const zero = await pieces( page, ID, '.lm-word' );
-	follows( zero, 0, from, 'text-words' );
-	assert( zero.every( ( p ) => p.willChange === '' ), 'text-words: will-change set before the start' );
+	follows( zero, 0, from, 'words' );
+	assert( zero.every( ( p ) => p.willChange === '' ), 'words: will-change set before the start' );
 
 	// Screen readers get the text as written while it is split.
 	const split = await aria( page );
@@ -201,29 +201,29 @@ async function words( reference ) {
 	await page.setViewportSize( { width: 1440, height: 900 } );
 	await page.waitForTimeout( 800 );
 	const after = await pieces( page, ID, '.lm-word' );
-	assert( after.length === count && after.every( ( p ) => ! p.nested ), `text-words: ${ after.length } words after the width changes (was ${ count }), nested: ${ after.some( ( p ) => p.nested ) }` );
+	assert( after.length === count && after.every( ( p ) => ! p.nested ), `words: ${ after.length } words after the width changes (was ${ count }), nested: ${ after.some( ( p ) => p.nested ) }` );
 
 	let lit = -1;
 	for ( const progress of [ 0, 0.3, 0.6, 1 ] ) {
 		const at = await scrubAt( page, ID, progress );
-		assert( at, 'text-words: no scrub trigger' );
+		assert( at, 'words: no scrub trigger' );
 		await scrollTo( page, progress === 0 ? at.start - 50 : progress === 1 ? at.end + 50 : at.y );
 		const list = await pieces( page, ID, '.lm-word' );
-		const full = follows( list, progress, from, 'text-words' );
-		assert( full >= lit, `text-words: fewer lit words at ${ progress } (${ full }) than before (${ lit })` );
+		const full = follows( list, progress, from, 'words' );
+		assert( full >= lit, `words: fewer lit words at ${ progress } (${ full }) than before (${ lit })` );
 		lit = full;
 		const will = list.filter( ( p ) => p.willChange !== '' ).length;
 		if ( progress === 0 || progress === 1 ) {
-			assert( will === 0, `text-words outside its scrub (${ progress }): will-change on ${ will } word(s)` );
+			assert( will === 0, `words outside its scrub (${ progress }): will-change on ${ will } word(s)` );
 		} else {
-			assert( will === list.length && list.every( ( p ) => p.willChange === 'opacity' ), `text-words inside its scrub: will-change on ${ will } of ${ list.length } words` );
+			assert( will === list.length && list.every( ( p ) => p.willChange === 'opacity' ), `words inside its scrub: will-change on ${ will } of ${ list.length } words` );
 		}
 	}
 
 	// Scrolling back dims them again.
 	const back = await scrubAt( page, ID, 0 );
 	await scrollTo( page, back.start - 50 );
-	follows( await pieces( page, ID, '.lm-word' ), 0, from, 'text-words scrolled back' );
+	follows( await pieces( page, ID, '.lm-word' ), 0, from, 'words scrolled back' );
 
 	// Characters, whose end the page cannot reach, and words whose start it cannot reach:
 	// both fully lit at the bottom of the page.
@@ -232,10 +232,10 @@ async function words( reference ) {
 		const top = ( id ) => document.getElementById( id ).getBoundingClientRect().top + window.scrollY;
 		return { max, charsStart: top( 'brxe-txchar' ) - window.innerHeight * 0.98, charsEnd: top( 'brxe-txchar' ) + window.innerHeight * 1.2, lateStart: top( 'brxe-txwlat' ) - window.innerHeight * 0.3 };
 	} );
-	assert( geometry.charsStart < geometry.max && geometry.charsEnd > geometry.max, `text-chars: start ${ geometry.charsStart } / end ${ geometry.charsEnd } for a maximum scroll of ${ geometry.max }: the case is not reproduced` );
+	assert( geometry.charsStart < geometry.max && geometry.charsEnd > geometry.max, `letters: start ${ geometry.charsStart } / end ${ geometry.charsEnd } for a maximum scroll of ${ geometry.max }: the case is not reproduced` );
 	assert( geometry.lateStart > geometry.max, `late words: start ${ geometry.lateStart } is reachable (max ${ geometry.max })` );
 	const chars = await pieces( page, 'brxe-txchar', '.lm-char' );
-	assert( chars.length > 20 && chars.every( ( p ) => Math.abs( p.opacity - from ) < 0.01 ), `text-chars: ${ chars.length } characters, not all at ${ from } before the start` );
+	assert( chars.length > 20 && chars.every( ( p ) => Math.abs( p.opacity - from ) < 0.01 ), `letters: ${ chars.length } characters, not all at ${ from } before the start` );
 
 	await scrollTo( page, geometry.max + 100 );
 	await page.waitForTimeout( 300 );
@@ -247,7 +247,7 @@ async function words( reference ) {
 		const dim = list.filter( ( p ) => p.opacity < 0.999 ).map( ( p ) => p.opacity );
 		assert( list.length > 0 && dim.length === 0, `${ name}: ${ dim.length } of ${ list.length } piece(s) still dim at the bottom of the page (${ dim.slice( 0, 5 ).join( ', ' ) })` );
 	}
-	// The text-lines entrance at the bottom plays once the end of the page is reached.
+	// The lines entrance at the bottom plays once the end of the page is reached.
 	await page.waitForFunction( () => ( window.lumiaMotion._debug.items().find( ( i ) => i.id === 'brxe-txllat' ) || {} ).state === 'done', null, { timeout: 4000 } ).catch( async () => {
 		throw new Error( `late lines: state ${ await state( page, 'brxe-txllat' ) } at the bottom of the page` );
 	} );

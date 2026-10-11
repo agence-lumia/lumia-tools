@@ -5489,27 +5489,6 @@ msgstr "Bas"
 msgid "Fade"
 msgstr "Fondu"
 
-msgid "Reveal"
-msgstr "Révélation"
-
-msgid "Blur in"
-msgstr "Apparition floue"
-
-msgid "Scale in"
-msgstr "Apparition agrandie"
-
-msgid "Scale and blur in"
-msgstr "Apparition agrandie et floue"
-
-msgid "Text lines"
-msgstr "Lignes de texte"
-
-msgid "Text words"
-msgstr "Mots du texte"
-
-msgid "Text characters"
-msgstr "Caractères du texte"
-
 msgid "Counter"
 msgstr "Compteur"
 
@@ -5768,18 +5747,6 @@ msgstr "Couleur du soulignement"
 msgid "One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP)."
 msgstr "Un seul effet par élément : avec deux classes Motion, la première l'emporte. Une valeur posée pour l'ordinateur vaut aussi pour mobile, sauf si vous réglez mobile. Sur le titre principal visible dès l'arrivée, préférez un effet de texte (LCP)."
 
-msgid "Text by lines"
-msgstr "Texte par lignes"
-
-msgid "Text by words"
-msgstr "Texte par mots"
-
-msgid "Text by characters"
-msgstr "Texte par caractères"
-
-msgid "Underline"
-msgstr "Soulignement"
-
 msgid "Off"
 msgstr "Désactivé"
 
@@ -5788,3 +5755,30 @@ msgstr "Indiquez l'unité, par exemple 2px."
 
 msgid "Include the unit, e.g. 0.12em."
 msgstr "Indiquez l'unité, par exemple 0.12em."
+
+msgid "Slide up"
+msgstr "Montée"
+
+msgid "Blur"
+msgstr "Flou"
+
+msgid "Blur up"
+msgstr "Flou montant"
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Zoom blur"
+msgstr "Zoom flou"
+
+msgid "Lines"
+msgstr "Lignes"
+
+msgid "Words on scroll"
+msgstr "Mots au défilement"
+
+msgid "Letters on scroll"
+msgstr "Lettres au défilement"
+
+msgid "Hover underline"
+msgstr "Soulignement au survol"

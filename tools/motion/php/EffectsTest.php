@@ -15,17 +15,18 @@ use Lumia\Tools\Modules\Motion\Effects;
 use Lumia\Tools\Modules\Motion\Legacy;
 
 return [
-	'catalog has the ten effects'                    => static function (): void {
+	'catalog has the eleven effects'                 => static function (): void {
 		lm_assert(
 			array_keys( Effects::catalog() ) === [
 				'fade',
-				'reveal',
-				'blur-in',
-				'scale-in',
-				'scale-blur-in',
-				'text-lines',
-				'text-words',
-				'text-chars',
+				'slide-up',
+				'blur',
+				'blur-up',
+				'zoom',
+				'zoom-blur',
+				'lines',
+				'words',
+				'letters',
 				'counter',
 				'underline',
 			],
@@ -42,7 +43,7 @@ return [
 	},
 	'slug_for_class matches the new name'            => static function (): void {
 		lm_assert( Effects::slug_for_class( 'lm-fade', false ) === 'fade', 'lm-fade' );
-		lm_assert( Effects::slug_for_class( 'lm-scale-blur-in', false ) === 'scale-blur-in', 'lm-scale-blur-in' );
+		lm_assert( Effects::slug_for_class( 'lm-zoom-blur', false ) === 'zoom-blur', 'lm-zoom-blur' );
 		lm_assert( Effects::slug_for_class( 'lm-unknown', false ) === null, 'lm-unknown' );
 	},
 	'slug_for_class ignores legacy names by default' => static function (): void {
@@ -50,14 +51,14 @@ return [
 	},
 	'slug_for_class resolves legacy names on demand' => static function (): void {
 		lm_assert( Effects::slug_for_class( 'sk-fade', true ) === 'fade', 'sk-fade with legacy' );
-		lm_assert( Effects::slug_for_class( 'sk-entry-blur', true ) === 'blur-in', 'sk-entry-blur with legacy' );
+		lm_assert( Effects::slug_for_class( 'sk-entry-blur', true ) === 'blur-up', 'sk-entry-blur with legacy' );
 		lm_assert( Effects::slug_for_class( 'lm-fade', true ) === 'fade', 'lm-fade with legacy' );
 		lm_assert( Effects::slug_for_class( 'sk-nope', true ) === null, 'sk-nope with legacy' );
 	},
 	'families'                                       => static function (): void {
-		lm_assert( Effects::family( 'text-words' ) === 'text', 'text-words' );
+		lm_assert( Effects::family( 'words' ) === 'text', 'words' );
 		lm_assert( Effects::family( 'fade' ) === 'enter', 'fade' );
-		lm_assert( Effects::family( 'scale-blur-in' ) === 'enter', 'scale-blur-in' );
+		lm_assert( Effects::family( 'zoom-blur' ) === 'enter', 'zoom-blur' );
 		lm_assert( Effects::family( 'counter' ) === 'counter', 'counter' );
 		lm_assert( Effects::family( 'underline' ) === 'underline', 'underline' );
 		lm_assert( Effects::family( 'nope' ) === null, 'nope' );
@@ -69,38 +70,51 @@ return [
 				$scrubbing[] = $slug;
 			}
 		}
-		lm_assert( $scrubbing === [ 'text-words', 'text-chars' ], 'scrub list: ' . implode( ',', $scrubbing ) );
-		lm_assert( Effects::catalog()['text-chars']['scrub'] === true, 'text-chars scrub' );
+		lm_assert( $scrubbing === [ 'words', 'letters' ], 'scrub list: ' . implode( ',', $scrubbing ) );
+		lm_assert( Effects::catalog()['letters']['scrub'] === true, 'letters scrub' );
 	},
 	'catalog classes and params'                     => static function (): void {
 		$catalog = Effects::catalog();
-		lm_assert( $catalog['blur-in']['class'] === 'lm-blur-in', 'blur-in class' );
-		lm_assert( $catalog['blur-in']['params'] === [ 'distance', 'blur' ], 'blur-in params' );
-		lm_assert( $catalog['scale-blur-in']['params'] === [ 'scale', 'blur' ], 'scale-blur-in params' );
+		lm_assert( $catalog['blur']['class'] === 'lm-blur' && $catalog['blur']['family'] === Effects::FAMILY_ENTER && false === $catalog['blur']['scrub'], 'blur entry' );
+		lm_assert( $catalog['blur']['params'] === [ 'blur' ], 'blur params' );
+		lm_assert( $catalog['blur-up']['class'] === 'lm-blur-up', 'blur-up class' );
+		lm_assert( $catalog['blur-up']['params'] === [ 'distance', 'blur' ], 'blur-up params' );
+		lm_assert( $catalog['zoom-blur']['params'] === [ 'scale', 'blur' ], 'zoom-blur params' );
 		lm_assert( $catalog['counter']['params'] === [ 'start_value' ], 'counter params' );
 		lm_assert( $catalog['underline']['params'] === [], 'underline params' );
 	},
 	'new_class_name maps legacy to new'              => static function (): void {
-		lm_assert( Legacy::new_class_name( 'sk-entry-blur' ) === 'lm-blur-in', 'sk-entry-blur' );
-		lm_assert( Legacy::new_class_name( 'sk-text-highlight-words' ) === 'lm-text-words', 'sk-text-highlight-words' );
+		lm_assert( Legacy::new_class_name( 'sk-entry-blur' ) === 'lm-blur-up', 'sk-entry-blur' );
+		lm_assert( Legacy::new_class_name( 'sk-text-highlight-words' ) === 'lm-words', 'sk-text-highlight-words' );
 		lm_assert( Legacy::new_class_name( 'sk-hover-underline' ) === 'lm-underline', 'sk-hover-underline' );
 		lm_assert( Legacy::new_class_name( 'lm-fade' ) === null, 'lm-fade is not legacy' );
 	},
 	'reference values'                               => static function (): void {
 		$ref = Effects::reference_values();
-		lm_assert( $ref['reveal']['distance'] === 48.0, 'reveal distance' );
-		lm_assert( $ref['text-words']['end_at'] === '-120%', 'text-words end_at' );
+		lm_assert( $ref['slide-up']['distance'] === 48.0, 'slide-up distance' );
+		lm_assert( $ref['words']['end_at'] === '-120%', 'words end_at' );
 		lm_assert( $ref['fade']['start_edge'] === 'top' && $ref['fade']['start_at'] === '98%', 'fade start' );
 		lm_assert( $ref['fade']['delay'] === 0.0, 'fade delay' );
 		lm_assert( $ref['fade']['duration'] === 0.45 && $ref['fade']['stagger'] === 0.06, 'fade timing' );
-		lm_assert( $ref['blur-in']['blur'] === 12.0 && $ref['blur-in']['distance'] === 20.0, 'blur-in' );
-		lm_assert( $ref['scale-in']['scale'] === 0.9, 'scale-in scale' );
-		lm_assert( $ref['scale-blur-in']['scale'] === 0.86 && $ref['scale-blur-in']['blur'] === 10.0, 'scale-blur-in' );
-		lm_assert( $ref['text-lines']['distance'] === 120.0 && $ref['text-lines']['duration'] === 0.95, 'text-lines' );
-		lm_assert( $ref['text-words']['stagger'] === 0.25 && $ref['text-words']['from_opacity'] === 0.08, 'text-words' );
-		lm_assert( $ref['text-chars']['stagger'] === 0.1 && $ref['text-chars']['from_opacity'] === 0.08, 'text-chars' );
-		lm_assert( ! array_key_exists( 'duration', $ref['text-words'] ), 'scrub has no duration' );
-		lm_assert( $ref['text-chars']['end_edge'] === 'top', 'text-chars end_edge' );
+		lm_assert(
+			$ref['blur'] === [
+				'start_edge' => 'top',
+				'start_at'   => '98%',
+				'delay'      => 0.0,
+				'duration'   => 0.8,
+				'stagger'    => 0.08,
+				'blur'       => 12.0,
+			],
+			'blur reference'
+		);
+		lm_assert( $ref['blur-up']['blur'] === 12.0 && $ref['blur-up']['distance'] === 20.0, 'blur-up' );
+		lm_assert( $ref['zoom']['scale'] === 0.9, 'zoom scale' );
+		lm_assert( $ref['zoom-blur']['scale'] === 0.86 && $ref['zoom-blur']['blur'] === 10.0, 'zoom-blur' );
+		lm_assert( $ref['lines']['distance'] === 120.0 && $ref['lines']['duration'] === 0.95, 'lines' );
+		lm_assert( $ref['words']['stagger'] === 0.25 && $ref['words']['from_opacity'] === 0.08, 'words' );
+		lm_assert( $ref['letters']['stagger'] === 0.1 && $ref['letters']['from_opacity'] === 0.08, 'letters' );
+		lm_assert( ! array_key_exists( 'duration', $ref['words'] ), 'scrub has no duration' );
+		lm_assert( $ref['letters']['end_edge'] === 'top', 'letters end_edge' );
 		lm_assert( ! array_key_exists( 'end_at', $ref['fade'] ), 'non-scrub has no end_at' );
 		lm_assert( $ref['counter']['duration'] === 1.35 && $ref['counter']['start_value'] === 0.0, 'counter' );
 		lm_assert( $ref['underline'] === [], 'underline is empty' );

@@ -30,13 +30,13 @@ $lm_mode = $args[0] ?? '';
 // rely on the code under test for what it expects.
 $lm_pairs = array(
 	'sk-fade'                 => 'lm-fade',
-	'sk-reveal'               => 'lm-reveal',
-	'sk-entry-blur'           => 'lm-blur-in',
-	'sk-scale-in'             => 'lm-scale-in',
-	'sk-scale-in-blur'        => 'lm-scale-blur-in',
-	'sk-text-lines'           => 'lm-text-lines',
-	'sk-text-highlight-words' => 'lm-text-words',
-	'sk-text-highlight-chars' => 'lm-text-chars',
+	'sk-reveal'               => 'lm-slide-up',
+	'sk-entry-blur'           => 'lm-blur-up',
+	'sk-scale-in'             => 'lm-zoom',
+	'sk-scale-in-blur'        => 'lm-zoom-blur',
+	'sk-text-lines'           => 'lm-lines',
+	'sk-text-highlight-words' => 'lm-words',
+	'sk-text-highlight-chars' => 'lm-letters',
 	'sk-counter'              => 'lm-counter',
 	'sk-hover-underline'      => 'lm-underline',
 );

@@ -17,13 +17,13 @@ use Lumia\Tools\Modules\Motion\Marker;
 
 return [
 	'an element effect gives its family'              => static function (): void {
-		lm_assert( Marker::families( [ '_lmEffect' => 'reveal' ], [], false ) === [ 'enter' ], 'reveal' );
+		lm_assert( Marker::families( [ '_lmEffect' => 'slide-up' ], [], false ) === [ 'enter' ], 'slide-up' );
 		lm_assert( Marker::families( [ '_lmEffect' => 'counter' ], [], false ) === [ 'counter' ], 'counter' );
 		lm_assert( Marker::families( [ '_lmEffect' => 'underline' ], [], false ) === [ 'underline' ], 'underline' );
 	},
 	'a breakpoint effect and a class combine'         => static function (): void {
 		$families = Marker::families(
-			[ '_lmEffect:mobile_portrait' => 'text-words' ],
+			[ '_lmEffect:mobile_portrait' => 'words' ],
 			[
 				[
 					'name'     => 'lm-fade',
@@ -43,7 +43,7 @@ return [
 					'settings' => [],
 				],
 				[
-					'name'     => 'lm-text-lines',
+					'name'     => 'lm-lines',
 					'settings' => [],
 				],
 				[
@@ -75,12 +75,12 @@ return [
 		$classes = [
 			[
 				'name'     => 'titre-hero',
-				'settings' => [ '_lmEffect' => 'scale-in' ],
+				'settings' => [ '_lmEffect' => 'zoom' ],
 			],
 		];
 		lm_assert( Marker::families( [], $classes, false ) === [ 'enter' ], 'class setting' );
 
-		$classes[0]['settings'] = [ '_lmEffect:tablet_portrait' => 'text-chars' ];
+		$classes[0]['settings'] = [ '_lmEffect:tablet_portrait' => 'letters' ];
 		lm_assert( Marker::families( [], $classes, false ) === [ 'text' ], 'class breakpoint setting' );
 
 		$classes[0]['settings'] = [ '_lmEffect' => 'none' ];
@@ -167,7 +167,7 @@ return [
 		lm_assert( Marker::inline_style( [ '_lmEffect' => 'none' ] ) === '--lm-effect:none;', 'none' );
 	},
 	'a class typed in the CSS classes field counts'   => static function (): void {
-		lm_assert( Marker::families( [ '_cssClasses' => 'lm-reveal' ], [], false ) === [ 'enter' ], 'lm-reveal typed' );
+		lm_assert( Marker::families( [ '_cssClasses' => 'lm-slide-up' ], [], false ) === [ 'enter' ], 'lm-slide-up typed' );
 		lm_assert( Marker::families( [ '_cssClasses' => "  hero\tlm-counter  big " ], [], false ) === [ 'counter' ], 'among other classes, any white space' );
 		lm_assert( Marker::families( [ '_cssClasses' => 'lm-fade lm-underline' ], [], false ) === [ 'enter', 'underline' ], 'two effects' );
 		lm_assert( Marker::families( [ '_cssClasses' => 'sk-fade' ], [], true ) === [ 'enter' ], 'legacy name typed, compatibility on' );

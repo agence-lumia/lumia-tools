@@ -33,16 +33,16 @@ $lm_class = static function ( string $id, string $name ): array {
 
 return [
 	'creation skips a class that exists and one whose legacy class exists' => static function () use ( $lm_class ): void {
-		$plan = ClassManager::plan_creation( [ $lm_class( 'a', 'sk-fade' ), $lm_class( 'b', 'lm-reveal' ) ] );
-		lm_assert( in_array( 'lm-blur-in', $plan, true ), 'lm-blur-in is missing from ' . implode( ',', $plan ) );
+		$plan = ClassManager::plan_creation( [ $lm_class( 'a', 'sk-fade' ), $lm_class( 'b', 'lm-slide-up' ) ] );
+		lm_assert( in_array( 'lm-blur-up', $plan, true ), 'lm-blur-up is missing from ' . implode( ',', $plan ) );
 		lm_assert( ! in_array( 'lm-fade', $plan, true ), 'lm-fade must wait for the migration of its legacy class' );
-		lm_assert( ! in_array( 'lm-reveal', $plan, true ), 'lm-reveal exists' );
+		lm_assert( ! in_array( 'lm-slide-up', $plan, true ), 'lm-slide-up exists' );
 	},
-	'creation on an empty site gives the ten classes, in catalog order' => static function (): void {
+	'creation on an empty site gives the eleven classes, in catalog order' => static function (): void {
 		$plan = ClassManager::plan_creation( [] );
 		$want = array_column( Effects::catalog(), 'class' );
 		lm_assert( $plan === $want, 'got ' . implode( ',', $plan ) );
-		lm_assert( count( $plan ) === 10, 'ten classes' );
+		lm_assert( count( $plan ) === 11, 'eleven classes' );
 	},
 	'creation once everything exists gives nothing'     => static function (): void {
 		$classes = [];
@@ -59,15 +59,15 @@ return [
 		foreach ( array_keys( Legacy::CLASS_ALIASES ) as $i => $legacy ) {
 			$classes[] = $lm_class( 'l' . $i, $legacy );
 		}
-		lm_assert( ClassManager::plan_creation( $classes ) === [], 'a site with the ten legacy classes needs no new class' );
+		lm_assert( ClassManager::plan_creation( $classes ) === [ 'lm-blur' ], 'a site with the ten legacy classes only lacks lm-blur, which has no legacy name' );
 	},
 	'creation ignores a malformed entry'                => static function (): void {
 		$plan = ClassManager::plan_creation( [ 'oops', 3, [ 'id' => 'z' ], [ 'name' => [ 'sk-fade' ] ] ] );
-		lm_assert( count( $plan ) === 10, 'garbage entries must not hide a class' );
+		lm_assert( count( $plan ) === 11, 'garbage entries must not hide a class' );
 	},
 	'migration renames what is free and reports what collides' => static function () use ( $lm_class ): void {
 		$plan = ClassManager::plan_migration(
-			[ $lm_class( 'a', 'sk-fade' ), $lm_class( 'b', 'sk-reveal' ), $lm_class( 'c', 'lm-reveal' ) ]
+			[ $lm_class( 'a', 'sk-fade' ), $lm_class( 'b', 'sk-reveal' ), $lm_class( 'c', 'lm-slide-up' ) ]
 		);
 		lm_assert(
 			$plan['rename'] === [

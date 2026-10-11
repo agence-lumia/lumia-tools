@@ -114,7 +114,7 @@ js '
 	const names = s.classes.map((c) => c.name);
 	const legacy = names.filter((n) => /^sk-/.test(n));
 	assert(legacy.length === 10, "the seed should leave ten legacy classes, got " + legacy.join(","));
-	assert(!names.some((n) => /^lm-(fade|reveal|blur-in|scale-in|scale-blur-in|text-lines|text-words|text-chars|counter|underline)$/.test(n)), "no new class should exist after the seed");
+	assert(!names.some((n) => /^lm-(fade|slide-up|blur-up|zoom|zoom-blur|lines|words|letters|counter|underline)$/.test(n)), "no new class should exist after the seed");
 	assert(!s.categories.some((c) => /^motion$/i.test(c.name)), "no Motion category should exist after the seed");
 ' SNAP="${SEEDED}"
 SEED_SUM="$(helper checksum)"
@@ -159,7 +159,7 @@ js '
 	assert(/element mgtext2: legacy class typed in the CSS classes field/.test(kept), "the class typed by hand keeps working");
 	assert(!all.some((h) => /mgtext5/.test(h)), "an agency class like .sk-container must never be reported");
 	assert(/class lm-underline: legacy name that keeps working/.test(kept), "the underline variable in the CSS of lm-underline is reported as kept");
-	assert(!/class lm-text-lines/.test(all.join("\n")), "the longer class name in lm-text-lines is not a legacy class");
+	assert(!/class lm-lines/.test(all.join("\n")), "the longer class name in lm-lines is not a legacy class");
 	// Fluent snippet: reported only when published.
 	const snippet = r.snippets.some((h) => /4-sk-motion\.php/.test(h));
 	assert(snippet === (env.SNIPPET === "published"), "the former snippet is reported only when published (status " + env.SNIPPET + "), reported: " + snippet);
@@ -217,9 +217,9 @@ js '
 	assert(after.categories.length === before.categories.length + 1, "only the Motion category is added");
 
 	const expected = {
-		"sk-fade": "lm-fade", "sk-reveal": "lm-reveal", "sk-entry-blur": "lm-blur-in", "sk-scale-in": "lm-scale-in",
-		"sk-scale-in-blur": "lm-scale-blur-in", "sk-text-lines": "lm-text-lines", "sk-text-highlight-words": "lm-text-words",
-		"sk-text-highlight-chars": "lm-text-chars", "sk-hover-underline": "lm-underline",
+		"sk-fade": "lm-fade", "sk-reveal": "lm-slide-up", "sk-entry-blur": "lm-blur-up", "sk-scale-in": "lm-zoom",
+		"sk-scale-in-blur": "lm-zoom-blur", "sk-text-lines": "lm-lines", "sk-text-highlight-words": "lm-words",
+		"sk-text-highlight-chars": "lm-letters", "sk-hover-underline": "lm-underline",
 	};
 	for (const [id, was] of Object.entries(b)) {
 		const now = a[id];
@@ -237,8 +237,8 @@ js '
 	assert(hand && hand.id === env.COUNTER_ID && hand.settings._lmDuration === 2 && !hand.category, "the class made by hand must be untouched");
 
 	// The class own CSS: renamed selector, longer name and variables left alone.
-	const lines = Object.values(a).find((c) => c.name === "lm-text-lines").settings._cssCustom;
-	assert(lines === ".lm-text-lines .line { overflow: hidden; }\n.sk-text-lines-extra { color: red; }", "CSS of lm-text-lines: " + lines);
+	const lines = Object.values(a).find((c) => c.name === "lm-lines").settings._cssCustom;
+	assert(lines === ".lm-lines .line { overflow: hidden; }\n.sk-text-lines-extra { color: red; }", "CSS of lm-lines: " + lines);
 	const underline = Object.values(a).find((c) => c.name === "lm-underline").settings["_cssCustom:tablet_portrait"];
 	assert(underline === ".lm-underline { --sk-hover-underline-gap: 4px; }", "CSS of lm-underline: " + underline);
 
@@ -281,16 +281,16 @@ wpx lumia motion classes
 [ "$(helper checksum)" = "${APPLIED_SUM}" ] || fail 'classes created something although every class exists'
 
 # Remove one class altogether (a site that never had it): exactly that one comes back.
-helper remove-class lm-blur-in
+helper remove-class lm-blur-up
 BEFORE_CREATE="$(helper snapshot)"
 CREATED_JSON="$(wpx lumia motion classes --format=json)"
 AFTER_CREATE="$(helper snapshot)"
 js '
 	const rows = JSON.parse(env.ROWS);
 	const created = rows.filter((r) => r.state === "created").map((r) => r.class);
-	assert(JSON.stringify(created) === JSON.stringify(["lm-blur-in"]), "only lm-blur-in should be created, got " + JSON.stringify(created));
+	assert(JSON.stringify(created) === JSON.stringify(["lm-blur-up"]), "only lm-blur-up should be created, got " + JSON.stringify(created));
 	const b = JSON.parse(env.BEFORE), a = JSON.parse(env.AFTER);
-	const made = a.classes.find((c) => c.name === "lm-blur-in");
+	const made = a.classes.find((c) => c.name === "lm-blur-up");
 	const motionId = a.categories.find((c) => /^motion$/i.test(c.name)).id;
 	assert(made && /^[a-z]{6}$/.test(made.id), "a six-letter ID");
 	assert(made.category === motionId, "in the Motion category");

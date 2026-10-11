@@ -48,10 +48,11 @@
  * ---------------------------------------------------------------- */
 
 .lm-thumb--fade,
-.lm-thumb--reveal,
-.lm-thumb--blur-in,
-.lm-thumb--scale-in,
-.lm-thumb--scale-blur-in {
+.lm-thumb--slide-up,
+.lm-thumb--blur,
+.lm-thumb--blur-up,
+.lm-thumb--zoom,
+.lm-thumb--zoom-blur {
 	border: 3px solid transparent;
 	border-radius: 5px;
 	background: currentColor;
@@ -64,20 +65,24 @@
 	animation-name: lm-thumb-fade;
 }
 
-.lm-thumb--reveal {
-	animation-name: lm-thumb-reveal;
+.lm-thumb--slide-up {
+	animation-name: lm-thumb-slide-up;
 }
 
-.lm-thumb--blur-in {
-	animation-name: lm-thumb-blur-in;
+.lm-thumb--blur {
+	animation-name: lm-thumb-blur;
 }
 
-.lm-thumb--scale-in {
-	animation-name: lm-thumb-scale-in;
+.lm-thumb--blur-up {
+	animation-name: lm-thumb-blur-up;
 }
 
-.lm-thumb--scale-blur-in {
-	animation-name: lm-thumb-scale-blur-in;
+.lm-thumb--zoom {
+	animation-name: lm-thumb-zoom;
+}
+
+.lm-thumb--zoom-blur {
+	animation-name: lm-thumb-zoom-blur;
 }
 
 @keyframes lm-thumb-fade {
@@ -96,7 +101,7 @@
 	}
 }
 
-@keyframes lm-thumb-reveal {
+@keyframes lm-thumb-slide-up {
 	0%,
 	8% {
 		opacity: 0;
@@ -115,7 +120,26 @@
 	}
 }
 
-@keyframes lm-thumb-blur-in {
+@keyframes lm-thumb-blur {
+	0%,
+	8% {
+		opacity: 0;
+		filter: blur(3px);
+	}
+
+	40%,
+	82% {
+		opacity: 1;
+		filter: blur(0);
+	}
+
+	100% {
+		opacity: 0;
+		filter: blur(3px);
+	}
+}
+
+@keyframes lm-thumb-blur-up {
 	0%,
 	8% {
 		opacity: 0;
@@ -137,7 +161,7 @@
 	}
 }
 
-@keyframes lm-thumb-scale-in {
+@keyframes lm-thumb-zoom {
 	0%,
 	8% {
 		opacity: 0;
@@ -156,7 +180,7 @@
 	}
 }
 
-@keyframes lm-thumb-scale-blur-in {
+@keyframes lm-thumb-zoom-blur {
 	0%,
 	8% {
 		opacity: 0;
@@ -182,12 +206,12 @@
  * Text: lines rise from below, words and characters light up one after the other.
  * ---------------------------------------------------------------- */
 
-.lm-thumb--text-lines::before,
-.lm-thumb--text-lines::after,
-.lm-thumb--text-words::before,
-.lm-thumb--text-words::after,
-.lm-thumb--text-chars::before,
-.lm-thumb--text-chars::after,
+.lm-thumb--lines::before,
+.lm-thumb--lines::after,
+.lm-thumb--words::before,
+.lm-thumb--words::after,
+.lm-thumb--letters::before,
+.lm-thumb--letters::after,
 .lm-thumb--underline::before,
 .lm-thumb--underline::after {
 	content: "";
@@ -195,12 +219,12 @@
 	display: block;
 }
 
-.lm-thumb--text-lines {
-	animation-name: lm-thumb-text-lines;
+.lm-thumb--lines {
+	animation-name: lm-thumb-lines;
 }
 
 /* Two full lines and a short one, from the bottom of the box (the box is the mask). */
-.lm-thumb--text-lines::before {
+.lm-thumb--lines::before {
 	top: 2px;
 	left: 1px;
 	width: 12px;
@@ -211,7 +235,7 @@
 	transform: translateY(calc(var(--lm-thumb-t) * 14px));
 }
 
-.lm-thumb--text-lines::after {
+.lm-thumb--lines::after {
 	top: 10px;
 	left: 1px;
 	width: 7px;
@@ -221,7 +245,7 @@
 	transform: translateY(calc(var(--lm-thumb-t) * 14px));
 }
 
-@keyframes lm-thumb-text-lines {
+@keyframes lm-thumb-lines {
 	0%,
 	8% {
 		--lm-thumb-t: 1;
@@ -238,15 +262,15 @@
 }
 
 /* Words and characters: the dim text, and the same text on top, uncovered step by step. */
-.lm-thumb--text-words::before,
-.lm-thumb--text-words::after,
-.lm-thumb--text-chars::before,
-.lm-thumb--text-chars::after {
+.lm-thumb--words::before,
+.lm-thumb--words::after,
+.lm-thumb--letters::before,
+.lm-thumb--letters::after {
 	inset: 0;
 }
 
-.lm-thumb--text-words::before,
-.lm-thumb--text-words::after {
+.lm-thumb--words::before,
+.lm-thumb--words::after {
 	background:
 		linear-gradient(currentColor, currentColor) 1px 3px / 4px 2px no-repeat,
 		linear-gradient(currentColor, currentColor) 6px 3px / 3px 2px no-repeat,
@@ -255,32 +279,32 @@
 		linear-gradient(currentColor, currentColor) 5px 8px / 5px 2px no-repeat;
 }
 
-.lm-thumb--text-chars::before,
-.lm-thumb--text-chars::after {
+.lm-thumb--letters::before,
+.lm-thumb--letters::after {
 	background:
 		repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 2px) 1px 3px / 12px 2px no-repeat,
 		repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 2px) 1px 8px / 8px 2px no-repeat;
 }
 
-.lm-thumb--text-words::before,
-.lm-thumb--text-chars::before {
+.lm-thumb--words::before,
+.lm-thumb--letters::before {
 	opacity: 0.25;
 }
 
-.lm-thumb--text-words::after,
-.lm-thumb--text-chars::after {
+.lm-thumb--words::after,
+.lm-thumb--letters::after {
 	clip-path: inset(0 calc(var(--lm-thumb-t) * 100%) 0 0);
 }
 
-.lm-thumb--text-words {
-	animation-name: lm-thumb-text-words;
+.lm-thumb--words {
+	animation-name: lm-thumb-words;
 }
 
-.lm-thumb--text-chars {
-	animation-name: lm-thumb-text-chars;
+.lm-thumb--letters {
+	animation-name: lm-thumb-letters;
 }
 
-@keyframes lm-thumb-text-words {
+@keyframes lm-thumb-words {
 	0%,
 	8% {
 		--lm-thumb-t: 1;
@@ -297,7 +321,7 @@
 	}
 }
 
-@keyframes lm-thumb-text-chars {
+@keyframes lm-thumb-letters {
 	0%,
 	8% {
 		--lm-thumb-t: 1;
