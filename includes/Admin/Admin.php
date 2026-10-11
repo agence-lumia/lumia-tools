@@ -13,6 +13,11 @@ use Lumia\Tools\Core\Settings;
 class Admin {
 
 	/**
+	 * Lümia logo for the admin menu: the glyph alone, monochrome, recolored by WordPress.
+	 */
+	private const MENU_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.96 -1 22 22"><path fill="black" d="M20.4 6.88c-3.79 0-6.88-3.08-6.88-6.88h-3.13c0 3.79-3.08 6.88-6.87 6.88 0 0-.41 0-.62 0v3.12c2.76 0 5 2.24 5 5h3.12c0-2.46-1.1-4.66-2.83-6.15 1.54-.82 2.84-2.03 3.77-3.49.93 1.47 2.23 2.68 3.77 3.49-1.73 1.49-2.83 3.69-2.83 6.15h3.12c0-2.76 2.24-5 5-5v-3.12c-.21 0-.62 0-.62 0Z"/><path fill="black" d="M2.9 16.87h18.12V20H2.9Z"/></svg>';
+
+	/**
 	 * Maximum size accepted for an imported configuration file (2 MiB).
 	 *
 	 * The file is read whole then decoded as JSON: two copies in memory.
@@ -95,8 +100,9 @@ class Admin {
 			'manage_options',
 			$this->slug,
 			[ $this, 'render_page' ],
-			// Versioned: the Dokploy template's nginx serves SVGs as `immutable` for a year.
-			add_query_arg( 'ver', LUMIA_VERSION, plugins_url( 'assets/admin/images/menu-icon.svg', LUMIA_PLUGIN_FILE ) ),
+			// Inline data URI: WordPress only recolors a base64 SVG menu icon to the admin color
+			// scheme (grey, white on hover and on the current page), like the other plugins.
+			'data:image/svg+xml;base64,' . base64_encode( self::MENU_ICON_SVG ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- WordPress requires a base64 SVG for a recolored menu icon.
 			99
 		);
 
