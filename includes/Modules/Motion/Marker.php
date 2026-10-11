@@ -28,8 +28,12 @@ final class Marker {
 		Effects::FAMILY_UNDERLINE,
 	];
 
-	/** Characters allowed in an inline value: nothing that could close the declaration or the attribute. */
-	const VALUE_PATTERN = '/^[A-Za-z0-9%#(),.\- ]+$/';
+	/**
+	 * Characters allowed in an inline value: nothing that could close the declaration or the attribute
+	 * (no `;`, `:`, quote, `<`, brace). `+` and `=` stay, for the relative positions of ScrollTrigger
+	 * (`top+=50 80%`).
+	 */
+	const VALUE_PATTERN = '/^[A-Za-z0-9%#(),.+=\- ]+$/';
 
 	/** Setting key of the effect, with its breakpoint variants (`_lmEffect:mobile_portrait`). */
 	const EFFECT_KEY = '_lmEffect';
@@ -114,7 +118,8 @@ final class Marker {
 	}
 
 	/**
-	 * Families of an element, from its own settings and from its classes.
+	 * Families of an element, from its own settings, from the class names typed in its "CSS classes"
+	 * field (`_cssClasses`) and from its global classes.
 	 *
 	 * @param array<string, mixed>                                              $element_settings Settings of the element.
 	 * @param array<int, array{name?: mixed, settings?: mixed}|array<mixed>>    $classes          Global classes of the element, as name and settings.
@@ -125,6 +130,18 @@ final class Marker {
 		$found = [];
 
 		self::collect_setting_families( $element_settings, $found );
+
+		// Bricks prints the field as it is in the class attribute, where the engine reads the effect too.
+		$typed = $element_settings['_cssClasses'] ?? null;
+		if ( is_string( $typed ) && '' !== $typed ) {
+			$tokens = preg_split( '/\s+/', $typed, -1, PREG_SPLIT_NO_EMPTY );
+			foreach ( false === $tokens ? [] : $tokens as $token ) {
+				$slug = Effects::slug_for_class( $token, $legacy );
+				if ( null !== $slug ) {
+					$found[ (string) Effects::family( $slug ) ] = true;
+				}
+			}
+		}
 
 		foreach ( $classes as $class ) {
 			if ( ! is_array( $class ) ) {
@@ -224,13 +241,16 @@ final class Marker {
 			return true;
 		}
 
-		if ( ! \Bricks\Query::is_looping() ) {
+		// Same tests as Bricks (Assets::generate_css_from_element): a loop selector only while a loop
+		// runs. Not is_looping(), which the `bricks/query/force_is_looping` filter turns true (AJAX
+		// popups) while Bricks still writes the ID selector. The loop element is prefixed to the
+		// selector of the others only.
+		$query_id = \Bricks\Query::is_any_looping();
+		if ( ! $query_id ) {
 			return false;
 		}
 
-		// Same test as Bricks: the loop element is prefixed to the selector of the others only.
-		$query_id     = \Bricks\Query::is_any_looping();
-		$loop_element = $query_id ? \Bricks\Query::get_query_element_id( (string) $query_id ) : false;
+		$loop_element = \Bricks\Query::get_query_element_id( (string) $query_id );
 
 		return empty( $loop_element ) || ( $element['id'] ?? null ) === $loop_element;
 	}

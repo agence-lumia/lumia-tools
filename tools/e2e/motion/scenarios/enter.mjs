@@ -174,6 +174,17 @@ async function desktop() {
 	await reveal( page, 'brxe-bskfd' );
 	assert( ( await look( page, 'brxe-bskfd' ) ).opacity === '1', 'former class: not visible after scrolling' );
 
+	// Names typed in the "CSS classes" field: an item each, still waiting below the screen, then played.
+	for ( const [ id, effect ] of [ [ 'brawsk', 'fade' ], [ 'brawlm', 'reveal' ] ] ) {
+		const typed = byId( list, id );
+		assert( typed && typed.effect === effect, `${ id } (typed in CSS classes): effect ${ typed && typed.effect } (expected ${ effect })` );
+		assert( typed.state === 'pending', `${ id } (typed in CSS classes): state ${ typed.state } before scrolling to it (expected pending)` );
+		await reveal( page, `brxe-${ id }` );
+		const shown = byId( await items( page ), id );
+		assert( shown.state === 'done', `${ id } (typed in CSS classes): state ${ shown.state } after scrolling (expected done)` );
+		assert( ( await look( page, `brxe-${ id }` ) ).opacity === '1', `${ id } (typed in CSS classes): not visible after scrolling` );
+	}
+
 	// Content inserted by a Bricks AJAX query: scanned, animated, visible.
 	await page.evaluate( () => {
 		const node = document.createElement( 'div' );
@@ -409,6 +420,8 @@ async function legacyOff() {
 		const mark = await page.evaluate( () => document.getElementById( 'brxe-bskfd' ).getAttribute( 'data-lm' ) );
 		assert( mark === null, `former class, compatibility off: data-lm=${ mark }` );
 		assert( ( await look( page, 'brxe-bskfd' ) ).opacity === '1', 'former class, compatibility off: hidden' );
+		assert( ! byId( list, 'brawsk' ), 'former name typed in CSS classes, compatibility off: the element still has an item' );
+		assert( byId( list, 'brawlm' ), 'name typed in CSS classes, compatibility off: no item' );
 		await page.context().close();
 	} );
 }

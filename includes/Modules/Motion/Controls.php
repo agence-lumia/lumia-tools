@@ -126,13 +126,20 @@ class Controls {
 	 * @return array<string, string>
 	 */
 	public static function variable_map(): array {
-		$map = [];
+		// Read for every marked element: built once per request (the properties do not depend on the locale).
+		static $map = null;
+		if ( null !== $map ) {
+			return $map;
+		}
+
+		$built = [];
 		foreach ( self::definitions() as $key => $control ) {
 			$property = $control['css'][0]['property'] ?? null;
 			if ( is_string( $property ) ) {
-				$map[ $key ] = $property;
+				$built[ $key ] = $property;
 			}
 		}
+		$map = $built;
 
 		return $map;
 	}

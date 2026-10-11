@@ -166,4 +166,48 @@ return [
 	'the off effect is kept so it overrides a class'  => static function (): void {
 		lm_assert( Marker::inline_style( [ '_lmEffect' => 'none' ] ) === '--lm-effect:none;', 'none' );
 	},
+	'a class typed in the CSS classes field counts'   => static function (): void {
+		lm_assert( Marker::families( [ '_cssClasses' => 'lm-reveal' ], [], false ) === [ 'enter' ], 'lm-reveal typed' );
+		lm_assert( Marker::families( [ '_cssClasses' => "  hero\tlm-counter  big " ], [], false ) === [ 'counter' ], 'among other classes, any white space' );
+		lm_assert( Marker::families( [ '_cssClasses' => 'lm-fade lm-underline' ], [], false ) === [ 'enter', 'underline' ], 'two effects' );
+		lm_assert( Marker::families( [ '_cssClasses' => 'sk-fade' ], [], true ) === [ 'enter' ], 'legacy name typed, compatibility on' );
+		lm_assert( Marker::families( [ '_cssClasses' => 'sk-fade' ], [], false ) === [], 'legacy name typed, compatibility off' );
+		lm_assert( Marker::families( [ '_cssClasses' => 'lm-fadex xlm-fade' ], [], true ) === [], 'a longer name is not the class' );
+		lm_assert( Marker::families( [ '_cssClasses' => [ 'lm-fade' ] ], [], true ) === [], 'not a string' );
+	},
+	'a scroll position with += survives inline'       => static function (): void {
+		lm_assert( Marker::inline_style( [ '_lmStart' => 'top+=50 80%' ] ) === '--lm-start:top+=50 80%;', 'top+=50 80%' );
+		lm_assert( Marker::inline_style( [ '_lmEnd' => 'bottom-=20 top' ] ) === '--lm-end:bottom-=20 top;', 'bottom-=20 top' );
+		lm_assert( Marker::inline_style( [ '_lmStart' => 'top+=50;color:red' ] ) === '', 'still no semicolon or colon' );
+		lm_assert( Marker::inline_style( [ '_lmStart' => 'top+=50}' ] ) === '', 'still no brace' );
+		lm_assert( Marker::inline_style( [ '_lmStart' => 'top+=50<' ] ) === '', 'still no angle bracket' );
+	},
+	'the loop state comes from the running loop only' => static function (): void {
+		require_once __DIR__ . '/bricks-stubs.php';
+
+		// Bricks forces is_looping() for an AJAX popup (`bricks/query/force_is_looping`) without any loop running:
+		// its elements keep their ID selector, so they need no inline style.
+		\Bricks\Query::$forced       = true;
+		\Bricks\Query::$looping      = false;
+		\Bricks\Query::$loop_element = false;
+		lm_assert( Marker::uses_class_selector( [ 'id' => 'abcdef' ] ) === false, 'forced is_looping, no loop running' );
+
+		\Bricks\Query::$forced       = false;
+		\Bricks\Query::$looping      = 'q1';
+		\Bricks\Query::$loop_element = 'loopel';
+		lm_assert( Marker::uses_class_selector( [ 'id' => 'loopel' ] ) === true, 'the element that holds the loop' );
+		lm_assert( Marker::uses_class_selector( [ 'id' => 'inside' ] ) === false, 'an element inside the loop' );
+
+		\Bricks\Query::$looping = false;
+		lm_assert( Marker::uses_class_selector( [ 'id' => 'outside' ] ) === false, 'no loop' );
+		lm_assert(
+			Marker::uses_class_selector(
+				[
+					'id'  => 'comp',
+					'cid' => 'x',
+				]
+			) === true,
+			'a component'
+		);
+	},
 ];

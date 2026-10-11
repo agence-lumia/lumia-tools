@@ -1,4 +1,4 @@
-import { newPage, pageUrl, assert } from '../lib.mjs';
+import { newPage, pageUrl, assert, withMotionSettings } from '../lib.mjs';
 
 const START_AT = '--lm-start-at';
 
@@ -83,5 +83,20 @@ export default async function () {
 	const small = await phone.evaluate( ( prop ) => [ ...document.querySelectorAll( '.brxe-mkbp' ) ].map( ( node ) => getComputedStyle( node ).getPropertyValue( prop ).trim() ), START_AT );
 	assert( small.length === 3 && small.every( ( v ) => v === '10%' ), `loop item, mobile: ${ START_AT }=${ small.join( ',' ) } (expected 10% x3)` );
 
+	// Names typed in the "CSS classes" field: marked like a global class, the former one while the compatibility setting is on.
+	const typed = await page.evaluate( () => [ 'mkrwsk', 'mkrwlm' ].map( ( id ) => document.getElementById( `brxe-${ id }` ).getAttribute( 'data-lm' ) ) );
+	assert( typed[ 0 ] === 'enter', `sk-fade typed in CSS classes: data-lm=${ typed[ 0 ] }` );
+	assert( typed[ 1 ] === 'enter', `lm-reveal typed in CSS classes: data-lm=${ typed[ 1 ] }` );
+
 	assert( page.errors.length === 0, `page errors: ${ page.errors.join( ' | ' ) }` );
+
+	// Compatibility off: the former name typed in CSS classes is no longer an effect, the new one still is.
+	await withMotionSettings( { legacy_classes: false }, async () => {
+		const off = await serverMarkup();
+		await off.goto( pageUrl( 'lm-e2e-marker' ), { waitUntil: 'load' } );
+		const marks = await off.evaluate( () => [ 'mkrwsk', 'mkrwlm' ].map( ( id ) => document.getElementById( `brxe-${ id }` ).getAttribute( 'data-lm' ) ) );
+		assert( marks[ 0 ] === null, `sk-fade typed, compatibility off: data-lm=${ marks[ 0 ] }` );
+		assert( marks[ 1 ] === 'enter', `lm-reveal typed, compatibility off: data-lm=${ marks[ 1 ] }` );
+		await off.context().close();
+	} );
 }

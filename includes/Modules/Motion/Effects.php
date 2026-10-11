@@ -68,6 +68,12 @@ final class Effects {
 	 * @return array<string, array{class: string, family: string, scrub: bool, params: string[]}>
 	 */
 	public static function catalog(): array {
+		// Asked for every rendered element: built once per request.
+		static $catalog = null;
+		if ( null !== $catalog ) {
+			return $catalog;
+		}
+
 		$definitions = [
 			'fade'          => [ self::FAMILY_ENTER, false, [] ],
 			'reveal'        => [ self::FAMILY_ENTER, false, [ 'distance' ] ],
@@ -81,15 +87,17 @@ final class Effects {
 			'underline'     => [ self::FAMILY_UNDERLINE, false, [] ],
 		];
 
-		$catalog = [];
+		$built = [];
 		foreach ( $definitions as $slug => $definition ) {
-			$catalog[ $slug ] = [
+			$built[ $slug ] = [
 				'class'  => 'lm-' . $slug,
 				'family' => $definition[0],
 				'scrub'  => $definition[1],
 				'params' => $definition[2],
 			];
 		}
+
+		$catalog = $built;
 
 		return $catalog;
 	}
@@ -171,10 +179,16 @@ final class Effects {
 	 * @return string|null The effect slug, or null when the class is not an effect.
 	 */
 	public static function slug_for_class( string $class_name, bool $legacy ): ?string {
-		foreach ( self::catalog() as $slug => $effect ) {
-			if ( $effect['class'] === $class_name ) {
-				return $slug;
+		static $by_class = null;
+		if ( null === $by_class ) {
+			$by_class = [];
+			foreach ( self::catalog() as $slug => $effect ) {
+				$by_class[ $effect['class'] ] = $slug;
 			}
+		}
+
+		if ( isset( $by_class[ $class_name ] ) ) {
+			return $by_class[ $class_name ];
 		}
 
 		if ( $legacy && isset( Legacy::CLASS_ALIASES[ $class_name ] ) ) {

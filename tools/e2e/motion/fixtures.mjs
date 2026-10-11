@@ -70,6 +70,9 @@ PAGES[ 'lm-e2e-marker' ] = {
 				[ heading( '{post_title}', {}, { id: 'mkselfh' } ) ],
 				{ id: 'mkself', classes: [ 'lm-e2e-preset' ] }
 			),
+			// Names typed in the "CSS classes" field (no global class): the former one counts while the compatibility setting is on.
+			heading( 'Former name typed', { _cssClasses: 'sk-fade' }, { id: 'mkrwsk' } ),
+			heading( 'Name typed', { _cssClasses: 'hero lm-reveal' }, { id: 'mkrwlm' } ),
 		] ),
 	],
 };
@@ -117,6 +120,9 @@ PAGES[ 'lm-e2e-basic' ] = {
 				{ id: 'binval' }
 			),
 			heading( 'Former class name', {}, { id: 'bskfd', classes: [ 'sk-fade' ] } ),
+			// Names typed in the "CSS classes" field, no global class.
+			heading( 'Former name typed', { _cssClasses: 'sk-fade' }, { id: 'brawsk' } ),
+			heading( 'Name typed', { _cssClasses: 'lm-reveal' }, { id: 'brawlm' } ),
 			spacer( 2600 ),
 		] ),
 	],
