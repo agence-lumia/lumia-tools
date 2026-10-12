@@ -943,7 +943,6 @@
   var counterWaiting = []; // pending items started before the adapter was there
   var counterTimer = 0;
   var counterGaveUp = false;
-  var counterLinear = {}; // CSS linear() of each spring, by curve key
   var COUNTER_COPY_STYLE = ";position:static;display:inline-block;margin:0 -1px 0 0;vertical-align:top";
 
   function counterAdapter() {
@@ -974,20 +973,14 @@
     return { node: found, fmt: fmt };
   }
 
-  // The curve of the counter as a CSS easing. Snappy and bouncy are already smooth here
-  // (core.resolve): a counter never goes past its value.
-  function counterEasing(o) {
-    if (o.easeKey === "linear") {
-      return "linear";
+  // The curve of the counter as a CSS easing (core.counterEase): a custom curve that would go
+  // past the value falls back to smooth, said once in debug mode.
+  function counterEasing(item) {
+    var ease = core.counterEase(item.options);
+    if (ease.warning) {
+      logOnce(item.el, describe(item.el) + ": " + ease.warning);
     }
-    if (o.easeKey === "custom" && o.curve) {
-      return "cubic-bezier(" + o.curve + ")";
-    }
-    var key = has(core.BOUNCE, o.easeKey) ? o.easeKey : "smooth";
-    if (!has(counterLinear, key)) {
-      counterLinear[key] = core.cssLinear(core.BOUNCE[key]).linear;
-    }
-    return counterLinear[key];
+    return ease.easing;
   }
 
   // Replaces the number with its NumberFlow element, at the start value. False when it stays as written.
@@ -1066,7 +1059,7 @@
     item.count.adapter.play(item.count.handle, {
       duration: o.tweenDuration,
       delay: o.delay,
-      easing: counterEasing(o),
+      easing: counterEasing(item),
       onEnd: function () {
         if (item.state === "playing") {
           item.state = "done";

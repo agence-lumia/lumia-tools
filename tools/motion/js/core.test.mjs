@@ -733,3 +733,22 @@ test("parseCounter: a separator touching the number outside it is left alone", (
   assert.notEqual(core.parseCounter("+150 clients."), null);
   assert.notEqual(core.parseCounter("1,5 %"), null);
 });
+
+test("counterEase: a custom curve that would overshoot falls back to smooth", () => {
+  const smooth = core.cssLinear(core.BOUNCE.smooth).linear;
+  const counter = (ease, custom) => core.counterEase(core.resolve("counter", { ease, "ease-custom": custom }, CFG));
+
+  assert.deepEqual(counter("linear", ""), { easing: "linear", warning: "" });
+  assert.deepEqual(counter("smooth", ""), { easing: smooth, warning: "" });
+  assert.deepEqual(counter("bouncy", ""), { easing: smooth, warning: "" });
+
+  const inside = counter("custom", "cubic-bezier(0.2, 0, 0.3, 1)");
+  assert.equal(inside.easing, "cubic-bezier(0.2,0,0.3,1)");
+  assert.equal(inside.warning, "");
+
+  for (const curve of ["cubic-bezier(0.3, 1.4, 0.5, 1)", "cubic-bezier(0.3, 0, 0.5, 1.2)", "cubic-bezier(0.3, -0.4, 0.5, 1)", "cubic-bezier(0.3, 0, 0.5, -0.1)"]) {
+    const got = counter("custom", curve);
+    assert.equal(got.easing, smooth, curve);
+    assert.match(got.warning, /smooth/, curve);
+  }
+});

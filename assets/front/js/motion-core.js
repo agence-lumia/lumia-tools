@@ -381,6 +381,32 @@
     };
   }
 
+  var counterLinearCache = {};
+
+  // The CSS easing of a counter (NumberFlow), from resolved options: linear, the custom
+  // cubic-bezier() when both its y values stay in [0, 1], else the smooth spring as linear()
+  // (snappy and bouncy are already smooth for a counter, see resolveEase). A y outside [0, 1]
+  // would show a value past the written one, or below the start: clamping it would give
+  // another curve than the one typed, so the counter uses smooth and says why (warning).
+  function counterEase(o) {
+    var warning = "";
+    if (o.easeKey === "linear") {
+      return { easing: "linear", warning: warning };
+    }
+    if (o.easeKey === "custom" && o.curve) {
+      var v = String(o.curve).split(",").map(parseFloat);
+      if (v.length === 4 && v[1] >= 0 && v[1] <= 1 && v[3] >= 0 && v[3] <= 1) {
+        return { easing: "cubic-bezier(" + o.curve + ")", warning: warning };
+      }
+      warning = "Easing cubic-bezier(" + o.curve + ") goes past the counter value: smooth curve used.";
+    }
+    var key = has(BOUNCE, o.easeKey) ? o.easeKey : "smooth";
+    if (!has(counterLinearCache, key)) {
+      counterLinearCache[key] = cssLinear(BOUNCE[key]).linear;
+    }
+    return { easing: counterLinearCache[key], warning: warning };
+  }
+
   /* ================================================================
    * TEMPO
    * ================================================================ */
@@ -828,6 +854,7 @@
     spring: spring,
     cssLinear: cssLinear,
     resolveEase: resolveEase,
+    counterEase: counterEase,
     tempoFactor: tempoFactor,
     resolve: resolve,
     signature: signature,
