@@ -1443,25 +1443,28 @@
     markerTriggers = [];
   }
 
-  // Builder: one marker-only trigger per item, at its start (and its end for a scrub). Drawn
-  // again whenever the items change; they follow nothing and play nothing.
+  // Builder: one marker-only trigger per item, with GSAP's own markers, the ones ?lmDebug shows on
+  // the public site: the start and the end on the element, the scroller-start and scroller-end
+  // lines on the viewport. A scrub gets its end; a one-shot effect (entrance, text, counter) is
+  // created with no end, as the engine creates it, so the end shown is ScrollTrigger's default
+  // ("bottom top"), where its trigger kills itself. Drawn again whenever the items change; they
+  // follow nothing and play nothing.
   function drawMarkers() {
     clearMarkers();
     if (!BUILDER || !markersOn || !running) {
       return;
     }
     items.forEach(function (item) {
-      var scrub = !!item.options.scrub;
+      var vars = {
+        trigger: item.el,
+        start: item.options.start,
+        markers: { startColor: "green", endColor: "red", fontSize: "12px", indent: 0 },
+      };
+      if (item.options.scrub) {
+        vars.end = item.options.end;
+      }
       try {
-        markerTriggers.push(
-          ScrollTrigger.create({
-            trigger: item.el,
-            start: item.options.start,
-            end: scrub ? item.options.end : item.options.start,
-            // A one-shot effect has a start only: its end marker is drawn transparent.
-            markers: { startColor: "green", endColor: scrub ? "red" : "transparent", fontSize: "12px", indent: 0 },
-          })
-        );
+        markerTriggers.push(ScrollTrigger.create(vars));
       } catch (error) {
         report("could not draw the markers of " + describe(item.el) + ".", error);
       }

@@ -31,7 +31,34 @@ async function selectAndOpen( page, canvas, id ) {
 	await effect.waitFor( { state: 'visible', timeout: 10000 } );
 }
 
-const markerCount = ( canvas ) => canvas.evaluate( () => document.querySelectorAll( '.gsap-marker-start' ).length );
+const markerCount = ( canvas ) => canvas.evaluate( () => document.querySelectorAll( '[class*="gsap-marker-"]' ).length );
+
+/**
+ * The markers of the canvas, as GSAP's own debug markers show them: per item a start and an end
+ * on the element, and the scroller-start and scroller-end lines on the viewport, none of them
+ * transparent (a one-shot effect used to get a transparent end).
+ */
+async function assertFullMarkers( canvas ) {
+	const m = await canvas.evaluate( () => {
+		const all = ( type ) => Array.from( document.querySelectorAll( `.gsap-marker-${ type }` ) );
+		const shown = ( el ) => {
+			const cs = getComputedStyle( el );
+			return cs.color !== 'rgba(0, 0, 0, 0)' && cs.display !== 'none' && cs.visibility !== 'hidden';
+		};
+		const types = [ 'start', 'end', 'scroller-start', 'scroller-end' ];
+		const out = { items: window.lumiaMotion._debug.items().length };
+		types.forEach( ( type ) => {
+			out[ type ] = all( type ).length;
+			out[ type + '-hidden' ] = all( type ).filter( ( el ) => ! shown( el ) ).length;
+		} );
+		return out;
+	} );
+	assert( m.items > 0, 'no item in the canvas' );
+	for ( const type of [ 'start', 'end', 'scroller-start', 'scroller-end' ] ) {
+		assert( m[ type ] === m.items, `${ m[ type ] } .gsap-marker-${ type } for ${ m.items } items, expected one per item` );
+		assert( m[ type + '-hidden' ] === 0, `${ m[ type + '-hidden' ] } .gsap-marker-${ type } drawn invisible` );
+	}
+}
 
 export default async function () {
 	const signIn = await newPage();
@@ -135,6 +162,7 @@ export default async function () {
 	await canvas2.waitForFunction( () => document.querySelectorAll( '.gsap-marker-start' ).length > 0, null, { timeout: 2000 } ).catch( () => {
 		throw new Error( 'Show markers: no .gsap-marker-start in the canvas' );
 	} );
+	await assertFullMarkers( canvas2 );
 	// Stable: drawing the markers must not make the canvas scan again and again.
 	const s0 = await canvas2.evaluate( () => window.lumiaMotion._debug.stats().scans );
 	await sleep( 1000 );
@@ -142,7 +170,7 @@ export default async function () {
 	assert( s1 - s0 <= 1, `the markers keep the canvas scanning: ${ s1 - s0 } scans in 1 s` );
 	await panel.screenshot( { path: OUT + 'panel-v2.png' } );
 	await markers.uncheck();
-	await canvas2.waitForFunction( () => document.querySelectorAll( '.gsap-marker-start' ).length === 0, null, { timeout: 2000 } ).catch( () => {
+	await canvas2.waitForFunction( () => document.querySelectorAll( '[class*="gsap-marker-"]' ).length === 0, null, { timeout: 2000 } ).catch( () => {
 		throw new Error( 'Show markers off: markers left in the canvas' );
 	} );
 	await markers.check();
