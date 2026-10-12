@@ -4,9 +4,8 @@
 // HTML, every module request started after the first contentful paint), the 3 s safety that
 // makes everything visible when the engine does not start or a library is blocked, the builder
 // windows, and the former snippet still being active.
-import { newPage, login, pageUrl, assert, snippet, items, BASE } from '../lib.mjs';
+import { foreignRequests, newPage, login, pageUrl, assert, snippet, items } from '../lib.mjs';
 
-const HOST = new URL( BASE ).host;
 const GSAP_FILES = /gsap|ScrollTrigger|SplitText|\/motion\.js(\?|$)/i;
 // Every file of the module a front page may request (the counter modules have their own scenario).
 const MODULE_FILES = /\/(gsap|ScrollTrigger|SplitText|lenis)(\.min)?\.(js|css)|\/motion(-core|-scroll|-builder)?\.(js|css)(\?|$)/;
@@ -83,7 +82,7 @@ export default async function () {
 		assert( /\.lm-ready/.test( await page.locator( 'style#lumia-motion-inline-css' ).textContent().catch( () => '' ) ), 'lm-e2e-none: the inline motion styles are missing' );
 		assert( await page.evaluate( () => document.documentElement.classList.contains( 'lm-js' ) ), 'lm-e2e-none: <html> has no lm-js' );
 		assert( page.errors.length === 0, `lm-e2e-none: page errors: ${ page.errors.join( ' | ' ) }` );
-		assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-none: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
+		assert( foreignRequests( urls ).length === 0, `lm-e2e-none: foreign host: ${ foreignRequests( urls ).join( ', ' ) }` );
 	}
 
 	// An animated page: GSAP and ScrollTrigger, the engine and its configuration, no SplitText.
@@ -111,7 +110,44 @@ export default async function () {
 
 		await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 5000 } );
 		assert( page.errors.length === 0, `lm-e2e-basic: page errors: ${ page.errors.join( ' | ' ) }` );
-		assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-basic: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
+		assert( foreignRequests( urls ).length === 0, `lm-e2e-basic: foreign host: ${ foreignRequests( urls ).join( ', ' ) }` );
+	}
+
+	// Only first-screen effects (an entrance played in CSS, a settled text, a settled counter): no engine, no
+	// GSAP, no SplitText, no counter module (smooth scroll, on every page when enabled, may still load); the
+	// styles stay inline. One entrance below the fold brings the engine back.
+	{
+		const page = await newPage();
+		const urls = await load( page, 'lm-e2e-first' );
+		await page.waitForTimeout( 1500 );
+		const files = urls.filter( ( u ) => /\/front\/js\//.test( u ) && ! /\/(lenis\.min|motion-scroll)\.js/.test( u ) );
+		assert( files.length === 0, `lm-e2e-first: module scripts requested: ${ files.join( ', ' ) }` );
+		const g = await globals( page );
+		assert( g.gsap === 'undefined' && g.config === null, `lm-e2e-first: gsap=${ g.gsap } config=${ JSON.stringify( g.config ) }` );
+		const html = await ( await fetch( pageUrl( 'lm-e2e-first' ) ) ).text();
+		assert( ! html.includes( 'lumiaMotionConfig' ) && ! html.includes( 'importmap' ), 'lm-e2e-first: the engine configuration or the counter import map is printed' );
+		assert( /<style id=["']lumia-motion-inline-css["']/.test( html ), 'lm-e2e-first: motion.css is not inline' );
+		const marks = await page.evaluate( () => [ 'fshd', 'fsln', 'fsct' ].map( ( id ) => {
+			const node = document.getElementById( `brxe-${ id }` );
+			return `${ node.getAttribute( 'data-lm-load' ) }/${ node.getAttribute( 'data-lm-settled' ) }`;
+		} ) );
+		assert( marks.join( ' ' ) === 'blur-up/null null/text null/counter', `lm-e2e-first: marks ${ marks.join( ' ' ) }` );
+		assert( page.errors.length === 0, `lm-e2e-first: page errors: ${ page.errors.join( ' | ' ) }` );
+		await page.context().close();
+	}
+	{
+		const page = await newPage();
+		const urls = await load( page, 'lm-e2e-first-below' );
+		await page.waitForFunction( () => window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 5000 } ).catch( () => {
+			throw new Error( 'lm-e2e-first-below: the engine never started' );
+		} );
+		for ( const file of [ 'gsap.min.js', 'ScrollTrigger.min.js', 'motion-core.js', 'motion.js' ] ) {
+			assert( urls.some( ( u ) => u.includes( `/${ file }` ) ), `lm-e2e-first-below: ${ file } not requested` );
+		}
+		// The settled text and counter need neither SplitText nor NumberFlow.
+		const extra = urls.filter( ( u ) => /SplitText|number-flow|motion-counter/.test( u ) );
+		assert( extra.length === 0, `lm-e2e-first-below: requested for settled elements only: ${ extra.join( ', ' ) }` );
+		await page.context().close();
 	}
 
 	// A text effect adds SplitText.
@@ -121,7 +157,7 @@ export default async function () {
 		assert( urls.some( ( u ) => u.includes( '/SplitText.min.js' ) ), 'lm-e2e-text: SplitText not requested' );
 		const g = await globals( page );
 		assert( g.splitText === 'function' || g.splitText === 'object', `lm-e2e-text: window.SplitText is ${ g.splitText }` );
-		assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-text: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
+		assert( foreignRequests( urls ).length === 0, `lm-e2e-text: foreign host: ${ foreignRequests( urls ).join( ', ' ) }` );
 	}
 
 	// The served HTML: no <script src> and no stylesheet link for the module's files, the styles inline,

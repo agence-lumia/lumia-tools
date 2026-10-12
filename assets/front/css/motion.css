@@ -167,8 +167,11 @@ html:not(.lenis) [id] {
  * the initial states, or by the 3 s safety of that same script.
  * ================================================================ */
 
+/* Not the elements the engine leaves alone: load animations (data-lm-load) and the settled
+ * text and counter effects of the first screen (data-lm-settled, which may hold an entrance on
+ * another breakpoint). On a page with only those, no engine loads to add lm-ready. */
 @media (prefers-reduced-motion: no-preference) {
-	.lm-js:not(.lm-ready) [data-lm~="enter"]:not([data-lm-load]) {
+	.lm-js:not(.lm-ready) [data-lm~="enter"]:not([data-lm-load]):not([data-lm-settled]) {
 		opacity: 0;
 	}
 }
@@ -176,7 +179,8 @@ html:not(.lenis) [id] {
 /* ================================================================
  * LOAD ANIMATIONS
  * Entrance effects of the first screen (data-lm-load, set by Marker) play here from the first
- * frame instead of waiting for the engine, which leaves them alone. The values are resolved at
+ * frame instead of waiting for the engine, which leaves them alone. Text and counter effects
+ * there have no CSS version: they are shown as written (data-lm-settled), no rule needed. The values are resolved at
  * render time and written inline: --lm-load-duration, --lm-load-move-duration (the duration
  * times the settle factor of a spring), --lm-load-delay (delay + rank in the lot x stagger),
  * --lm-load-ease (transform: overshoot allowed), --lm-load-safe-ease (opacity and blur: never
@@ -354,8 +358,9 @@ lm-number-flow {
 }
 
 /* Copy of a split text or of a counter kept for screen readers (and, for a counter, for
- * crawlers: innerText leaves NumberFlow's shadow DOM out): hidden from the eye, never selected (a copy-paste would get the text twice). The engine sets the same
- * styles inline, in case an optimiser strips this rule. */
+ * crawlers: innerText leaves NumberFlow's shadow DOM out): hidden from the eye, never
+ * selected (a copy-paste would get the text twice). The engine sets the same styles inline,
+ * in case an optimiser strips this rule. */
 .lm-sr {
 	position: absolute;
 	width: 1px;

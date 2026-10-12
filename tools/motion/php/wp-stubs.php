@@ -78,3 +78,12 @@ if ( ! function_exists( 'determine_locale' ) ) {
 		return 'en_US';
 	}
 }
+
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+	/**
+	 * AJAX stand-in: true while a test sets $GLOBALS['lm_test_doing_ajax'].
+	 */
+	function wp_doing_ajax(): bool {
+		return ! empty( $GLOBALS['lm_test_doing_ajax'] );
+	}
+}

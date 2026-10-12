@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-11T23:07:39+00:00\n"
+"POT-Creation-Date: 2026-10-12T11:02:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -4370,7 +4370,7 @@ msgid "Always"
 msgstr ""
 
 #: includes/Modules/Motion/Controls.php:249
-msgid "Auto: animated as soon as the page opens when the element is in the header or the first section. Always: on load wherever it is. Never: always on scroll. Breakpoint values are ignored."
+msgid "Auto: in the header or the first section, an entrance plays as soon as the page opens and a text effect or a counter is shown as written. Always: an entrance plays on load wherever it is. Never: always on scroll. Breakpoint values are ignored."
 msgstr ""
 
 #: includes/Modules/Motion/Controls.php:256

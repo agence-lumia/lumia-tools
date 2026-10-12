@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  *   (the styles, printed inline: a linked stylesheet would block the first paint).
  * - `wp_head` (priority 1): the inline script that sets `lm-js` and the 3 s safety.
  * - `wp_footer` (priority 19): the page is rendered, popups included (Bricks prints them
- *   at priority 10), and `Marker::page_families()` knows which effects are on it. On a
+ *   at priority 10), and `Marker::engine_families()` knows which effects the engine plays. On a
  *   public page the scripts are not printed as tags: an inline loader injects them once
  *   the page has painted, see print_loader(). In the canvas they are printed by WordPress
  *   at priority 20, as usual.
@@ -181,7 +181,7 @@ final class Assets {
 		}
 
 		$canvas = self::is_builder_canvas();
-		if ( ! $canvas && ! in_array( Effects::FAMILY_COUNTER, Marker::page_families(), true ) ) {
+		if ( ! $canvas && ! in_array( Effects::FAMILY_COUNTER, Marker::engine_families(), true ) ) {
 			return;
 		}
 
@@ -316,7 +316,7 @@ final class Assets {
 
 		$canvas    = self::is_builder_canvas();
 		$engine    = $canvas || $this->page_needs_engine();
-		$splitting = $canvas || in_array( Effects::FAMILY_TEXT, Marker::page_families(), true );
+		$splitting = $canvas || in_array( Effects::FAMILY_TEXT, Marker::engine_families(), true );
 
 		$this->register_libraries();
 
@@ -454,10 +454,13 @@ final class Assets {
 	 * Whether the rendered page holds an effect that needs the engine.
 	 *
 	 * The underline is drawn by the stylesheet alone: a page that only has underlines
-	 * does not need GSAP.
+	 * does not need GSAP. Neither do the elements the engine leaves alone: entrances played in
+	 * CSS on load (`data-lm-load`) and settled text and counter effects of the first screen
+	 * (`data-lm-settled`), see Marker::engine_families(). A page whose effects are all on the
+	 * first screen loads no script; its styles stay inline.
 	 */
 	private function page_needs_engine(): bool {
-		$families = array_diff( Marker::page_families(), [ Effects::FAMILY_UNDERLINE ] );
+		$families = array_diff( Marker::engine_families(), [ Effects::FAMILY_UNDERLINE ] );
 
 		return array() !== $families;
 	}

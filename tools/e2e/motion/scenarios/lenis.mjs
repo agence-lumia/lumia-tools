@@ -4,10 +4,9 @@
 // when the setting is off. The lab sets --navbar-height to 61 px (its custom CSS uses
 // !important): the scenario overrides it with a clamp() in rem, and another value under
 // 1000 px, to exercise what the offset has to read.
-import { newPage, pageUrl, assert, near, items, injectCss, withMotionSettings, BASE } from '../lib.mjs';
+import { foreignRequests, newPage, pageUrl, assert, near, items, injectCss, withMotionSettings } from '../lib.mjs';
 
 const NAVBAR_CSS = ':root{--navbar-height:clamp(60px,4rem,90px) !important}@media (max-width:1000px){:root{--navbar-height:90px !important}}';
-const HOST = new URL( BASE ).host;
 
 const lenisReady = ( page ) => page.waitForFunction(
 	() => document.documentElement.classList.contains( 'lm-ready' ) && !! window.lumiaLenis,
@@ -116,7 +115,7 @@ async function plainPage() {
 	assert( lenisCss && /html\.lenis/.test( lenisCss.text ) && /lenis-stopped/.test( lenisCss.text ), 'lm-e2e-none: the Lenis styles are not inline' );
 	assert( lenisCss.after, 'lm-e2e-none: the Lenis styles come before the motion styles' );
 	assert( ! urls.some( ( u ) => /gsap|ScrollTrigger|SplitText|\/motion\.js/i.test( u ) ), 'lm-e2e-none: a GSAP or engine file was requested' );
-	assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-none: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
+	assert( foreignRequests( urls ).length === 0, `lm-e2e-none: foreign host: ${ foreignRequests( urls ).join( ', ' ) }` );
 	const state = await page.evaluate( () => ( {
 		gsap: typeof window.gsap,
 		lenis: typeof window.lumiaLenis,

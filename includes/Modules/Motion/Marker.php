@@ -16,7 +16,8 @@ defined( 'ABSPATH' ) || exit;
  * any rule: without it a class preset would override the element.
  *
  * Entrance effects of the first screen also get `data-lm-load` and their resolved values
- * (LoadAnimation): the stylesheet plays them from the first frame, the engine skips them.
+ * (LoadAnimation): the stylesheet plays them from the first frame, the engine skips them. Text
+ * and counter effects there get `data-lm-settled`: shown as written, the engine skips them too.
  *
  * The pure parts (families, inline_style) call no WordPress function except through
  * Controls::definitions(), so tools/motion/php/MarkerTest.php runs them with stand-ins.
@@ -38,15 +39,22 @@ final class Marker {
 	 */
 	const VALUE_PATTERN = '/^[A-Za-z0-9%#(),.+=\- ]+$/';
 
+	/** Attribute of a text or counter effect of the first screen, shown as written (see load_attributes()). */
+	const SETTLED = 'data-lm-settled';
+
+	/** Families settled in the load zone: those with no CSS version of their animation. */
+	const SETTLED_FAMILIES = [ Effects::FAMILY_TEXT, Effects::FAMILY_COUNTER ];
+
 	/** Setting key of the effect, with its breakpoint variants (`_lmEffect:mobile_portrait`). */
 	const EFFECT_KEY = '_lmEffect';
 
 	/**
-	 * Families seen while rendering the current request.
+	 * Families of the elements the engine plays: not those played in CSS on load
+	 * (`data-lm-load`) nor those settled (`data-lm-settled`), which it leaves alone.
 	 *
 	 * @var array<string, true>
 	 */
-	private static array $seen = [];
+	private static array $engine_seen = [];
 
 	/**
 	 * Global classes of the site, by ID, read once per request.
@@ -72,12 +80,13 @@ final class Marker {
 	}
 
 	/**
-	 * Families of the elements rendered so far in this request, in the fixed order.
+	 * Families of the elements rendered so far that the engine plays, in the fixed order: the
+	 * elements played in CSS on load and the settled ones are left out.
 	 *
 	 * @return string[]
 	 */
-	public static function page_families(): array {
-		return array_values( array_intersect( self::FAMILY_ORDER, array_keys( self::$seen ) ) );
+	public static function engine_families(): array {
+		return array_values( array_intersect( self::FAMILY_ORDER, array_keys( self::$engine_seen ) ) );
 	}
 
 	/**
@@ -113,10 +122,6 @@ final class Marker {
 			return $attributes;
 		}
 
-		foreach ( $families as $family ) {
-			self::$seen[ $family ] = true;
-		}
-
 		$attributes['_root']['data-lm'] = implode( ' ', $families );
 
 		if ( self::uses_class_selector( $data ) ) {
@@ -129,12 +134,22 @@ final class Marker {
 
 		// The builder canvas shows the final state and replays through the engine: never in CSS.
 		// Attributes already completed (the filter run twice) keep their rank in the lot.
-		if ( ! $builder && ! isset( $attributes['_root']['data-lm-load'] ) ) {
+		$done = isset( $attributes['_root']['data-lm-load'] ) || isset( $attributes['_root'][ self::SETTLED ] );
+		if ( ! $builder && ! $done ) {
 			[ $area, $depth, $outer ] = self::render_context();
 			$load                     = self::load_attributes( $data, $settings, $classes, $area, self::$legacy, $depth, $outer );
-			if ( array() !== $load ) {
+			if ( isset( $load['data-lm-load'], $load['style'] ) ) {
 				$attributes['_root']['data-lm-load'] = $load['data-lm-load'];
 				$attributes['_root']['style']        = self::merge_style( $attributes['_root']['style'] ?? null, $load['style'] );
+			} elseif ( isset( $load[ self::SETTLED ] ) ) {
+				$attributes['_root'][ self::SETTLED ] = $load[ self::SETTLED ];
+			}
+		}
+
+		// The engine skips both kinds: a page whose effects are all of them needs no engine.
+		if ( ! isset( $attributes['_root']['data-lm-load'] ) && ! isset( $attributes['_root'][ self::SETTLED ] ) ) {
+			foreach ( $families as $family ) {
+				self::$engine_seen[ $family ] = true;
 			}
 		}
 
@@ -142,11 +157,17 @@ final class Marker {
 	}
 
 	/**
-	 * Load-animation attributes of an element, or an empty array when the engine plays it.
+	 * Load attributes of an element, or an empty array when the engine plays it.
 	 *
-	 * Records the element in the load zone (LoadAnimation::observe()), then: an entrance effect
-	 * set to "always", or to "auto" (the default) inside the zone, plays in CSS on load; "never",
-	 * any other family, or no base effect, does not.
+	 * Records the element in the load zone (LoadAnimation::observe()), then, unless "On load" is
+	 * "never":
+	 * - an entrance base effect set to "always", or to "auto" (the default) inside the zone, plays
+	 *   in CSS on load: `data-lm-load` and its resolved values;
+	 * - otherwise a text or counter effect (any breakpoint) inside the zone is settled:
+	 *   `data-lm-settled`, shown as written from the first frame. These have no CSS version, so
+	 *   the engine would split the painted text and slide it back in, or show the counter's
+	 *   value, then 0, then count; it leaves them alone instead. "always" does not extend the
+	 *   zone for them.
 	 *
 	 * @param array<mixed, mixed>                                            $element          Element data (id, parent...).
 	 * @param array<string, mixed>                                           $element_settings Element settings.
@@ -155,22 +176,32 @@ final class Marker {
 	 * @param bool                                                           $legacy           Whether the legacy class names count.
 	 * @param int                                                            $depth            Number of nested renders (1 = top level).
 	 * @param string                                                         $outer_area       Area of the outermost render, '' when unknown.
-	 * @return array<string, string> `data-lm-load` and `style`, or nothing.
+	 * @return array<string, string> `data-lm-load` and `style`, or `data-lm-settled`, or nothing.
 	 */
 	public static function load_attributes( array $element, array $element_settings, array $classes, string $area, bool $legacy, int $depth = 1, string $outer_area = '' ): array {
 		$in_zone = LoadAnimation::observe( $element, $area, $depth, $outer_area );
 
-		$slug = LoadAnimation::effect( $element_settings, $classes, $legacy );
-		if ( null === $slug || Effects::FAMILY_ENTER !== Effects::family( $slug ) ) {
-			return [];
-		}
-
 		$mode = LoadAnimation::mode( $element_settings, $classes );
-		if ( 'never' === $mode || ( 'auto' === $mode && ! $in_zone ) ) {
+		if ( 'never' === $mode ) {
 			return [];
 		}
 
-		return LoadAnimation::attributes( $slug, LoadAnimation::merged_settings( $element_settings, $classes ), LoadAnimation::config() );
+		$slug = LoadAnimation::effect( $element_settings, $classes, $legacy );
+		if ( null !== $slug && Effects::FAMILY_ENTER === Effects::family( $slug ) ) {
+			if ( 'auto' === $mode && ! $in_zone ) {
+				return [];
+			}
+
+			return LoadAnimation::attributes( $slug, LoadAnimation::merged_settings( $element_settings, $classes ), LoadAnimation::config() );
+		}
+
+		if ( ! $in_zone ) {
+			return [];
+		}
+
+		$settled = array_intersect( self::families( $element_settings, $classes, $legacy ), self::SETTLED_FAMILIES );
+
+		return array() === $settled ? [] : [ self::SETTLED => implode( ' ', $settled ) ];
 	}
 
 	/**

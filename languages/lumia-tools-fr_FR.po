@@ -5778,8 +5778,8 @@ msgstr "Afficher les repères"
 msgid "Trigger"
 msgstr "Déclenchement"
 
-msgid "Auto: animated as soon as the page opens when the element is in the header or the first section. Always: on load wherever it is. Never: always on scroll. Breakpoint values are ignored."
-msgstr "Auto : animé dès l'ouverture de la page s'il est dans l'en-tête ou la première section. Toujours : au chargement où qu'il soit. Jamais : toujours au défilement. Les valeurs par breakpoint sont ignorées."
+msgid "Auto: in the header or the first section, an entrance plays as soon as the page opens and a text effect or a counter is shown as written. Always: an entrance plays on load wherever it is. Never: always on scroll. Breakpoint values are ignored."
+msgstr "Auto : dans l'en-tête ou la première section, une entrée est jouée dès l'ouverture de la page, un effet de texte ou un compteur est affiché tel qu'écrit. Toujours : une entrée est jouée au chargement où qu'elle soit. Jamais : toujours au défilement. Les valeurs par breakpoint sont ignorées."
 
 msgid "The animation starts when this edge of the element reaches this height of the screen (0% = top, 100% = bottom)."
 msgstr "L'animation démarre quand ce repère de l'élément atteint cette hauteur de l'écran (0 % = haut, 100 % = bas)."

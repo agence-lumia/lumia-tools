@@ -138,6 +138,19 @@ export function items( page ) {
 	);
 }
 
+/**
+ * Requests of a page to another host than the site under test. Font files are left out: the lab
+ * copy keeps the font URLs of the production site in its theme CSS (lab.dev.agence-lumia.com),
+ * which have nothing to do with the module; a CDN script or stylesheet still counts.
+ *
+ * @param {string[]} urls Requested URLs.
+ * @return {string[]}
+ */
+export function foreignRequests( urls ) {
+	const host = new URL( BASE ).host;
+	return urls.filter( ( u ) => /^https?:/.test( u ) && new URL( u ).host !== host && ! /\.(woff2?|ttf|otf|eot)(\?|#|$)/i.test( new URL( u ).pathname ) );
+}
+
 export function assert( cond, msg ) {
 	if ( ! cond ) {
 		throw new Error( msg );

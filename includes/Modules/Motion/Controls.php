@@ -246,7 +246,7 @@ class Controls {
 					]
 				),
 				'placeholder' => __( 'Auto', 'lumia-tools' ),
-				'description' => __( 'Auto: animated as soon as the page opens when the element is in the header or the first section. Always: on load wherever it is. Never: always on scroll. Breakpoint values are ignored.', 'lumia-tools' ),
+				'description' => __( 'Auto: in the header or the first section, an entrance plays as soon as the page opens and a text effect or a counter is shown as written. Always: an entrance plays on load wherever it is. Never: always on scroll. Breakpoint values are ignored.', 'lumia-tools' ),
 			]
 		);
 

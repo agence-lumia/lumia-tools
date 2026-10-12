@@ -161,6 +161,39 @@ PAGES[ 'lm-e2e-load' ] = {
 	],
 };
 
+// Settled text and counters (settled): in the first section, a lines heading, a words scrub and a
+// counter are shown as written from the first paint; the same effects set to "never" still
+// animate. The entrance below the fold loads the engine, which must leave the settled ones alone.
+PAGES[ 'lm-e2e-settled' ] = {
+	title: 'LM E2E settled',
+	elements: [
+		section( [
+			heading( 'Hero lines, shown as written', { tag: 'h1' }, { id: 'sthead', classes: [ 'lm-lines' ] } ),
+			text( 'Words that would light up one by one, already lit on the first screen.', { tag: 'p' }, { id: 'stword', classes: [ 'lm-words' ] } ),
+			text( '1 250', {}, { id: 'stcntr', classes: [ 'lm-counter' ] } ),
+			heading( 'Lines on the engine path', { _lmLoad: 'never' }, { id: 'stnvln', classes: [ 'lm-lines' ] } ),
+			text( '2 480', { _lmLoad: 'never' }, { id: 'stnvct', classes: [ 'lm-counter' ] } ),
+		] ),
+		section( [ spacer( 2000 ), heading( 'Below the fold', {}, { id: 'stlate', classes: [ 'lm-fade' ] } ), spacer( 800 ) ] ),
+	],
+};
+
+// Only first-screen effects (loading): an entrance played in CSS, a settled text and a settled
+// counter. No script of the module may load. Its twin adds one entrance below the fold.
+const firstScreen = ( prefix ) => section( [
+	heading( 'First screen only', { tag: 'h1' }, { id: `${ prefix }hd`, classes: [ 'lm-blur-up' ] } ),
+	text( 'Settled lines', {}, { id: `${ prefix }ln`, classes: [ 'lm-lines' ] } ),
+	text( '1 250', {}, { id: `${ prefix }ct`, classes: [ 'lm-counter' ] } ),
+] );
+PAGES[ 'lm-e2e-first' ] = {
+	title: 'LM E2E first',
+	elements: [ firstScreen( 'fs' ), section( [ spacer( 2000 ), heading( 'No effect below', {}, { id: 'fsplain' } ) ] ) ],
+};
+PAGES[ 'lm-e2e-first-below' ] = {
+	title: 'LM E2E first below',
+	elements: [ firstScreen( 'fb' ), section( [ spacer( 2000 ), heading( 'Entrance below', {}, { id: 'fblate', classes: [ 'lm-fade' ] } ) ] ) ],
+};
+
 // A page too short for its last elements to reach their start: 30% and the preset's 60%.
 PAGES[ 'lm-e2e-short' ] = {
 	title: 'LM E2E short',
@@ -202,22 +235,26 @@ const WORDS_TEXT =
 	'Scroll back up and they fade again, scroll down and they come back, always in step with the scroll bar, ' +
 	'never ahead of it and never behind it, whatever the width of the screen they are read on.';
 
+// Everything sits in the first section, which tests the engine: "On load: never" on every
+// effect, otherwise they would be settled (shown as written, see lm-e2e-settled).
+const ENGINE = { _lmLoad: 'never' };
+
 PAGES[ 'lm-e2e-text' ] = {
 	title: 'LM E2E text',
 	elements: [
 		section( [
-			heading( 'Words one by one', { tag: 'h1', _lmEffect: 'words' }, { id: 'texthd' } ),
+			heading( 'Words one by one', { tag: 'h1', _lmEffect: 'words', ...ENGINE }, { id: 'texthd' } ),
 			spacer( 1200 ),
-			heading( 'Lines rise from under a mask', {}, { id: 'txlnhd', classes: [ 'lm-lines' ] } ),
+			heading( 'Lines rise from under a mask', ENGINE, { id: 'txlnhd', classes: [ 'lm-lines' ] } ),
 			spacer( 1200 ),
-			text( LINES_TEXT, { tag: 'p' }, { id: 'txlnpp', classes: [ 'lm-lines' ] } ),
+			text( LINES_TEXT, { tag: 'p', ...ENGINE }, { id: 'txlnpp', classes: [ 'lm-lines' ] } ),
 			spacer( 1200 ),
-			text( WORDS_TEXT, { tag: 'p' }, { id: 'txword', classes: [ 'lm-words' ] } ),
+			text( WORDS_TEXT, { tag: 'p', ...ENGINE }, { id: 'txword', classes: [ 'lm-words' ] } ),
 			spacer( 1200 ),
-			heading( 'Characters light up at the end', { tag: 'h3' }, { id: 'txchar', classes: [ 'lm-letters' ] } ),
+			heading( 'Characters light up at the end', { tag: 'h3', ...ENGINE }, { id: 'txchar', classes: [ 'lm-letters' ] } ),
 			spacer( 600 ),
-			text( 'Last words, started at 30%', { tag: 'p', _lmStartAt: '30' }, { id: 'txwlat', classes: [ 'lm-words' ] } ),
-			text( 'Last lines, started at 30%', { tag: 'p', _lmStartAt: '30' }, { id: 'txllat', classes: [ 'lm-lines' ] } ),
+			text( 'Last words, started at 30%', { tag: 'p', _lmStartAt: '30', ...ENGINE }, { id: 'txwlat', classes: [ 'lm-words' ] } ),
+			text( 'Last lines, started at 30%', { tag: 'p', _lmStartAt: '30', ...ENGINE }, { id: 'txllat', classes: [ 'lm-lines' ] } ),
 			spacer( 100 ),
 		] ),
 	],
@@ -225,26 +262,27 @@ PAGES[ 'lm-e2e-text' ] = {
 
 // Counters: one of each format in dynamic width (the default) and in fixed width, an ambiguous
 // text, inner markup, a bouncy curve, and a start the page cannot reach at the very bottom.
-const FIXED = { _lmCounterWidth: 'fixed' };
+// All in the first section, on the engine path ("On load: never").
+const FIXED = { _lmCounterWidth: 'fixed', ...ENGINE };
 PAGES[ 'lm-e2e-counter' ] = {
 	title: 'LM E2E counter',
 	elements: [
 		section( [
 			heading( 'Counters', { tag: 'h1' }, { id: 'cnthd' } ),
 			spacer( 1200 ),
-			text( '2024', {}, { id: 'cnyear', classes: [ 'lm-counter' ] } ),
-			text( '1 250', {}, { id: 'cngrp', classes: [ 'lm-counter' ] } ),
-			text( '98,5 %', {}, { id: 'cndec', classes: [ 'lm-counter' ] } ),
-			text( '+150 clients', {}, { id: 'cnpfx', classes: [ 'lm-counter' ] } ),
+			text( '2024', ENGINE, { id: 'cnyear', classes: [ 'lm-counter' ] } ),
+			text( '1 250', ENGINE, { id: 'cngrp', classes: [ 'lm-counter' ] } ),
+			text( '98,5 %', ENGINE, { id: 'cndec', classes: [ 'lm-counter' ] } ),
+			text( '+150 clients', ENGINE, { id: 'cnpfx', classes: [ 'lm-counter' ] } ),
 			text( '2024', FIXED, { id: 'cnyerf', classes: [ 'lm-counter' ] } ),
 			text( '1 250', FIXED, { id: 'cngrpf', classes: [ 'lm-counter' ] } ),
 			text( '98,5 %', FIXED, { id: 'cndecf', classes: [ 'lm-counter' ] } ),
 			text( '+150 clients', FIXED, { id: 'cnpfxf', classes: [ 'lm-counter' ] } ),
-			text( '24/7', {}, { id: 'cnamb', classes: [ 'lm-counter' ] } ),
-			text( '<strong>350</strong> projets', {}, { id: 'cnmark', classes: [ 'lm-counter' ] } ),
-			text( '100', { _lmEase: 'bouncy' }, { id: 'cnbnc', classes: [ 'lm-counter' ] } ),
+			text( '24/7', ENGINE, { id: 'cnamb', classes: [ 'lm-counter' ] } ),
+			text( '<strong>350</strong> projets', ENGINE, { id: 'cnmark', classes: [ 'lm-counter' ] } ),
+			text( '100', { _lmEase: 'bouncy', ...ENGINE }, { id: 'cnbnc', classes: [ 'lm-counter' ] } ),
 			spacer( 1200 ),
-			text( '75', { _lmStartAt: '30' }, { id: 'cnlate', classes: [ 'lm-counter' ] } ),
+			text( '75', { _lmStartAt: '30', ...ENGINE }, { id: 'cnlate', classes: [ 'lm-counter' ] } ),
 			spacer( 100 ),
 		] ),
 	],

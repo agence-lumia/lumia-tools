@@ -7,7 +7,7 @@
 
 // Development-only test file: it is not plugin code. Assertions read as
 // "actual === expected", so Yoda conditions would only make them harder to read.
-// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals, WordPress.PHP.YodaConditions, WordPress.WP.AlternativeFunctions
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals, WordPress.PHP.YodaConditions, WordPress.WP.AlternativeFunctions, WordPress.PHP.DevelopmentFunctions.error_log_var_export
 
 declare( strict_types=1 );
 
@@ -625,11 +625,208 @@ return [
 		);
 		lm_assert( ( $got['data-lm-load'] ?? null ) === 'fade', 'always outside the zone: ' . json_encode( $got ) );
 
-		// Only the enter family plays in CSS.
+		// Only the enter family plays in CSS: a text effect of the zone is shown as written instead.
 		$text = [
 			'id'     => 'hd0004',
 			'parent' => 'sec001',
 		];
-		lm_assert( Marker::load_attributes( $text, [ '_lmEffect' => 'lines' ], [], 'content', true ) === [], 'text effect' );
+		$got  = Marker::load_attributes( $text, [ '_lmEffect' => 'lines' ], [], 'content', true );
+		lm_assert( ! isset( $got['data-lm-load'] ), 'text effect never plays in CSS: ' . json_encode( $got ) );
+	},
+	'marker: text and counter effects of the zone are settled' => static function (): void {
+		LoadAnimation::reset();
+		LoadAnimation::configure( lm_load_config() );
+		$hero = [
+			'id'     => 'sec001',
+			'parent' => 0,
+		];
+		Marker::load_attributes( $hero, [], [], 'content', true );
+		$in = static function ( string $id ): array {
+			return [
+				'id'     => $id,
+				'parent' => 'sec001',
+			];
+		};
+
+		$got = Marker::load_attributes( $in( 'tx0001' ), [ '_lmEffect' => 'lines' ], [], 'content', true );
+		lm_assert( $got === [ 'data-lm-settled' => 'text' ], 'lines in the zone: ' . json_encode( $got ) );
+
+		$got = Marker::load_attributes( $in( 'tx0002' ), [ '_lmEffect' => 'words' ], [], 'content', true );
+		lm_assert( $got === [ 'data-lm-settled' => 'text' ], 'scrub in the zone: ' . json_encode( $got ) );
+
+		$got = Marker::load_attributes( $in( 'ct0001' ), [ '_lmEffect' => 'counter' ], [], 'content', true );
+		lm_assert( $got === [ 'data-lm-settled' => 'counter' ], 'counter in the zone: ' . json_encode( $got ) );
+
+		$got = Marker::load_attributes(
+			$in( 'ct0002' ),
+			[
+				'_lmEffect' => 'counter',
+				'_lmLoad'   => 'always',
+			],
+			[],
+			'content',
+			true
+		);
+		lm_assert( $got === [ 'data-lm-settled' => 'counter' ], 'always in the zone: ' . json_encode( $got ) );
+
+		// From a global class.
+		$got = Marker::load_attributes(
+			$in( 'tx0003' ),
+			[],
+			[
+				[
+					'name'     => 'lm-lines',
+					'settings' => [],
+				],
+			],
+			'content',
+			true
+		);
+		lm_assert( $got === [ 'data-lm-settled' => 'text' ], 'class lm-lines in the zone: ' . json_encode( $got ) );
+
+		// A text effect on a smaller breakpoint only: shown as written there too.
+		$got = Marker::load_attributes( $in( 'tx0004' ), [ '_lmEffect:mobile_portrait' => 'lines' ], [], 'content', true );
+		lm_assert( $got === [ 'data-lm-settled' => 'text' ], 'breakpoint text effect in the zone: ' . json_encode( $got ) );
+
+		// Never: the engine animates it, as before.
+		$got = Marker::load_attributes(
+			$in( 'tx0005' ),
+			[
+				'_lmEffect' => 'lines',
+				'_lmLoad'   => 'never',
+			],
+			[],
+			'content',
+			true
+		);
+		lm_assert( $got === [], 'never in the zone: ' . json_encode( $got ) );
+
+		// An entrance of the zone still plays in CSS, even with a text effect on a breakpoint.
+		$got = Marker::load_attributes(
+			$in( 'en0001' ),
+			[
+				'_lmEffect'                 => 'fade',
+				'_lmEffect:mobile_portrait' => 'lines',
+			],
+			[],
+			'content',
+			true
+		);
+		lm_assert( ( $got['data-lm-load'] ?? null ) === 'fade' && ! isset( $got['data-lm-settled'] ), 'entrance in the zone: ' . json_encode( $got ) );
+
+		// Outside the zone: never settled, "always" does not extend the zone (no CSS version).
+		Marker::load_attributes(
+			[
+				'id'     => 'sec002',
+				'parent' => 0,
+			],
+			[],
+			[],
+			'content',
+			true
+		);
+		$out = [
+			'id'     => 'tx0006',
+			'parent' => 'sec002',
+		];
+		lm_assert( Marker::load_attributes( $out, [ '_lmEffect' => 'lines' ], [], 'content', true ) === [], 'text outside the zone' );
+		$got = Marker::load_attributes(
+			[
+				'id'     => 'ct0003',
+				'parent' => 'sec002',
+			],
+			[
+				'_lmEffect' => 'counter',
+				'_lmLoad'   => 'always',
+			],
+			[],
+			'content',
+			true
+		);
+		lm_assert( $got === [], 'always counter outside the zone: ' . json_encode( $got ) );
+	},
+	'a popup never joins the zone, even inside a header render' => static function (): void {
+		LoadAnimation::reset();
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'pop001',
+					'parent' => 0,
+				],
+				'popup',
+				2,
+				'header'
+			) === false,
+			'popup root in a header render'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'pop002',
+					'parent' => 'pop001',
+				],
+				'popup',
+				2,
+				'header'
+			) === false,
+			'popup child in a header render'
+		);
+		lm_assert(
+			LoadAnimation::observe(
+				[
+					'id'     => 'pop003',
+					'parent' => 0,
+				],
+				'popup',
+				1,
+				'popup'
+			) === false,
+			'popup root'
+		);
+	},
+	'no zone in an AJAX render'                           => static function (): void {
+		LoadAnimation::reset();
+		$GLOBALS['lm_test_doing_ajax'] = true;
+		try {
+			lm_assert( LoadAnimation::async_render() === true, 'AJAX detected' );
+			lm_assert(
+				LoadAnimation::observe(
+					[
+						'id'     => 'hdr001',
+						'parent' => 0,
+					],
+					'header',
+					1,
+					'header'
+				) === false,
+				'header in AJAX'
+			);
+			lm_assert(
+				LoadAnimation::observe(
+					[
+						'id'     => 'sec001',
+						'parent' => 0,
+					],
+					'content',
+					1,
+					'content'
+				) === false,
+				'first root in AJAX'
+			);
+		} finally {
+			$GLOBALS['lm_test_doing_ajax'] = false;
+		}
+		lm_assert( LoadAnimation::async_render() === false, 'a page render' );
+	},
+	'no zone in a REST render'                            => static function (): void {
+		// REST_REQUEST cannot be undefined again: checked in a separate PHP process.
+		$root   = dirname( __DIR__, 3 );
+		$script = 'define("ABSPATH", ' . var_export( $root . '/', true ) . ');'
+			. 'require ' . var_export( $root . '/includes/Core/Autoloader.php', true ) . ';'
+			. '\\Lumia\\Tools\\Core\\Autoloader::register();'
+			. 'define("REST_REQUEST", true);'
+			. 'echo json_encode([\\Lumia\\Tools\\Modules\\Motion\\LoadAnimation::async_render(), \\Lumia\\Tools\\Modules\\Motion\\LoadAnimation::observe(["id" => "hdr001", "parent" => 0], "header")]);';
+		$out    = shell_exec( escapeshellarg( PHP_BINARY ) . ' -r ' . escapeshellarg( $script ) . ' 2>&1' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec -- Development test: a fresh PHP process.
+		lm_assert( trim( (string) $out ) === '[true,false]', 'REST render: ' . (string) $out );
 	},
 ];

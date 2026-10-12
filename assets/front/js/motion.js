@@ -300,6 +300,13 @@
     if (el && el.hasAttribute("data-lm-load")) {
       return "load";
     }
+    // Text and counter effects of the first screen (see Marker): they have no CSS version, and
+    // splitting the painted text, or showing the counter at its start value, would make it flash.
+    // Left as written, which is their final state (a scrub included: every word fully visible).
+    // Never set in the canvas either: Replay still plays them there.
+    if (el && el.hasAttribute("data-lm-settled")) {
+      return "settled";
+    }
     if (!has(SLUGS, effect)) {
       return "unknown effect " + JSON.stringify(effect);
     }

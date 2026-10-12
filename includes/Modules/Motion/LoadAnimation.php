@@ -16,8 +16,9 @@ defined( 'ABSPATH' ) || exit;
  * stagger, curve, effect parameters), for the base breakpoint only: the stylesheet cannot read
  * a breakpoint value from PHP, and that limit is documented.
  *
- * Pure PHP with a per-request state (the zone and the ranks), no WordPress function: the unit
- * tests under tools/motion/php run it without WordPress.
+ * Pure PHP with a per-request state (the zone and the ranks); the only WordPress function,
+ * wp_doing_ajax(), is called when it exists: the unit tests under tools/motion/php run it
+ * without WordPress.
  */
 final class LoadAnimation {
 
@@ -152,11 +153,15 @@ final class LoadAnimation {
 	 * @param array<mixed, mixed> $element    Element data (id, parent, parentComponent).
 	 * @param string              $area       Bricks render area: header, content, footer, popup...
 	 * @param int                 $depth      Number of nested renders (1 = top-level render).
+	 * A popup is never in the zone, even rendered inside a header render: it opens later, over the
+	 * page. Nothing is in the zone of an AJAX or REST render (a popup, a query page or a builder
+	 * call rendered on its own): what it returns is not the first screen of a page.
+	 *
 	 * @param string              $outer_area Area of the outermost render, '' when unknown.
 	 */
 	public static function observe( array $element, string $area, int $depth = 1, string $outer_area = '' ): bool {
 		$id = self::id( $element['id'] ?? null );
-		if ( '' === $id ) {
+		if ( '' === $id || 'popup' === $area || self::async_render() ) {
 			return false;
 		}
 
@@ -196,6 +201,17 @@ final class LoadAnimation {
 		}
 
 		return $in;
+	}
+
+	/**
+	 * Whether this request renders for AJAX or REST rather than a page (no load zone then).
+	 */
+	public static function async_render(): bool {
+		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
+			return true;
+		}
+
+		return defined( 'REST_REQUEST' ) && REST_REQUEST;
 	}
 
 	/**
