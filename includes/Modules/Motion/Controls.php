@@ -506,6 +506,24 @@ class Controls {
 			]
 		);
 
+		// The placeholder is the reference value (auto), as for the number fields.
+		$controls['_lmCounterWidth'] = self::variable(
+			'--lm-counter-width',
+			[
+				'label'       => __( 'Counter width', 'lumia-tools' ),
+				'type'        => 'select',
+				'options'     => self::options(
+					Effects::COUNTER_WIDTHS,
+					[
+						'auto'  => __( 'Dynamic width', 'lumia-tools' ),
+						'fixed' => __( 'Fixed width', 'lumia-tools' ),
+					]
+				),
+				'placeholder' => __( 'Dynamic width', 'lumia-tools' ),
+				'description' => __( 'Dynamic: the number widens as its digits appear. Fixed: every digit of the final number is there from the start, all of the same width.', 'lumia-tools' ),
+			]
+		);
+
 		return $controls;
 	}
 

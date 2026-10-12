@@ -102,7 +102,7 @@ export default async function () {
 		assert( config.classes[ 'lm-fade' ] === 'fade' && config.classes[ 'lm-words' ] === 'words', 'config.classes does not map lm-fade / lm-words' );
 		assert( config.aliases[ 'sk-fade' ] === 'fade', `config.aliases['sk-fade']=${ config.aliases[ 'sk-fade' ] }` );
 		assert( typeof config.legacyGlobal === 'string' && config.legacyGlobal !== '', 'config.legacyGlobal is empty' );
-		assert( Array.isArray( config.variables ) && config.variables.length === 19 && config.variables.includes( 'lm-effect' ) && config.variables.includes( 'lm-load' ), 'config.variables is not the 19 engine variables' );
+		assert( Array.isArray( config.variables ) && config.variables.length === 20 && config.variables.includes( 'lm-effect' ) && config.variables.includes( 'lm-load' ) && config.variables.includes( 'lm-counter-width' ), 'config.variables is not the 20 engine variables' );
 
 		await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 5000 } );
 		assert( page.errors.length === 0, `lm-e2e-basic: page errors: ${ page.errors.join( ' | ' ) }` );

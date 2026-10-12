@@ -83,18 +83,24 @@ $effect_labels = [
 ];
 
 $field_labels = [
-	'start_edge'   => __( 'Start edge', 'lumia-tools' ),
-	'start_at'     => __( 'Start position', 'lumia-tools' ),
-	'end_edge'     => __( 'End edge', 'lumia-tools' ),
-	'end_at'       => __( 'End position', 'lumia-tools' ),
-	'delay'        => __( 'Delay (s)', 'lumia-tools' ),
-	'duration'     => __( 'Duration (s)', 'lumia-tools' ),
-	'stagger'      => __( 'Stagger (s)', 'lumia-tools' ),
-	'distance'     => __( 'Distance (px)', 'lumia-tools' ),
-	'blur'         => __( 'Blur (px)', 'lumia-tools' ),
-	'scale'        => __( 'Scale', 'lumia-tools' ),
-	'from_opacity' => __( 'Starting opacity', 'lumia-tools' ),
-	'start_value'  => __( 'Starting value', 'lumia-tools' ),
+	'start_edge'    => __( 'Start edge', 'lumia-tools' ),
+	'start_at'      => __( 'Start position', 'lumia-tools' ),
+	'end_edge'      => __( 'End edge', 'lumia-tools' ),
+	'end_at'        => __( 'End position', 'lumia-tools' ),
+	'delay'         => __( 'Delay (s)', 'lumia-tools' ),
+	'duration'      => __( 'Duration (s)', 'lumia-tools' ),
+	'stagger'       => __( 'Stagger (s)', 'lumia-tools' ),
+	'distance'      => __( 'Distance (px)', 'lumia-tools' ),
+	'blur'          => __( 'Blur (px)', 'lumia-tools' ),
+	'scale'         => __( 'Scale', 'lumia-tools' ),
+	'from_opacity'  => __( 'Starting opacity', 'lumia-tools' ),
+	'start_value'   => __( 'Starting value', 'lumia-tools' ),
+	'counter_width' => __( 'Width', 'lumia-tools' ),
+];
+
+$counter_width_labels = [
+	'auto'  => __( 'Dynamic width', 'lumia-tools' ),
+	'fixed' => __( 'Fixed width', 'lumia-tools' ),
 ];
 
 // Text lines slide by a share of their own height, not by pixels.
@@ -228,6 +234,12 @@ $number_ranges = [
 										<select id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $name ); ?>" class="lumia-select lumia-select--sm">
 											<?php foreach ( Effects::EDGES as $edge ) : ?>
 												<option value="<?php echo esc_attr( $edge ); ?>" <?php selected( (string) $value, $edge ); ?>><?php echo esc_html( $edge_labels[ $edge ] ?? $edge ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									<?php elseif ( 'counter_width' === $key ) : ?>
+										<select id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $name ); ?>" class="lumia-select lumia-select--sm">
+											<?php foreach ( Effects::COUNTER_WIDTHS as $width ) : ?>
+												<option value="<?php echo esc_attr( $width ); ?>" <?php selected( (string) $value, $width ); ?>><?php echo esc_html( $counter_width_labels[ $width ] ?? $width ); ?></option>
 											<?php endforeach; ?>
 										</select>
 									<?php elseif ( 'start_at' === $key || 'end_at' === $key ) : ?>

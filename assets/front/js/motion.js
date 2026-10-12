@@ -5,11 +5,11 @@
  *
  * Every element marked data-lm becomes an item: its effect comes from the computed
  * --lm-effect (element > class, per breakpoint, by the CSS cascade), else from the first
- * effect class of its class attribute. Its settings are the 18 engine variables, read
+ * effect class of its class attribute. Its settings are the engine variables (config.variables), read
  * once when the item is built and again on refresh(), never per frame.
  *
  * Each family of effects has a builder (FAMILIES below): entrance effects, text effects
- * (SplitText) and the counter, all behind the same hooks.
+ * (SplitText) and the counter (NumberFlow, through motion-counter.mjs), all behind the same hooks.
  *
  * In the Bricks canvas (config.builder) nothing is hidden and nothing follows the scroll:
  * every element is in its final state. motion-builder.js calls scan(), which reads the page
@@ -925,12 +925,30 @@
 
   /* ================================================================
    * FAMILY: COUNTER
-   * Counts from the start value to the number written in the HTML, in the format it is
-   * written in (core.parseCounter), then puts the written text node back. The number must
-   * sit in a single text node; anything else ("24/7", digits split by markup) is left as is.
-   * While it counts, screen readers get the written text (.lm-sr) and the counting copy is
-   * hidden from them: the start value is not the value.
+   * Rolls the digits from the start value to the number written in the HTML, in the format
+   * it is written in (core.parseCounter), with NumberFlow: motion-counter.mjs, a script module
+   * loaded on the pages that have a counter, exposes window.lumiaMotionCounter. The number
+   * must sit in a single text node; anything else ("24/7", digits split by markup) is left
+   * as is. The NumberFlow element replaces the text node and stays once the number is
+   * written; it names itself after the value for assistive technologies, and a visually
+   * hidden copy of the text (.lm-sr, hidden from them) keeps the number in innerText.
+   *
+   * Without the adapter after COUNTER_WAIT_MS (blocked file, browser without module
+   * support), or when NumberFlow cannot animate in this browser, the text stays as written.
    * ================================================================ */
+
+  var COUNTER_WAIT_MS = 3000;
+  var COUNTER_READY = "lumia-motion-counter-ready";
+  var counterWaiting = []; // pending items started before the adapter was there
+  var counterTimer = 0;
+  var counterGaveUp = false;
+  var counterLinear = {}; // CSS linear() of each spring, by curve key
+  var COUNTER_COPY_STYLE = ";position:static;display:inline-block;margin:0 -1px 0 0;vertical-align:top";
+
+  function counterAdapter() {
+    var adapter = window.lumiaMotionCounter;
+    return adapter && typeof adapter.mount === "function" && typeof adapter.play === "function" ? adapter : null;
+  }
 
   // The text node holding the number and its format, or { reason } when there is none.
   function counterSource(el) {
@@ -955,45 +973,77 @@
     return { node: found, fmt: fmt };
   }
 
-  // Replaces the text node with its copy for screen readers and the copy that counts.
-  function counterWrap(item, source) {
-    var node = source.node;
+  // The curve of the counter as a CSS easing. Snappy and bouncy are already smooth here
+  // (core.resolve): a counter never goes past its value.
+  function counterEasing(o) {
+    if (o.easeKey === "linear") {
+      return "linear";
+    }
+    if (o.easeKey === "custom" && o.curve) {
+      return "cubic-bezier(" + o.curve + ")";
+    }
+    var key = has(core.BOUNCE, o.easeKey) ? o.easeKey : "smooth";
+    if (!has(counterLinear, key)) {
+      counterLinear[key] = core.cssLinear(core.BOUNCE[key]).linear;
+    }
+    return counterLinear[key];
+  }
+
+  // Replaces the number with its NumberFlow element, at the start value. False when it stays as written.
+  function counterMount(item) {
+    var adapter = counterAdapter();
+    var source = counterSource(item.el);
+    if (source.reason) {
+      logOnce(item.el, describe(item.el) + " left as written: " + source.reason + ".");
+      return false;
+    }
+    // NumberFlow draws the digits in its shadow DOM, which innerText, hence a crawler that
+    // renders the page, does not read: a visually hidden copy keeps the written text in the
+    // page. Assistive technologies skip it, they get the name of the NumberFlow element.
     var copy = srCopy();
-    var shown = document.createElement("span");
-    copy.textContent = node.nodeValue;
-    shown.setAttribute("aria-hidden", "true");
-    node.parentNode.insertBefore(copy, node);
-    node.parentNode.insertBefore(shown, node);
-    node.parentNode.removeChild(node);
-    item.count = { node: node, fmt: source.fmt, copy: copy, shown: shown };
+    // Inline-level, unlike the copy of a split text: an absolute box counts as a block in
+    // innerText, which would read "350\n projets". It takes no width (1px less 1px of margin).
+    copy.style.cssText = SR_STYLE + COUNTER_COPY_STYLE;
+    copy.textContent = source.node.nodeValue;
+    copy.setAttribute("aria-hidden", "true");
+    source.node.parentNode.insertBefore(copy, source.node);
+    var handle = null;
+    try {
+      handle = adapter.mount(source.node, source.fmt, {
+        from: item.options.startValue,
+        fixed: item.options.counterWidth === "fixed",
+      });
+    } finally {
+      // Not mounted (or the adapter threw): the text stays alone, as written.
+      if (!handle && copy.parentNode) {
+        copy.parentNode.removeChild(copy);
+      }
+    }
+    if (!handle) {
+      logOnce(item.el, describe(item.el) + " left as written: NumberFlow cannot animate in this browser.");
+      return false;
+    }
+    item.count = { adapter: adapter, handle: handle, copy: copy };
+    return true;
   }
 
-  function counterWrite(item, value) {
-    var c = item.count;
-    c.shown.textContent = c.fmt.prefix + core.formatCounter(value, c.fmt) + c.fmt.suffix;
-  }
-
-  // Stops counting and puts the written text node back, untouched.
+  // Stops rolling and puts the written text node back, untouched.
   function counterReset(item) {
     if (item.trigger) {
       item.trigger.kill();
       item.trigger = null;
     }
-    (item.tweens || []).forEach(function (tween) {
-      tween.kill();
-    });
-    item.tweens = [];
+    var waiting = counterWaiting.indexOf(item);
+    if (waiting > -1) {
+      counterWaiting.splice(waiting, 1);
+    }
     var c = item.count;
     item.count = null;
-    if (!c) {
-      return;
-    }
-    if (c.copy.parentNode) {
-      c.copy.parentNode.insertBefore(c.node, c.copy);
-      c.copy.parentNode.removeChild(c.copy);
-    }
-    if (c.shown.parentNode) {
-      c.shown.parentNode.removeChild(c.shown);
+    if (c) {
+      if (c.copy.parentNode) {
+        c.copy.parentNode.removeChild(c.copy);
+      }
+      c.adapter.reset(c.handle);
     }
   }
 
@@ -1011,53 +1061,90 @@
     }
     item.state = "playing";
     var o = item.options;
-    var value = { current: o.startValue };
-    item.tweens = [
-      gsap.to(value, {
-        current: item.count.fmt.value,
-        duration: o.tweenDuration,
-        // Already the version without overshoot (core.resolve): never past the value.
-        ease: o.ease,
-        delay: o.delay,
-        onUpdate: function () {
-          counterWrite(item, value.current);
+    item.count.adapter.play(item.count.handle, {
+      duration: o.tweenDuration,
+      delay: o.delay,
+      easing: counterEasing(o),
+      onEnd: function () {
+        if (item.state === "playing") {
+          item.state = "done";
+        }
+      },
+    });
+  }
+
+  // Mounts a pending item and watches its start.
+  function counterPrepare(item) {
+    try {
+      if (!counterMount(item)) {
+        settle(item);
+        return;
+      }
+      item.trigger = ScrollTrigger.create({
+        trigger: item.el,
+        start: item.options.start,
+        once: true,
+        markers: DEBUG,
+        onEnter: function () {
+          attempt(item, counterPlay);
         },
-        onComplete: function () {
-          if (item.state === "playing") {
-            counterReset(item);
-            item.state = "done";
-          }
-        },
-      }),
-    ];
+      });
+    } catch (error) {
+      report("could not prepare " + describe(item.el) + ": shown as written.", error);
+      settle(item);
+    }
+  }
+
+  // The adapter arrived: the items that waited for it are mounted, unless they moved on.
+  function counterArrived() {
+    clearTimeout(counterTimer);
+    counterTimer = 0;
+    document.removeEventListener(COUNTER_READY, counterArrived);
+    var list = counterWaiting;
+    counterWaiting = [];
+    if (!counterAdapter()) {
+      return;
+    }
+    list.forEach(function (item) {
+      if (item.state === "pending" && !item.count && items.indexOf(item) > -1) {
+        counterPrepare(item);
+      }
+    });
+    if (list.length) {
+      measure();
+    }
+  }
+
+  // Too late: the waiting items stay as written, and so does every later one.
+  function counterGiveUp() {
+    counterTimer = 0;
+    counterGaveUp = true;
+    document.removeEventListener(COUNTER_READY, counterArrived);
+    var list = counterWaiting;
+    counterWaiting = [];
+    list.forEach(function (item) {
+      if (item.state === "pending") {
+        logOnce(item.el, describe(item.el) + " left as written: the counter script did not load.");
+        settle(item);
+      }
+    });
   }
 
   var counter = {
     start: function (list) {
       list.forEach(function (item) {
-        try {
-          var source = counterSource(item.el);
-          if (source.reason) {
-            logOnce(item.el, describe(item.el) + " left as written: " + source.reason + ".");
-            settle(item);
-            return;
-          }
-          counterWrap(item, source);
-          counterWrite(item, item.options.startValue);
-          item.trigger = ScrollTrigger.create({
-            trigger: item.el,
-            start: item.options.start,
-            once: true,
-            markers: DEBUG,
-            onEnter: function () {
-              attempt(item, counterPlay);
-            },
-          });
-        } catch (error) {
-          report("could not prepare " + describe(item.el) + ": shown as written.", error);
+        if (counterAdapter()) {
+          counterPrepare(item);
+        } else if (counterGaveUp) {
           settle(item);
+        } else {
+          counterWaiting.push(item);
         }
       });
+      if (counterWaiting.length && !counterTimer) {
+        document.addEventListener(COUNTER_READY, counterArrived);
+        counterTimer = setTimeout(counterGiveUp, COUNTER_WAIT_MS);
+      }
     },
 
     play: function (list) {
@@ -1066,14 +1153,11 @@
       });
     },
 
-    // Builder: counts again from the start value.
+    // Builder: rolls again from the start value.
     preview: function (item) {
-      var source = counterSource(item.el);
-      if (source.reason) {
+      if (!counterAdapter() || !counterMount(item)) {
         return;
       }
-      counterWrap(item, source);
-      counterWrite(item, item.options.startValue);
       item.state = "pending";
       counterPlay(item);
     },

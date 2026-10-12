@@ -15,6 +15,11 @@ defined( 'ABSPATH' ) || exit;
  *   at priority 10), and `Marker::page_families()` knows which effects are on it. The
  *   scripts of the footer are printed at priority 20.
  *
+ * The counter is the exception: its NumberFlow modules are WordPress script modules, which a
+ * classic theme such as Bricks prints at `wp_footer` priority 10 (import map, then the modules).
+ * `enqueue_counter()` runs at that same priority, after the popups of Bricks and before the
+ * printing of core, see order_module_printing().
+ *
  * Nothing is loaded in the admin. In the builder, the main window gets the builder
  * stylesheet and the panel script (Replay, markers, inherited placeholders), and the canvas
  * gets the engine in its builder mode (no smooth scroll).
@@ -30,6 +35,20 @@ final class Assets {
 	const HANDLE_BUILDER       = 'lumia-motion-builder';
 	const HANDLE_SCROLL        = 'lumia-motion-scroll';
 	const HANDLE_PANEL         = 'lumia-motion-panel';
+	const HANDLE_COUNTER       = 'lumia-motion-counter';
+
+	/**
+	 * Script modules of the counter: import map id => file under assets/front/js/vendor/.
+	 * Dependencies first. esm-env resolves its conditional exports through the import map:
+	 * a browser, neither in development nor Node.
+	 */
+	const COUNTER_MODULES = [
+		'esm-env/browser'     => 'esm-env/true.js',
+		'esm-env/development' => 'esm-env/false.js',
+		'esm-env/node'        => 'esm-env/false.js',
+		'esm-env'             => 'esm-env/index.js',
+		'number-flow/lite'    => 'number-flow/lite.mjs',
+	];
 
 	/** Seconds after which the safety makes every element visible when the engine did not start. */
 	const SAFETY_MS = 3000;
@@ -57,6 +76,79 @@ final class Assets {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_styles' ] );
 		add_action( 'wp_head', [ $this, 'print_head_script' ], 1 );
 		add_action( 'wp_footer', [ $this, 'enqueue_scripts' ], 19 );
+		add_action( 'wp_footer', [ $this, 'enqueue_counter' ], 10 );
+		self::order_module_printing();
+	}
+
+	/**
+	 * Moves the printing of the script modules after enqueue_counter(), at the same priority.
+	 *
+	 * In a classic theme, core prints the import map, the modules and their preloads at
+	 * `wp_footer` priority 10, hooked on `after_setup_theme`; Bricks renders its popups at
+	 * that priority too, hooked earlier (theme load). The counter modules can only be
+	 * enqueued once the popups are rendered (a counter may sit in one), and must be before
+	 * core prints: an import map printed later is ignored by browsers once a module has
+	 * started loading. Hooked on `init`, ours would run after core's printers, so these are
+	 * hooked again, at the same priority, after ours. Only their order within priority 10
+	 * changes; a block theme prints the import map in the head, nothing is moved there.
+	 */
+	private static function order_module_printing(): void {
+		if ( ! function_exists( 'wp_script_modules' ) ) {
+			return;
+		}
+
+		$modules = wp_script_modules();
+		foreach ( [ 'print_import_map', 'print_enqueued_script_modules', 'print_script_module_preloads' ] as $method ) {
+			$callback = [ $modules, $method ];
+			if ( 10 === has_action( 'wp_footer', $callback ) ) {
+				remove_action( 'wp_footer', $callback, 10 );
+				add_action( 'wp_footer', $callback, 10 );
+			}
+		}
+	}
+
+	/**
+	 * The NumberFlow modules and the counter adapter, on the pages that have a counter (always
+	 * in the canvas, where any element may become one).
+	 */
+	public function enqueue_counter(): void {
+		if ( is_admin() || self::is_builder_main() || ! function_exists( 'wp_register_script_module' ) ) {
+			return;
+		}
+
+		$canvas = self::is_builder_canvas();
+		if ( ! $canvas && ! in_array( Effects::FAMILY_COUNTER, Marker::page_families(), true ) ) {
+			return;
+		}
+
+		if ( ! self::has_script( 'motion-counter.mjs' ) ) {
+			return;
+		}
+
+		$vendor = LUMIA_ASSETS_URL . 'front/js/vendor/';
+		foreach ( self::COUNTER_MODULES as $id => $file ) {
+			if ( ! self::has_script( 'vendor/' . $file ) ) {
+				return;
+			}
+			wp_register_script_module( $id, $vendor . $file, self::module_deps( $id ), LUMIA_VERSION );
+		}
+
+		wp_enqueue_script_module( self::HANDLE_COUNTER, LUMIA_ASSETS_URL . 'front/js/motion-counter.mjs', [ 'number-flow/lite' ], LUMIA_VERSION );
+	}
+
+	/**
+	 * Static imports of a counter module, as its file writes them.
+	 *
+	 * @param string $id Module id, a key of COUNTER_MODULES.
+	 * @return string[]
+	 */
+	private static function module_deps( string $id ): array {
+		$deps = [
+			'esm-env'          => [ 'esm-env/browser', 'esm-env/development', 'esm-env/node' ],
+			'number-flow/lite' => [ 'esm-env' ],
+		];
+
+		return $deps[ $id ] ?? [];
 	}
 
 	/**

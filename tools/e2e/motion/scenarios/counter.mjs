@@ -1,59 +1,89 @@
-// Counter: every format comes back exactly as written, an ambiguous text is never touched,
-// a bouncy curve never counts past the value, inner markup is kept, screen readers get the
-// written value while it counts, a start the page cannot reach still counts, reduced motion
-// shows the values as written.
+// Counter (NumberFlow): every format ends exactly as written, for the eye and for assistive
+// technologies; the line never changes height and, in fixed width, the number never changes
+// width; a year never gets a group separator; an ambiguous text is never touched; inner
+// markup is kept; a start the page cannot reach still counts. Fallbacks: NumberFlow blocked
+// or reduced motion leave the text as written. A page without counter loads none of it, a
+// counter that only sits in a footer popup still gets it.
 import { newPage, pageUrl, assert, items } from '../lib.mjs';
 
 const SLUG = 'lm-e2e-counter';
-const IDS = [ 'brxe-cnyear', 'brxe-cngrp', 'brxe-cndec', 'brxe-cnpfx', 'brxe-cnamb', 'brxe-cnmark', 'brxe-cnbnc', 'brxe-cnlate' ];
+const DYNAMIC = [ 'brxe-cnyear', 'brxe-cngrp', 'brxe-cndec', 'brxe-cnpfx' ];
+const FIXED = [ 'brxe-cnyerf', 'brxe-cngrpf', 'brxe-cndecf', 'brxe-cnpfxf' ];
+const IDS = [ ...DYNAMIC, ...FIXED, 'brxe-cnamb', 'brxe-cnmark', 'brxe-cnbnc', 'brxe-cnlate' ];
 const COUNTING = IDS.filter( ( id ) => id !== 'brxe-cnamb' && id !== 'brxe-cnlate' );
+const FLOW_FILES = /\/(number-flow|esm-env)\/|motion-counter\.mjs/;
 
-async function open( o = {} ) {
+async function open( o = {}, before = null ) {
 	const page = await newPage( o );
-	const res = await page.goto( pageUrl( SLUG ), { waitUntil: 'load' } );
-	assert( res && res.status() === 200, `${ SLUG }: status ${ res && res.status() }` );
+	if ( before ) {
+		await before( page );
+	}
+	const res = await page.goto( pageUrl( o.slug || SLUG ), { waitUntil: 'load' } );
+	assert( res && res.status() === 200, `${ o.slug || SLUG }: status ${ res && res.status() }` );
 	await page.waitForFunction(
 		() => document.documentElement.classList.contains( 'lm-ready' ) && window.lumiaMotion && window.lumiaMotion._debug,
 		null,
 		{ timeout: 5000 }
 	).catch( () => {
-		throw new Error( `${ SLUG }: the engine did not start` );
+		throw new Error( `${ o.slug || SLUG }: the engine did not start` );
 	} );
 	return page;
 }
 
-/** Markup of the counters as the server sent it. */
-const originals = ( page ) => page.evaluate( async ( ids ) => {
+/** HTML of the page as the server sent it, and the text of each counter in it. */
+const served = ( page ) => page.evaluate( async ( ids ) => {
 	const html = await ( await fetch( location.href ) ).text();
 	const doc = new DOMParser().parseFromString( html, 'text/html' );
-	const out = {};
+	const out = { html, markup: {}, text: {} };
 	ids.forEach( ( id ) => {
-		out[ id ] = doc.getElementById( id ).innerHTML;
+		out.markup[ id ] = doc.getElementById( id ).innerHTML;
+		out.text[ id ] = doc.getElementById( id ).textContent;
 	} );
 	return out;
 }, IDS );
 
 const markup = ( page ) => page.evaluate( ( ids ) => Object.fromEntries( ids.map( ( id ) => [ id, document.getElementById( id ).innerHTML ] ) ), IDS );
 
-/** Installs a per-frame sampler of the text the eye sees (screen reader copies left out). */
+const states = async ( page, ids ) => ( await items( page ) ).filter( ( i ) => ids.includes( i.id ) ).map( ( i ) => `${ i.id }:${ i.state }` );
+
+/** Accessible name and role of the NumberFlow element of a counter, as Chrome computes them (ElementInternals). */
+async function flowName( page, id ) {
+	const cdp = await page.context().newCDPSession( page );
+	try {
+		const { root } = await cdp.send( 'DOM.getDocument', { depth: -1, pierce: true } );
+		const { nodeId } = await cdp.send( 'DOM.querySelector', { nodeId: root.nodeId, selector: `#${ id } lm-number-flow` } );
+		if ( ! nodeId ) {
+			return null;
+		}
+		const { nodes } = await cdp.send( 'Accessibility.getPartialAXTree', { nodeId, fetchRelatives: false } );
+		const node = nodes[ 0 ] || {};
+		return { role: node.role && node.role.value, name: node.name && node.name.value, ignored: !! node.ignored };
+	} finally {
+		await cdp.detach();
+	}
+}
+
+/** Per-frame sampler: height of each counter, width of its NumberFlow element, symbols shown. */
 const sample = ( page ) => page.evaluate( ( ids ) => {
-	const seen = ( node ) => {
-		let out = '';
-		node.childNodes.forEach( ( child ) => {
-			if ( child.nodeType === 3 ) {
-				out += child.nodeValue;
-			} else if ( child.nodeType === 1 && ! child.classList.contains( 'lm-sr' ) ) {
-				out += seen( child );
-			}
-		} );
-		return out;
-	};
-	window.lmSeen = seen;
 	window.lmSamples = Object.fromEntries( ids.map( ( id ) => [ id, [] ] ) );
 	window.lmStrong = document.querySelector( '#brxe-cnmark strong' );
 	window.lmStrongLost = 0;
 	const tick = () => {
-		ids.forEach( ( id ) => window.lmSamples[ id ].push( seen( document.getElementById( id ) ) ) );
+		ids.forEach( ( id ) => {
+			const el = document.getElementById( id );
+			const flow = el.querySelector( 'lm-number-flow' );
+			// Symbols shown (group, decimal, prefix, suffix), the leaving ones (inert) left out.
+			const symbols = flow && flow.shadowRoot ? [ ...flow.shadowRoot.querySelectorAll( '.symbol' ) ].filter( ( s ) => ! s.closest( '[inert]' ) ).map( ( s ) => s.textContent ).join( '|' ) : null;
+			// Layout width of the element, and visual width of its number (NumberFlow scales it while digits appear).
+			const number = flow && flow.shadowRoot ? flow.shadowRoot.querySelector( '.number' ) : null;
+			window.lmSamples[ id ].push( {
+				height: el.getBoundingClientRect().height,
+				width: flow ? flow.getBoundingClientRect().width : null,
+				visual: number ? number.getBoundingClientRect().width : null,
+				symbols,
+				playing: ( window.lumiaMotion._debug.items().find( ( i ) => i.id === id ) || {} ).state === 'playing',
+			} );
+		} );
 		if ( document.querySelector( '#brxe-cnmark strong' ) !== window.lmStrong ) {
 			window.lmStrongLost++;
 		}
@@ -64,86 +94,105 @@ const sample = ( page ) => page.evaluate( ( ids ) => {
 	requestAnimationFrame( tick );
 }, IDS );
 
-const states = async ( page, ids ) => ( await items( page ) ).filter( ( i ) => ids.includes( i.id ) ).map( ( i ) => `${ i.id }:${ i.state }` );
-
-/** What assistive technologies get for each counter (Playwright's ARIA snapshot). */
-async function aria( page ) {
-	const out = {};
-	for ( const id of IDS ) {
-		out[ id ] = await page.locator( `#${ id }` ).ariaSnapshot();
-	}
-	return out;
-}
-
-async function animated( reference ) {
+async function animated() {
 	const page = await open();
-	const orig = await originals( page );
+	const orig = await served( page );
 
-	// The copy for screen readers is hidden from the eye and never selected.
-	const copy = await page.evaluate( () => {
-		const n = document.querySelector( '#brxe-cnyear .lm-sr' );
-		const r = n ? n.getBoundingClientRect() : null;
-		return n ? { width: r.width, height: r.height, select: getComputedStyle( n ).userSelect, inline: n.style.userSelect } : null;
-	} );
-	assert( copy && copy.width <= 1 && copy.height <= 1 && copy.select === 'none' && copy.inline === 'none', `cnyear: screen reader copy ${ JSON.stringify( copy ) }` );
-
-	// Pending: screen readers get the written value, not the start value on screen.
-	const pending = await aria( page );
-	for ( const id of IDS ) {
-		assert( pending[ id ] === reference[ id ], `${ id } while pending: screen readers get\n${ pending[ id ] }\ninstead of\n${ reference[ id ] }` );
+	// The number is in the HTML the server sends (what a crawler reads without JavaScript).
+	for ( const id of COUNTING ) {
+		assert( orig.text[ id ].trim() !== '' && /\d/.test( orig.text[ id ] ), `${ id }: no number in the served HTML` );
 	}
+
+	// Mounted while pending: a NumberFlow element in place of the number, the ambiguous text untouched.
+	await page.waitForFunction( ( ids ) => ids.every( ( id ) => document.querySelector( `#${ id } lm-number-flow` ) ), COUNTING, { timeout: 4000 } ).catch( async () => {
+		throw new Error( `counters not mounted: ${ ( await markup( page ) )[ 'brxe-cnyear' ] }` );
+	} );
+	assert( ! ( await page.locator( '#brxe-cnamb lm-number-flow' ).count() ), 'cnamb (24/7) got a NumberFlow element' );
+
+	// Heights before anything plays: the line keeps its height once NumberFlow is in.
+	const heightAtRest = await page.evaluate( ( ids ) => Object.fromEntries( ids.map( ( id ) => [ id, document.getElementById( id ).getBoundingClientRect().height ] ) ), COUNTING );
 
 	await sample( page );
-	await page.evaluate( () => window.scrollTo( 0, 0 ) );
-	const firstSeen = await page.evaluate( () => window.lmSeen( document.getElementById( 'brxe-cnyear' ) ) );
-	assert( firstSeen === '0', `cnyear while pending shows "${ firstSeen }" (expected its start value 0)` );
-
-	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'center' } ) );
+	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'start' } ) );
 	await page.waitForFunction(
 		( ids ) => ids.every( ( id ) => ( window.lumiaMotion._debug.items().find( ( i ) => i.id === id ) || {} ).state === 'done' ),
 		COUNTING,
-		{ timeout: 6000 }
+		{ timeout: 8000 }
 	).catch( async () => {
 		throw new Error( `counters never finished: ${ ( await states( page, COUNTING ) ).join( ', ' ) }` );
 	} );
-	await page.waitForTimeout( 100 );
+	await page.waitForTimeout( 300 );
 	const result = await page.evaluate( () => {
 		window.lmStop = true;
 		return { samples: window.lmSamples, strongLost: window.lmStrongLost };
 	} );
 
-	// Every text exactly as written at the end.
-	const end = await markup( page );
-	for ( const id of IDS.filter( ( i ) => i !== 'brxe-cnlate' ) ) {
-		assert( end[ id ] === orig[ id ], `${ id }: "${ end[ id ] }" at the end (expected "${ orig[ id ] }")` );
-	}
-
-	// Every counter really counted.
 	for ( const id of COUNTING ) {
-		const distinct = new Set( result.samples[ id ] );
-		assert( distinct.size >= 4, `${ id }: only ${ distinct.size } distinct value(s) seen (${ [ ...distinct ].slice( 0, 6 ).join( ' | ' ) })` );
+		const frames = result.samples[ id ];
+		const played = frames.filter( ( f ) => f.playing ).length;
+		assert( played >= 30, `${ id }: only ${ played } frame(s) sampled while playing` );
+
+		// Height constant across the animation (both widths), and equal to the height at rest.
+		const heights = [ ...new Set( frames.map( ( f ) => f.height.toFixed( 2 ) ) ) ];
+		assert( heights.length === 1 && heights[ 0 ] === heightAtRest[ id ].toFixed( 2 ), `${ id }: height changed: ${ heights.join( ', ' ) } (at rest ${ heightAtRest[ id ] })` );
+	}
+	assert( COUNTING.every( ( id ) => result.samples[ id ].length >= 60 ), 'fewer than 60 frames sampled' );
+
+	// Fixed width: the NumberFlow element and the number it draws never change width.
+	for ( const id of FIXED ) {
+		for ( const key of [ 'width', 'visual' ] ) {
+			const widths = [ ...new Set( result.samples[ id ].map( ( f ) => f[ key ].toFixed( 1 ) ) ) ];
+			assert( widths.length === 1, `${ id }: ${ key } width changed in fixed mode: ${ widths.slice( 0, 6 ).join( ', ' ) }` );
+		}
+	}
+	// Dynamic width: the number grows as its digits appear (the year starts at "0").
+	for ( const id of DYNAMIC ) {
+		const visual = new Set( result.samples[ id ].map( ( f ) => f.visual.toFixed( 1 ) ) );
+		assert( visual.size > 3, `${ id }: the drawn number took only ${ visual.size } width(s) in dynamic mode` );
 	}
 
-	// "24/7" never changed, at any frame.
-	const ambiguous = [ ...new Set( result.samples[ 'brxe-cnamb' ] ) ];
-	assert( ambiguous.length === 1 && ambiguous[ 0 ] === '24/7', `24/7 changed: ${ ambiguous.join( ' | ' ) }` );
+	// A year never shows a group separator, nor any other symbol.
+	for ( const id of [ 'brxe-cnyear', 'brxe-cnyerf' ] ) {
+		const bad = result.samples[ id ].filter( ( f ) => f.symbols !== '' );
+		assert( bad.length === 0, `${ id }: symbols shown: ${ [ ...new Set( bad.map( ( f ) => f.symbols ) ) ].join( ' / ' ) }` );
+	}
+	// The other formats keep their separators, prefix and suffix while they count.
+	const symbolsOf = ( id ) => new Set( result.samples[ id ].map( ( f ) => f.symbols ) );
+	assert( [ ...symbolsOf( 'brxe-cndec' ) ].every( ( s ) => s === ',| %' ), `cndec symbols: ${ [ ...symbolsOf( 'brxe-cndec' ) ].join( ' / ' ) }` );
+	assert( [ ...symbolsOf( 'brxe-cnpfx' ) ].every( ( s ) => s === '+| clients' ), `cnpfx symbols: ${ [ ...symbolsOf( 'brxe-cnpfx' ) ].join( ' / ' ) }` );
+	// Fixed width: "0 000" from the start, so the group separator is always there.
+	assert( [ ...symbolsOf( 'brxe-cngrpf' ) ].every( ( s ) => s === ' ' ), `cngrpf symbols: ${ [ ...symbolsOf( 'brxe-cngrpf' ) ].join( ' / ' ) }` );
 
-	// A bouncy curve never counts past 100.
-	const bouncy = result.samples[ 'brxe-cnbnc' ].map( ( s ) => parseFloat( s ) );
-	assert( bouncy.every( ( v ) => v <= 100 ), `bouncy counter went past 100: ${ bouncy.filter( ( v ) => v > 100 ).join( ', ' ) }` );
+	// The end: the NumberFlow element is kept, and assistive technologies get the written text.
+	for ( const id of COUNTING ) {
+		assert( await page.locator( `#${ id } lm-number-flow` ).count() === 1, `${ id }: the NumberFlow element is gone at the end` );
+		// The number's own text node: the <strong> of cnmark holds "350", " projets" stays outside.
+		const expected = id === 'brxe-cnmark' ? '350' : orig.text[ id ].trim();
+		const ax = await flowName( page, id );
+		assert( ax && ! ax.ignored && ax.role === 'image' && ax.name === expected, `${ id }: accessibility ${ JSON.stringify( ax ) } (expected an image named "${ expected }")` );
+	}
+
+	// What a crawler that renders the page reads (innerText leaves the shadow DOM out): the
+	// written text, through the visually hidden copy, which assistive technologies skip.
+	const rendered = await page.evaluate( ( ids ) => Object.fromEntries( ids.map( ( id ) => {
+		const copy = document.querySelector( `#${ id } .lm-sr` );
+		return [ id, { text: document.getElementById( id ).innerText.trim(), hidden: copy ? copy.getAttribute( 'aria-hidden' ) : null } ];
+	} ) ), COUNTING );
+	for ( const id of COUNTING ) {
+		assert( rendered[ id ].text === orig.text[ id ].trim(), `${ id }: innerText "${ rendered[ id ].text }" (expected "${ orig.text[ id ].trim() }")` );
+		assert( rendered[ id ].hidden === 'true', `${ id }: the copy for crawlers is not hidden from assistive technologies` );
+	}
+
+	// "24/7" never changed.
+	assert( ( await markup( page ) )[ 'brxe-cnamb' ] === orig.markup[ 'brxe-cnamb' ], 'cnamb (24/7) changed' );
+
+	// A bouncy curve becomes the smooth one: a counter never goes past its value.
 	const bouncyItem = ( await items( page ) ).find( ( i ) => i.id === 'brxe-cnbnc' );
 	assert( bouncyItem.options.easeKey === 'smooth', `bouncy counter: curve ${ bouncyItem.options.easeKey } (expected smooth)` );
 
 	// Inner markup: the <strong> node itself was kept, the number counted inside it.
 	assert( result.strongLost === 0, `cnmark: the <strong> element was replaced during ${ result.strongLost } frame(s)` );
-	const strongSamples = new Set( result.samples[ 'brxe-cnmark' ] );
-	assert( [ ...strongSamples ].every( ( s ) => / projets$/.test( s ) ), `cnmark: text outside the number changed (${ [ ...strongSamples ].slice( 0, 5 ).join( ' | ' ) })` );
-
-	// Formats while counting: grouping and decimal separator kept.
-	const dec = result.samples[ 'brxe-cndec' ].filter( ( s ) => s !== '98,5 %' );
-	assert( dec.every( ( s ) => /^\d+,\d %$/.test( s ) ), `cndec: unexpected format while counting: ${ dec.filter( ( s ) => ! /^\d+,\d %$/.test( s ) ).slice( 0, 5 ).join( ' | ' ) }` );
-	const pfx = result.samples[ 'brxe-cnpfx' ];
-	assert( pfx.every( ( s ) => /^\+\d+ clients$/.test( s ) ), `cnpfx: unexpected format while counting: ${ pfx.filter( ( s ) => ! /^\+\d+ clients$/.test( s ) ).slice( 0, 5 ).join( ' | ' ) }` );
+	assert( await page.locator( '#brxe-cnmark strong > lm-number-flow' ).count() === 1, 'cnmark: the number is not counted inside <strong>' );
 
 	// A start the page cannot reach (30% at the very bottom): counts once the end is reached.
 	const late = await page.evaluate( () => {
@@ -156,7 +205,8 @@ async function animated( reference ) {
 	await page.waitForFunction( () => ( window.lumiaMotion._debug.items().find( ( i ) => i.id === 'brxe-cnlate' ) || {} ).state === 'done', null, { timeout: 5000 } ).catch( async () => {
 		throw new Error( `cnlate never counted at the bottom of the page: ${ ( await states( page, [ 'brxe-cnlate' ] ) ).join() }` );
 	} );
-	assert( ( await markup( page ) )[ 'brxe-cnlate' ] === orig[ 'brxe-cnlate' ], 'cnlate: not back to its written value' );
+	await page.waitForTimeout( 300 );
+	assert( ( await flowName( page, 'brxe-cnlate' ) ).name === '75', 'cnlate: not at its written value' );
 
 	assert( page.errors.length === 0, `page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
@@ -165,36 +215,81 @@ async function animated( reference ) {
 /** Destroyed while counting: every text back as written. */
 async function destroyed() {
 	const page = await open();
-	const orig = await originals( page );
+	const orig = await served( page );
 	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'center' } ) );
 	await page.waitForTimeout( 200 );
 	await page.evaluate( () => window.lumiaMotion.destroy() );
 	const end = await markup( page );
-	IDS.forEach( ( id ) => assert( end[ id ] === orig[ id ], `destroy(): ${ id } is "${ end[ id ] }" (expected "${ orig[ id ] }")` ) );
+	IDS.forEach( ( id ) => assert( end[ id ] === orig.markup[ id ], `destroy(): ${ id } is "${ end[ id ] }" (expected "${ orig.markup[ id ] }")` ) );
 	assert( page.errors.length === 0, `destroy(): page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
 }
 
-/** Reduced motion: values as written from the load. Returns the ARIA snapshots of the plain page, the reference. */
+/** Reduced motion: values as written, no NumberFlow element, before and after scrolling. */
 async function reduced() {
 	const page = await open( { reducedMotion: 'reduce' } );
-	const orig = await originals( page );
-	const now = await markup( page );
-	IDS.forEach( ( id ) => assert( now[ id ] === orig[ id ], `reduced: ${ id } is "${ now[ id ] }" at load (expected "${ orig[ id ] }")` ) );
+	const orig = await served( page );
+	const check = async ( when ) => {
+		const now = await markup( page );
+		IDS.forEach( ( id ) => assert( now[ id ] === orig.markup[ id ], `reduced: ${ id } is "${ now[ id ] }" ${ when } (expected "${ orig.markup[ id ] }")` ) );
+		assert( ! ( await page.locator( 'lm-number-flow' ).count() ), `reduced: a NumberFlow element ${ when }` );
+	};
+	await check( 'at load' );
 	const pending = ( await items( page ) ).filter( ( i ) => i.state === 'pending' );
 	assert( pending.length === 0, `reduced: pending items ${ pending.map( ( i ) => i.id ).join( ', ' ) }` );
 	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'center' } ) );
 	await page.waitForTimeout( 500 );
-	const later = await markup( page );
-	IDS.forEach( ( id ) => assert( later[ id ] === orig[ id ], `reduced: ${ id } changed to "${ later[ id ] }" after scrolling` ) );
-	const reference = await aria( page );
+	await check( 'after scrolling' );
 	assert( page.errors.length === 0, `reduced: page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
-	return reference;
+}
+
+/** NumberFlow blocked: the engine gives up after its wait and every counter stays as written. */
+async function blocked() {
+	const page = await open( {}, ( p ) => p.route( '**/number-flow/lite.mjs*', ( route ) => route.abort() ) );
+	const orig = await served( page );
+	await page.waitForTimeout( 3500 );
+	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'center' } ) );
+	await page.waitForTimeout( 2500 );
+	const now = await markup( page );
+	IDS.forEach( ( id ) => assert( now[ id ] === orig.markup[ id ], `blocked: ${ id } is "${ now[ id ] }" (expected "${ orig.markup[ id ] }")` ) );
+	assert( ! ( await page.locator( 'lm-number-flow' ).count() ), 'blocked: a NumberFlow element on the page' );
+	const pending = ( await items( page ) ).filter( ( i ) => COUNTING.includes( i.id ) && i.state === 'pending' );
+	assert( pending.length === 0, `blocked: counters still pending: ${ pending.map( ( i ) => i.id ).join( ', ' ) }` );
+	await page.context().close();
+}
+
+/** A page without counter requests none of the counter files; a counter in a footer popup gets them. */
+async function loading() {
+	const page = await newPage();
+	const requested = [];
+	page.on( 'request', ( r ) => requested.push( r.url() ) );
+	await page.goto( pageUrl( 'lm-e2e-basic' ), { waitUntil: 'load' } );
+	await page.waitForTimeout( 500 );
+	const html = await page.content();
+	assert( /lumia-motion-js/.test( html ), 'lm-e2e-basic: the engine is not on the page, the check proves nothing' );
+	const flow = requested.filter( ( u ) => FLOW_FILES.test( u ) );
+	assert( flow.length === 0, `lm-e2e-basic: counter files requested: ${ flow.join( ', ' ) }` );
+	assert( ! /number-flow|esm-env/.test( html ), 'lm-e2e-basic: counter modules in the HTML' );
+	await page.context().close();
+
+	const popup = await open( { slug: 'lm-e2e-counter-popup' } );
+	const map = await popup.evaluate( () => {
+		const node = document.getElementById( 'wp-importmap' );
+		return node ? JSON.parse( node.textContent ).imports : null;
+	} );
+	assert( map && map[ 'number-flow/lite' ] && map[ 'esm-env' ] && map[ 'esm-env/browser' ], `counter in a popup: import map ${ JSON.stringify( map ) }` );
+	await popup.waitForFunction( () => window.lumiaMotionCounter, null, { timeout: 4000 } ).catch( () => {
+		throw new Error( 'counter in a popup: the counter adapter never started' );
+	} );
+	assert( popup.errors.length === 0, `counter in a popup: page errors: ${ popup.errors.join( ' | ' ) }` );
+	await popup.context().close();
 }
 
 export default async function () {
-	const reference = await reduced();
-	await animated( reference );
+	await loading();
+	await reduced();
+	await blocked();
+	await animated();
 	await destroyed();
 }

@@ -223,8 +223,9 @@ PAGES[ 'lm-e2e-text' ] = {
 	],
 };
 
-// Counters: one of each format, an ambiguous text, inner markup, a bouncy curve, and a start
-// the page cannot reach at the very bottom.
+// Counters: one of each format in dynamic width (the default) and in fixed width, an ambiguous
+// text, inner markup, a bouncy curve, and a start the page cannot reach at the very bottom.
+const FIXED = { _lmCounterWidth: 'fixed' };
 PAGES[ 'lm-e2e-counter' ] = {
 	title: 'LM E2E counter',
 	elements: [
@@ -232,9 +233,13 @@ PAGES[ 'lm-e2e-counter' ] = {
 			heading( 'Counters', { tag: 'h1' }, { id: 'cnthd' } ),
 			spacer( 1200 ),
 			text( '2024', {}, { id: 'cnyear', classes: [ 'lm-counter' ] } ),
-			text( '1 200', {}, { id: 'cngrp', classes: [ 'lm-counter' ] } ),
+			text( '1 250', {}, { id: 'cngrp', classes: [ 'lm-counter' ] } ),
 			text( '98,5 %', {}, { id: 'cndec', classes: [ 'lm-counter' ] } ),
 			text( '+150 clients', {}, { id: 'cnpfx', classes: [ 'lm-counter' ] } ),
+			text( '2024', FIXED, { id: 'cnyerf', classes: [ 'lm-counter' ] } ),
+			text( '1 250', FIXED, { id: 'cngrpf', classes: [ 'lm-counter' ] } ),
+			text( '98,5 %', FIXED, { id: 'cndecf', classes: [ 'lm-counter' ] } ),
+			text( '+150 clients', FIXED, { id: 'cnpfxf', classes: [ 'lm-counter' ] } ),
 			text( '24/7', {}, { id: 'cnamb', classes: [ 'lm-counter' ] } ),
 			text( '<strong>350</strong> projets', {}, { id: 'cnmark', classes: [ 'lm-counter' ] } ),
 			text( '100', { _lmEase: 'bouncy' }, { id: 'cnbnc', classes: [ 'lm-counter' ] } ),
@@ -243,6 +248,13 @@ PAGES[ 'lm-e2e-counter' ] = {
 			spacer( 100 ),
 		] ),
 	],
+};
+
+// A counter only in a popup rendered in the footer (after the page content): the counter
+// modules must still be printed.
+PAGES[ 'lm-e2e-counter-popup' ] = {
+	title: 'LM E2E counter popup',
+	elements: [ section( [ heading( 'Counter in a popup', { tag: 'h1' }, { id: 'cpophd', classes: [ 'lm-fade' ] } ) ] ) ],
 };
 
 // Bricks popups, real ones: two templates (content rendered in the footer, content fetched
@@ -291,6 +303,13 @@ PAGES[ 'lm-e2e-popup-ajax' ] = {
 	post_type: 'bricks_template',
 	meta: { _bricks_template_type: 'popup', _bricks_template_settings: { ...popupOn( 'lm-e2e-popup', 'lm-e2e-popup-plain' ), popupAjax: true } },
 	elements: [ el( 'block', {}, [ heading( 'AJAX popup title', { tag: 'h3' }, { id: 'popa1h', classes: [ 'lm-fade' ] } ) ], { id: 'popa1b' } ) ],
+};
+
+PAGES[ 'lm-e2e-popup-counter' ] = {
+	title: 'LM E2E popup counter',
+	post_type: 'bricks_template',
+	meta: { _bricks_template_type: 'popup', _bricks_template_settings: popupOn( 'lm-e2e-counter-popup' ) },
+	elements: [ el( 'block', {}, [ text( '1 250', {}, { id: 'popcnt', classes: [ 'lm-counter' ] } ) ], { id: 'popcnb' } ) ],
 };
 
 // Menus that lock the page with body.no-scroll and fire no popup event: an offcanvas with

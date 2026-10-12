@@ -101,6 +101,11 @@
 	inherits: false;
 }
 
+@property --lm-counter-width {
+	syntax: '*';
+	inherits: false;
+}
+
 @property --lm-load {
 	syntax: '*';
 	inherits: false;
@@ -332,9 +337,15 @@ html:not(.lenis) [id] {
  * COUNTER AND TEXT
  * ================================================================ */
 
-/* Digits keep their width while the number counts up: no jitter. */
-[data-lm~="counter"] {
-	font-variant-numeric: tabular-nums;
+/* The NumberFlow element of a counter (motion-counter.mjs). Its mask pads the number above
+ * and below, which made the line taller (61.6 px to 84 px measured): the negative margin
+ * gives that space back, rounded the way NumberFlow rounds the padding, so the line keeps
+ * its height through the whole animation. The width of the digits is the font's own
+ * (dynamic width), or tabular, set on the element, in fixed width. */
+lm-number-flow {
+	line-height: inherit;
+	vertical-align: top;
+	margin-block: calc(-2 * round(nearest, calc(var(--number-flow-mask-height, .25em) / 2), 1px));
 }
 
 /* One line of a split text. */
@@ -342,8 +353,8 @@ html:not(.lenis) [id] {
 	display: block;
 }
 
-/* Copy of a split text or a counter kept for screen readers: hidden from the eye, read
- * aloud, never selected (a copy-paste would get the text twice). The engine sets the same
+/* Copy of a split text kept for screen readers, or of a counter kept for crawlers: hidden
+ * from the eye, never selected (a copy-paste would get the text twice). The engine sets the same
  * styles inline, in case an optimiser strips this rule. */
 .lm-sr {
 	position: absolute;

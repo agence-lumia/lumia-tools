@@ -80,7 +80,7 @@ return [
 		lm_assert( $catalog['blur-up']['class'] === 'lm-blur-up', 'blur-up class' );
 		lm_assert( $catalog['blur-up']['params'] === [ 'distance', 'blur' ], 'blur-up params' );
 		lm_assert( $catalog['zoom-blur']['params'] === [ 'scale', 'blur' ], 'zoom-blur params' );
-		lm_assert( $catalog['counter']['params'] === [ 'start_value' ], 'counter params' );
+		lm_assert( $catalog['counter']['params'] === [ 'start_value', 'counter_width' ], 'counter params' );
 		lm_assert( $catalog['underline']['params'] === [], 'underline params' );
 	},
 	'new_class_name maps legacy to new'              => static function (): void {
@@ -117,6 +117,7 @@ return [
 		lm_assert( $ref['letters']['end_edge'] === 'top', 'letters end_edge' );
 		lm_assert( ! array_key_exists( 'end_at', $ref['fade'] ), 'non-scrub has no end_at' );
 		lm_assert( $ref['counter']['duration'] === 1.35 && $ref['counter']['start_value'] === 0.0, 'counter' );
+		lm_assert( $ref['counter']['counter_width'] === 'auto', 'counter width defaults to auto' );
 		lm_assert( $ref['underline'] === [], 'underline is empty' );
 		lm_assert( array_keys( $ref ) === array_keys( Effects::catalog() ), 'same keys as the catalog' );
 	},
@@ -129,8 +130,8 @@ return [
 		}
 	},
 	'engine variables'                               => static function (): void {
-		lm_assert( count( Effects::ENGINE_VARIABLES ) === 19, 'expected 19 engine variables' );
-		lm_assert( count( array_unique( Effects::ENGINE_VARIABLES ) ) === 19, 'duplicate variable' );
+		lm_assert( count( Effects::ENGINE_VARIABLES ) === 20, 'expected 20 engine variables' );
+		lm_assert( count( array_unique( Effects::ENGINE_VARIABLES ) ) === 20, 'duplicate variable' );
 		foreach ( Effects::ENGINE_VARIABLES as $name ) {
 			lm_assert( strpos( $name, 'lm-' ) === 0, "{$name} must start with lm-" );
 			lm_assert( strpos( $name, '--' ) !== 0, "{$name} must not carry the leading dashes" );
@@ -138,6 +139,13 @@ return [
 		}
 		lm_assert( in_array( 'lm-ease-custom', Effects::ENGINE_VARIABLES, true ), 'lm-ease-custom' );
 		lm_assert( in_array( 'lm-load', Effects::ENGINE_VARIABLES, true ), 'lm-load' );
+		lm_assert( in_array( 'lm-counter-width', Effects::ENGINE_VARIABLES, true ), 'lm-counter-width' );
+	},
+	'motion.css registers every engine variable, not inherited' => static function (): void {
+		$css = (string) file_get_contents( dirname( __DIR__, 3 ) . '/assets/front/css/motion.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file, not a URL.
+		preg_match_all( '/@property --([a-z-]+) \{\s*syntax: \'\*\';\s*inherits: false;\s*\}/', $css, $m );
+		$registered = array_values( array_filter( $m[1], static fn( $name ) => strpos( $name, 'underline' ) === false ) );
+		lm_assert( $registered === Effects::ENGINE_VARIABLES, 'motion.css @property list differs from ENGINE_VARIABLES: ' . implode( ',', $registered ) );
 	},
 	'constants'                                      => static function (): void {
 		lm_assert(

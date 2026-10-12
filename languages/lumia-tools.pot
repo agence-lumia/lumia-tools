@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-11T22:39:39+00:00\n"
+"POT-Creation-Date: 2026-10-11T23:07:39+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -4433,7 +4433,7 @@ msgid "Timing"
 msgstr ""
 
 #: includes/Modules/Motion/Controls.php:340
-#: includes/Modules/Motion/settings-template.php:144
+#: includes/Modules/Motion/settings-template.php:150
 msgid "Tempo"
 msgstr ""
 
@@ -4536,7 +4536,7 @@ msgid "Starting offset, in px. Lines: percent of the line height."
 msgstr ""
 
 #: includes/Modules/Motion/Controls.php:464
-#: includes/Modules/Motion/Controls.php:635
+#: includes/Modules/Motion/Controls.php:653
 #: includes/Modules/Motion/settings-template.php:75
 msgid "Blur"
 msgstr ""
@@ -4569,80 +4569,99 @@ msgstr ""
 msgid "Number the counter starts from."
 msgstr ""
 
+#: includes/Modules/Motion/Controls.php:513
+msgid "Counter width"
+msgstr ""
+
+#: includes/Modules/Motion/Controls.php:518
+#: includes/Modules/Motion/Controls.php:522
+#: includes/Modules/Motion/settings-template.php:102
+msgid "Dynamic width"
+msgstr ""
+
+#: includes/Modules/Motion/Controls.php:519
+#: includes/Modules/Motion/settings-template.php:103
+msgid "Fixed width"
+msgstr ""
+
 #: includes/Modules/Motion/Controls.php:523
+msgid "Dynamic: the number widens as its digits appear. Fixed: every digit of the final number is there from the start, all of the same width."
+msgstr ""
+
+#: includes/Modules/Motion/Controls.php:541
 msgid "Underline"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:532
+#: includes/Modules/Motion/Controls.php:550
 msgid "Underline thickness"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:535
+#: includes/Modules/Motion/Controls.php:553
 msgid "Line thickness. Empty = scales with the text size (1 px for body text, about 2 px on a 32 px title)."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:543
+#: includes/Modules/Motion/Controls.php:561
 msgid "Underline gap"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:547
+#: includes/Modules/Motion/Controls.php:565
 msgid "Include the unit, e.g. 0.12em."
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:555
+#: includes/Modules/Motion/Controls.php:573
 msgid "Underline color"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:633
+#: includes/Modules/Motion/Controls.php:651
 #: includes/Modules/Motion/settings-template.php:73
 msgid "Fade"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:634
+#: includes/Modules/Motion/Controls.php:652
 #: includes/Modules/Motion/settings-template.php:74
 msgid "Slide up"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:636
+#: includes/Modules/Motion/Controls.php:654
 #: includes/Modules/Motion/settings-template.php:76
 msgid "Blur up"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:637
+#: includes/Modules/Motion/Controls.php:655
 #: includes/Modules/Motion/settings-template.php:77
 msgid "Zoom"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:638
+#: includes/Modules/Motion/Controls.php:656
 #: includes/Modules/Motion/settings-template.php:78
 msgid "Zoom blur"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:639
+#: includes/Modules/Motion/Controls.php:657
 #: includes/Modules/Motion/settings-template.php:79
 msgid "Lines"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:640
+#: includes/Modules/Motion/Controls.php:658
 #: includes/Modules/Motion/settings-template.php:80
 msgid "Words on scroll"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:641
+#: includes/Modules/Motion/Controls.php:659
 #: includes/Modules/Motion/settings-template.php:81
 msgid "Letters on scroll"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:642
+#: includes/Modules/Motion/Controls.php:660
 #: includes/Modules/Motion/settings-template.php:82
 msgid "Counter"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:643
+#: includes/Modules/Motion/Controls.php:661
 msgid "Hover underline"
 msgstr ""
 
-#: includes/Modules/Motion/Controls.php:654
+#: includes/Modules/Motion/Controls.php:672
 msgid "Off"
 msgstr ""
 
@@ -4702,194 +4721,198 @@ msgstr ""
 msgid "Starting value"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:101
+#: includes/Modules/Motion/settings-template.php:98
+msgid "Width"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:107
 msgid "Distance (%)"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:121
+#: includes/Modules/Motion/settings-template.php:127
 msgid "Motion module sections"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:122
+#: includes/Modules/Motion/settings-template.php:128
 msgid "Animations"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:123
+#: includes/Modules/Motion/settings-template.php:129
 msgid "Scrolling"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:124
+#: includes/Modules/Motion/settings-template.php:130
 msgid "Builder"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:125
-#: includes/Modules/Motion/settings-template.php:358
+#: includes/Modules/Motion/settings-template.php:131
+#: includes/Modules/Motion/settings-template.php:370
 msgid "Compatibility"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:137
+#: includes/Modules/Motion/settings-template.php:143
 msgid "Pace and curve"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:138
+#: includes/Modules/Motion/settings-template.php:144
 msgid "How animations move by default. Each element can override them in the Bricks builder."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:145
+#: includes/Modules/Motion/settings-template.php:151
 msgid "Durations and staggers are multiplied by 0.5 (very fast), 0.75 (fast), 1 (normal), 1.5 (slow) or 2 (very slow). Delays are never scaled."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:158
+#: includes/Modules/Motion/settings-template.php:164
 msgid "Easing curve"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:159
+#: includes/Modules/Motion/settings-template.php:165
 msgid "Smooth, snappy and bouncy are springs: smooth settles without overshoot, snappy overshoots slightly, bouncy overshoots more and rebounds. Linear keeps a constant speed."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:172
+#: includes/Modules/Motion/settings-template.php:178
 msgid "Custom curve"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:173
+#: includes/Modules/Motion/settings-template.php:179
 msgid "Used when the easing curve is set to Custom. Four numbers, for example cubic-bezier(0.2, 0.8, 0.2, 1). The first and third must be between 0 and 1; an invalid curve falls back to the smooth curve."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:200
+#: includes/Modules/Motion/settings-template.php:206
 msgid "Reference values"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:201
+#: includes/Modules/Motion/settings-template.php:207
 msgid "Used by every element of an effect that does not set its own value. The start edge is the part of the element that triggers the animation; the start position is how far down the screen that edge must be (98% is almost at the bottom). Effects that follow the scroll also have an end."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:263
+#: includes/Modules/Motion/settings-template.php:275
 msgid "The underline effect has no reference value: it is styled with the CSS variables --lm-underline-thickness, --lm-underline-gap, --lm-underline-color and --lm-underline-duration."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:275
-#: includes/Modules/Motion/settings-template.php:282
+#: includes/Modules/Motion/settings-template.php:287
+#: includes/Modules/Motion/settings-template.php:294
 msgid "Smooth scrolling"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:276
+#: includes/Modules/Motion/settings-template.php:288
 msgid "Eases the mouse wheel on desktop. Touch screens keep their native scrolling."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:283
+#: includes/Modules/Motion/settings-template.php:295
 msgid "Loaded on every public page, with or without animation, so the scroll feels the same everywhere."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:301
+#: includes/Modules/Motion/settings-template.php:313
 msgid "Intensity"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:302
+#: includes/Modules/Motion/settings-template.php:314
 msgid "Between 0.01 and 1. A low value glides for longer, 1 follows the wheel with no easing."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:329
+#: includes/Modules/Motion/settings-template.php:341
 msgid "Builder preview"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:330
+#: includes/Modules/Motion/settings-template.php:342
 msgid "Elements always appear in their final state in the builder, so the page can be built without hidden content."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:336
+#: includes/Modules/Motion/settings-template.php:348
 msgid "Animation preview"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:337
+#: includes/Modules/Motion/settings-template.php:349
 msgid "Replaying plays an element once when one of its Motion settings changes."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:341
+#: includes/Modules/Motion/settings-template.php:353
 msgid "Replay on change"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:342
+#: includes/Modules/Motion/settings-template.php:354
 msgid "Never animate"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:359
+#: includes/Modules/Motion/settings-template.php:371
 msgid "For sites that used the former animation snippet of the agency."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:365
+#: includes/Modules/Motion/settings-template.php:377
 msgid "Former class names"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:366
+#: includes/Modules/Motion/settings-template.php:378
 msgid "Keeps the classes of the former snippet working until the content is moved to the lm- classes. Turn it off once the migration is done."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:392
+#: includes/Modules/Motion/settings-template.php:404
 msgid "Migration"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:393
+#: includes/Modules/Motion/settings-template.php:405
 msgid "Moves the content from the former classes to the lm- classes. It runs once per site, from the command line, and keeps every element and its animation."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:399
+#: includes/Modules/Motion/settings-template.php:411
 msgid "The content could not be read to count the former classes."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:402
+#: includes/Modules/Motion/settings-template.php:414
 msgid "No former class is left on this site. The compatibility setting above can be turned off."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:406
+#: includes/Modules/Motion/settings-template.php:418
 msgid "Former classes"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:407
+#: includes/Modules/Motion/settings-template.php:419
 msgid "Global classes that still carry a former name."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:415
+#: includes/Modules/Motion/settings-template.php:427
 msgid "Elements concerned"
 msgstr ""
 
 #. translators: %s: number of pages, headers, footers and templates.
-#: includes/Modules/Motion/settings-template.php:421
+#: includes/Modules/Motion/settings-template.php:433
 #, php-format
 msgid "Spread over %s pages, headers, footers or templates."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:434
+#: includes/Modules/Motion/settings-template.php:446
 msgid "Selectors that will stop matching"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:435
+#: includes/Modules/Motion/settings-template.php:447
 msgid "Custom CSS that targets a class that is renamed. The content then carries the new name and the compatibility setting does not bring the old one back, so fix these before or right after the migration. They are listed, never rewritten."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:443
+#: includes/Modules/Motion/settings-template.php:455
 msgid "Kept working by compatibility"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:444
+#: includes/Modules/Motion/settings-template.php:456
 msgid "Former names typed in a CSS classes field, former underline variables, and selectors of classes that keep their name. They stop working when the compatibility setting is turned off."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:452
+#: includes/Modules/Motion/settings-template.php:464
 msgid "Published snippets"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:453
+#: includes/Modules/Motion/settings-template.php:465
 msgid "FluentSnippets files that are published and still name the former classes. Deactivate or delete them."
 msgstr ""
 
 #. translators: 1: a WP-CLI command that previews the migration, 2: the same command that applies it.
-#: includes/Modules/Motion/settings-template.php:466
+#: includes/Modules/Motion/settings-template.php:478
 #, php-format
 msgid "Preview it with %1$s, which writes nothing and lists everything it found. Apply it with %2$s."
 msgstr ""
 
 #. translators: %s: name of the former animation snippet.
-#: includes/Modules/Motion/settings-template.php:479
+#: includes/Modules/Motion/settings-template.php:491
 #, php-format
 msgid "Then deactivate (or delete) the \"%s\" snippet in FluentSnippets, purge the page cache, check the site, and turn off the compatibility setting above once nothing is kept working by it."
 msgstr ""

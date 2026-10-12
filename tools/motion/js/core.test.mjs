@@ -48,6 +48,7 @@ const CFG = {
       delay: 0,
       duration: 1.35,
       start_value: 0,
+      counter_width: "auto",
     },
     underline: {},
   },
@@ -294,6 +295,23 @@ test("resolve: effect-specific values", () => {
   assert.equal(w.fromOpacity, 0.5);
   assert.equal(core.resolve("counter", { "start-value": "10" }, CFG).startValue, 10);
   assert.equal(core.resolve("counter", {}, CFG).startValue, 0);
+});
+
+test("resolve: counter width, auto by default, fixed when asked", () => {
+  assert.equal(core.resolve("counter", {}, CFG).counterWidth, "auto");
+  assert.equal(core.resolve("counter", { "counter-width": "fixed" }, CFG).counterWidth, "fixed");
+  assert.equal(core.resolve("counter", { "counter-width": " FIXED " }, CFG).counterWidth, "fixed");
+  const site = { ...CFG, effects: { ...CFG.effects, counter: { ...CFG.effects.counter, counter_width: "fixed" } } };
+  assert.equal(core.resolve("counter", {}, site).counterWidth, "fixed");
+  assert.equal(core.resolve("counter", { "counter-width": "auto" }, site).counterWidth, "auto");
+  const bad = core.resolve("counter", { "counter-width": "wide" }, CFG);
+  assert.equal(bad.counterWidth, "auto");
+  assert.ok(bad.warnings.some((w) => /counter width/i.test(w)), bad.warnings.join(" "));
+  assert.equal(core.resolve("fade", { "counter-width": "fixed" }, CFG).counterWidth, "auto");
+  assert.notEqual(
+    core.signature(core.resolve("counter", {}, CFG)),
+    core.signature(core.resolve("counter", { "counter-width": "fixed" }, CFG)),
+  );
 });
 
 test("resolve: start position", () => {

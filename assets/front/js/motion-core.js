@@ -385,6 +385,8 @@
    * TEMPO
    * ================================================================ */
 
+  var COUNTER_WIDTHS = ["auto", "fixed"];
+
   var TEMPOS = { "very-fast": 0.5, fast: 0.75, normal: 1, slow: 1.5, "very-slow": 2 };
 
   // Multiplier of a tempo keyword; null for "custom" (unscaled); 1 for anything unknown.
@@ -616,6 +618,19 @@
       warnings.push("Invalid easing " + JSON.stringify(typedEase || easeKeyword) + ": " + curve.key + " curve used.");
     }
 
+    // Counter width: "auto" grows with the digits, "fixed" holds every digit of the final value
+    // from the start. Typed on the element, else the site value; anything else is "auto".
+    var counterWidth = "auto";
+    if (family === "counter") {
+      var typedWidth = text(raw["counter-width"]).toLowerCase();
+      var siteWidth = text(settings.counter_width).toLowerCase();
+      if (typedWidth !== "" && COUNTER_WIDTHS.indexOf(typedWidth) === -1) {
+        warnings.push("Invalid counter width " + JSON.stringify(typedWidth) + ": site value used.");
+        typedWidth = "";
+      }
+      counterWidth = typedWidth || (COUNTER_WIDTHS.indexOf(siteWidth) > -1 ? siteWidth : "auto");
+    }
+
     return {
       effect: effect,
       family: family,
@@ -637,6 +652,7 @@
       scale: pickNumber("scale", raw, settings, warnings),
       fromOpacity: pickNumber("from_opacity", raw, settings, warnings),
       startValue: pickNumber("start_value", raw, settings, warnings),
+      counterWidth: counterWidth,
       warnings: warnings,
     };
   }
@@ -657,6 +673,7 @@
       o.scale,
       o.fromOpacity,
       o.startValue,
+      o.counterWidth,
     ]);
   }
 
@@ -806,6 +823,7 @@
   }
 
   return {
+    BOUNCE: BOUNCE,
     bezier: bezier,
     spring: spring,
     cssLinear: cssLinear,

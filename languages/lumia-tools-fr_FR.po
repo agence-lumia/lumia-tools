@@ -5528,6 +5528,9 @@ msgstr "Opacité de départ"
 msgid "Starting value"
 msgstr "Valeur de départ"
 
+msgid "Width"
+msgstr "Largeur"
+
 msgid "Distance (%)"
 msgstr "Distance (%)"
 
@@ -5732,6 +5735,18 @@ msgstr "Opacité de départ"
 
 msgid "Counter start value"
 msgstr "Valeur de départ du compteur"
+
+msgid "Counter width"
+msgstr "Largeur du compteur"
+
+msgid "Dynamic width"
+msgstr "Largeur dynamique"
+
+msgid "Fixed width"
+msgstr "Largeur fixe"
+
+msgid "Dynamic: the number widens as its digits appear. Fixed: every digit of the final number is there from the start, all of the same width."
+msgstr "Dynamique : le nombre s'élargit à mesure que ses chiffres apparaissent. Fixe : tous les chiffres du nombre final sont là dès le départ, tous de la même largeur."
 
 msgid "Underline thickness"
 msgstr "Épaisseur du soulignement"

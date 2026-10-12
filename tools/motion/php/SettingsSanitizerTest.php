@@ -97,6 +97,12 @@ return [
 		lm_assert( 1e9 === $high['counter']['start_value'], 'start_value 5e12 must become 1e9' );
 		lm_assert( -1e9 === $low['counter']['start_value'], 'start_value -5e12 must become -1e9' );
 	},
+	'counter_width keeps auto or fixed only'        => static function () use ( $lm_defaults, $lm_effects ): void {
+		lm_assert( 'fixed' === $lm_effects( [ 'counter' => [ 'counter_width' => 'fixed' ] ], $lm_defaults )['counter']['counter_width'], 'fixed kept' );
+		lm_assert( 'auto' === $lm_effects( [ 'counter' => [ 'counter_width' => 'wide' ] ], $lm_defaults )['counter']['counter_width'], 'unknown keyword falls back to auto' );
+		lm_assert( 'auto' === $lm_effects( [ 'counter' => [ 'counter_width' => 3 ] ], $lm_defaults )['counter']['counter_width'], 'a number falls back to auto' );
+		lm_assert( 'auto' === $lm_effects( [], $lm_defaults )['counter']['counter_width'], 'absent: auto' );
+	},
 	'lerp is clamped to 0.01..1'                    => static function () use ( $lm_defaults ): void {
 		$high = SettingsSanitizer::sanitize( [ 'lenis' => [ 'lerp' => '7' ] ], $lm_defaults() );
 		$low  = SettingsSanitizer::sanitize( [ 'lenis' => [ 'lerp' => '0' ] ], $lm_defaults() );

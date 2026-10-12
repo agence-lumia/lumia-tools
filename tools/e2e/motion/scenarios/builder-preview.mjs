@@ -7,7 +7,7 @@
 //    interrupted by another change ends final too);
 //  - an element given an effect in the panel (no data-lm: only the canvas knows it) is found
 //    by its computed --lm-effect and replayed; text scrubs replay 0 to 1 in 1.2 s and the
-//    counter counts again;
+//    counter rolls again (NumberFlow);
 //  - with the "never animate" setting nothing replays, the signature is still kept up to date;
 //  - the API of the panel: replay(id) plays one element (false for an unknown id or under
 //    reduced motion), inspect(id) gives the inherited values before the tempo factor,
@@ -342,11 +342,16 @@ export default async function () {
 					} );
 				}
 				if ( check === 'counter' ) {
-					if ( ! out.texts.includes( el.textContent ) ) {
-						out.texts.push( el.textContent );
+					// NumberFlow draws in its shadow DOM: the visual width of its number (scaled while
+					// the digits appear) tells the frames apart.
+					const number = el.querySelector( 'lm-number-flow' )?.shadowRoot?.querySelector( '.number' );
+					const width = number ? number.getBoundingClientRect().width.toFixed( 1 ) : 'none';
+					if ( ! out.texts.includes( width ) ) {
+						out.texts.push( width );
 					}
 				}
-				const live = el.querySelector( '.lm-word, .lm-line, .lm-char' ) || ( check === 'counter' && el.querySelector( '[aria-hidden]' ) );
+				const playing = ( window.lumiaMotion._debug.items().find( ( i ) => i.id === id ) || {} ).state === 'playing';
+				const live = el.querySelector( '.lm-word, .lm-line, .lm-char' ) || ( check === 'counter' && playing );
 				if ( live ) {
 					out.end = performance.now() - t0;
 				}
@@ -369,9 +374,20 @@ export default async function () {
 		}
 		const end = await canvas.evaluate( ( id ) => {
 			const el = document.getElementById( id );
-			return { text: el.textContent, pieces: el.querySelectorAll( '.lm-word, .lm-line, .lm-char, .lm-sr' ).length, opacity: getComputedStyle( el ).opacity };
+			return {
+				text: el.textContent,
+				shown: el.innerText.trim(),
+				pieces: el.querySelectorAll( '.lm-word, .lm-line, .lm-char, .lm-sr' ).length,
+				flows: el.querySelectorAll( 'lm-number-flow' ).length,
+				opacity: getComputedStyle( el ).opacity,
+			};
 		}, id );
-		assert( end.text === text && end.pieces === 0, `${ slug }: the element is not back as written after the replay: ${ JSON.stringify( end ) }` );
+		if ( check === 'counter' ) {
+			// The NumberFlow element stays at the written value, with its copy for crawlers.
+			assert( end.flows === 1 && end.shown === text && end.pieces === 1, `${ slug }: the counter is not at its written value after the replay: ${ JSON.stringify( end ) }` );
+		} else {
+			assert( end.text === text && end.pieces === 0, `${ slug }: the element is not back as written after the replay: ${ JSON.stringify( end ) }` );
+		}
 	}
 
 	// A replay interrupted by another change ends in the final state.
