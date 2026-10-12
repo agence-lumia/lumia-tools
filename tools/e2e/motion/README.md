@@ -18,9 +18,10 @@ Exemple : `export LM_E2E_WP=/chemin/vers/wp.sh` (un script qui lance `wordpress:
 
 | Scénario | Vérifie |
 |---|---|
-| `smoke`, `marker`, `loading` | Page sans effet : aucune ressource ; marquage `data-lm` ; chargement conditionnel, styles en ligne et moteur injecté après le premier affichage, sécurité de 3 s, fichier bloqué |
+| `smoke`, `marker`, `loading` | Page sans effet : aucune ressource ; marquage `data-lm` ; chargement conditionnel (aucun moteur quand tous les effets sont au premier écran), styles en ligne et moteur injecté après le premier affichage, sécurité de 3 s, fichier bloqué. Aucune requête vers un autre hôte, polices exceptées (`foreignRequests()` : la copie du lab garde les URL de polices du site de production dans le CSS du thème) |
 | `enter`, `text`, `scroll-position` | Effets d'entrée, de texte ; position conservée au rafraîchissement, retour, ancre |
 | `load` | Animations au chargement : `data-lm-load` sur le premier écran, jamais sous 0,01 d'opacité, état final atteint, « Au chargement » `never` / `always`, aucun mouvement en réduction de mouvement |
+| `settled` | Textes et compteurs du premier écran (`data-lm-settled`) : jamais découpés, jamais masqués, valeur écrite affichée à chaque image, même moteur démarré ; « Au chargement » `never` les anime encore |
 | `counter` | Compteur NumberFlow : formats écrits à l'identique, valeur lue par les lecteurs d'écran à chaque instant, hauteur de ligne constante, largeur fixe, repli sans le module |
 | `lenis`, `builder-preview`, `builder-panel` | Défilement doux ; aperçu dans le canvas ; panneau (sections, Replay, repères, valeurs héritées) |
 
