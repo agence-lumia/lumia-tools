@@ -353,8 +353,8 @@ lm-number-flow {
 	display: block;
 }
 
-/* Copy of a split text kept for screen readers, or of a counter kept for crawlers: hidden
- * from the eye, never selected (a copy-paste would get the text twice). The engine sets the same
+/* Copy of a split text or of a counter kept for screen readers (and, for a counter, for
+ * crawlers: innerText leaves NumberFlow's shadow DOM out): hidden from the eye, never selected (a copy-paste would get the text twice). The engine sets the same
  * styles inline, in case an optimiser strips this rule. */
 .lm-sr {
 	position: absolute;

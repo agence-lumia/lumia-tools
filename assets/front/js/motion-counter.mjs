@@ -20,7 +20,8 @@
  * "1 250") and all digits have the same width, so the number never changes width.
  *
  * The element stays once the animation is over: going back to the text would shift the
- * number by a few pixels. Its accessible name is the formatted value (ElementInternals).
+ * number by a few pixels. The engine hides it from assistive technologies (its name, from
+ * ElementInternals, is the start value until it plays) and gives them a copy of the text.
  */
 import NumberFlowLite, { define, formatToData, canAnimate } from "number-flow/lite";
 

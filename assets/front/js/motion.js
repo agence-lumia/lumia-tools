@@ -930,8 +930,9 @@
    * loaded on the pages that have a counter, exposes window.lumiaMotionCounter. The number
    * must sit in a single text node; anything else ("24/7", digits split by markup) is left
    * as is. The NumberFlow element replaces the text node and stays once the number is
-   * written; it names itself after the value for assistive technologies, and a visually
-   * hidden copy of the text (.lm-sr, hidden from them) keeps the number in innerText.
+   * written. A visually hidden copy of the written text (.lm-sr) is what assistive
+   * technologies read, from the mount on (the element itself is aria-hidden), and keeps the
+   * number in innerText for crawlers.
    *
    * Without the adapter after COUNTER_WAIT_MS (blocked file, browser without module
    * support), or when NumberFlow cannot animate in this browser, the text stays as written.
@@ -999,13 +1000,13 @@
     }
     // NumberFlow draws the digits in its shadow DOM, which innerText, hence a crawler that
     // renders the page, does not read: a visually hidden copy keeps the written text in the
-    // page. Assistive technologies skip it, they get the name of the NumberFlow element.
+    // page. It is also what assistive technologies read, at every moment: the NumberFlow
+    // element is hidden from them (its name would be the start value until it plays).
     var copy = srCopy();
     // Inline-level, unlike the copy of a split text: an absolute box counts as a block in
     // innerText, which would read "350\n projets". It takes no width (1px less 1px of margin).
     copy.style.cssText = SR_STYLE + COUNTER_COPY_STYLE;
     copy.textContent = source.node.nodeValue;
-    copy.setAttribute("aria-hidden", "true");
     source.node.parentNode.insertBefore(copy, source.node);
     var handle = null;
     try {
@@ -1023,6 +1024,7 @@
       logOnce(item.el, describe(item.el) + " left as written: NumberFlow cannot animate in this browser.");
       return false;
     }
+    handle.flow.setAttribute("aria-hidden", "true");
     item.count = { adapter: adapter, handle: handle, copy: copy };
     return true;
   }

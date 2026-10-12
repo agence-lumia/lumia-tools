@@ -1,7 +1,7 @@
-// Counter (NumberFlow): every format ends exactly as written, for the eye and for assistive
-// technologies; the line never changes height and, in fixed width, the number never changes
-// width; a year never gets a group separator; an ambiguous text is never touched; inner
-// markup is kept; a start the page cannot reach still counts. Fallbacks: NumberFlow blocked
+// Counter (NumberFlow): every format ends exactly as written, for the eye; assistive
+// technologies get the written text at every moment, never the start value; the line
+// never changes height and, in fixed width, the number never changes width; a year never
+// gets a group separator; an ambiguous text is never touched; inner markup is kept; a start the page cannot reach still counts. Fallbacks: NumberFlow blocked
 // or reduced motion leave the text as written. A page without counter loads none of it, a
 // counter that only sits in a footer popup still gets it.
 import { newPage, pageUrl, assert, items } from '../lib.mjs';
@@ -46,7 +46,7 @@ const markup = ( page ) => page.evaluate( ( ids ) => Object.fromEntries( ids.map
 
 const states = async ( page, ids ) => ( await items( page ) ).filter( ( i ) => ids.includes( i.id ) ).map( ( i ) => `${ i.id }:${ i.state }` );
 
-/** Accessible name and role of the NumberFlow element of a counter, as Chrome computes them (ElementInternals). */
+/** Role, name and ignored state of the NumberFlow element of a counter in Chrome's accessibility tree. */
 async function flowName( page, id ) {
 	const cdp = await page.context().newCDPSession( page );
 	try {
@@ -60,6 +60,23 @@ async function flowName( page, id ) {
 		return { role: node.role && node.role.value, name: node.name && node.name.value, ignored: !! node.ignored };
 	} finally {
 		await cdp.detach();
+	}
+}
+
+/** What assistive technologies get for each counter (Playwright's ARIA snapshot, aria-hidden honoured). */
+async function aria( page ) {
+	const out = {};
+	for ( const id of IDS ) {
+		out[ id ] = await page.locator( `#${ id }` ).ariaSnapshot();
+	}
+	return out;
+}
+
+/** Screen readers get exactly what they get from the plain page, the written text once. */
+async function sameAria( page, reference, when ) {
+	const now = await aria( page );
+	for ( const id of IDS ) {
+		assert( now[ id ] === reference[ id ], `${ id } ${ when }: screen readers get\n${ now[ id ] }\ninstead of\n${ reference[ id ] }` );
 	}
 }
 
@@ -94,7 +111,7 @@ const sample = ( page ) => page.evaluate( ( ids ) => {
 	requestAnimationFrame( tick );
 }, IDS );
 
-async function animated() {
+async function animated( reference ) {
 	const page = await open();
 	const orig = await served( page );
 
@@ -109,11 +126,18 @@ async function animated() {
 	} );
 	assert( ! ( await page.locator( '#brxe-cnamb lm-number-flow' ).count() ), 'cnamb (24/7) got a NumberFlow element' );
 
+	// Before the counters start: the written value for screen readers, never the start value.
+	await sameAria( page, reference, 'while pending' );
+
 	// Heights before anything plays: the line keeps its height once NumberFlow is in.
 	const heightAtRest = await page.evaluate( ( ids ) => Object.fromEntries( ids.map( ( id ) => [ id, document.getElementById( id ).getBoundingClientRect().height ] ) ), COUNTING );
 
 	await sample( page );
 	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'start' } ) );
+	// While they roll.
+	await page.waitForFunction( () => window.lumiaMotion._debug.items().some( ( i ) => i.id === 'brxe-cnyear' && i.state === 'playing' ), null, { timeout: 3000 } );
+	await page.waitForTimeout( 150 );
+	await sameAria( page, reference, 'while playing' );
 	await page.waitForFunction(
 		( ids ) => ids.every( ( id ) => ( window.lumiaMotion._debug.items().find( ( i ) => i.id === id ) || {} ).state === 'done' ),
 		COUNTING,
@@ -163,24 +187,20 @@ async function animated() {
 	// Fixed width: "0 000" from the start, so the group separator is always there.
 	assert( [ ...symbolsOf( 'brxe-cngrpf' ) ].every( ( s ) => s === ' ' ), `cngrpf symbols: ${ [ ...symbolsOf( 'brxe-cngrpf' ) ].join( ' / ' ) }` );
 
-	// The end: the NumberFlow element is kept, and assistive technologies get the written text.
+	// The end: the NumberFlow element is kept and hidden from assistive technologies (Chrome's
+	// own tree, its ElementInternals name included), which get the written text, once.
+	await sameAria( page, reference, 'at the end' );
 	for ( const id of COUNTING ) {
 		assert( await page.locator( `#${ id } lm-number-flow` ).count() === 1, `${ id }: the NumberFlow element is gone at the end` );
-		// The number's own text node: the <strong> of cnmark holds "350", " projets" stays outside.
-		const expected = id === 'brxe-cnmark' ? '350' : orig.text[ id ].trim();
 		const ax = await flowName( page, id );
-		assert( ax && ! ax.ignored && ax.role === 'image' && ax.name === expected, `${ id }: accessibility ${ JSON.stringify( ax ) } (expected an image named "${ expected }")` );
+		assert( ax && ax.ignored, `${ id }: the NumberFlow element is in the accessibility tree: ${ JSON.stringify( ax ) }` );
 	}
 
 	// What a crawler that renders the page reads (innerText leaves the shadow DOM out): the
-	// written text, through the visually hidden copy, which assistive technologies skip.
-	const rendered = await page.evaluate( ( ids ) => Object.fromEntries( ids.map( ( id ) => {
-		const copy = document.querySelector( `#${ id } .lm-sr` );
-		return [ id, { text: document.getElementById( id ).innerText.trim(), hidden: copy ? copy.getAttribute( 'aria-hidden' ) : null } ];
-	} ) ), COUNTING );
+	// written text, through the visually hidden copy.
+	const rendered = await page.evaluate( ( ids ) => Object.fromEntries( ids.map( ( id ) => [ id, document.getElementById( id ).innerText.trim() ] ) ), COUNTING );
 	for ( const id of COUNTING ) {
-		assert( rendered[ id ].text === orig.text[ id ].trim(), `${ id }: innerText "${ rendered[ id ].text }" (expected "${ orig.text[ id ].trim() }")` );
-		assert( rendered[ id ].hidden === 'true', `${ id }: the copy for crawlers is not hidden from assistive technologies` );
+		assert( rendered[ id ] === orig.text[ id ].trim(), `${ id }: innerText "${ rendered[ id ] }" (expected "${ orig.text[ id ].trim() }")` );
 	}
 
 	// "24/7" never changed.
@@ -206,7 +226,7 @@ async function animated() {
 		throw new Error( `cnlate never counted at the bottom of the page: ${ ( await states( page, [ 'brxe-cnlate' ] ) ).join() }` );
 	} );
 	await page.waitForTimeout( 300 );
-	assert( ( await flowName( page, 'brxe-cnlate' ) ).name === '75', 'cnlate: not at its written value' );
+	await sameAria( page, reference, 'after the late counter' );
 
 	assert( page.errors.length === 0, `page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
@@ -225,7 +245,7 @@ async function destroyed() {
 	await page.context().close();
 }
 
-/** Reduced motion: values as written, no NumberFlow element, before and after scrolling. */
+/** Reduced motion: values as written, no NumberFlow element, before and after scrolling. Returns the ARIA snapshots of the plain page, the reference. */
 async function reduced() {
 	const page = await open( { reducedMotion: 'reduce' } );
 	const orig = await served( page );
@@ -240,8 +260,10 @@ async function reduced() {
 	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'center' } ) );
 	await page.waitForTimeout( 500 );
 	await check( 'after scrolling' );
+	const reference = await aria( page );
 	assert( page.errors.length === 0, `reduced: page errors: ${ page.errors.join( ' | ' ) }` );
 	await page.context().close();
+	return reference;
 }
 
 /** NumberFlow blocked: the engine gives up after its wait and every counter stays as written. */
@@ -288,8 +310,8 @@ async function loading() {
 
 export default async function () {
 	await loading();
-	await reduced();
+	const reference = await reduced();
 	await blocked();
-	await animated();
+	await animated( reference );
 	await destroyed();
 }
