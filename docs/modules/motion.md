@@ -24,6 +24,33 @@
 - **LCP:** entrance effects in the header or the first section play in CSS from the first frame (see "Load animations" below), so they never wait for the scripts. Elsewhere, entrance effects pre-hide the element until the engine is ready; text and counters are never pre-hidden.
 - **On load** (`_lmLoad`, `--lm-load`): `auto` (default), `always` (played on load wherever the element is), `never` (always the scroll path). Only the base value counts (element, else its first class with one); breakpoint values are ignored.
 
+### Names
+
+| Class / `--lm-effect` | Admin label (fr) | Family | Settings it reads |
+|---|---|---|---|
+| `lm-fade` | Fondu | entrance | none |
+| `lm-slide-up` | Montée | entrance | distance |
+| `lm-blur` | Flou | entrance | blur |
+| `lm-blur-up` | Flou montant | entrance | distance, blur |
+| `lm-zoom` | Zoom | entrance | scale |
+| `lm-zoom-blur` | Zoom flou | entrance | scale, blur |
+| `lm-lines` | Lignes | text | distance |
+| `lm-words` | Mots au défilement | text, scrub | start opacity |
+| `lm-letters` | Lettres au défilement | text, scrub | start opacity |
+| `lm-counter` | Compteur | counter | start value, width |
+| `lm-underline` | Soulignement au survol | underline (CSS) | `--lm-underline-*` |
+
+| Tempo | Factor | Label (fr) | Curve | Label (fr) |
+|---|---|---|---|---|
+| `very-fast` | ×0.5 | Très rapide | `smooth` (default) | Douce |
+| `fast` | ×0.75 | Rapide | `snappy` | Vive |
+| `normal` | ×1 | Normal | `bouncy` | Rebond |
+| `slow` | ×1.5 | Lent | `linear` | Linéaire |
+| `very-slow` | ×2 | Très lent | `custom` | Personnalisée |
+| `custom` | typed duration | Personnalisé | | |
+
+The names of the first trials (before iteration 2) have no alias: the module was never released with them. The only former names still understood are the `sk-*` ones, in `Legacy.php`.
+
 ### Variables
 
 Engine variables are registered with `@property … inherits: false`, so a child never inherits its section's settings: `--lm-effect`, `--lm-start-edge`, `--lm-start-at`, `--lm-end-edge`, `--lm-end-at`, `--lm-start`, `--lm-end`, `--lm-tempo`, `--lm-duration`, `--lm-delay`, `--lm-stagger`, `--lm-ease`, `--lm-ease-custom`, `--lm-distance`, `--lm-blur`, `--lm-scale`, `--lm-from-opacity`, `--lm-start-value`, `--lm-counter-width`, `--lm-load`. `tools/motion/php/EffectsTest.php` checks that the `@property` list of `motion.css` is `Effects::ENGINE_VARIABLES`, in order.
@@ -121,6 +148,20 @@ The release build leaves every file under a `vendor/` folder as it is and fails 
 6. When the Compatibility tab reports nothing left, turn off "Former class names".
 
 The scan ignores revisions, trashed posts and auto-drafts; published FluentSnippets files are reported, never modified.
+
+## Performance (Lighthouse, local copy, 12/10/2026)
+
+Local Docker copy of the lab (original dump, `wp lumia motion migrate --apply` run with the current code), gzip on, Lighthouse performance only, median of 3 runs. Mobile uses Lighthouse's default simulated throttling.
+
+| Page (mobile) | Old snippet (recorded earlier, original dump) | No animation (same state) | Module, iteration 2 | Module, devtools throttling (applied) | No animation, devtools throttling |
+|---|---|---|---|---|---|
+| Home | 95 / LCP 2.58 s | 96 / 2.35 s | **92 / LCP 3.02 s** | 89 / 2.54 s | 77 / 3.70 s |
+| Contact | 99 / 1.97 s | 98 / 1.97 s | **95 / LCP 2.73 s** | 92 / 2.45 s | 90 / 2.69 s |
+| Legal notice (underline only) | 97 | | 97 / LCP 2.28 s | | |
+
+Desktop: 100 on all three pages (LCP 0.67 s home, 0.62 s contact). Iteration 1 was 89 / 3.45 s (home) and 94 / 2.96 s (contact). Pages carry the animations (home: 33 `data-lm`, 3 `data-lm-load`; contact: 11 and 5).
+
+Criterion "LCP at most 0.2 s above the old snippet" (2.78 s home, 2.17 s contact): **not met by the simulated mobile figure** (3.02 s and 2.73 s). The LCP element is the hero paragraph (a `blur-up` load element, painted from the first frame); the breakdown is TTFB 0.45 s, load delay 0, load time 0, render delay 2.56 s (85 %). The trace says otherwise: Chrome's observed FCP and LCP are the same (317 ms home, 217 ms contact), with and without the module, so the page paints at once and the gap comes from Lighthouse's simulation (it models the deferred scripts and the animation work on the 4x slower CPU). With the throttling applied for real (`--throttling-method=devtools`) the module is **faster** than no animation on both pages (2.54 s vs 3.70 s, 2.45 s vs 2.69 s). Not tuned. The iteration 1 figures (pre-hide waiting for the scripts) are 0.2 to 0.4 s worse than iteration 2 on the simulated figure.
 
 ## Tests
 

@@ -10,6 +10,20 @@ travail monté en `wp-content/plugins/lumia-tools`, et une commande WP-CLI qui l
 Au premier lancement, `playwright-core` (sans navigateur) est installé dans `.cache/`
 (ignoré par git).
 
+`LM_E2E_WP` est **obligatoire** pour `setup`, `all` et les scénarios qui lisent la base (`load`,
+`counter`, `builder-panel`…) : sans lui, `wp` doit exister sur la machine, ce qui est rarement le cas.
+Exemple : `export LM_E2E_WP=/chemin/vers/wp.sh` (un script qui lance `wordpress:cli` contre le site local).
+
+## Scénarios
+
+| Scénario | Vérifie |
+|---|---|
+| `smoke`, `marker`, `loading` | Page sans effet : aucune ressource ; marquage `data-lm` ; chargement conditionnel, sécurité de 3 s |
+| `enter`, `text`, `scroll-position` | Effets d'entrée, de texte ; position conservée au rafraîchissement, retour, ancre |
+| `load` | Animations au chargement : `data-lm-load` sur le premier écran, jamais sous 0,01 d'opacité, état final atteint, « Au chargement » `never` / `always`, aucun mouvement en réduction de mouvement |
+| `counter` | Compteur NumberFlow : formats écrits à l'identique, valeur lue par les lecteurs d'écran à chaque instant, hauteur de ligne constante, largeur fixe, repli sans le module |
+| `lenis`, `builder-preview`, `builder-panel` | Défilement doux ; aperçu dans le canvas ; panneau (sections, Replay, repères, valeurs héritées) |
+
 ## Variables
 
 | Variable | Défaut | Rôle |

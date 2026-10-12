@@ -112,11 +112,13 @@ In Settings > Updates:
 
 ### Motion
 
-- Entrance, text, counter and underline effects for Bricks, from a global class (`lm-fade`, `lm-reveal`…) or the Motion group of any element
+- Eleven effects from a global class (`lm-fade`, `lm-slide-up`, `lm-blur`, `lm-blur-up`, `lm-zoom`, `lm-zoom-blur`, `lm-lines`, `lm-words`, `lm-letters`, `lm-counter`, `lm-underline`) or the Motion group of any element
 - Per-element settings through `--lm-*` CSS variables (element > class > module defaults), breakpoints included
-- Built-in tempo (fast, normal, slow, exact) and curves (Lümia curve, Apple-style springs, linear, custom)
-- Loaded only on the pages that use an effect; GSAP and Lenis bundled, no CDN; optional Lenis smooth scrolling
-- Live preview and effect thumbnails in the builder; `wp lumia motion migrate` for sites using the former snippet
+- Five tempos (very fast, fast, normal, slow, very slow, or a custom duration) and curves Smooth, Snappy, Bouncy (springs), Linear and Custom (`cubic-bezier()`), set independently
+- Entrance effects of the first screen play in CSS from the first frame, so they never delay the LCP
+- Counters roll with [NumberFlow](https://number-flow.barvian.me/) (dynamic or fixed width), and screen readers always get the written value
+- Loaded only on the pages that use an effect; GSAP, Lenis and NumberFlow bundled, no CDN; optional Lenis smooth scrolling
+- Clear Bricks panel (sections, units, Replay, "Show markers", inherited values as placeholders); `wp lumia motion migrate` for sites using the former snippet
 
 ## Architecture
 
