@@ -180,11 +180,12 @@ html:not(.lenis) [id] {
  * LOAD ANIMATIONS
  * Entrance effects of the first screen (data-lm-load, set by Marker) play here from the first
  * frame instead of waiting for the engine, which leaves them alone. Text and counter effects
- * there have no CSS version: they are shown as written (data-lm-settled), no rule needed. The values are resolved at
- * render time and written inline: --lm-load-duration, --lm-load-move-duration (the duration
- * times the settle factor of a spring), --lm-load-delay (delay + rank in the lot x stagger),
- * --lm-load-ease (transform: overshoot allowed), --lm-load-safe-ease (opacity and blur: never
- * past their end), --lm-distance, --lm-blur, --lm-scale.
+ * there have no CSS version: they are shown as written (data-lm-settled), no rule needed. The
+ * values are resolved at render time and written inline: --lm-load-duration,
+ * --lm-load-move-duration (the duration times the settle factor of a spring), --lm-load-delay
+ * (delay + rank in the lot x stagger), --lm-load-ease (transform: overshoot allowed),
+ * --lm-load-safe-ease (opacity and blur: never past their end), --lm-distance, --lm-blur,
+ * --lm-scale.
  *
  * Opacity starts at 0.01, not 0: Chrome does not count a paint at opacity 0 for the LCP.
  * Keyframes give the start only: the end is the element's own value, so an author's opacity,
