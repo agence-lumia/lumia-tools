@@ -299,12 +299,16 @@ async function tallScreen() {
 async function strippedCss() {
 	const page = await newPage();
 	let stripped = 0;
-	await page.route( /\/motion\.css(\?|$)/, async ( route ) => {
+	// motion.css is printed inline in the head: the rule is removed from the served document.
+	await page.route( '**/*', async ( route ) => {
+		if ( route.request().resourceType() !== 'document' ) {
+			return route.continue();
+		}
 		const res = await route.fetch();
-		const body = ( await res.text() ).replace( /\.lm-sr\s*\{[^}]*\}/g, () => {
+		const body = ( await res.text() ).replace( /(<style id=["']lumia-motion-inline-css["'][^>]*>)([\s\S]*?)(<\/style>)/, ( all, open, css, close ) => open + css.replace( /\.lm-sr\s*\{[^}]*\}/g, () => {
 			stripped++;
 			return '';
-		} );
+		} ) + close );
 		return route.fulfill( { response: res, body } );
 	} );
 	const res = await page.goto( pageUrl( SLUG ), { waitUntil: 'load' } );

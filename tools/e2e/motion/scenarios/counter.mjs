@@ -292,8 +292,31 @@ async function loading() {
 	assert( /lumia-motion-js/.test( html ), 'lm-e2e-basic: the engine is not on the page, the check proves nothing' );
 	const flow = requested.filter( ( u ) => FLOW_FILES.test( u ) );
 	assert( flow.length === 0, `lm-e2e-basic: counter files requested: ${ flow.join( ', ' ) }` );
-	assert( ! /number-flow|esm-env/.test( html ), 'lm-e2e-basic: counter modules in the HTML' );
+	// Tags only: the inline motion styles carry the lm-number-flow rules.
+	const tags = ( html.match( /<(script|link)\b[^>]*>/g ) || [] ).join( '\n' ) + ( ( html.match( /<script[^>]*type=["']importmap["'][^>]*>[\s\S]*?<\/script>/ ) || [ '' ] )[ 0 ] );
+	assert( ! /number-flow|esm-env|motion-counter/.test( tags ), 'lm-e2e-basic: counter modules in the HTML' );
 	await page.context().close();
+
+	// A counter page: the import map is in the served HTML, the entry module and its preloads are not
+	// (the loader injects the entry after the first paint).
+	const servedHtml = await ( await fetch( pageUrl( 'lm-e2e-counter' ) ) ).text();
+	assert( /id=["']wp-importmap["']/.test( servedHtml ), 'lm-e2e-counter: no import map in the served HTML' );
+	assert( ! /<script[^>]*type=["']module["'][^>]*motion-counter/.test( servedHtml ) && ! /modulepreload/.test( servedHtml ), 'lm-e2e-counter: the counter module or a preload is printed as a tag' );
+	{
+		const page = await open( { slug: 'lm-e2e-counter' } );
+		await page.waitForFunction( () => window.lumiaMotionCounter, null, { timeout: 4000 } );
+		// Against the first paint, not the first contentful one: every element of this page is an
+		// entrance, hidden until the engine plays it, so nothing contentful is painted before.
+		const t = await page.evaluate( () => {
+			const fp = ( performance.getEntriesByType( 'paint' ).find( ( e ) => e.name === 'first-paint' ) || {} ).startTime;
+			return {
+				fp,
+				early: performance.getEntriesByType( 'resource' ).filter( ( e ) => /\/(number-flow|esm-env)\/|motion-counter\.mjs/.test( e.name ) && ! ( e.startTime > fp ) ).map( ( e ) => `${ e.name } ${ Math.round( e.startTime ) } ms` ),
+			};
+		} );
+		assert( typeof t.fp === 'number' && t.early.length === 0, `lm-e2e-counter: counter files requested before the first paint (${ t.fp } ms): ${ t.early.join( ', ' ) }` );
+		await page.context().close();
+	}
 
 	const popup = await open( { slug: 'lm-e2e-counter-popup' } );
 	const map = await popup.evaluate( () => {

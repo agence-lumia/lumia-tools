@@ -18,7 +18,7 @@ Exemple : `export LM_E2E_WP=/chemin/vers/wp.sh` (un script qui lance `wordpress:
 
 | Scénario | Vérifie |
 |---|---|
-| `smoke`, `marker`, `loading` | Page sans effet : aucune ressource ; marquage `data-lm` ; chargement conditionnel, sécurité de 3 s |
+| `smoke`, `marker`, `loading` | Page sans effet : aucune ressource ; marquage `data-lm` ; chargement conditionnel, styles en ligne et moteur injecté après le premier affichage, sécurité de 3 s, fichier bloqué |
 | `enter`, `text`, `scroll-position` | Effets d'entrée, de texte ; position conservée au rafraîchissement, retour, ancre |
 | `load` | Animations au chargement : `data-lm-load` sur le premier écran, jamais sous 0,01 d'opacité, état final atteint, « Au chargement » `never` / `always`, aucun mouvement en réduction de mouvement |
 | `counter` | Compteur NumberFlow : formats écrits à l'identique, valeur lue par les lecteurs d'écran à chaque instant, hauteur de ligne constante, largeur fixe, repli sans le module |

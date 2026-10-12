@@ -43,6 +43,37 @@ const stable = ( page ) => page.evaluate( () => new Promise( ( resolve ) => {
 	requestAnimationFrame( tick );
 } ) );
 
+/**
+ * Init script: counts the calls of lumiaLenis.scrollTo (window.lmCalls) from the moment the module creates the
+ * instance (its scripts run after the first paint, so no earlier hook can see it), and when `global` is given,
+ * defines that global right then, as a former snippet showing up after the module. window.lmLoadedFirst: whether
+ * the page had already loaded when the instance appeared.
+ */
+function watchLenis( global ) {
+	let value;
+	window.lmCalls = 0;
+	window.lmLoadedFirst = null;
+	Object.defineProperty( window, 'lumiaLenis', {
+		configurable: true,
+		get: () => value,
+		set: ( instance ) => {
+			value = instance;
+			if ( ! instance || null !== window.lmLoadedFirst ) {
+				return;
+			}
+			window.lmLoadedFirst = document.readyState === 'complete';
+			if ( global ) {
+				window[ global ] = {};
+			}
+			const original = instance.scrollTo.bind( instance );
+			instance.scrollTo = ( ...args ) => {
+				window.lmCalls++;
+				return original( ...args );
+			};
+		},
+	} );
+}
+
 /** Requests made while a page loads, and the response. */
 async function load( page, slug ) {
 	const urls = [];
@@ -72,9 +103,18 @@ async function plainPage() {
 	const page = await newPage();
 	const urls = await load( page, 'lm-e2e-none' );
 	await lenisReady( page );
-	for ( const file of [ 'lenis.min.js', 'motion-scroll.js', 'lenis.css' ] ) {
+	for ( const file of [ 'lenis.min.js', 'motion-scroll.js' ] ) {
 		assert( urls.some( ( u ) => u.includes( `/${ file }` ) ), `lm-e2e-none: ${ file } not requested` );
 	}
+	// The Lenis stylesheet is printed inline, as is, after the motion styles.
+	assert( ! urls.some( ( u ) => u.includes( '/lenis.css' ) ), 'lm-e2e-none: lenis.css requested (it is printed inline)' );
+	const lenisCss = await page.evaluate( () => {
+		const node = document.getElementById( 'lumia-lenis-inline-css' );
+		const motion = document.getElementById( 'lumia-motion-inline-css' );
+		return node ? { text: node.textContent, after: !! ( motion && ( motion.compareDocumentPosition( node ) & Node.DOCUMENT_POSITION_FOLLOWING ) ) } : null;
+	} );
+	assert( lenisCss && /html\.lenis/.test( lenisCss.text ) && /lenis-stopped/.test( lenisCss.text ), 'lm-e2e-none: the Lenis styles are not inline' );
+	assert( lenisCss.after, 'lm-e2e-none: the Lenis styles come before the motion styles' );
 	assert( ! urls.some( ( u ) => /gsap|ScrollTrigger|SplitText|\/motion\.js/i.test( u ) ), 'lm-e2e-none: a GSAP or engine file was requested' );
 	assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-none: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
 	const state = await page.evaluate( () => ( {
@@ -375,7 +415,7 @@ async function formerSnippet() {
 	const GLOBAL = 'StudioKyneMotion';
 	for ( const [ name, init ] of [
 		[ 'global before the module', `window.${ GLOBAL } = {};` ],
-		[ 'global after the module, before load', `document.addEventListener( 'DOMContentLoaded', () => { window.${ GLOBAL } = {}; } );` ],
+		[ 'global after the module, before load', `(${ watchLenis.toString() })( '${ GLOBAL }' );` ],
 	] ) {
 		for ( const slug of [ 'lm-e2e-none', 'lm-e2e-basic' ] ) {
 			const label = `former snippet (${ name }), ${ slug }`;
@@ -401,20 +441,11 @@ async function formerSnippet() {
 	// Arriving on an anchor while the former snippet shows up before the load: the landing (one frame after
 	// the load) must not drive the instance that stood down.
 	const page = await newPage();
-	await page.addInitScript( ( global ) => {
-		document.addEventListener( 'DOMContentLoaded', () => {
-			window[ global ] = {};
-			window.lmCalls = 0;
-			const original = window.lumiaLenis.scrollTo.bind( window.lumiaLenis );
-			window.lumiaLenis.scrollTo = ( ...args ) => {
-				window.lmCalls++;
-				return original( ...args );
-			};
-		} );
-	}, GLOBAL );
+	await page.addInitScript( watchLenis, GLOBAL );
 	await page.goto( pageUrl( 'lm-e2e-anchor' ) + '#target', { waitUntil: 'load' } );
 	await page.waitForTimeout( 600 );
-	const late = await page.evaluate( () => ( { calls: window.lmCalls, lenis: typeof window.lumiaLenis } ) );
+	const late = await page.evaluate( () => ( { calls: window.lmCalls, lenis: typeof window.lumiaLenis, loadedFirst: window.lmLoadedFirst } ) );
+	assert( late.loadedFirst === false, `former snippet, anchor landing: the instance appeared ${ late.loadedFirst ? 'after the load' : 'never' } (the case is not reproduced)` );
 	assert( late.lenis === 'undefined', `former snippet, anchor landing: window.lumiaLenis is ${ late.lenis }` );
 	assert( late.calls === 0, `former snippet, anchor landing: the destroyed Lenis was asked to scroll ${ late.calls } time(s)` );
 	noErrors( page, 'former snippet, anchor landing' );
@@ -459,16 +490,7 @@ async function reducedMotion() {
 async function hiddenAnchor() {
 	for ( const [ hash, calls, name ] of [ [ '#lmhidden', 0, 'a target without a box' ], [ '#target', 1, 'a visible target' ] ] ) {
 		const page = await newPage();
-		await page.addInitScript( () => {
-			document.addEventListener( 'DOMContentLoaded', () => {
-				window.lmCalls = 0;
-				const original = window.lumiaLenis.scrollTo.bind( window.lumiaLenis );
-				window.lumiaLenis.scrollTo = ( ...args ) => {
-					window.lmCalls++;
-					return original( ...args );
-				};
-			} );
-		} );
+		await page.addInitScript( watchLenis, null );
 		await page.goto( pageUrl( 'lm-e2e-anchor' ) + hash, { waitUntil: 'load' } );
 		await lenisReady( page );
 		await page.waitForTimeout( 600 );

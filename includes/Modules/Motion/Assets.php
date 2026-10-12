@@ -9,11 +9,13 @@ defined( 'ABSPATH' ) || exit;
  * Three moments, each with a different amount of knowledge about the page:
  *
  * - `wp_enqueue_scripts`: before anything is rendered, so only what every page needs
- *   (the stylesheet).
+ *   (the styles, printed inline: a linked stylesheet would block the first paint).
  * - `wp_head` (priority 1): the inline script that sets `lm-js` and the 3 s safety.
  * - `wp_footer` (priority 19): the page is rendered, popups included (Bricks prints them
- *   at priority 10), and `Marker::page_families()` knows which effects are on it. The
- *   scripts of the footer are printed at priority 20.
+ *   at priority 10), and `Marker::page_families()` knows which effects are on it. On a
+ *   public page the scripts are not printed as tags: an inline loader injects them once
+ *   the page has painted, see print_loader(). In the canvas they are printed by WordPress
+ *   at priority 20, as usual.
  *
  * The counter is the exception: its NumberFlow modules are WordPress script modules, which a
  * classic theme such as Bricks prints at `wp_footer` priority 10 (import map, then the modules).
@@ -54,6 +56,40 @@ final class Assets {
 	const SAFETY_MS = 3000;
 
 	/**
+	 * Milliseconds after DOMContentLoaded after which the loader injects the scripts even
+	 * without a paint: a tab opened in the background paints nothing until it is shown, and a
+	 * browser with only `first-contentful-paint` waits for content on a page whose every
+	 * element is an entrance hidden until the engine plays it.
+	 */
+	const LOADER_FALLBACK_MS = 1000;
+
+	/** Handles of the scripts the loader may inject, in no particular order. */
+	const LOADED_HANDLES = [
+		self::HANDLE_GSAP,
+		self::HANDLE_SCROLLTRIGGER,
+		self::HANDLE_SPLITTEXT,
+		self::HANDLE_LENIS,
+		self::HANDLE_CORE,
+		self::HANDLE_MOTION,
+		self::HANDLE_SCROLL,
+	];
+
+	/**
+	 * URL of the counter entry module on a public page, as core would print it.
+	 *
+	 * @var string
+	 */
+	private string $counter_url = '';
+
+	/**
+	 * URL of the counter entry module withheld from the footer, injected by the loader ('' when
+	 * core prints it, in the canvas or when the import map is not printed in the footer).
+	 *
+	 * @var string
+	 */
+	private string $counter_src = '';
+
+	/**
 	 * Sanitized settings of the module.
 	 *
 	 * @var array<string, mixed>
@@ -77,7 +113,7 @@ final class Assets {
 		add_action( 'wp_head', [ $this, 'print_head_script' ], 1 );
 		add_action( 'wp_footer', [ $this, 'enqueue_scripts' ], 19 );
 		add_action( 'wp_footer', [ $this, 'enqueue_counter' ], 10 );
-		self::order_module_printing();
+		$this->order_module_printing();
 	}
 
 	/**
@@ -91,8 +127,12 @@ final class Assets {
 	 * started loading. Hooked on `init`, ours would run after core's printers, so these are
 	 * hooked again, at the same priority, after ours. Only their order within priority 10
 	 * changes; a block theme prints the import map in the head, nothing is moved there.
+	 *
+	 * Between the import map and the modules, withhold_counter() takes the counter entry out
+	 * of the queue on a public page: the loader injects it after the first paint. Only when
+	 * the import map is printed in the footer, so that it still lists the counter modules.
 	 */
-	private static function order_module_printing(): void {
+	private function order_module_printing(): void {
 		if ( ! function_exists( 'wp_script_modules' ) ) {
 			return;
 		}
@@ -103,8 +143,32 @@ final class Assets {
 			if ( 10 === has_action( 'wp_footer', $callback ) ) {
 				remove_action( 'wp_footer', $callback, 10 );
 				add_action( 'wp_footer', $callback, 10 );
+				if ( 'print_import_map' === $method ) {
+					add_action( 'wp_footer', [ $this, 'withhold_counter' ], 10 );
+				}
 			}
 		}
+	}
+
+	/**
+	 * Takes the counter entry module out of the queue of a public page, once the import map
+	 * that lists its dependencies is printed, and keeps its URL for the loader.
+	 *
+	 * Printed as a tag, the module and its preloads would be requested while the page is
+	 * parsed, before the first paint. Nothing is preloaded either: the preloads only list the
+	 * dependencies of queued modules. The canvas keeps the tag.
+	 */
+	public function withhold_counter(): void {
+		if ( is_admin() || self::is_builder_main() || self::is_builder_canvas() || ! function_exists( 'wp_dequeue_script_module' ) ) {
+			return;
+		}
+
+		if ( '' === $this->counter_url ) {
+			return;
+		}
+
+		wp_dequeue_script_module( self::HANDLE_COUNTER );
+		$this->counter_src = $this->counter_url;
 	}
 
 	/**
@@ -133,7 +197,15 @@ final class Assets {
 			wp_register_script_module( $id, $vendor . $file, self::module_deps( $id ), LUMIA_VERSION );
 		}
 
-		wp_enqueue_script_module( self::HANDLE_COUNTER, LUMIA_ASSETS_URL . 'front/js/motion-counter.mjs', [ 'number-flow/lite' ], LUMIA_VERSION );
+		$src = LUMIA_ASSETS_URL . 'front/js/motion-counter.mjs';
+		wp_enqueue_script_module( self::HANDLE_COUNTER, $src, [ 'number-flow/lite' ], LUMIA_VERSION );
+
+		if ( ! $canvas ) {
+			// Same URL as core would print (WP_Script_Modules::get_src()).
+			$src = apply_filters( 'script_module_loader_src', add_query_arg( 'ver', LUMIA_VERSION, $src ), self::HANDLE_COUNTER ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's filter.
+
+			$this->counter_url = is_string( $src ) ? $src : '';
+		}
 	}
 
 	/**
@@ -152,7 +224,14 @@ final class Assets {
 	}
 
 	/**
-	 * Stylesheets: the builder one in the main builder window, the front one everywhere else.
+	 * Styles: the builder stylesheet in the main builder window; everywhere else the front
+	 * styles (and the Lenis ones when smooth scroll is on), printed inline in the head.
+	 *
+	 * A linked stylesheet blocks the first paint until it has arrived, and Lighthouse's
+	 * simulation charges that request to the LCP. Printed inline, the 4 KB (gzip) of styles
+	 * travel with the page. The file read is the one that would have been linked, so the
+	 * release zip, which minifies motion.css in place, prints the minified styles; lenis.css
+	 * is a third-party file, printed as it is shipped.
 	 */
 	public function enqueue_styles(): void {
 		if ( is_admin() ) {
@@ -165,14 +244,33 @@ final class Assets {
 			return;
 		}
 
-		wp_enqueue_style( self::HANDLE_MOTION, LUMIA_ASSETS_URL . 'front/css/motion.css', [], LUMIA_VERSION );
+		self::inline_style( self::HANDLE_MOTION, 'front/css/motion.css', [] );
 
 		if ( $this->legacy_enabled() ) {
 			wp_add_inline_style( self::HANDLE_MOTION, Legacy::underline_css() );
 		}
 
 		if ( $this->scroll_wanted() ) {
-			wp_enqueue_style( self::HANDLE_LENIS, LUMIA_ASSETS_URL . 'front/js/vendor/lenis/lenis.css', [ self::HANDLE_MOTION ], LUMIA_VERSION );
+			self::inline_style( self::HANDLE_LENIS, 'front/js/vendor/lenis/lenis.css', [ self::HANDLE_MOTION ] );
+		}
+	}
+
+	/**
+	 * Enqueues a style handle with no file and the content of a stylesheet of the plugin as
+	 * its inline style (`<style id="{handle}-inline-css">`, where the link would have been).
+	 *
+	 * @param string   $handle Style handle.
+	 * @param string   $file   Path under assets/.
+	 * @param string[] $deps   Handles printed before this one.
+	 */
+	private static function inline_style( string $handle, string $file, array $deps ): void {
+		wp_register_style( $handle, false, $deps, LUMIA_VERSION );
+		wp_enqueue_style( $handle );
+
+		$path = dirname( LUMIA_PLUGIN_FILE ) . '/assets/' . $file;
+		$css  = is_readable( $path ) ? file_get_contents( $path ) : false; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file of the plugin, not a URL.
+		if ( is_string( $css ) && '' !== trim( $css ) ) {
+			wp_add_inline_style( $handle, trim( $css ) );
 		}
 	}
 
@@ -229,6 +327,127 @@ final class Assets {
 		if ( $this->scroll_wanted() ) {
 			$this->enqueue_scroll( $engine );
 		}
+
+		if ( ! $canvas ) {
+			$this->print_loader();
+		}
+	}
+
+	/**
+	 * Replaces the script tags of a public page with an inline loader that injects the same
+	 * scripts once the page has painted.
+	 *
+	 * Since the load animations are pure CSS, the first frame needs no script. Printed as
+	 * deferred tags, the scripts were still requested while the HTML was parsed, before the
+	 * first paint, and Lighthouse's simulated throttling counts every request started before
+	 * the observed LCP (and the CPU time of the scripts) in its LCP estimate: +0.7 s on the
+	 * mobile LCP for a page Chrome paints at the same time with or without the module.
+	 *
+	 * What loads is still decided by the enqueues above: the handles queued here, their
+	 * dependencies in WordPress order, their URLs as WordPress prints them (`ver`, then the
+	 * `script_loader_src` filter) and their inline `before` data, printed at once (the
+	 * configuration objects). They are then dequeued, so WordPress prints no tag.
+	 *
+	 * The loader waits for DOMContentLoaded, then for the first paint entry (`first-paint`, or
+	 * `first-contentful-paint` where only that one exists), two animation frames in a browser
+	 * without paint timing, LOADER_FALLBACK_MS at most (a tab opened in the background paints
+	 * nothing). Two frames alone were not enough: Chrome's paint entry carries the time the
+	 * frame was presented, measured 2 ms after the second frame callback had injected the
+	 * counter module. It then appends the scripts with `async = false`:
+	 * they are fetched in parallel and run in order. A script that fails to load adds
+	 * `lm-ready` at once, so nothing waits for the 3 s safety. The counter entry module
+	 * (withhold_counter()) is injected first; its import map stays in the HTML.
+	 */
+	private function print_loader(): void {
+		$scripts = wp_scripts();
+		$queued  = array_values( array_intersect( $scripts->queue, self::LOADED_HANDLES ) );
+		$order   = [];
+		foreach ( $queued as $handle ) {
+			self::resolve_script( $scripts, $handle, $order );
+		}
+
+		$before = '';
+		$list   = [];
+		foreach ( $order as $handle ) {
+			$item = $scripts->registered[ $handle ];
+			$src  = (string) $item->src;
+			if ( ! empty( $item->ver ) ) {
+				$src = add_query_arg( 'ver', $item->ver, $src );
+			}
+			$src = apply_filters( 'script_loader_src', $src, $handle ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's filter, as WordPress applies it.
+
+			// Without the sourceURL comment core adds to it: the data ends up in the loader's tag.
+			$data = trim( (string) preg_replace( '~^//# sourceURL=.*$~m', '', $scripts->get_inline_script_data( $handle, 'before' ) ) );
+			if ( '' !== $data ) {
+				$before .= $data . "\n";
+			}
+
+			if ( is_string( $src ) && '' !== $src ) {
+				$list[] = [
+					'id'  => $handle . '-js',
+					'src' => esc_url_raw( $src ),
+				];
+			}
+		}
+
+		foreach ( $queued as $handle ) {
+			wp_dequeue_script( $handle );
+		}
+
+		if ( array() === $list && '' === $this->counter_src ) {
+			return;
+		}
+
+		$flags  = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES;
+		$module = '' === $this->counter_src ? '' : esc_url_raw( $this->counter_src );
+
+		wp_print_inline_script_tag(
+			$before . self::loader_js() . '(' . wp_json_encode( $list, $flags ) . ',' . wp_json_encode( $module, $flags ) . ');',
+			[ 'id' => 'lumia-motion-loader' ]
+		);
+	}
+
+	/**
+	 * Adds a handle to the list after its dependencies, depth first, as WordPress orders them.
+	 *
+	 * @param \WP_Scripts $scripts Registry.
+	 * @param string      $handle  Handle to add.
+	 * @param string[]    $order   Ordered handles, completed in place.
+	 */
+	private static function resolve_script( \WP_Scripts $scripts, string $handle, array &$order ): void {
+		if ( in_array( $handle, $order, true ) || ! isset( $scripts->registered[ $handle ] ) ) {
+			return;
+		}
+
+		foreach ( (array) $scripts->registered[ $handle ]->deps as $dep ) {
+			self::resolve_script( $scripts, (string) $dep, $order );
+		}
+
+		$order[] = $handle;
+	}
+
+	/**
+	 * The loader, a function expression called with the ordered scripts (`[{id, src}]`) and the
+	 * URL of the counter entry module ('' when none).
+	 */
+	private static function loader_js(): string {
+		return '(function(list,module){'
+			. 'var d=document,started=false;'
+			. 'function shown(){d.documentElement.classList.add("lm-ready");}'
+			. 'function add(){'
+			. 'if(started){return;}started=true;'
+			. 'if(module){var m=d.createElement("script");m.type="module";m.src=module;m.id="' . self::HANDLE_COUNTER . '-js-module";d.body.appendChild(m);}'
+			. 'list.forEach(function(item){var s=d.createElement("script");s.src=item.src;s.id=item.id;s.async=false;s.onerror=shown;d.body.appendChild(s);});'
+			. '}'
+			. 'function painted(){'
+			. 'setTimeout(add,' . (int) self::LOADER_FALLBACK_MS . ');'
+			. 'var P=window.PerformanceObserver,types=P&&P.supportedEntryTypes||[];'
+			. 'if(types.indexOf("paint")<0){requestAnimationFrame(function(){requestAnimationFrame(add);});return;}'
+			. 'if(performance.getEntriesByType("paint").length){add();return;}'
+			. 'var o=new P(function(){o.disconnect();add();});o.observe({type:"paint",buffered:true});'
+			. '}'
+			. 'if(d.readyState==="loading"){d.addEventListener("DOMContentLoaded",painted,{once:true});}else{painted();}'
+			. '})';
 	}
 
 	/**

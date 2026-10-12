@@ -1,11 +1,15 @@
 // Conditional loading of the Motion assets: nothing on a page with no animation, GSAP and
 // ScrollTrigger on an animated page, SplitText only for a text effect, no foreign host, the
-// 3 s safety that makes everything visible when the engine does not start, the builder
+// styles inline and the engine injected after the first paint (no module file in the served
+// HTML, every module request started after the first contentful paint), the 3 s safety that
+// makes everything visible when the engine does not start or a library is blocked, the builder
 // windows, and the former snippet still being active.
 import { newPage, login, pageUrl, assert, snippet, items, BASE } from '../lib.mjs';
 
 const HOST = new URL( BASE ).host;
 const GSAP_FILES = /gsap|ScrollTrigger|SplitText|\/motion\.js(\?|$)/i;
+// Every file of the module a front page may request (the counter modules have their own scenario).
+const MODULE_FILES = /\/(gsap|ScrollTrigger|SplitText|lenis)(\.min)?\.(js|css)|\/motion(-core|-scroll|-builder)?\.(js|css)(\?|$)/;
 const SNIPPET = '4-sk-motion.php';
 const FORMER_CDN = 'https://cdn.jsdelivr.net/**';
 
@@ -75,7 +79,8 @@ export default async function () {
 		assert( engine.length === 0, `lm-e2e-none requested engine files: ${ engine.join( ', ' ) }` );
 		const g = await globals( page );
 		assert( g.gsap === 'undefined', `lm-e2e-none: window.gsap is ${ g.gsap }` );
-		assert( await page.locator( 'link[href*="/front/css/motion.css"]' ).count() === 1, 'lm-e2e-none: motion.css is not linked' );
+		assert( await page.locator( 'link[href*="/front/css/motion.css"]' ).count() === 0, 'lm-e2e-none: motion.css is linked (it is printed inline)' );
+		assert( /\.lm-ready/.test( await page.locator( 'style#lumia-motion-inline-css' ).textContent().catch( () => '' ) ), 'lm-e2e-none: the inline motion styles are missing' );
 		assert( await page.evaluate( () => document.documentElement.classList.contains( 'lm-js' ) ), 'lm-e2e-none: <html> has no lm-js' );
 		assert( page.errors.length === 0, `lm-e2e-none: page errors: ${ page.errors.join( ' | ' ) }` );
 		assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-none: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
@@ -119,10 +124,58 @@ export default async function () {
 		assert( urls.every( ( u ) => ! u.startsWith( 'http' ) || new URL( u ).host === HOST ), `lm-e2e-text: foreign host: ${ urls.filter( ( u ) => u.startsWith( 'http' ) && new URL( u ).host !== HOST ).join( ', ' ) }` );
 	}
 
-	// The engine never starts (script blocked): the element is hidden at first, then the 3 s safety shows everything.
+	// The served HTML: no <script src> and no stylesheet link for the module's files, the styles inline,
+	// the engine injected by the loader once the page has painted.
+	for ( const slug of [ 'lm-e2e-basic', 'lm-e2e-text', 'lm-e2e-none' ] ) {
+		const html = await ( await fetch( pageUrl( slug ) ) ).text();
+		const scripts = [ ...html.matchAll( /<script\b[^>]*\bsrc=["']([^"']+)["']/g ) ].map( ( m ) => m[ 1 ] ).filter( ( u ) => MODULE_FILES.test( u ) );
+		assert( scripts.length === 0, `${ slug }: module scripts in the served HTML: ${ scripts.join( ', ' ) }` );
+		const links = [ ...html.matchAll( /<link\b[^>]*>/g ) ].map( ( m ) => m[ 0 ] ).filter( ( l ) => /stylesheet/.test( l ) && /\/(motion|lenis)\.css/.test( l ) );
+		assert( links.length === 0, `${ slug }: module stylesheets linked: ${ links.join( ' ' ) }` );
+		const inline = html.match( /<style id=["']lumia-motion-inline-css["'][^>]*>([\s\S]*?)<\/style>/ );
+		assert( inline && /\.lm-ready/.test( inline[ 1 ] ) && /data-lm/.test( inline[ 1 ] ), `${ slug }: motion.css is not inline in the head` );
+		assert( html.indexOf( 'lumia-motion-inline-css' ) < html.indexOf( '</head>' ), `${ slug }: the inline styles are not in the head` );
+	}
 	{
 		const page = await newPage();
-		await page.route( /\/motion\.js(\?|$)/, ( route ) => route.abort() );
+		await load( page, 'lm-e2e-text' );
+		await page.waitForFunction( () => window.lumiaMotion && window.lumiaMotion._debug && document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 5000 } ).catch( () => {
+			throw new Error( 'injected engine: window.lumiaMotion never started' );
+		} );
+		const timing = await page.evaluate( () => {
+			const fcp = performance.getEntriesByType( 'paint' ).find( ( e ) => e.name === 'first-contentful-paint' );
+			return {
+				fcp: fcp ? fcp.startTime : null,
+				files: performance.getEntriesByType( 'resource' ).filter( ( e ) => /\/front\/(js|css)\//.test( e.name ) ).map( ( e ) => ( { name: e.name.replace( /^.*\/front\//, '' ), start: e.startTime } ) ),
+			};
+		} );
+		assert( timing.fcp !== null, 'injected engine: no first-contentful-paint entry (nothing proved)' );
+		assert( timing.files.length >= 5, `injected engine: ${ timing.files.length } module file(s) requested (expected the engine and SplitText)` );
+		const early = timing.files.filter( ( f ) => f.start <= timing.fcp );
+		assert( early.length === 0, `injected engine: requests started before the first paint (${ Math.round( timing.fcp ) } ms): ${ early.map( ( f ) => `${ f.name } ${ Math.round( f.start ) } ms` ).join( ', ' ) }` );
+		assert( page.errors.length === 0, `injected engine: page errors: ${ page.errors.join( ' | ' ) }` );
+		await page.context().close();
+	}
+
+	// GSAP blocked: the libraries after it still run, the engine cannot; the page ends shown, at once.
+	{
+		const page = await newPage();
+		await page.route( /\/gsap\.min\.js(\?|$)/, ( route ) => route.abort() );
+		await load( page, 'lm-e2e-basic' );
+		await page.waitForFunction( () => document.documentElement.classList.contains( 'lm-ready' ), null, { timeout: 2000 } ).catch( () => {
+			throw new Error( 'blocked GSAP: <html> has no lm-ready 2 s after the load (the failed file must show the page, not the 3 s safety)' );
+		} );
+		await page.waitForTimeout( 300 );
+		const opacities = await page.evaluate( () => [ ...document.querySelectorAll( '[data-lm]' ) ].map( ( n ) => getComputedStyle( n ).opacity ) );
+		assert( opacities.length > 0 && opacities.every( ( o ) => o === '1' ), `blocked GSAP: an element is still hidden (opacity ${ opacities.join( ',' ) })` );
+		await page.context().close();
+	}
+
+	// The engine never starts (its file loads but does nothing, as a script error would): the element is hidden
+	// at first, then the 3 s safety shows everything. A file that fails to load shows the page at once (below).
+	{
+		const page = await newPage();
+		await page.route( /\/motion\.js(\?|$)/, ( route ) => route.fulfill( { contentType: 'application/javascript', body: '/* the engine does not start */' } ) );
 		await load( page, 'lm-e2e-basic' );
 		const state = () => page.evaluate( () => ( {
 			ready: document.documentElement.classList.contains( 'lm-ready' ),
