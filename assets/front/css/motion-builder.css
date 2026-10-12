@@ -48,9 +48,24 @@
  * Group icon: the Lucide "sparkles" (lucide-static 1.34.0, the official file as is, base64)
  * drawn as a mask over the Bricks "star" the group declares (Controls::add_group()), which
  * stays as the fallback. The star keeps its box (visibility, not display) so the size and
- * the alignment of the title do not change. The left rail of shortcuts (quick access) is a
- * fixed list of the Bricks groups: a group added by a plugin never appears there.
+ * the alignment of the title do not change. The same mask draws the Motion item that
+ * motion-panel.js adds to the left rail of shortcuts (quick access), sized and scaled like the
+ * Bricks icons there (16px, 0.9, full size while the rail is hovered).
  * ---------------------------------------------------------------- */
+
+#bricks-panel-element-quick-access li.lm-rail-motion .lm-rail-icon {
+	display: block;
+	position: relative;
+	width: 16px;
+	height: 16px;
+	transform: scale(0.9);
+	transition: transform 0.05s ease-in-out;
+}
+
+#bricks-panel-element-quick-access.hover li.lm-rail-motion .lm-rail-icon,
+#bricks-panel-element-quick-access:hover li.lm-rail-motion .lm-rail-icon {
+	transform: scale(1);
+}
 
 [data-control-group="lm_motion"] .control-group-title > .icon[data-name="star"] {
 	position: relative;
@@ -60,7 +75,8 @@
 	visibility: hidden;
 }
 
-[data-control-group="lm_motion"] .control-group-title > .icon[data-name="star"]::before {
+[data-control-group="lm_motion"] .control-group-title > .icon[data-name="star"]::before,
+#bricks-panel-element-quick-access li.lm-rail-motion .lm-rail-icon::before {
 	content: "";
 	position: absolute;
 	inset: 0;

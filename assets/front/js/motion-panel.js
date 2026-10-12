@@ -10,7 +10,12 @@
  *   canvas engine when it starts), never saved in the page;
  * - the empty number fields show, as their placeholder, the value the selected element really
  *   gets (its class, else the site value of its effect): lumiaMotion.inspect(id). The static
- *   placeholder of Controls.php stays when the canvas cannot tell.
+ *   placeholder of Controls.php stays when the canvas cannot tell;
+ * - a Motion shortcut in the left rail of the element panel (#bricks-panel-element-quick-access).
+ *   Bricks 2.4.2 builds that rail from a fixed list of its own groups (the `shortcuts` computed
+ *   of a Vue component, no plugin API): the item is a plain <li> appended after the last Bricks
+ *   one, with the same markup, and a click sets the same state as Bricks' setActivePanelGroup().
+ *   Bricks internals: when they change, the item is simply absent (no error).
  *
  * The selected element comes from the state of the builder: Bricks 2.4.2 mounts a Vue 3 app
  * and exposes its reactive state as the global property $_state ($_state.activeElement.id).
@@ -35,9 +40,14 @@
     _lmStartValue: "startValue",
   };
 
+  var RAIL_ID = "bricks-panel-element-quick-access";
+  var RAIL_GROUP = "lm_motion"; // the control group of Controls::add_group()
+  var RAIL_ITEM = "lm-rail-motion";
+
   var timer = 0;
   var firstRequest = 0;
   var watching = false;
+  var railWatching = false;
   var markersOn = readPref();
 
   function readPref() {
@@ -93,6 +103,150 @@
       }
     );
   }
+
+  // ------------------------------------------------------------------ rail shortcut
+
+  // The Motion group of the selected element (its config holds the translated title), or null.
+  function railGroup(props) {
+    var element = props.$_state.activeElement;
+    if (!element || typeof props.$_getElementConfig !== "function") {
+      return null;
+    }
+    var config = props.$_getElementConfig(element.name);
+    var groups = config && config.controlGroups;
+    return groups && groups[RAIL_GROUP] ? groups[RAIL_GROUP] : null;
+  }
+
+  // Cheap version of Bricks' controlGroupHasSettings(): any _lm* key (any breakpoint) on the
+  // class being edited, else on the element.
+  function railHasSettings(state) {
+    var source = state.activeClass || state.activeElement;
+    var settings = source && source.settings;
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+      return false;
+    }
+    return Object.keys(settings).some(function (key) {
+      return key.indexOf("_lm") === 0;
+    });
+  }
+
+  function railActive(state) {
+    return state.activePanelTab === "style" && state.activePanelGroup === RAIL_GROUP;
+  }
+
+  // What Bricks' setActivePanelGroup(group) does for a group of the Style tab (main.min.js 2.4.2).
+  // Its toggle-off branch compares the group with the tab name, so it never runs for a style group.
+  function openRailGroup() {
+    var props = builderProps();
+    if (!props) {
+      return;
+    }
+    var state = props.$_state;
+    try {
+      if (typeof props.$_clearSearchControls === "function") {
+        props.$_clearSearchControls();
+      }
+      state.activePanelGroup = RAIL_GROUP;
+      state.activePanelTab = "style";
+      state.showHideElement = false;
+      state.showConditions = false;
+      state.showInteractions = false;
+      state.elementQuickAccessIndex = -1;
+    } catch (error) {
+      // Bricks changed: the rail item does nothing rather than break the builder.
+    }
+  }
+
+  // The markup of a Bricks item: <li data-balloon data-balloon-pos> with a .bricks-svg-wrapper.
+  // No .index: the digit shortcuts address Bricks' own list by position. The icon is the Lucide
+  // sparkles of the group title, a CSS mask (motion-builder.css).
+  function createRailItem(list) {
+    var item = document.createElement("li");
+    item.className = RAIL_ITEM;
+    var model = list.querySelector("li[data-balloon-pos]");
+    item.setAttribute("data-balloon-pos", model ? model.getAttribute("data-balloon-pos") : "right");
+    var wrapper = document.createElement("span");
+    wrapper.className = "bricks-svg-wrapper";
+    wrapper.setAttribute("data-name", "lm-sparkles");
+    var icon = document.createElement("span");
+    icon.className = "lm-rail-icon";
+    wrapper.appendChild(icon);
+    item.appendChild(wrapper);
+    item.addEventListener("click", function (event) {
+      event.stopPropagation(); // as Bricks' @click.stop
+      openRailGroup();
+    });
+    return item;
+  }
+
+  function toggleClass(el, name, on) {
+    if (el.classList.contains(name) !== on) {
+      el.classList.toggle(name, on);
+    }
+  }
+
+  function updateRailItem(item, props, group) {
+    var state = props.$_state;
+    var title = typeof group.title === "string" && group.title !== "" ? group.title : "Motion";
+    if (item.getAttribute("data-balloon") !== title) {
+      item.setAttribute("data-balloon", title);
+    }
+    toggleClass(item, "active", railActive(state));
+    toggleClass(item, "has-settings", railHasSettings(state));
+  }
+
+  // Classes follow the state: tab, group, selection, class and their settings.
+  function watchRail(props) {
+    if (railWatching || typeof props.$_watch !== "function") {
+      return;
+    }
+    railWatching = true;
+    var state = props.$_state;
+    props.$_watch(
+      function () {
+        var element = state.activeElement;
+        return [state.activePanelTab, state.activePanelGroup, element && element.id, railHasSettings(state)].join("|");
+      },
+      function () {
+        syncRail();
+      }
+    );
+  }
+
+  // Runs on every mutation of the builder: Vue renders the list again (a new <ul> when its
+  // renderKey changes, on every selection) and drops the foreign item. Only childList mutations
+  // are observed, so setting classes here never wakes the observer; the insertion does, once,
+  // and the second pass finds the item in place.
+  function syncRail() {
+    try {
+      var rail = document.getElementById(RAIL_ID);
+      var list = rail && rail.querySelector("ul");
+      if (!list) {
+        return;
+      }
+      var props = builderProps();
+      var item = list.querySelector("li." + RAIL_ITEM);
+      var group = props ? railGroup(props) : null;
+      if (!group) {
+        if (item) {
+          item.remove();
+        }
+        return;
+      }
+      if (!item) {
+        item = createRailItem(list);
+      }
+      if (list.lastElementChild !== item) {
+        list.appendChild(item);
+      }
+      updateRailItem(item, props, group);
+      watchRail(props);
+    } catch (error) {
+      // Bricks changed: no item, no error.
+    }
+  }
+
+  // ------------------------------------------------------------------ panel
 
   function activeId() {
     var state = builderState();
@@ -198,6 +352,10 @@
     function (event) {
       var target = event.target;
       if (target && target.classList && target.classList.contains("lm-panel-markers")) {
+        // The checkbox sits in an info control: left to bubble, its event reached the Bricks
+        // control, which stored the Event object as the element's _lmHelp setting (saved in the
+        // page, and shown as a Motion setting).
+        event.stopPropagation();
         markersOn = target.checked;
         writePref(markersOn);
         var motion = engine();
@@ -215,14 +373,28 @@
     true
   );
 
+  // Same for the input event of the checkbox.
+  document.addEventListener(
+    "input",
+    function (event) {
+      var target = event.target;
+      if (target && target.classList && target.classList.contains("lm-panel-markers")) {
+        event.stopPropagation();
+      }
+    },
+    true
+  );
+
   // The panel renders its fields again on every selection, group, breakpoint or class change.
   function observe() {
     if (typeof MutationObserver !== "function" || !document.body) {
       return;
     }
     new MutationObserver(function () {
-      // The checkbox at once, before the panel is painted; the placeholders once it settles.
+      // The checkbox and the rail item at once, before the panel is painted; the placeholders
+      // once it settles.
       syncMarkers();
+      syncRail();
       later(SYNC_MS);
     }).observe(document.body, { childList: true, subtree: true });
   }

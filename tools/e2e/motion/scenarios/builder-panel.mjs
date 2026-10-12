@@ -19,9 +19,9 @@ async function openBuilder( page, slug, anchorId ) {
 }
 
 /** Selects an element from the canvas and shows the Motion group of the Style tab. */
-async function selectAndOpen( page, canvas, id ) {
+async function selectAndOpen( page, canvas, id, position = { x: 10, y: 6 } ) {
 	await canvas.evaluate( ( id ) => document.getElementById( `brxe-${ id }` ).scrollIntoView( { block: 'center' } ), id );
-	await canvas.locator( `#brxe-${ id }` ).click( { position: { x: 10, y: 6 }, force: true } );
+	await canvas.locator( `#brxe-${ id }` ).click( { position, force: true } );
 	await page.locator( `#element-${ id }.active` ).waitFor( { timeout: 10000 } );
 	await page.getByText( 'Style', { exact: true } ).filter( { visible: true } ).first().click();
 	const effect = page.locator( '[data-controlkey="_lmEffect"]' ).first();
@@ -133,6 +133,60 @@ export default async function () {
 	assert( icon.svg === 'hidden', 'the native star SVG is still shown under the sparkles' );
 	assert( parseFloat( icon.width ) > 0, 'the sparkles mask has no width' );
 
+	// The Motion shortcut of the left rail (motion-panel.js): the last item, after Bricks' own.
+	const railItem = '#bricks-panel-element-quick-access ul > li.lm-rail-motion';
+	const rail = () => panel.evaluate( () => {
+		const list = document.querySelector( '#bricks-panel-element-quick-access ul' );
+		const item = list && list.querySelector( 'li.lm-rail-motion' );
+		if ( ! item ) {
+			return null;
+		}
+		const icon = item.querySelector( '.bricks-svg-wrapper .lm-rail-icon' );
+		const before = icon ? getComputedStyle( icon, '::before' ) : null;
+		const props = document.querySelector( '[data-v-app]' ).__vue_app__.config.globalProperties;
+		return {
+			last: list.lastElementChild === item,
+			bricksItems: list.querySelectorAll( 'li:not(.lm-rail-motion)' ).length,
+			balloon: item.getAttribute( 'data-balloon' ),
+			pos: item.getAttribute( 'data-balloon-pos' ),
+			active: item.classList.contains( 'active' ),
+			hasSettings: item.classList.contains( 'has-settings' ),
+			mask: before ? before.maskImage || before.webkitMaskImage || '' : '',
+			width: icon ? icon.getBoundingClientRect().width : 0,
+			tab: props.$_state.activePanelTab,
+			group: props.$_state.activePanelGroup,
+		};
+	} );
+	let r = await rail();
+	assert( r, 'no Motion item in the left rail of the element panel' );
+	assert( r.last && r.bricksItems > 0, `the Motion item is not after the Bricks items (last: ${ r.last }, Bricks items: ${ r.bricksItems })` );
+	assert( r.balloon === 'Motion' && r.pos, `the Motion item has the tooltip "${ r.balloon }" (${ r.pos })` );
+	assert( /^url\("data:image\/svg\+xml;base64,/.test( r.mask ) && r.width > 0, 'the Motion item has no sparkles icon' );
+	assert( r.active, 'the Motion item is not active while the Motion group is open' );
+	assert( ! r.hasSettings, 'the Motion item shows settings on an element with no _lm* setting' );
+	// From the Content tab, a click opens the Motion group of the Style tab.
+	await panel.locator( '#bricks-panel-element-quick-access ul > li' ).first().click();
+	await panel.waitForFunction( () => document.querySelector( '[data-v-app]' ).__vue_app__.config.globalProperties.$_state.activePanelTab === 'content', null, { timeout: 5000 } );
+	assert( ! ( await rail() ).active, 'the Motion item is still active on the Content tab' );
+	await panel.locator( railItem ).click();
+	await panel.locator( '[data-controlkey="_lmEffect"]' ).first().waitFor( { state: 'visible', timeout: 5000 } ).catch( () => {
+		throw new Error( 'a click on the Motion rail item did not open the Motion group' );
+	} );
+	r = await rail();
+	assert( r.tab === 'style' && r.group === 'lm_motion', `the Motion rail item opened ${ r.tab } / ${ r.group }, expected style / lm_motion` );
+	assert( r.active, 'the Motion item is not active after its click' );
+	// Another element: Bricks renders the rail again, the item comes back.
+	// Its middle: the toolbar of the selected element covers the top of the next one.
+	await selectAndOpen( panel, canvas2, 'bpre30', { x: 60, y: 20 } );
+	await panel.locator( railItem ).waitFor( { timeout: 5000 } ).catch( () => {
+		throw new Error( 'the Motion rail item is gone after selecting another element' );
+	} );
+	r = await rail();
+	assert( r.last, 'the Motion rail item is not the last item after selecting another element' );
+	assert( r.hasSettings, 'the Motion item does not show the _lmStartAt setting of the element' );
+	assert( ( await panel.locator( railItem ).count() ) === 1, 'the Motion rail item is there twice' );
+	await selectAndOpen( panel, canvas2, 'bpre01' );
+
 	// Live placeholders: the empty Stagger field shows the stagger of the class (0.15).
 	const placeholder = ( key ) => panel.locator( `[data-controlkey="${ key }"] input` ).first().getAttribute( 'placeholder' );
 	await panel.waitForFunction( () => {
@@ -169,6 +223,10 @@ export default async function () {
 	const s1 = await canvas2.evaluate( () => window.lumiaMotion._debug.stats().scans );
 	assert( s1 - s0 <= 1, `the markers keep the canvas scanning: ${ s1 - s0 } scans in 1 s` );
 	await panel.screenshot( { path: OUT + 'panel-v2.png' } );
+	// The rail with its Motion item, hovered so the tooltip shows, and the markers in the canvas.
+	await panel.locator( '#bricks-panel-element-quick-access ul > li.lm-rail-motion' ).hover();
+	await sleep( 300 );
+	await panel.screenshot( { path: OUT + 'rail-markers.png' } );
 	await markers.uncheck();
 	await canvas2.waitForFunction( () => document.querySelectorAll( '[class*="gsap-marker-"]' ).length === 0, null, { timeout: 2000 } ).catch( () => {
 		throw new Error( 'Show markers off: markers left in the canvas' );
@@ -185,6 +243,14 @@ export default async function () {
 	assert( await panel.locator( '.lm-panel-markers' ).first().isChecked(), 'Show markers is unchecked after a reload' );
 	await panel.locator( '.lm-panel-markers' ).first().uncheck();
 	assert( ( await panel.evaluate( () => localStorage.getItem( 'lmMotionMarkers' ) ) ) === null, 'Show markers off left lmMotionMarkers in localStorage' );
+	// The checkbox is a preference of the browser, never a setting of the element.
+	const helpSetting = await panel.evaluate( () => {
+		const element = document.querySelector( '[data-v-app]' ).__vue_app__.config.globalProperties.$_state.activeElement;
+		return Object.keys( ( element && element.settings ) || {} ).filter( ( key ) => key === '_lmHelp' );
+	} );
+	assert( helpSetting.length === 0, 'Show markers wrote _lmHelp in the settings of the element' );
+	assert( ! ( await rail() ).hasSettings, 'the Motion rail item shows settings after Show markers' );
 
 	assert( panel.errors.length === 0, `page errors: ${ panel.errors.join( ' | ' ) }` );
 }
+
