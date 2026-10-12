@@ -21,4 +21,5 @@
 /CLAUDE.md
 /docs
 /.superpowers
-/.DS_Store
+# Unanchored on purpose: macOS drops one in every folder, at any depth.
+.DS_Store

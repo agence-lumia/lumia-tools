@@ -251,6 +251,24 @@ export default async function () {
 	assert( helpSetting.length === 0, 'Show markers wrote _lmHelp in the settings of the element' );
 	assert( ! ( await rail() ).hasSettings, 'the Motion rail item shows settings after Show markers' );
 
+	// An old page may hold junk in _lmHelp (an Event object), and a separator is no setting either:
+	// neither lights the dot. A real control does, on a breakpoint too.
+	const setSettings = ( values ) => panel.evaluate( ( values ) => {
+		const element = document.querySelector( '[data-v-app]' ).__vue_app__.config.globalProperties.$_state.activeElement;
+		Object.keys( element.settings || {} ).filter( ( k ) => k.indexOf( '_lm' ) === 0 ).forEach( ( k ) => delete element.settings[ k ] );
+		element.settings = Object.assign( element.settings || {}, values );
+	}, values );
+	const dot = async ( expected, message ) => {
+		await sleep( 500 );
+		assert( ( await rail() ).hasSettings === expected, message );
+	};
+	await setSettings( { _lmHelp: { isTrusted: true }, _lmEffectSep: 'x' } );
+	await dot( false, 'the Motion rail item shows settings for an element holding only _lmHelp junk and a separator' );
+	await setSettings( { _lmHelp: { isTrusted: true }, '_lmDelay:mobile_portrait': '0.2' } );
+	await dot( true, 'the Motion rail item does not show a real setting set on a breakpoint' );
+	await setSettings( {} );
+	await dot( false, 'the Motion rail item still shows settings once they are removed' );
+
 	assert( panel.errors.length === 0, `page errors: ${ panel.errors.join( ' | ' ) }` );
 }
 

@@ -117,17 +117,42 @@
     return groups && groups[RAIL_GROUP] ? groups[RAIL_GROUP] : null;
   }
 
-  // Cheap version of Bricks' controlGroupHasSettings(): any _lm* key (any breakpoint) on the
-  // class being edited, else on the element.
-  function railHasSettings(state) {
+  // Cheap version of Bricks' controlGroupHasSettings(): a real setting (any breakpoint) on the
+  // class being edited, else on the element. Only the css-backed controls of the Motion group
+  // count (what Bricks counts too): not the help (_lmHelp), not the separators (*Sep), and not
+  // an unknown key, such as the {isTrusted: true} an old page may hold in _lmHelp. When the
+  // element config is out of reach, the same is approximated by name: not _lmHelp, not *Sep.
+  function railHasSettings(props) {
+    var state = props.$_state;
     var source = state.activeClass || state.activeElement;
     var settings = source && source.settings;
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
       return false;
     }
+    var controls = null;
+    if (state.activeElement && typeof props.$_getElementConfig === "function") {
+      var config = props.$_getElementConfig(state.activeElement.name);
+      controls = config && config.controls && typeof config.controls === "object" ? config.controls : null;
+    }
     return Object.keys(settings).some(function (key) {
-      return key.indexOf("_lm") === 0;
+      if (key.indexOf("_lm") !== 0) {
+        return false;
+      }
+      var base = key.split(":")[0]; // "_lmDelay:mobile_portrait" => "_lmDelay"
+      if (base === "_lmHelp" || /Sep$/.test(base)) {
+        return false;
+      }
+      return controls ? !!(controls[base] && controls[base].css) : true;
     });
+  }
+
+  // Bricks' own rail items (everything but ours). Bricks builds them all behind the same
+  // permission ($_userHasPermission("access_element_content"), `shortcuts` computed, 2.4.2) and
+  // never shows the Style groups without it, so our item mirrors them rather than re-checking a
+  // permission: no Bricks item, no Motion item. Absent items fail closed, which is also what
+  // happens when Bricks changes its markup (the panel group stays reachable from the Style tab).
+  function railHasBricksItems(list) {
+    return !!list.querySelector("li:not(." + RAIL_ITEM + ")");
   }
 
   function railActive(state) {
@@ -192,7 +217,7 @@
       item.setAttribute("data-balloon", title);
     }
     toggleClass(item, "active", railActive(state));
-    toggleClass(item, "has-settings", railHasSettings(state));
+    toggleClass(item, "has-settings", railHasSettings(props));
   }
 
   // Classes follow the state: tab, group, selection, class and their settings.
@@ -205,7 +230,7 @@
     props.$_watch(
       function () {
         var element = state.activeElement;
-        return [state.activePanelTab, state.activePanelGroup, element && element.id, railHasSettings(state)].join("|");
+        return [state.activePanelTab, state.activePanelGroup, element && element.id, railHasSettings(props)].join("|");
       },
       function () {
         syncRail();
@@ -227,7 +252,7 @@
       var props = builderProps();
       var item = list.querySelector("li." + RAIL_ITEM);
       var group = props ? railGroup(props) : null;
-      if (!group) {
+      if (!group || !railHasBricksItems(list)) {
         if (item) {
           item.remove();
         }
