@@ -5757,6 +5757,12 @@ msgstr "Écart du soulignement"
 msgid "Underline color"
 msgstr "Couleur du soulignement"
 
+#. translators: %s: name of the value set for the whole site, e.g. "Smooth".
+#: includes/Modules/Motion/Controls.php:625
+#, php-format
+msgid "%s (site default)"
+msgstr "%s (défaut du site)"
+
 msgid "One effect per element: with two Motion classes, the first one wins. A desktop value also applies to mobile unless mobile has its own. On the main heading above the fold, prefer a text effect (LCP)."
 msgstr "Un seul effet par élément : avec deux classes Motion, la première l'emporte. Une valeur posée pour l'ordinateur vaut aussi pour mobile, sauf si vous réglez mobile. Sur le titre principal visible dès l'arrivée, préférez un effet de texte (LCP)."
 

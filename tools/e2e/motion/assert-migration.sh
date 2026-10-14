@@ -304,23 +304,19 @@ wpx lumia motion classes >/dev/null
 [ "$(helper checksum)" = "${CREATED_SUM}" ] || fail 'a second classes run wrote something'
 echo 'ok classes creates exactly the missing class (locked, Motion category) once'
 
-# ---------------------------------------------------------------- turning the module on creates the missing classes
+# ---------------------------------------------------------------- turning the module on creates no class
+# New sites use the Motion tab: the lm-* classes are only made on request (`wp lumia motion classes`).
 helper remove-class lm-underline
+ACTIVATE_SUM="$(helper checksum)"
 helper on-activate
-js '
-	const a = JSON.parse(env.AFTER);
-	const made = a.classes.filter((c) => c.name === "lm-underline");
-	assert(made.length === 1, "on_activate should create lm-underline once, got " + made.length);
-	assert(a.locked.includes(made[0].id), "locked");
-	assert(made[0].category === a.categories.find((c) => /^motion$/i.test(c.name)).id, "in the Motion category");
-' AFTER="$(helper snapshot)"
+[ "$(helper checksum)" = "${ACTIVATE_SUM}" ] || fail 'turning the module on wrote something'
 
 # Not on a Bricks site: nothing at all, even with every class missing.
 helper remove-class lm-underline
 NOBRICKS_SUM="$(helper checksum)"
 [ "$(helper without-bricks | tail -n 1)" = "[]" ] || fail 'without Bricks, create_missing() should return an empty list'
 [ "$(helper checksum)" = "${NOBRICKS_SUM}" ] || fail 'the module wrote something although Bricks is not the active theme'
-echo 'ok on_activate creates the missing classes, and nothing without Bricks'
+echo 'ok on_activate creates no class, and classes creates nothing without Bricks'
 
 # ---------------------------------------------------------------- the usage report after the migration
 AFTER_JSON="$(wpx lumia motion migrate --format=json | json_of)"

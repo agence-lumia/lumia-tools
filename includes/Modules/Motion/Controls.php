@@ -164,12 +164,13 @@ class Controls {
 	 */
 	public static function definitions(): array {
 		// Bricks loads every element, about a hundred, on each request: build the list once
-		// per locale (the labels are translated).
+		// per locale (the labels are translated) and per module settings (the placeholders of
+		// Easing and Tempo name the site values).
 		static $cache = [];
 
-		$locale = determine_locale();
-		if ( isset( $cache[ $locale ] ) ) {
-			return $cache[ $locale ];
+		$key = determine_locale() . '|' . md5( serialize( get_option( 'lumia_module_motion', [] ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Cache key only, never unserialized.
+		if ( isset( $cache[ $key ] ) ) {
+			return $cache[ $key ];
 		}
 
 		$controls = array_merge(
@@ -181,7 +182,7 @@ class Controls {
 			self::underline_section()
 		);
 
-		$cache[ $locale ] = $controls;
+		$cache[ $key ] = $controls;
 
 		return $controls;
 	}
@@ -334,6 +335,15 @@ class Controls {
 
 		$controls['_lmTimingSep'] = self::separator( __( 'Timing', 'lumia-tools' ) );
 
+		$tempo_labels = [
+			'very-fast' => __( 'Very fast', 'lumia-tools' ),
+			'fast'      => __( 'Fast', 'lumia-tools' ),
+			'normal'    => __( 'Normal', 'lumia-tools' ),
+			'slow'      => __( 'Slow', 'lumia-tools' ),
+			'very-slow' => __( 'Very slow', 'lumia-tools' ),
+			'custom'    => _x( 'Custom', 'tempo', 'lumia-tools' ),
+		];
+
 		$controls['_lmTempo'] = self::variable(
 			'--lm-tempo',
 			[
@@ -341,16 +351,9 @@ class Controls {
 				'type'        => 'select',
 				'options'     => self::options(
 					Effects::TEMPO_KEYWORDS,
-					[
-						'very-fast' => __( 'Very fast', 'lumia-tools' ),
-						'fast'      => __( 'Fast', 'lumia-tools' ),
-						'normal'    => __( 'Normal', 'lumia-tools' ),
-						'slow'      => __( 'Slow', 'lumia-tools' ),
-						'very-slow' => __( 'Very slow', 'lumia-tools' ),
-						'custom'    => _x( 'Custom', 'tempo', 'lumia-tools' ),
-					]
+					$tempo_labels
 				),
-				'placeholder' => __( 'Default', 'lumia-tools' ),
+				'placeholder' => self::site_default_placeholder( 'tempo', 'normal', $tempo_labels ),
 			]
 		);
 
@@ -404,6 +407,14 @@ class Controls {
 
 		$controls['_lmFeelSep'] = self::separator( __( 'Feel', 'lumia-tools' ) );
 
+		$ease_labels = [
+			'smooth' => __( 'Smooth', 'lumia-tools' ),
+			'snappy' => __( 'Snappy', 'lumia-tools' ),
+			'bouncy' => __( 'Bouncy', 'lumia-tools' ),
+			'linear' => __( 'Linear', 'lumia-tools' ),
+			'custom' => __( 'Custom', 'lumia-tools' ),
+		];
+
 		$controls['_lmEase'] = self::variable(
 			'--lm-ease',
 			[
@@ -411,15 +422,9 @@ class Controls {
 				'type'        => 'select',
 				'options'     => self::options(
 					Effects::EASES,
-					[
-						'smooth' => __( 'Smooth', 'lumia-tools' ),
-						'snappy' => __( 'Snappy', 'lumia-tools' ),
-						'bouncy' => __( 'Bouncy', 'lumia-tools' ),
-						'linear' => __( 'Linear', 'lumia-tools' ),
-						'custom' => __( 'Custom', 'lumia-tools' ),
-					]
+					$ease_labels
 				),
-				'placeholder' => __( 'Default', 'lumia-tools' ),
+				'placeholder' => self::site_default_placeholder( 'ease', 'smooth', $ease_labels ),
 			]
 		);
 
@@ -602,6 +607,23 @@ class Controls {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Placeholder of a select that falls back to a site setting: the value the element really gets
+	 * when the field is empty ("Smooth (site default)"), not a bare "Default".
+	 *
+	 * @param string                $setting  Key in the module settings (`ease`, `tempo`).
+	 * @param string                $fallback Value of the module defaults.
+	 * @param array<string, string> $labels   Option labels, keyed by value.
+	 */
+	private static function site_default_placeholder( string $setting, string $fallback, array $labels ): string {
+		$settings = get_option( 'lumia_module_motion', [] );
+		$value    = is_array( $settings ) && is_string( $settings[ $setting ] ?? null ) ? $settings[ $setting ] : $fallback;
+		$label    = $labels[ $value ] ?? $labels[ $fallback ] ?? $value;
+
+		/* translators: %s: name of the value set for the whole site, e.g. "Smooth". */
+		return sprintf( __( '%s (site default)', 'lumia-tools' ), $label );
 	}
 
 	/**

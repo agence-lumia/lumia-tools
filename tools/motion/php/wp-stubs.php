@@ -37,6 +37,19 @@ if ( ! function_exists( '_x' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_option' ) ) {
+	/**
+	 * Option stand-in: reads $GLOBALS['lm_test_options'], which a test may fill.
+	 *
+	 * @param string $name          Option name.
+	 * @param mixed  $default_value Returned when the option is not set.
+	 * @return mixed
+	 */
+	function get_option( string $name, $default_value = false ) {
+		return $GLOBALS['lm_test_options'][ $name ] ?? $default_value;
+	}
+}
+
 if ( ! function_exists( 'esc_html__' ) ) {
 	/**
 	 * Translation and escaping stand-in.

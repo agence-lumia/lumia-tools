@@ -431,3 +431,9 @@ Une seule variante, le défilement de chiffres de NumberFlow, **embarqué tel qu
 - Lighthouse mobile accueil et contact (critère A), avant fusion.
 - Compteur : largeur visuelle constante en `fixed`, hauteur de ligne constante dans les deux modes, valeur finale et séparateurs identiques au HTML, aucun script de compteur sur une page sans compteur.
 - Alias : chaque classe `sk-*` produit l'effet de sa nouvelle classe ; `migrate --apply` renomme vers les nouveaux noms.
+
+## Itération 3 : premiers essais sur le lab (14/10/2026)
+
+- **Champs vides « Animation » et « Tempo »** : le texte d'aide affiche la valeur du site (« Smooth (défaut du site) ») au lieu de « Par défaut ». Smooth reste la valeur par défaut du module.
+- **Plus aucune classe créée à l'activation.** Les nouveaux sites (boilerplate compris) choisissent l'effet dans l'onglet Motion de chaque élément. Les sites existants gardent la migration par renommage (`sk-*` → `lm-*`, même ID, aucune page réécrite). `wp lumia motion classes` crée encore les classes `lm-*` à la demande, et elles restent reconnues partout. Le § 2 (« À l'activation du module… ») ne vaut plus que pour cette commande.
+- **Boilerplate** : 5 éléments seulement (Accueil : 2, modèle Maintenance : 3) utilisent les anciennes classes ; ils seront refaits à la main dans l'onglet Motion, puis les classes `sk-*` supprimées. Pas d'option de conversion automatique.

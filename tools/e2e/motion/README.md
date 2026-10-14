@@ -52,7 +52,7 @@ tools/e2e/motion/assert-migration.sh     # wp lumia motion classes|migrate, sans
 dans l'état d'un site qui a encore les anciennes classes (`assert-migration.php seed`), vérifie le dry-run
 (rien d'écrit : somme de contrôle des options et des métas Bricks), un conflit avec une classe créée à la
 main, le `--apply` (mêmes ID, catégorie « Motion », CSS propre de la classe), sa répétition, la création
-des classes manquantes et l'activation du module, puis **réimporte la base dans tous les cas** (`trap`) et
+des classes manquantes, l'activation du module (qui ne crée plus aucune classe), puis **réimporte la base dans tous les cas** (`trap`) et
 compare la somme de contrôle à celle du départ. Il se termine par `run.sh enter` (`LM_E2E_SKIP_ENTER=1`
 pour l'omettre). Dernière ligne : `ok migration`.
 

@@ -91,23 +91,6 @@ class Module extends AbstractModule {
 	}
 
 	/**
-	 * Creates the missing lm-* classes in Bricks when the module is turned on.
-	 *
-	 * Nothing happens unless Bricks is the active theme. Whatever goes wrong is logged (with WP_DEBUG)
-	 * and never blocks the activation: `wp lumia motion classes` creates the classes later and reports
-	 * the error.
-	 */
-	public function on_activate(): void {
-		try {
-			ClassManager::create_missing();
-		} catch ( \Throwable $e ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'Lumia Tools, Motion: the Motion classes were not created on activation (' . $e->getMessage() . ').' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Only with WP_DEBUG, and the activation must not fail.
-			}
-		}
-	}
-
-	/**
 	 * Keys to delete on uninstall.
 	 *
 	 * The cached usage scan is a transient: its two rows are deleted as options, so they go even
