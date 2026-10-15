@@ -30,6 +30,9 @@ class Module extends AbstractModule {
 		add_action( 'wp_ajax_lumia_files_get_content', [ $this, 'ajax_get_content' ] );
 		add_action( 'wp_ajax_lumia_files_save_content', [ $this, 'ajax_save_content' ] );
 		add_action( 'wp_ajax_lumia_files_upload', [ $this, 'ajax_upload' ] );
+		add_action( 'wp_ajax_lumia_files_danger_enable', [ $this, 'ajax_danger_enable' ] );
+		add_action( 'wp_ajax_lumia_files_danger_disable', [ $this, 'ajax_danger_disable' ] );
+		add_action( DangerMode::CRON_HOOK, [ DangerMode::class, 'expire' ] );
 		add_action( 'admin_post_lumia_files_download', [ $this, 'handle_download' ] );
 
 		// The code editor relies on CodeMirror, shipped with WordPress. The core
@@ -159,10 +162,12 @@ class Module extends AbstractModule {
 	 *
 	 * The two do not cover the same thing:
 	 *  - DISALLOW_FILE_EDIT means code EDITING from the admin. We therefore
-	 *    refuse saving a content and uploading;
+	 *    refuse saving a content and uploading, unless the temporary danger
+	 *    mode is on (see DangerMode);
 	 *  - DISALLOW_FILE_MODS is broader (no file modification at all,
 	 *    installation included): we then refuse every mutation, including
-	 *    rename, move, delete, create a folder, zip, extract.
+	 *    rename, move, delete, create a folder, zip, extract. The danger mode
+	 *    never lifts it.
 	 *
 	 * Reading (listing, preview, download) stays open in both cases: neither
 	 * constant says anything about reading.
@@ -172,19 +177,36 @@ class Module extends AbstractModule {
 	 * filter rather than through the constant is respected as well.
 	 *
 	 * @param bool $editing True if the call writes a CONTENT (edit/upload).
+	 * @return bool True if the write is allowed only thanks to the danger mode.
 	 */
-	private function check_file_mods( bool $editing = false ): void {
-		$blocked = ! wp_is_file_mod_allowed( 'lumia_files' )
-			|| ( $editing && defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT );
-
-		if ( $blocked ) {
+	private function check_file_mods( bool $editing = false ): bool {
+		if ( ! DangerMode::mods_allowed() ) {
 			wp_send_json_error(
 				[
-					'message' => __( 'File modification is disabled on this site (DISALLOW_FILE_EDIT, DISALLOW_FILE_MODS or the file_mod_allowed filter).', 'lumia-tools' ),
+					'message' => __( 'File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter).', 'lumia-tools' ),
 				],
 				403
 			);
 		}
+
+		if ( ! $editing || ! DangerMode::edit_disallowed() ) {
+			return false;
+		}
+
+		if ( DangerMode::is_active() ) {
+			return true;
+		}
+
+		wp_send_json_error(
+			[
+				'message' => DangerMode::is_available()
+					? __( 'Code editing is disabled on this site (DISALLOW_FILE_EDIT). Turn on the danger mode to unlock it for one hour.', 'lumia-tools' )
+					: __( 'Code editing is disabled on this site (DISALLOW_FILE_EDIT).', 'lumia-tools' ),
+				// Lets files.js show the lock again (expired, or locked from another tab).
+				'danger'  => DangerMode::to_js(),
+			],
+			403
+		);
 	}
 
 	private function get_post_path( string $key = 'path' ): string {
@@ -214,8 +236,11 @@ class Module extends AbstractModule {
 
 			wp_send_json_success(
 				[
-					'items' => $formatted,
-					'path'  => $path,
+					'items'  => $formatted,
+					'path'   => $path,
+					// Refreshed on every navigation: another tab may have turned
+					// the danger mode on or off, or it may have expired.
+					'danger' => DangerMode::to_js(),
 				]
 			);
 		} catch ( \Exception $e ) {
@@ -347,12 +372,16 @@ class Module extends AbstractModule {
 
 	public function ajax_save_content(): void {
 		$this->check_nonce();
-		$this->check_file_mods( true );
-		$path    = $this->get_post_path();
-		$content = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by check_nonce(); source file content saved as is, writing restricted to get_required_capability() and blocked by DISALLOW_FILE_EDIT.
+		$via_danger = $this->check_file_mods( true );
+		$path       = $this->get_post_path();
+		$content    = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified by check_nonce(); source file content saved as is, writing restricted to get_required_capability() and blocked by DISALLOW_FILE_EDIT unless the danger mode is on.
 
 		try {
 			$this->fm->save_content( $path, $content );
+			if ( $via_danger ) {
+				// Canonical path, as for uploads: the client may send `a//b/./x.php`.
+				do_action( 'lumia_files_danger_mode_write', $this->fm->to_relative( $this->fm->resolve( $path ) ), 'save' );
+			}
 			wp_send_json_success( [ 'message' => __( 'File saved.', 'lumia-tools' ) ] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ] );
@@ -364,7 +393,7 @@ class Module extends AbstractModule {
 		if ( ! wp_verify_nonce( $nonce, 'lumia_admin_nonce' ) || ! current_user_can( static::get_required_capability() ) ) {
 			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'lumia-tools' ) ], 403 );
 		}
-		$this->check_file_mods( true );
+		$via_danger = $this->check_file_mods( true );
 
 		$dir   = isset( $_POST['path'] ) ? sanitize_text_field( wp_unslash( $_POST['path'] ) ) : '';
 		$files = $_FILES['files'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
@@ -402,6 +431,9 @@ class Module extends AbstractModule {
 					throw new \RuntimeException( __( 'Upload failed.', 'lumia-tools' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- caught just below, returned as JSON, escaped on display by the toast.
 				}
 				$uploaded[] = $this->fm->upload( $dir, $file );
+				if ( $via_danger ) {
+					do_action( 'lumia_files_danger_mode_write', (string) end( $uploaded ), 'upload' );
+				}
 			} catch ( \Exception $e ) {
 				/* translators: 1: label, 2: value. */
 				$errors[] = sprintf( __( '%1$s: %2$s', 'lumia-tools' ), sanitize_text_field( $file['name'] ), $e->getMessage() );
@@ -420,6 +452,45 @@ class Module extends AbstractModule {
 					count( $uploaded )
 				),
 				'paths'   => $uploaded,
+			]
+		);
+	}
+
+	/* ================================================================
+	 * AJAX — DANGER MODE
+	 * ================================================================ */
+
+	public function ajax_danger_enable(): void {
+		$this->check_nonce();
+
+		if ( ! DangerMode::is_available() ) {
+			wp_send_json_error(
+				[
+					'message' => __( 'The danger mode is not available on this site.', 'lumia-tools' ),
+					'danger'  => DangerMode::to_js(),
+				],
+				403
+			);
+		}
+
+		DangerMode::enable( get_current_user_id() );
+
+		wp_send_json_success(
+			[
+				'message' => __( 'File editing unlocked for one hour.', 'lumia-tools' ),
+				'danger'  => DangerMode::to_js(),
+			]
+		);
+	}
+
+	public function ajax_danger_disable(): void {
+		$this->check_nonce();
+		DangerMode::disable();
+
+		wp_send_json_success(
+			[
+				'message' => __( 'File editing locked again.', 'lumia-tools' ),
+				'danger'  => DangerMode::to_js(),
 			]
 		);
 	}
@@ -565,12 +636,27 @@ class Module extends AbstractModule {
 				'editorUnsavedMessage'   => __( 'Do you want to leave without saving your changes?', 'lumia-tools' ),
 				'editorUnsavedLeave'     => _x( 'Leave without saving', 'file editor', 'lumia-tools' ),
 				'editorUnsavedStay'      => __( 'Stay', 'lumia-tools' ),
+				'dangerLabel'            => __( 'Danger mode:', 'lumia-tools' ),
+				'dangerLockedText'       => __( 'Code editing is disabled on this site (DISALLOW_FILE_EDIT): saving and uploading are blocked.', 'lumia-tools' ),
+				'dangerModsText'         => __( 'File modification is disabled on this site (DISALLOW_FILE_MODS or the file_mod_allowed filter): files can only be browsed and downloaded.', 'lumia-tools' ),
+				'dangerEnableBtn'        => __( 'Unlock for one hour', 'lumia-tools' ),
+				'dangerDisableBtn'       => __( 'Lock now', 'lumia-tools' ),
+				'dangerConfirmTitle'     => __( 'Unlock file editing for one hour?', 'lumia-tools' ),
+				'dangerConfirmMessage'   => __( 'DISALLOW_FILE_EDIT forbids editing code from the browser on this site. For one hour, this file manager will be able to save and upload files anyway, then it locks itself again. A mistake in a PHP file can take the whole site down: keep an SSH or SFTP access at hand. When the Activity Log module is on, the unlock is recorded there.', 'lumia-tools' ),
+				/* translators: %d: minutes left before file editing locks again. */
+				'dangerRemaining'        => __( '%d min left.', 'lumia-tools' ),
+				/* translators: %d: minutes left before file editing locks again. */
+				'dangerBadge'            => __( 'Danger mode: %d min', 'lumia-tools' ),
+				/* translators: %d: minutes left before file editing locks again. */
+				'dangerSoon'             => __( 'File editing locks again in %d min: save your changes.', 'lumia-tools' ),
+				'dangerExpired'          => __( 'The hour is over: file editing is locked again.', 'lumia-tools' ),
 				'downloadUrl'            => admin_url( 'admin-post.php?action=lumia_files_download' ),
 				'downloadNonce'          => wp_create_nonce( 'lumia_files_download' ),
 			],
 			// Empty if syntax highlighting is turned off in the user's profile:
 			// files.js then falls back to the bare textarea.
 			'codeEditor' => $this->code_editor_settings,
+			'danger'     => $this->is_files_screen() ? DangerMode::to_js() : [],
 		];
 	}
 
@@ -599,10 +685,19 @@ class Module extends AbstractModule {
 		return [];
 	}
 
+	/**
+	 * Disabling the module must not leave an unlock behind it, to be found
+	 * again on reactivation.
+	 */
+	public function on_deactivate(): void {
+		DangerMode::disable();
+	}
+
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ 'lumia_module_files' ],
+			'options' => [ 'lumia_module_files', DangerMode::OPTION ],
 			'meta'    => [],
+			'cron'    => [ DangerMode::CRON_HOOK ],
 		];
 	}
 

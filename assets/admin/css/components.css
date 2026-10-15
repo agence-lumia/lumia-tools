@@ -811,6 +811,14 @@ details[open] .lumia-section__chevron {
   border: 1px solid oklch(0.8 0.08 20 / 0.2);
 }
 
+/* Body text stays dark: the amber of --lumia-warning is too light to read a
+   whole sentence on the cream background (badges only hold a word). */
+.lumia-notice--warning {
+  background: var(--lumia-warning-bg);
+  color: var(--lumia-text);
+  border: 1px solid oklch(0.8 0.12 80 / 0.45);
+}
+
 .lumia-empty {
   text-align: center;
   padding: 48px 20px;

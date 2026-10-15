@@ -1,0 +1,102 @@
+<?php
+/**
+ * Minimal WordPress stand-ins for the tests that reach Controls::definitions().
+ *
+ * The control definitions build their labels with the translation and escaping
+ * functions. The tests only read keys and units, so identity stubs are enough.
+ * Development only, never shipped.
+ *
+ * @package Lumia\Tools
+ */
+
+// Development-only file: the point is to declare WordPress core functions.
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals, Universal.Files.SeparateFunctionsFromOA, WordPress.Security.EscapeOutput
+
+declare( strict_types=1 );
+
+if ( ! function_exists( '__' ) ) {
+	/**
+	 * Translation stand-in.
+	 *
+	 * @param string $text Text.
+	 */
+	function __( string $text ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( '_x' ) ) {
+	/**
+	 * Contextual translation stand-in.
+	 *
+	 * @param string $text    Text.
+	 * @param string $context Context.
+	 */
+	function _x( string $text, string $context ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'get_option' ) ) {
+	/**
+	 * Option stand-in: reads $GLOBALS['lm_test_options'], which a test may fill.
+	 *
+	 * @param string $name          Option name.
+	 * @param mixed  $default_value Returned when the option is not set.
+	 * @return mixed
+	 */
+	function get_option( string $name, $default_value = false ) {
+		return $GLOBALS['lm_test_options'][ $name ] ?? $default_value;
+	}
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+	/**
+	 * Translation and escaping stand-in.
+	 *
+	 * @param string $text Text.
+	 */
+	function esc_html__( string $text ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * Escaping stand-in.
+	 *
+	 * @param string $text Text.
+	 */
+	function esc_html( string $text ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+	/**
+	 * Escaping stand-in.
+	 *
+	 * @param string $text Text.
+	 */
+	function esc_attr( string $text ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'determine_locale' ) ) {
+	/**
+	 * Locale stand-in.
+	 */
+	function determine_locale(): string {
+		return 'en_US';
+	}
+}
+
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+	/**
+	 * AJAX stand-in: true while a test sets $GLOBALS['lm_test_doing_ajax'].
+	 */
+	function wp_doing_ajax(): bool {
+		return ! empty( $GLOBALS['lm_test_doing_ajax'] );
+	}
+}

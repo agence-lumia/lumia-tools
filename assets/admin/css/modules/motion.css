@@ -1,0 +1,76 @@
+/*
+ * Lümia Tools - Motion module (settings screen)
+ *
+ * Layout of the reference values only: every control is a design-system component.
+ */
+
+.lumia-mo__effects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.lumia-mo__effect {
+  margin: 0;
+  padding: 12px 16px 16px;
+  min-width: 0;
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-surface);
+}
+
+.lumia-mo__effect-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lumia-text);
+}
+
+.lumia-mo__effect-class {
+  padding: 1px 6px;
+  border-radius: var(--lumia-radius-xs);
+  background: var(--lumia-n100);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--lumia-text-muted);
+}
+
+.lumia-mo__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px 16px;
+  margin-top: 8px;
+}
+
+.lumia-mo__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lumia-mo__label {
+  font-size: 12px;
+  color: var(--lumia-text-muted);
+}
+
+.lumia-mo__field .lumia-input,
+.lumia-mo__field .lumia-select {
+  width: 100%;
+  max-width: none;
+}
+
+/* The curve is a whole cubic-bezier() expression: the default input width cuts it. */
+.lumia-mo__curve {
+  min-width: 300px;
+}
+
+@media screen and (max-width: 782px) {
+  .lumia-mo__curve {
+    min-width: 0;
+  }
+}

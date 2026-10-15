@@ -30,6 +30,7 @@ class Activator {
 		'media'           => \Lumia\Tools\Modules\Media\Module::class,
 		'activity_log'    => \Lumia\Tools\Modules\ActivityLog\Module::class,
 		'smtp'            => \Lumia\Tools\Modules\Smtp\Module::class,
+		'motion'          => \Lumia\Tools\Modules\Motion\Module::class,
 	];
 
 	/**

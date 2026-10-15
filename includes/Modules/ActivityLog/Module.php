@@ -481,6 +481,20 @@ class Module extends AbstractModule {
 			'paths'        => __( 'Changed fields', 'lumia-tools' ),
 			'modules'      => __( 'Modules', 'lumia-tools' ),
 			'via'          => __( 'Source', 'lumia-tools' ),
+			'until'        => __( 'Until', 'lumia-tools' ),
+			'reason'       => __( 'Reason', 'lumia-tools' ),
+			'enabled_by'   => __( 'Turned on by', 'lumia-tools' ),
+			'operation'    => __( 'Operation', 'lumia-tools' ),
+		];
+
+		$reasons = [
+			'manual'  => __( 'Locked by hand', 'lumia-tools' ),
+			'expired' => __( 'One hour elapsed', 'lumia-tools' ),
+		];
+
+		$operations = [
+			'save'   => __( 'Saved from the editor', 'lumia-tools' ),
+			'upload' => __( 'Uploaded', 'lumia-tools' ),
 		];
 
 		$channels = [
@@ -520,6 +534,10 @@ class Module extends AbstractModule {
 				$value = $this->status_label( $value );
 			} elseif ( 'via' === $key ) {
 				$value = $channels[ $value ] ?? (string) $value;
+			} elseif ( 'reason' === $key ) {
+				$value = $reasons[ $value ] ?? (string) $value;
+			} elseif ( 'operation' === $key ) {
+				$value = $operations[ $value ] ?? (string) $value;
 			} elseif ( 'modules' === $key && is_array( $value ) ) {
 				$parts = [];
 				foreach ( $value as $module => $active ) {

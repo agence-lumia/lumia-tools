@@ -152,6 +152,10 @@ For a **secondary clarification** — the caveat that matters but would lengthen
 
 Hover and focus both trigger the bubble (which `title` does not do); a tooltip already open chains without delay onto the next. On the plugin pages, prefer `data-lumia-tip` to `title` for any icon-only control.
 
+## Inline notices
+
+`lumia-notice` + `--success`, `--error` or `--warning` (components.css). The warning variant keeps the body text dark (`--lumia-text`): the amber of `--lumia-warning` only reads on a single word, as in a badge, not on a sentence.
+
 ## Toasts / notifications
 
 ```javascript

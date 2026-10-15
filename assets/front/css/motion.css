@@ -1,0 +1,377 @@
+/*
+ * Lumia Tools - Motion front stylesheet.
+ *
+ * Printed in the <head> of every public page while the module is active: it is small, and
+ * the pre-hide rule has to exist before the first paint to avoid a flash.
+ */
+
+/* ================================================================
+ * ENGINE VARIABLES
+ * Set by the Motion panel on an element or a global class. Not inherited: a child of an
+ * animated element must not pick up its settings. The list is Effects::ENGINE_VARIABLES.
+ * ================================================================ */
+
+@property --lm-effect {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-start-edge {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-start-at {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-end-edge {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-end-at {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-start {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-end {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-tempo {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-duration {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-delay {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-stagger {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-ease {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-ease-custom {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-distance {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-blur {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-scale {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-from-opacity {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-start-value {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-counter-width {
+	syntax: '*';
+	inherits: false;
+}
+
+@property --lm-load {
+	syntax: '*';
+	inherits: false;
+}
+
+/* ================================================================
+ * CURVES
+ * Generated from the engine springs: run node tools/motion/js/build-curves.mjs, never edit by
+ * hand. The plain declaration is the fallback of browsers without linear().
+ * ================================================================ */
+
+/* lm-curves:start */
+:root {
+	--lm-curve-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+	--lm-curve-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+	--lm-curve-bouncy: cubic-bezier(0.22, 1, 0.36, 1);
+	--lm-settle-smooth: 1.4695;
+	--lm-settle-snappy: 1.5536;
+	--lm-settle-bouncy: 2.051;
+}
+
+@supports (animation-timing-function: linear(0, 1)) {
+	:root {
+		--lm-curve-smooth: linear(0, 0.024 2.56%, 0.0823 5.13%, 0.1594 7.69%, 0.4152 15.38%, 0.4934 17.95%, 0.5645 20.51%, 0.6282 23.08%, 0.6844 25.64%, 0.7334 28.21%, 0.7758 30.77%, 0.8122 33.33%, 0.8432 35.9%, 0.8694 38.46%, 0.9102 43.59%, 0.9388 48.72%, 0.966 56.41%, 0.9848 66.67%, 0.9956 82.05%, 1);
+		--lm-curve-snappy: linear(0, 0.0277 2.56%, 0.0972 5.13%, 0.1918 7.69%, 0.515 15.38%, 0.6132 17.95%, 0.7007 20.51%, 0.7764 23.08%, 0.84 25.64%, 0.8921 28.21%, 0.9334 30.77%, 0.9653 33.33%, 0.989 35.9%, 1.0058 38.46%, 1.0171 41.03%, 1.0274 46.15%, 1.0256 53.85%, 1.0045 74.36%, 0.9992 97.44%, 1);
+		--lm-curve-bouncy: linear(0, 0.0482 2.56%, 0.168 5.13%, 0.3267 7.69%, 0.4981 10.26%, 0.6629 12.82%, 0.808 15.38%, 0.9263 17.95%, 1.0152 20.51%, 1.0756 23.08%, 1.1108 25.64%, 1.1252 28.21%, 1.1239 30.77%, 1.1117 33.33%, 1.0309 43.59%, 1.0019 48.72%, 0.9874 53.85%, 0.9841 58.97%, 1.0014 82.05%, 1);
+	}
+}
+/* lm-curves:end */
+
+/* ================================================================
+ * SCROLL
+ * ================================================================ */
+
+/* A theme setting "scroll-behavior: smooth" animates the scroll restore on reload and
+ * fights ScrollTrigger and Lenis. Anchor links are handled by Lenis or by scroll-margin. */
+html {
+	scroll-behavior: auto !important;
+}
+
+/* Scroll anchoring must never pick an element the engine moves. Measured on a reload at
+ * 3000 px: Chrome anchored on a blur-up heading and moved the page by its 20 px start offset
+ * (3019 instead of 3000, one reload out of two). Other elements still anchor the page. */
+@media (prefers-reduced-motion: no-preference) {
+	[data-lm~="enter"] {
+		overflow-anchor: none;
+	}
+}
+
+/* Without Lenis, an anchor lands below the fixed header. With Lenis, its anchors option
+ * applies the same offset. */
+html:not(.lenis) [id] {
+	scroll-margin-top: var(--navbar-height, 0px);
+}
+
+/* ================================================================
+ * NO FLASH
+ * lm-js is set by the inline script of the <head>; lm-ready by the engine once it has set
+ * the initial states, or by the 3 s safety of that same script.
+ * ================================================================ */
+
+/* Not the elements the engine leaves alone: load animations (data-lm-load) and the settled
+ * text and counter effects of the first screen (data-lm-settled, which may hold an entrance on
+ * another breakpoint). On a page with only those, no engine loads to add lm-ready. */
+@media (prefers-reduced-motion: no-preference) {
+	.lm-js:not(.lm-ready) [data-lm~="enter"]:not([data-lm-load]):not([data-lm-settled]) {
+		opacity: 0;
+	}
+}
+
+/* ================================================================
+ * LOAD ANIMATIONS
+ * Entrance effects of the first screen (data-lm-load, set by Marker) play here from the first
+ * frame instead of waiting for the engine, which leaves them alone. Text and counter effects
+ * there have no CSS version: they are shown as written (data-lm-settled), no rule needed. The
+ * values are resolved at render time and written inline: --lm-load-duration,
+ * --lm-load-move-duration (the duration times the settle factor of a spring), --lm-load-delay
+ * (delay + rank in the lot x stagger), --lm-load-ease (transform: overshoot allowed),
+ * --lm-load-safe-ease (opacity and blur: never past their end), --lm-distance, --lm-blur,
+ * --lm-scale.
+ *
+ * Opacity starts at 0.01, not 0: Chrome does not count a paint at opacity 0 for the LCP.
+ * Keyframes give the start only: the end is the element's own value, so an author's opacity,
+ * filter or transform is where the animation lands. Fill "backwards" holds the start during the
+ * delay; past the end the animation stops applying, so hover transitions keep working.
+ * ================================================================ */
+
+@keyframes lm-load-fade {
+	from {
+		opacity: 0.01;
+	}
+}
+
+@keyframes lm-load-blur {
+	from {
+		filter: blur(var(--lm-blur));
+	}
+}
+
+@keyframes lm-load-slide-up-move {
+	from {
+		transform: translateY(var(--lm-distance));
+	}
+}
+
+@keyframes lm-load-blur-up-move {
+	from {
+		transform: translateY(var(--lm-distance));
+	}
+}
+
+@keyframes lm-load-zoom-move {
+	from {
+		transform: scale(var(--lm-scale));
+	}
+}
+
+@keyframes lm-load-zoom-blur-move {
+	from {
+		transform: scale(var(--lm-scale));
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	[data-lm-load="fade"] {
+		animation: lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="blur"] {
+		animation:
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards,
+			lm-load-blur var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="slide-up"] {
+		animation:
+			lm-load-slide-up-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="blur-up"] {
+		animation:
+			lm-load-blur-up-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards,
+			lm-load-blur var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="zoom"] {
+		animation:
+			lm-load-zoom-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+
+	[data-lm-load="zoom-blur"] {
+		animation:
+			lm-load-zoom-blur-move var(--lm-load-move-duration) var(--lm-load-ease) var(--lm-load-delay) backwards,
+			lm-load-fade var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards,
+			lm-load-blur var(--lm-load-duration) var(--lm-load-safe-ease) var(--lm-load-delay) backwards;
+	}
+}
+
+/* ================================================================
+ * UNDERLINE (CSS only)
+ * Drawn left to right on hover and focus, undrawn right to left on leave. The four
+ * variables are inheritable on purpose: set them on a wrapper to restyle every link in it.
+ * ================================================================ */
+
+.lm-underline,
+[data-lm~="underline"] {
+	position: relative;
+	display: inline-block;
+	line-height: 1.08;
+	padding-bottom: calc(var(--lm-underline-gap, 0.12em) * 0.45);
+	text-decoration: none;
+	overflow: visible;
+}
+
+.lm-underline::after,
+[data-lm~="underline"]::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: calc(-1 * var(--lm-underline-gap, 0.12em));
+	height: var(--lm-underline-thickness, 1px);
+	border-radius: 999px;
+	background-color: var(--lm-underline-color, currentColor);
+	pointer-events: none;
+	transform: scaleX(0);
+	transform-origin: right center;
+	transition: transform var(--lm-underline-duration, 0.4s) cubic-bezier(0.25, 1, 0.5, 1);
+	will-change: transform;
+}
+
+/* Thickness follows the text size where round() exists. A var() declaration is only invalid
+ * at computed-value time, so a second "height" would win and give "auto" elsewhere: the
+ * variant has to sit behind @supports. */
+@supports (height: round(1px, 1px)) {
+	.lm-underline::after,
+	[data-lm~="underline"]::after {
+		height: var(--lm-underline-thickness, round(max(1px, 0.06em), 1px));
+	}
+}
+
+.lm-underline:hover,
+.lm-underline:focus-visible,
+[data-lm~="underline"]:hover,
+[data-lm~="underline"]:focus-visible {
+	outline: none;
+}
+
+.lm-underline:hover::after,
+.lm-underline:focus-visible::after,
+[data-lm~="underline"]:hover::after,
+[data-lm~="underline"]:focus-visible::after {
+	transform: scaleX(1);
+	transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lm-underline,
+	[data-lm~="underline"] {
+		padding-bottom: var(--lm-underline-gap, 0.12em);
+	}
+
+	.lm-underline::after,
+	[data-lm~="underline"]::after {
+		transition: none;
+		transform: scaleX(1);
+	}
+}
+
+/* ================================================================
+ * COUNTER AND TEXT
+ * ================================================================ */
+
+/* The NumberFlow element of a counter (motion-counter.mjs). Its mask pads the number above
+ * and below, which made the line taller (61.6 px to 84 px measured): the negative margin
+ * gives that space back, rounded the way NumberFlow rounds the padding, so the line keeps
+ * its height through the whole animation. The width of the digits is the font's own
+ * (dynamic width), or tabular, set on the element, in fixed width. */
+lm-number-flow {
+	line-height: inherit;
+	vertical-align: top;
+	margin-block: calc(-2 * round(nearest, calc(var(--number-flow-mask-height, .25em) / 2), 1px));
+}
+
+/* One line of a split text. */
+.lm-line {
+	display: block;
+}
+
+/* Copy of a split text or of a counter kept for screen readers (and, for a counter, for
+ * crawlers: innerText leaves NumberFlow's shadow DOM out): hidden from the eye, never
+ * selected (a copy-paste would get the text twice). The engine sets the same styles inline,
+ * in case an optimiser strips this rule. */
+.lm-sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+	-webkit-user-select: none;
+	user-select: none;
+}

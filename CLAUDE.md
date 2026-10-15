@@ -6,7 +6,7 @@ Working guide for Claude Code on this repository. The rules below are absolute; 
 
 **Lümia Tools** (repository `agence-lumia/lumia-tools`, text domain and slug `lumia-tools`) is a modular WordPress plugin (PHP 8.0+, WP 6.9+). It is the former Studio Kyne Mini Tools (SKMT), renamed in 2.0.0. No build step in development, no runtime Composer, no npm: plain PHP with a home-grown PSR-4 autoloader (`Lumia\Tools\` → `includes/`). The source assets stay readable; only the release zip is minified (see below). No automated tests of the plugin itself (the only checks are `composer check`, the language-file gate and the Docker bench, see below). Third-party JS is shipped as is under `assets/admin/js/vendor/`, never bundled.
 
-Ten modules under `includes/Modules/`: Security, WhiteLabel, ImageOptimizer, MenuCreator, Login, Files, Media, Database, ActivityLog, Smtp. Each extends `AbstractModule`, registers its hooks in `init()`, sanitizes what it persists itself (`save_settings()` — the core applies nothing) and declares its uninstall keys. Settings: `lumia_settings` (global + module state) and `lumia_module_{id}` (per module), merged **recursively** over the defaults.
+Eleven modules under `includes/Modules/`: Security, WhiteLabel, ImageOptimizer, MenuCreator, Login, Files, Media, Database, ActivityLog, Smtp, Motion. Each extends `AbstractModule`, registers its hooks in `init()`, sanitizes what it persists itself (`save_settings()` — the core applies nothing) and declares its uninstall keys. Settings: `lumia_settings` (global + module state) and `lumia_module_{id}` (per module), merged **recursively** over the defaults.
 
 Lifecycle: `plugins_loaded` → `Plugin::instance()` → `init` → text domain loading, module definitions (filter `lumia_module_definitions`), `Module::init()` on every active module. `Admin` exists only under `is_admin()`. Every form posts to `admin-post.php` with a nonce + `manage_options`; every AJAX endpoint (`wp_ajax_lumia_{module}_{action}`) checks `lumia_admin_nonce` then the module capability.
 
@@ -74,6 +74,8 @@ Allow-list of files that may contain a legacy name in code or data (anything els
 - `includes/Core/Migration/FromSkmt.php`
 - `includes/Modules/Smtp/Crypto.php` (legacy key-derivation context, needed to re-encrypt)
 - `includes/Modules/ImageOptimizer/Module.php` (`LEGACY_BACKUP_DIR`)
+- `includes/Modules/Motion/Legacy.php` (the `sk-*` classes, `--sk-hover-underline-*` variables, `StudioKyneMotion` global and "SK Motion" snippet name of the former snippet)
+- `tools/motion/` and `tools/e2e/motion/` (tests and fixtures of the Motion migration, never shipped)
 - `includes/Core/Plugin.php` (the hold branch)
 - `includes/Core/Activator.php`
 - `uninstall.php`

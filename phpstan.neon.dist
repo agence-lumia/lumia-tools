@@ -12,5 +12,8 @@ parameters:
         - includes/Modules/*/settings-template.php
     bootstrapFiles:
         - tools/phpstan-bootstrap.php
+    scanFiles:
+        - tools/phpstan-bricks.stub
+        - tools/phpstan-wpcli.stub
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true

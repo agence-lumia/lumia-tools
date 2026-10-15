@@ -104,6 +104,11 @@ class Recorder {
 		// Settings.
 		add_action( 'updated_option', [ $this, 'on_updated_option' ], 10, 3 );
 		add_action( 'added_option', [ $this, 'on_added_option' ], 10, 2 );
+
+		// Files module danger mode (see Files\DangerMode).
+		add_action( 'lumia_files_danger_mode_enabled', [ $this, 'on_danger_mode_enabled' ], 10, 2 );
+		add_action( 'lumia_files_danger_mode_disabled', [ $this, 'on_danger_mode_disabled' ], 10, 2 );
+		add_action( 'lumia_files_danger_mode_write', [ $this, 'on_danger_mode_write' ], 10, 2 );
 	}
 
 	/* ================================================================
@@ -671,6 +676,66 @@ class Recorder {
 	}
 
 	/* ================================================================
+	 * FILES — DANGER MODE
+	 *
+	 * A security audit trail: the role exclusion does not apply (as for
+	 * failed logins), otherwise excluding administrators would hide every
+	 * unlock. The group exclusion still does.
+	 * ================================================================ */
+
+	/**
+	 * @param int $expires Expiry timestamp.
+	 * @param int $user_id User who turned it on.
+	 */
+	public function on_danger_mode_enabled( $expires, $user_id ): void {
+		$user = get_userdata( (int) $user_id );
+
+		$this->record(
+			'files_unlocked',
+			'lumia',
+			0,
+			'files',
+			[ 'until' => wp_date( 'Y-m-d H:i', (int) $expires ) ],
+			$user ? $user : null,
+			false
+		);
+	}
+
+	/**
+	 * An expiry is written without an author (cron, or the page load that
+	 * noticed it): who turned the mode on goes into the details.
+	 *
+	 * @param string $reason     'manual' or 'expired'.
+	 * @param int    $enabled_by User who turned it on.
+	 */
+	public function on_danger_mode_disabled( $reason, $enabled_by ): void {
+		$details = [ 'reason' => (string) $reason ];
+		$owner   = get_userdata( (int) $enabled_by );
+
+		if ( $owner ) {
+			$details['enabled_by'] = $owner->user_login;
+		}
+
+		$this->record(
+			'files_locked',
+			'lumia',
+			0,
+			'files',
+			$details,
+			'expired' === $reason ? new \WP_User( 0 ) : null,
+			false
+		);
+	}
+
+	/**
+	 * @param string $path      Path relative to the WordPress root.
+	 * @param string $operation 'save' or 'upload'.
+	 */
+	public function on_danger_mode_write( $path, $operation ): void {
+		$this->record( 'file_written', 'file', 0, (string) $path, [ 'operation' => (string) $operation ], null, false );
+	}
+
+	/* ================================================================
 	 * WRITING
 	 * ================================================================ */
 
@@ -679,6 +744,7 @@ class Recorder {
 	 *
 	 * @param array<string, mixed> $details
 	 * @param \WP_User|null        $actor           Explicit author; the current user otherwise.
+	 *                                              A non-existent user means "no author".
 	 * @param bool                 $apply_role_rule False for anonymous events (failed login):
 	 *                                              excluding administrators must not hide the
 	 *                                              attacks aimed at them.
@@ -697,10 +763,10 @@ class Recorder {
 			return;
 		}
 
-		if ( null === $actor ) {
-			$current = wp_get_current_user();
-			$actor   = $current->exists() ? $current : null;
-		}
+		// An explicit user that does not exist (`new \WP_User( 0 )`) forces an
+		// event without author, even during a logged-in request.
+		$actor = $actor ?? wp_get_current_user();
+		$actor = $actor->exists() ? $actor : null;
 
 		$roles = $actor ? array_values( (array) $actor->roles ) : [];
 

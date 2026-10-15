@@ -120,6 +120,14 @@ class Modules {
 				'class'       => 'Lumia\\Tools\\Modules\\Smtp\\Module',
 				'icon'        => 'mail',
 			],
+			'motion'          => [
+				'name'        => __( 'Motion', 'lumia-tools' ),
+				'description' => __( 'Entrance and scroll animations for Bricks, adjustable per element.', 'lumia-tools' ),
+				'menu_label'  => __( 'Motion', 'lumia-tools' ),
+				'menu_desc'   => __( 'Animate Bricks elements', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\Motion\\Module',
+				'icon'        => 'sparkles',
+			],
 		];
 
 		/**

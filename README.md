@@ -9,7 +9,7 @@ Requires WordPress 6.9+ and PHP 8.0+. The interface is in English and ships with
 - Modular architecture: enable only the modules you need
 - Modern, fast custom admin interface
 - Updates through GitHub (Stable and Dev channels)
-- Ten modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP
+- Eleven modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP, Motion
 
 ## Installation
 
@@ -109,6 +109,16 @@ In Settings > Updates:
 - Presets for common providers (Brevo, Mailgun, SendGrid, Postmark, SES, Mailjet, OVHcloud, Hostinger, Gmail, Microsoft 365)
 - Test email with the SMTP transcript, and a log of every email sent (purged on a schedule)
 - The password is encrypted at rest and never part of the settings export. Credentials can instead be defined in `wp-config.php` (`LUMIA_SMTP_USER`, `LUMIA_SMTP_PASSWORD`, `LUMIA_BREVO_API_KEY`, and `LUMIA_ENCRYPTION_KEY` to pin the encryption key)
+
+### Motion
+
+- Eleven effects from a global class (`lm-fade`, `lm-slide-up`, `lm-blur`, `lm-blur-up`, `lm-zoom`, `lm-zoom-blur`, `lm-lines`, `lm-words`, `lm-letters`, `lm-counter`, `lm-underline`) or the Motion group of any element
+- Per-element settings through `--lm-*` CSS variables (element > class > module defaults), breakpoints included
+- Five tempos (very fast, fast, normal, slow, very slow, or a custom duration) and curves Smooth, Snappy, Bouncy (springs), Linear and Custom (`cubic-bezier()`), set independently
+- Entrance effects of the first screen play in CSS from the first frame, so they never delay the LCP
+- Counters roll with [NumberFlow](https://number-flow.barvian.me/) (dynamic or fixed width), and screen readers always get the written value
+- Loaded only on the pages that use an effect; GSAP, Lenis and NumberFlow bundled, no CDN; optional Lenis smooth scrolling
+- Clear Bricks panel (sections, units, Replay, "Show markers", inherited values as placeholders); `wp lumia motion migrate` for sites using the former snippet
 
 ## Architecture
 
