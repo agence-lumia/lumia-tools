@@ -12,6 +12,8 @@
 	<exclude-pattern>*/tools/e2e/*</exclude-pattern>
 	<!-- Docker bench of the image delivery (fixture generator, assertion scripts): same status. -->
 	<exclude-pattern>*/tools/e2e-images/*</exclude-pattern>
+	<!-- Rollout scripts run through `wp eval-file` on the sites: never shipped, not plugin code. -->
+	<exclude-pattern>*/tools/rollout/*</exclude-pattern>
 	<!-- Claude Code folder, including the agent worktrees nested under .claude/worktrees/: a full copy of
 	     the plugin there gave "Duplicate class name" warnings. Relative (anchored at the scanned root),
 	     since a worktree's own absolute path contains /.claude/ and would exclude everything. -->
