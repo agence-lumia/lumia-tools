@@ -397,13 +397,15 @@
   // Builder: plays an item once, from its start state to its final one. The element is final
   // (settled) when this is called, and ends final again; a change that comes first kills the
   // item, which puts the element back as it ends.
+  // Whether the item has something to replay (underline has no preview: it is CSS on hover).
   function replay(item) {
     var family = FAMILIES[item.family];
     if (typeof family.preview !== "function") {
-      return;
+      return false;
     }
     stats.replays++;
     attempt(item, family.preview);
+    return true;
   }
 
   // Undoes everything the item did: the element goes back to how the page rendered it.
@@ -1235,8 +1237,8 @@
   }
 
   /* A scrub whose end lies past the end of the page would stop part-way, its last words
-   * dim for good (the reference end, top -120%, is out of reach for any text in the last two
-   * screens of a page). Its end is moved to the end of the page; its start, when it lies
+   * dim for good (the reference end, bottom 45%, is out of reach for a text in the last half
+   * screen of a page). Its end is moved to the end of the page; its start, when it lies
    * past that too or within the last half screen, to half a screen before, so the text
    * still lights up as the visitor scrolls down. setPositions() lasts until the next
    * refresh, which comes back here. */
@@ -1685,12 +1687,15 @@
       var found = items.filter(function (item) {
         return isBricksId(item.el, id);
       });
+      var played = 0;
       found.forEach(function (item) {
         // From its final state, whatever it was doing: a replay still playing is cut short.
         settle(item);
-        replay(item);
+        if (replay(item)) {
+          played++;
+        }
       });
-      return found.length > 0;
+      return played > 0;
     },
     // Builder (the "Show markers" checkbox): draws or removes the ScrollTrigger markers.
     markers: function (on) {

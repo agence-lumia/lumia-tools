@@ -282,13 +282,15 @@
   // The engine of the canvas, or null while the canvas loads.
   function engine() {
     var frame = document.getElementById("bricks-builder-iframe");
-    var win = null;
+    var motion = null;
+    // Reading a property of another window throws when the canvas is not (or no longer) same
+    // origin: the whole access is guarded, not only contentWindow.
     try {
-      win = frame && frame.contentWindow;
+      var win = frame && frame.contentWindow;
+      motion = win && win.lumiaMotion;
     } catch (error) {
       return null;
     }
-    var motion = win && win.lumiaMotion;
     return motion && typeof motion.replay === "function" ? motion : null;
   }
 
@@ -366,7 +368,11 @@
       var motion = engine();
       var id = activeId();
       if (motion && id) {
-        motion.replay(id);
+        try {
+          motion.replay(id);
+        } catch (error) {
+          // The canvas reloads or changed: the button does nothing rather than break the builder.
+        }
       }
     },
     true

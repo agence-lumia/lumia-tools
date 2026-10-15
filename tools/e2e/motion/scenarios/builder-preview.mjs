@@ -185,6 +185,7 @@ export default async function () {
 		const b = ( await stats( canvas ) ).replays;
 		assert( ( await canvas.evaluate( () => window.lumiaMotion.replay( 'nope00' ) ) ) === false, 'replay() of an unknown id returned true' );
 		assert( ( await canvas.evaluate( () => window.lumiaMotion.replay( 'bpre30' ) ) ) === true, 'replay() of bpre30 returned false' );
+		assert( ( await canvas.evaluate( () => window.lumiaMotion.replay( 'bpreul' ) ) ) === false, 'replay() of an underline returned true' );
 		assert( ( await stats( canvas ) ).replays === b + 1, `replay(id): replays went from ${ b } to ${ ( await stats( canvas ) ).replays }` );
 		await waitFinal( canvas, 'brxe-bpre30', 'replay(id)' );
 

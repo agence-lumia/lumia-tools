@@ -466,7 +466,7 @@
   };
 
   var INTERNAL_START = { edge: "top", at: "98%" };
-  var INTERNAL_END = { edge: "top", at: "-120%" };
+  var INTERNAL_END = { edge: "bottom", at: "45%" };
   var EDGES = ["top", "center", "bottom"];
   // A ScrollTrigger position: one or two tokens, each an edge keyword or a length, with an
   // optional "+=" / "-=" offset ("top 80%", "top+=50 center", "+=500"); "foo" is refused.

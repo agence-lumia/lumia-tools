@@ -28,8 +28,8 @@ const scrub = (stagger, fromOpacity) => ({
   delay: 0,
   stagger,
   from_opacity: fromOpacity,
-  end_edge: "top",
-  end_at: "-120%",
+  end_edge: "bottom",
+  end_at: "45%",
 });
 const CFG = {
   effects: {
@@ -365,7 +365,7 @@ test("resolve: invalid edge or at is refused with a warning", () => {
 
 test("resolve: scrub effects have an end, ignore tempo and ease", () => {
   const o = core.resolve("words", {}, CFG);
-  assert.equal(o.end, "top -120%");
+  assert.equal(o.end, "bottom 45%");
   assert.equal(o.scrub, true);
   assert.equal(o.family, "text");
   assert.equal(o.easeKey, "linear");
@@ -373,7 +373,7 @@ test("resolve: scrub effects have an end, ignore tempo and ease", () => {
   const t = core.resolve("letters", { tempo: "slow", ease: "bouncy" }, CFG);
   assert.equal(t.stagger, 0.1);
   assert.equal(t.easeKey, "linear");
-  assert.equal(t.end, "top -120%");
+  assert.equal(t.end, "bottom 45%");
   assert.equal(
     core.resolve("words", { "end-edge": "center", "end-at": "20" }, CFG).end,
     "center 20%",

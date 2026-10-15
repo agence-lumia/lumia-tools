@@ -317,7 +317,7 @@ class Controls {
 			[
 				'label'       => __( 'End position (ScrollTrigger)', 'lumia-tools' ),
 				'type'        => 'text',
-				'placeholder' => 'top -120%',
+				'placeholder' => 'bottom 45%',
 				'description' => __( 'Advanced: replaces the end edge and height above.', 'lumia-tools' ),
 			]
 		);
@@ -512,19 +512,18 @@ class Controls {
 		);
 
 		// The placeholder is the reference value (auto), as for the number fields.
+		$width_labels = [
+			'auto'  => __( 'Dynamic width', 'lumia-tools' ),
+			'fixed' => __( 'Fixed width', 'lumia-tools' ),
+		];
+
 		$controls['_lmCounterWidth'] = self::variable(
 			'--lm-counter-width',
 			[
 				'label'       => __( 'Counter width', 'lumia-tools' ),
 				'type'        => 'select',
-				'options'     => self::options(
-					Effects::COUNTER_WIDTHS,
-					[
-						'auto'  => __( 'Dynamic width', 'lumia-tools' ),
-						'fixed' => __( 'Fixed width', 'lumia-tools' ),
-					]
-				),
-				'placeholder' => __( 'Dynamic width', 'lumia-tools' ),
+				'options'     => self::options( Effects::COUNTER_WIDTHS, $width_labels ),
+				'placeholder' => self::site_default_placeholder( 'effects.counter.counter_width', 'auto', $width_labels ),
 				'description' => __( 'Dynamic: the number widens as its digits appear. Fixed: every digit of the final number is there from the start, all of the same width.', 'lumia-tools' ),
 			]
 		);
@@ -613,14 +612,17 @@ class Controls {
 	 * Placeholder of a select that falls back to a site setting: the value the element really gets
 	 * when the field is empty ("Smooth (site default)"), not a bare "Default".
 	 *
-	 * @param string                $setting  Key in the module settings (`ease`, `tempo`).
+	 * @param string                $setting  Dotted path in the module settings (`ease`, `effects.counter.counter_width`).
 	 * @param string                $fallback Value of the module defaults.
 	 * @param array<string, string> $labels   Option labels, keyed by value.
 	 */
 	private static function site_default_placeholder( string $setting, string $fallback, array $labels ): string {
-		$settings = get_option( 'lumia_module_motion', [] );
-		$value    = is_array( $settings ) && is_string( $settings[ $setting ] ?? null ) ? $settings[ $setting ] : $fallback;
-		$label    = $labels[ $value ] ?? $labels[ $fallback ] ?? $value;
+		$value = get_option( 'lumia_module_motion', [] );
+		foreach ( explode( '.', $setting ) as $key ) {
+			$value = is_array( $value ) ? ( $value[ $key ] ?? null ) : null;
+		}
+		$value = is_string( $value ) ? $value : $fallback;
+		$label = $labels[ $value ] ?? $labels[ $fallback ] ?? $value;
 
 		/* translators: %s: name of the value set for the whole site, e.g. "Smooth". */
 		return sprintf( __( '%s (site default)', 'lumia-tools' ), $label );

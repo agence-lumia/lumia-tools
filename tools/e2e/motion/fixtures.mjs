@@ -107,6 +107,8 @@ PAGES[ 'lm-e2e-basic' ] = {
 			// Four presets in a row: the class gives slide-up at 60%, three of them adjust it.
 			heading( 'Preset', {}, { id: 'bpre01', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset at 30%', { _lmStartAt: '30' }, { id: 'bpre30', classes: [ 'lm-e2e-preset' ] } ),
+			// Underline has no preview (CSS on hover): replay() must say it played nothing.
+			text( 'Underline, nothing to replay', { _lmEffect: 'underline' }, { id: 'bpreul' } ),
 			heading( 'Preset at 80% on phones', { '_lmStartAt:mobile_portrait': '80' }, { id: 'bpremb', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset, fast and bouncy', { _lmTempo: 'fast', _lmEase: 'bouncy' }, { id: 'bprefb', classes: [ 'lm-e2e-preset' ] } ),
 			// A bouncy curve overshoots: the blur must still never go below 0.
@@ -225,7 +227,7 @@ PAGES[ 'lm-e2e-anchor' ] = {
 };
 
 // Text effects (text, loading). The last two elements sit too close to the bottom for their
-// start (30%) to be reached; the h3 reaches its start but not its end (top -120%).
+// start (30%) to be reached; the h3 reaches its start but not its end (bottom 45%).
 const LINES_TEXT =
 	'Motion should feel like a <strong>natural consequence</strong> of reading: each line rises from under its own mask, ' +
 	'one after the other, and the paragraph is left <em>exactly</em> as it was written once the last line has landed, ' +

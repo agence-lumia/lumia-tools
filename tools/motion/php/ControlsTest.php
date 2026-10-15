@@ -21,18 +21,21 @@ return [
 		$controls                   = Controls::definitions();
 		lm_assert( $controls['_lmEase']['placeholder'] === 'Smooth (site default)', 'ease: ' . $controls['_lmEase']['placeholder'] );
 		lm_assert( $controls['_lmTempo']['placeholder'] === 'Normal (site default)', 'tempo: ' . $controls['_lmTempo']['placeholder'] );
+		lm_assert( $controls['_lmCounterWidth']['placeholder'] === 'Dynamic width (site default)', 'width: ' . $controls['_lmCounterWidth']['placeholder'] );
 	},
 	'empty easing and tempo follow the site settings'   => static function (): void {
 		$GLOBALS['lm_test_options'] = [
 			'lumia_module_motion' => [
-				'ease'  => 'bouncy',
-				'tempo' => 'slow',
+				'ease'    => 'bouncy',
+				'tempo'   => 'slow',
+				'effects' => [ 'counter' => [ 'counter_width' => 'fixed' ] ],
 			],
 		];
 		$controls                   = Controls::definitions();
 		$GLOBALS['lm_test_options'] = [];
 		lm_assert( $controls['_lmEase']['placeholder'] === 'Bouncy (site default)', 'ease: ' . $controls['_lmEase']['placeholder'] );
 		lm_assert( $controls['_lmTempo']['placeholder'] === 'Slow (site default)', 'tempo: ' . $controls['_lmTempo']['placeholder'] );
+		lm_assert( $controls['_lmCounterWidth']['placeholder'] === 'Fixed width (site default)', 'width: ' . $controls['_lmCounterWidth']['placeholder'] );
 	},
 	'an unknown stored value falls back to the default' => static function (): void {
 		$GLOBALS['lm_test_options'] = [ 'lumia_module_motion' => [ 'ease' => 'wobbly' ] ];

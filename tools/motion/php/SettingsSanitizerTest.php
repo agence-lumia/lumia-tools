@@ -141,7 +141,7 @@ return [
 	'end_edge accepts the three edges only'         => static function () use ( $lm_defaults, $lm_effects ): void {
 		$bad  = $lm_effects( [ 'words' => [ 'end_edge' => 'left' ] ], $lm_defaults );
 		$good = $lm_effects( [ 'words' => [ 'end_edge' => 'center' ] ], $lm_defaults );
-		lm_assert( 'top' === $bad['words']['end_edge'], 'left must become top' );
+		lm_assert( 'bottom' === $bad['words']['end_edge'], 'left must become bottom' );
 		lm_assert( 'center' === $good['words']['end_edge'], 'center must be kept' );
 	},
 	'start_at needs a percentage'                   => static function () use ( $lm_defaults, $lm_effects ): void {
@@ -155,7 +155,7 @@ return [
 	'end_at needs a percentage and may be negative' => static function () use ( $lm_defaults, $lm_effects ): void {
 		$bare     = $lm_effects( [ 'words' => [ 'end_at' => '20' ] ], $lm_defaults );
 		$negative = $lm_effects( [ 'words' => [ 'end_at' => '-35.5%' ] ], $lm_defaults );
-		lm_assert( '-120%' === $bare['words']['end_at'], '20 must become the default -120%' );
+		lm_assert( '45%' === $bare['words']['end_at'], '20 must become the default 45%' );
 		lm_assert( '-35.5%' === $negative['words']['end_at'], '-35.5% must be kept' );
 	},
 	'tempo accepts the five profiles'               => static function () use ( $lm_defaults ): void {

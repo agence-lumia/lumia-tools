@@ -140,8 +140,10 @@ final class Effects {
 				'delay'        => 0.0,
 				'stagger'      => $stagger,
 				'from_opacity' => $from_opacity,
-				'end_edge'     => 'top',
-				'end_at'       => '-120%',
+				// Bottom edge: the letter being revealed travels from start_at to end_at on screen
+				// whatever the length of the text, so the last one lights up just above the middle.
+				'end_edge'     => 'bottom',
+				'end_at'       => '45%',
 			];
 		};
 

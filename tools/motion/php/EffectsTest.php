@@ -92,7 +92,7 @@ return [
 	'reference values'                               => static function (): void {
 		$ref = Effects::reference_values();
 		lm_assert( $ref['slide-up']['distance'] === 48.0, 'slide-up distance' );
-		lm_assert( $ref['words']['end_at'] === '-120%', 'words end_at' );
+		lm_assert( $ref['words']['end_edge'] === 'bottom' && $ref['words']['end_at'] === '45%', 'words end' );
 		lm_assert( $ref['fade']['start_edge'] === 'top' && $ref['fade']['start_at'] === '98%', 'fade start' );
 		lm_assert( $ref['fade']['delay'] === 0.0, 'fade delay' );
 		lm_assert( $ref['fade']['duration'] === 0.45 && $ref['fade']['stagger'] === 0.06, 'fade timing' );
@@ -114,7 +114,7 @@ return [
 		lm_assert( $ref['words']['stagger'] === 0.25 && $ref['words']['from_opacity'] === 0.08, 'words' );
 		lm_assert( $ref['letters']['stagger'] === 0.1 && $ref['letters']['from_opacity'] === 0.08, 'letters' );
 		lm_assert( ! array_key_exists( 'duration', $ref['words'] ), 'scrub has no duration' );
-		lm_assert( $ref['letters']['end_edge'] === 'top', 'letters end_edge' );
+		lm_assert( $ref['letters']['end_edge'] === 'bottom', 'letters end_edge' );
 		lm_assert( ! array_key_exists( 'end_at', $ref['fade'] ), 'non-scrub has no end_at' );
 		lm_assert( $ref['counter']['duration'] === 1.35 && $ref['counter']['start_value'] === 0.0, 'counter' );
 		lm_assert( $ref['counter']['counter_width'] === 'auto', 'counter width defaults to auto' );
