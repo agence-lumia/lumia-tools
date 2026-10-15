@@ -12,6 +12,8 @@
 	<exclude-pattern>*/tools/e2e/*</exclude-pattern>
 	<!-- Docker bench of the image delivery (fixture generator, assertion scripts): same status. -->
 	<exclude-pattern>*/tools/e2e-images/*</exclude-pattern>
+	<!-- Rollout scripts run through `wp eval-file` on the sites: never shipped, not plugin code. -->
+	<exclude-pattern>*/tools/rollout/*</exclude-pattern>
 	<!-- Claude Code folder, including the agent worktrees nested under .claude/worktrees/: a full copy of
 	     the plugin there gave "Duplicate class name" warnings. Relative (anchored at the scanned root),
 	     since a worktree's own absolute path contains /.claude/ and would exclude everything. -->
@@ -84,6 +86,13 @@
 	<!-- PHP compatibility: minimum version declared in the header -->
 	<config name="testVersion" value="8.0-"/>
 	<rule ref="PHPCompatibilityWP"/>
+
+	<!-- False positive: the sniff reads the method name Effects::family() as the removed "fam" extension.
+	     Scoped to the Motion module (the only caller) and its tests; every other extension stays checked. -->
+	<rule ref="PHPCompatibility.Extensions.RemovedExtensions.famRemoved">
+		<exclude-pattern>*/includes/Modules/Motion/*</exclude-pattern>
+		<exclude-pattern>*/tools/motion/*</exclude-pattern>
+	</rule>
 
 	<!-- Minimum WordPress version (deprecated functions) -->
 	<config name="minimum_wp_version" value="6.9"/>

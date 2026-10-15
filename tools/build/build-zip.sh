@@ -8,9 +8,10 @@
 #      tools/build/zip-excludes.txt lists and without the .po / .pot sources;
 #   2. compiles each languages/*.po into a .l10n.php next to the .mo (WordPress >= 6.5
 #      reads the PHP file first, the .mo stays as a fallback);
-#   3. minifies every assets/**/*.js and *.css except *.min.*, in place, with a pinned
-#      esbuild in transform mode (no bundling, no --format: top-level names and every
-#      property name are kept, the files stay plain browser scripts);
+#   3. minifies every assets/**/*.js, *.mjs and *.css except *.min.* and the third-party
+#      files of the vendor/ folders (shipped byte for byte), in place, with a pinned
+#      esbuild in transform mode (no bundling, no --format: top-level names, imports and
+#      every property name are kept, the files stay plain browser scripts or modules);
 #   4. checks the result, then zips it with lumia-tools/ as the top folder.
 #
 # <version> is only used in messages: the version bump of lumia-tools.php is done by the
@@ -90,12 +91,13 @@ done
 assets=()
 while IFS= read -r -d '' asset; do
 	assets+=("${asset}")
-done < <(find "${stage}/assets" -type f \( -name '*.js' -o -name '*.css' \) ! -name '*.min.*' -print0 | sort -z)
+done < <(find "${stage}/assets" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.css' \) ! -name '*.min.*' ! -path '*/vendor/*' -print0 | sort -z)
 [ "${#assets[@]}" -gt 0 ] || die "no asset to minify under assets/"
 
 assets_before="$(bytes "${assets[@]}")"
 for asset in "${assets[@]}"; do
 	loader="${asset##*.}"
+	[ "${loader}" = mjs ] && loader=js
 	npx --yes "esbuild@${ESBUILD_VERSION}" --minify --loader="${loader}" --log-level=warning \
 		< "${asset}" > "${asset}.min.tmp" \
 		|| die "esbuild failed on ${asset#"${stage}/"}"
@@ -107,7 +109,11 @@ for asset in "${assets[@]}"; do
 done
 assets_after="$(bytes "${assets[@]}")"
 
-# 4. Checks on the staging copy.
+# 4. Checks on the staging copy. Third-party files ship unmodified.
+while IFS= read -r -d '' file; do
+	cmp -s "${file}" "${stage}/${file}" || die "${file} differs in the build: vendor files ship as they are"
+done < <(find assets -type f -path '*/vendor/*' ! -name '.DS_Store' -print0)
+
 missing=()
 while IFS= read -r -d '' file; do
 	[ -s "${stage}/${file}" ] || missing+=("${file}")
