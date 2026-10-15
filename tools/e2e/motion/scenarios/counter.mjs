@@ -307,8 +307,6 @@ async function loading() {
 	assert( /lumia-motion-counter-js/.test( servedHtml ), 'lm-e2e-counter: the loader does not list the counter script' );
 	{
 		const page = await open( { slug: 'lm-e2e-counter' } );
-		const mjs = [];
-		page.on( 'request', ( r ) => /\.mjs(\?|$)/.test( r.url() ) && mjs.push( r.url() ) );
 		await page.waitForFunction( () => window.lumiaMotionCounter, null, { timeout: 4000 } );
 		// Against the first paint, not the first contentful one: every element of this page is an
 		// entrance, hidden until the engine plays it, so nothing contentful is painted before.
@@ -316,11 +314,14 @@ async function loading() {
 			const fp = ( performance.getEntriesByType( 'paint' ).find( ( e ) => e.name === 'first-paint' ) || {} ).startTime;
 			return {
 				fp,
+				// Every resource of the page, whenever it loaded (a listener attached after open() would
+				// see none): no script module may be requested.
+				mjs: performance.getEntriesByType( 'resource' ).map( ( e ) => e.name ).filter( ( n ) => /\.mjs(\?|$)/.test( n ) ),
 				early: performance.getEntriesByType( 'resource' ).filter( ( e ) => /\/(number-flow|esm-env)\/|motion-counter\.m?js/.test( e.name ) && ! ( e.startTime > fp ) ).map( ( e ) => `${ e.name } ${ Math.round( e.startTime ) } ms` ),
 			};
 		} );
 		assert( typeof t.fp === 'number' && t.early.length === 0, `lm-e2e-counter: counter files requested before the first paint (${ t.fp } ms): ${ t.early.join( ', ' ) }` );
-		assert( mjs.length === 0, `lm-e2e-counter: .mjs files requested: ${ mjs.join( ', ' ) }` );
+		assert( t.mjs.length === 0, `lm-e2e-counter: .mjs files requested: ${ t.mjs.join( ', ' ) }` );
 		await page.context().close();
 	}
 

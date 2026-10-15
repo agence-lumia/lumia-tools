@@ -147,7 +147,7 @@ Copied unmodified from the npm tarballs `gsap-3.15.0.tgz` (d2e33ad202d4811e90848
 | `assets/front/js/vendor/esm-env/dev-fallback.js` | `9a8b82930d9fe18c0ff5aa20b8a3166ca60d75902e4d9676d101abfc6f4f9452` |
 | `assets/front/js/vendor/esm-env/LICENSE` | `6df5276ee7531fcc5446f19082c12e77bb6c5f081fd2b6d6cf88180a5ee36acd` |
 
-The release build leaves every file under a `vendor/` folder as it is and fails if one differs in the zip (`tools/build/build-zip.sh`): `lenis.css`, which it used to re-minify, now ships as published too. `motion-counter.mjs` is minified like the other scripts of the module.
+The release build leaves every file under a `vendor/` folder as it is and fails if one differs in the zip (`tools/build/build-zip.sh`): `lenis.css`, which it used to re-minify, now ships as published too. `motion-counter.js` (the counter bundle) is minified like the other scripts of the module; its source `motion-counter.mjs` ships but is never loaded.
 
 ## Migrating a site from the snippet
 
