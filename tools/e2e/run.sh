@@ -270,7 +270,7 @@ remove_snippets() {
 # installed. Legacy SKMT_* constants and skmt_* hooks must keep working, and the
 # deprecation of the hooks must reach debug.log.
 cmd_assert_compat() {
-	local failures=0 folder code location log
+	local failures=0 folder code location log login_slug
 
 	check() { # check <label> <status: 0 = ok>
 		if [ "$2" -eq 0 ]; then
@@ -286,7 +286,7 @@ cmd_assert_compat() {
 	CLEANUP_SNIPPETS=1
 	remove_snippets
 
-	# Security on, with its defaults (custom login URL /connexion): wp-login.php answers 404.
+	# Security on, with the migrated settings: wp-login.php answers 404.
 	# shellcheck disable=SC2016 # PHP code: the single quotes are on purpose.
 	wp --user=admin eval '$m = \Lumia\Tools\Core\Plugin::instance()->modules; $m->register_default_modules( false ); $m->activate( "security" );' >/dev/null
 	wp rewrite flush --hard >/dev/null
@@ -316,8 +316,12 @@ add_filter(
 );
 EOF
 	dc --progress quiet run --rm -T cli sh -c 'rm -f /var/www/html/wp-content/debug.log'
-	location="$(curl -s -o /dev/null -D - -H 'X-E2E-User: admin' "${SITE_URL}/connexion/" | tr -d '\r' | sed -n 's/^[Ll]ocation: //p')"
-	check "a logged-in visit of /connexion/ is redirected by the legacy filter (got '${location}')" "$([ "${location}" = "${SITE_URL}/e2e-skmt-redirect/" ] && echo 0 || echo 1)"
+	# The slug is read, never assumed: the full seed migrates SKMT's "/connexion-e2e",
+	# only a --minimal seed falls back to the "/connexion" default.
+	login_slug="$(wp option pluck lumia_module_security authentication custom_login_url 2>/dev/null || true)"
+	login_slug="${login_slug:-/connexion}"
+	location="$(curl -s -o /dev/null -D - -H 'X-E2E-User: admin' "${SITE_URL}/${login_slug#/}/" | tr -d '\r' | sed -n 's/^[Ll]ocation: //p')"
+	check "a logged-in visit of ${login_slug}/ is redirected by the legacy filter (got '${location}')" "$([ "${location}" = "${SITE_URL}/e2e-skmt-redirect/" ] && echo 0 || echo 1)"
 	log="$(dc --progress quiet run --rm -T cli sh -c 'cat /var/www/html/wp-content/debug.log 2>/dev/null' || true)"
 	check "debug.log carries the deprecation of skmt_custom_login_redirect" "$(grep -q 'skmt_custom_login_redirect' <<<"${log}" && echo 0 || echo 1)"
 	check "the notice names the replacement lumia_custom_login_redirect" "$(grep -q 'lumia_custom_login_redirect' <<<"${log}" && echo 0 || echo 1)"
