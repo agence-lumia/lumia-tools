@@ -9,7 +9,7 @@
  * once when the item is built and again on refresh(), never per frame.
  *
  * Each family of effects has a builder (FAMILIES below): entrance effects, text effects
- * (SplitText) and the counter (NumberFlow, through motion-counter.mjs), all behind the same hooks.
+ * (SplitText) and the counter (NumberFlow, through motion-counter.js), all behind the same hooks.
  *
  * In the Bricks canvas (config.builder) nothing is hidden and nothing follows the scroll:
  * every element is in its final state. motion-builder.js calls scan(), which reads the page
@@ -935,8 +935,8 @@
   /* ================================================================
    * FAMILY: COUNTER
    * Rolls the digits from the start value to the number written in the HTML, in the format
-   * it is written in (core.parseCounter), with NumberFlow: motion-counter.mjs, a script module
-   * loaded on the pages that have a counter, exposes window.lumiaMotionCounter. The number
+   * it is written in (core.parseCounter), with NumberFlow: motion-counter.js (generated from
+   * motion-counter.mjs), loaded on the pages that have a counter, exposes window.lumiaMotionCounter. The number
    * must sit in a single text node; anything else ("24/7", digits split by markup) is left
    * as is. The NumberFlow element replaces the text node and stays once the number is
    * written. A visually hidden copy of the written text (.lm-sr) is what assistive

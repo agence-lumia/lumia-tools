@@ -11,7 +11,8 @@ const DYNAMIC = [ 'brxe-cnyear', 'brxe-cngrp', 'brxe-cndec', 'brxe-cnpfx' ];
 const FIXED = [ 'brxe-cnyerf', 'brxe-cngrpf', 'brxe-cndecf', 'brxe-cnpfxf' ];
 const IDS = [ ...DYNAMIC, ...FIXED, 'brxe-cnamb', 'brxe-cnmark', 'brxe-cnbnc', 'brxe-cnlate' ];
 const COUNTING = IDS.filter( ( id ) => id !== 'brxe-cnamb' && id !== 'brxe-cnlate' );
-const FLOW_FILES = /\/(number-flow|esm-env)\/|motion-counter\.mjs/;
+// The bundle (motion-counter.js) and the sources it is built from, never loaded as modules.
+const FLOW_FILES = /\/(number-flow|esm-env)\/|motion-counter\.m?js/;
 
 async function open( o = {}, before = null ) {
 	const page = await newPage( o );
@@ -268,7 +269,7 @@ async function reduced() {
 
 /** NumberFlow blocked: the engine gives up after its wait and every counter stays as written. */
 async function blocked() {
-	const page = await open( {}, ( p ) => p.route( '**/number-flow/lite.mjs*', ( route ) => route.abort() ) );
+	const page = await open( {}, ( p ) => p.route( '**/motion-counter.js*', ( route ) => route.abort() ) );
 	const orig = await served( page );
 	await page.waitForTimeout( 3500 );
 	await page.evaluate( () => document.getElementById( 'brxe-cnyear' ).scrollIntoView( { block: 'center' } ) );
@@ -293,15 +294,17 @@ async function loading() {
 	const flow = requested.filter( ( u ) => FLOW_FILES.test( u ) );
 	assert( flow.length === 0, `lm-e2e-basic: counter files requested: ${ flow.join( ', ' ) }` );
 	// Tags only: the inline motion styles carry the lm-number-flow rules.
-	const tags = ( html.match( /<(script|link)\b[^>]*>/g ) || [] ).join( '\n' ) + ( ( html.match( /<script[^>]*type=["']importmap["'][^>]*>[\s\S]*?<\/script>/ ) || [ '' ] )[ 0 ] );
-	assert( ! /number-flow|esm-env|motion-counter/.test( tags ), 'lm-e2e-basic: counter modules in the HTML' );
+	const tags = ( html.match( /<(script|link)\b[^>]*>/g ) || [] ).join( '\n' );
+	assert( ! /number-flow|esm-env|motion-counter/.test( tags ), 'lm-e2e-basic: counter script in the HTML' );
 	await page.context().close();
 
-	// A counter page: the import map is in the served HTML, the entry module and its preloads are not
-	// (the loader injects the entry after the first paint).
+	// A counter page: no script module at all (nginx serves .mjs as application/octet-stream, which
+	// browsers refuse for a module), the counter is a classic script the loader injects after the
+	// first paint, so it is not printed as a tag either.
 	const servedHtml = await ( await fetch( pageUrl( 'lm-e2e-counter' ) ) ).text();
-	assert( /id=["']wp-importmap["']/.test( servedHtml ), 'lm-e2e-counter: no import map in the served HTML' );
-	assert( ! /<script[^>]*type=["']module["'][^>]*motion-counter/.test( servedHtml ) && ! /modulepreload/.test( servedHtml ), 'lm-e2e-counter: the counter module or a preload is printed as a tag' );
+	assert( ! /importmap|type=["']module["']|modulepreload/.test( servedHtml ), 'lm-e2e-counter: a script module, an import map or a preload in the served HTML' );
+	assert( ! /<script[^>]*src=["'][^"']*motion-counter/.test( servedHtml ), 'lm-e2e-counter: the counter script is printed as a tag' );
+	assert( /lumia-motion-counter-js/.test( servedHtml ), 'lm-e2e-counter: the loader does not list the counter script' );
 	{
 		const page = await open( { slug: 'lm-e2e-counter' } );
 		await page.waitForFunction( () => window.lumiaMotionCounter, null, { timeout: 4000 } );
@@ -311,19 +314,18 @@ async function loading() {
 			const fp = ( performance.getEntriesByType( 'paint' ).find( ( e ) => e.name === 'first-paint' ) || {} ).startTime;
 			return {
 				fp,
-				early: performance.getEntriesByType( 'resource' ).filter( ( e ) => /\/(number-flow|esm-env)\/|motion-counter\.mjs/.test( e.name ) && ! ( e.startTime > fp ) ).map( ( e ) => `${ e.name } ${ Math.round( e.startTime ) } ms` ),
+				// Every resource of the page, whenever it loaded (a listener attached after open() would
+				// see none): no script module may be requested.
+				mjs: performance.getEntriesByType( 'resource' ).map( ( e ) => e.name ).filter( ( n ) => /\.mjs(\?|$)/.test( n ) ),
+				early: performance.getEntriesByType( 'resource' ).filter( ( e ) => /\/(number-flow|esm-env)\/|motion-counter\.m?js/.test( e.name ) && ! ( e.startTime > fp ) ).map( ( e ) => `${ e.name } ${ Math.round( e.startTime ) } ms` ),
 			};
 		} );
 		assert( typeof t.fp === 'number' && t.early.length === 0, `lm-e2e-counter: counter files requested before the first paint (${ t.fp } ms): ${ t.early.join( ', ' ) }` );
+		assert( t.mjs.length === 0, `lm-e2e-counter: .mjs files requested: ${ t.mjs.join( ', ' ) }` );
 		await page.context().close();
 	}
 
 	const popup = await open( { slug: 'lm-e2e-counter-popup' } );
-	const map = await popup.evaluate( () => {
-		const node = document.getElementById( 'wp-importmap' );
-		return node ? JSON.parse( node.textContent ).imports : null;
-	} );
-	assert( map && map[ 'number-flow/lite' ] && map[ 'esm-env' ] && map[ 'esm-env/browser' ], `counter in a popup: import map ${ JSON.stringify( map ) }` );
 	await popup.waitForFunction( () => window.lumiaMotionCounter, null, { timeout: 4000 } ).catch( () => {
 		throw new Error( 'counter in a popup: the counter adapter never started' );
 	} );
