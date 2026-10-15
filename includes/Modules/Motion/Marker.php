@@ -106,7 +106,7 @@ final class Marker {
 			return $attributes;
 		}
 
-		$settings = $element->settings;
+		$settings = self::with_resolved_classes( $element->settings, $attributes['_root']['class'] ?? null );
 		$data     = is_array( $element->element ) ? $element->element : [];
 		$classes  = self::classes_of( $settings );
 		$families = self::families( $settings, $classes, self::$legacy );
@@ -146,14 +146,46 @@ final class Marker {
 			}
 		}
 
-		// The engine skips both kinds: a page whose effects are all of them needs no engine.
-		if ( ! isset( $attributes['_root']['data-lm-load'] ) && ! isset( $attributes['_root'][ self::SETTLED ] ) ) {
+		// The engine skips both kinds: a page whose effects are all of them needs no engine. Except
+		// inside a query loop: "Load more", infinite scroll, AJAX pagination and query filters add
+		// items of the same kind later (rendered by the REST API, outside the first screen), and
+		// they need the engine. AJAX popups need no such rule: Bricks 2.4.3 renders their content
+		// with the page (Popups::generate_popup_html(), to drop an empty one), so it is counted.
+		$skipped = isset( $attributes['_root']['data-lm-load'] ) || isset( $attributes['_root'][ self::SETTLED ] );
+		if ( ! $skipped || self::in_loop() ) {
 			foreach ( $families as $family ) {
 				self::$engine_seen[ $family ] = true;
 			}
 		}
 
 		return $attributes;
+	}
+
+	/**
+	 * Settings whose typed classes (`_cssClasses`) hold dynamic data get them as Bricks rendered them.
+	 *
+	 * Bricks 2.4.3 renders the dynamic data of each class (`Element::set_root_attributes()`, through
+	 * `bricks_render_dynamic_data()`) into the `class` list of the root attributes, which this filter
+	 * receives. The raw field (`lm-{acf_effect}`) named no effect, so such an element was never marked.
+	 * That list also holds the global class names and `brxe-*`: harmless, the global classes are read
+	 * before the typed ones and `brxe-*` names no effect. Plain fields are left as they are.
+	 *
+	 * @param array<string, mixed> $settings Element settings.
+	 * @param mixed                $rendered `class` of the root attributes (a list, or a string).
+	 * @return array<string, mixed>
+	 */
+	public static function with_resolved_classes( array $settings, $rendered ): array {
+		$typed = $settings['_cssClasses'] ?? null;
+		if ( ! is_string( $typed ) || ! str_contains( $typed, '{' ) ) {
+			return $settings;
+		}
+
+		$names = is_array( $rendered ) ? $rendered : ( is_string( $rendered ) ? [ $rendered ] : [] );
+		$names = array_filter( $names, static fn( $name ) => is_string( $name ) && '' !== trim( $name ) );
+
+		$settings['_cssClasses'] = implode( ' ', $names );
+
+		return $settings;
 	}
 
 	/**
@@ -224,6 +256,13 @@ final class Marker {
 		$outer = is_array( $stack[0] ?? null ) && is_string( $stack[0]['source_area'] ?? null ) ? $stack[0]['source_area'] : '';
 
 		return [ $area, max( 1, count( $stack ) ), $outer ];
+	}
+
+	/**
+	 * Whether a query loop is running (the element is one of its items, or the loop element).
+	 */
+	private static function in_loop(): bool {
+		return class_exists( '\Bricks\Query' ) && (bool) \Bricks\Query::is_any_looping();
 	}
 
 	/**

@@ -226,12 +226,15 @@
 	}
 }
 
+/* Each option row of the Bricks list clips its content (overflow: hidden) 8 px below the thumbnail:
+ * the move plus the blur halo (about twice the radius) must stay within it. 4 px + blur(3px) went
+ * past it, and the bottom of the halo was cut. */
 @keyframes lm-thumb-blur-up {
 	0%,
 	8% {
 		opacity: 0;
-		filter: blur(3px);
-		transform: translateY(4px);
+		filter: blur(2px);
+		transform: translateY(3px);
 	}
 
 	40%,
@@ -243,8 +246,8 @@
 
 	100% {
 		opacity: 0;
-		filter: blur(3px);
-		transform: translateY(4px);
+		filter: blur(2px);
+		transform: translateY(3px);
 	}
 }
 

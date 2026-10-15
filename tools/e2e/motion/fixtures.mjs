@@ -398,6 +398,64 @@ PAGES[ 'lm-e2e-menu' ] = {
 	],
 };
 
+// A Template element in the header (a mega menu built from a section template): its section is
+// rendered with the area "content" inside the header render, and must not take the first-root slot
+// of the page. The real first section keeps its load animation; the template's heading, being in the
+// header, gets one too.
+PAGES[ 'lm-e2e-tpl-section' ] = {
+	title: 'LM E2E section template',
+	post_type: 'bricks_template',
+	meta: { _bricks_template_type: 'section' },
+	elements: [ section( [ heading( 'Section template heading', { tag: 'h3' }, { id: 'tplsh1', classes: [ 'lm-fade' ] } ) ], { id: 'tplsec' } ) ],
+};
+PAGES[ 'lm-e2e-tpl-header' ] = {
+	title: 'LM E2E header with a template',
+	post_type: 'bricks_template',
+	area: 'header',
+	meta: { _bricks_template_type: 'header', _bricks_template_settings: popupOn( 'lm-e2e-header' ) },
+	elements: [ section( [ el( 'template', { template: '@id:lm-e2e-tpl-section' }, [], { id: 'hdtplel' } ) ], { id: 'hdtpls' } ) ],
+};
+PAGES[ 'lm-e2e-header' ] = {
+	title: 'LM E2E header',
+	elements: [
+		section( [ heading( 'First section of the page', { tag: 'h1' }, { id: 'hdfrst', classes: [ 'lm-fade' ] } ) ], { id: 'hdsec1' } ),
+		section( [ spacer( 1600 ), heading( 'Below the fold', {}, { id: 'hdbelo', classes: [ 'lm-fade' ] } ) ] ),
+	],
+};
+
+// A query loop in the first section: its items play in CSS on load, but "Load more" and the like add items
+// later, which need the engine. A class typed with dynamic data ({url_parameter:fx}) is read as Bricks
+// renders it. An entrance whose element has its own opacity (0.5) ends there, not at 1.
+// The loop alone, nothing else animated on the page: only the loop can bring the engine.
+PAGES[ 'lm-e2e-loop-first' ] = {
+	title: 'LM E2E loop first',
+	elements: [
+		section( [
+			heading( 'Loop in the first section', { tag: 'h1' }, { id: 'lpfrhd' } ),
+			el(
+				'block',
+				{ hasLoop: true, query: { objectType: 'post', post_type: [ 'post' ], posts_per_page: 2 } },
+				[ heading( '{post_title}', { tag: 'h3' }, { id: 'lpfrit', classes: [ 'lm-fade' ] } ) ],
+				{ id: 'lpfrlp' }
+			),
+		] ),
+		section( [ spacer( 1600 ), heading( 'No effect below', {}, { id: 'lpfrpl' } ) ] ),
+	],
+};
+PAGES[ 'lm-e2e-edges' ] = {
+	title: 'LM E2E edges',
+	elements: [
+		section( [ heading( 'Edges', { tag: 'h1' }, { id: 'edgehd' } ) ] ),
+		section( [
+			spacer( 1600 ),
+			heading( 'Dynamic class', { _cssClasses: 'lm-{url_parameter:fx}' }, { id: 'edgedy' } ),
+			spacer( 300 ),
+			heading( 'Half opacity', { _opacity: '0.5', _lmLoad: 'never' }, { id: 'edgeop', classes: [ 'lm-fade' ] } ),
+			spacer( 1600 ),
+		] ),
+	],
+};
+
 /** Flattens a node tree into Bricks' element list. */
 function flatten( nodes, slug ) {
 	const out = [];
@@ -421,6 +479,7 @@ export async function setup() {
 			slug,
 			title: p.title,
 			post_type: p.post_type || 'page',
+			area: p.area || 'content',
 			meta: p.meta || {},
 			elements: flatten( p.elements, slug ),
 		} ) ),

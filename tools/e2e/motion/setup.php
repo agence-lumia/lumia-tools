@@ -145,7 +145,9 @@ foreach ( $lm_payload['pages'] as $lm_page ) {
 
 	$lm_post_id = $lm_post_ids[ $lm_page['slug'] ];
 	update_post_meta( $lm_post_id, '_bricks_editor_mode', 'bricks' );
-	update_post_meta( $lm_post_id, '_bricks_page_content_2', wp_slash( $lm_elements ) );
+	// A header template keeps its elements under the header key, every other post under the content key.
+	$lm_data_key = 'header' === ( $lm_page['area'] ?? '' ) ? '_bricks_page_header_2' : '_bricks_page_content_2';
+	update_post_meta( $lm_post_id, $lm_data_key, wp_slash( $lm_elements ) );
 	foreach ( (array) $lm_page['meta'] as $lm_key => $lm_value ) {
 		update_post_meta( $lm_post_id, $lm_key, wp_slash( lm_e2e_resolve_ids( $lm_value, $lm_post_ids ) ) );
 	}

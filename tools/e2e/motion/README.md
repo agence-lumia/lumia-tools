@@ -23,6 +23,7 @@ Exemple : `export LM_E2E_WP=/chemin/vers/wp.sh` (un script qui lance `wordpress:
 | `load` | Animations au chargement : `data-lm-load` sur le premier écran, jamais sous 0,01 d'opacité, état final atteint, « Au chargement » `never` / `always`, aucun mouvement en réduction de mouvement |
 | `settled` | Textes et compteurs du premier écran (`data-lm-settled`) : jamais découpés, jamais masqués, valeur écrite affichée à chaque image, même moteur démarré ; « Au chargement » `never` les anime encore |
 | `counter` | Compteur NumberFlow : formats écrits à l'identique, valeur lue par les lecteurs d'écran à chaque instant, hauteur de ligne constante, largeur fixe, repli sans le module |
+| `edges` | Élément Template dans l'en-tête (la première section garde son animation au chargement), boucle de requête dans la première section (le moteur se charge quand même), classe tapée avec une donnée dynamique (`lm-{url_parameter:fx}`), entrée qui finit à l'opacité propre de l'élément |
 | `lenis`, `builder-preview`, `builder-panel` | Défilement doux ; aperçu dans le canvas ; panneau (sections, Replay, repères, valeurs héritées) |
 
 ## Variables

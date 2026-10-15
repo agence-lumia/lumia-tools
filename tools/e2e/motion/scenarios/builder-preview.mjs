@@ -16,7 +16,7 @@
 //    under reduced motion). Capture for a visual check: out/effects-list.png.
 //
 // The page is never saved: every change lives in the builder session only.
-import { newPage, login, pageUrl, assert, withMotionSettings, OUT } from '../lib.mjs';
+import { newPage, login, pageUrl, assert, withMotionSettings, OUT, styleTab, motionGroupTitle } from '../lib.mjs';
 
 const EFFECTS = [ 'fade', 'slide-up', 'blur', 'blur-up', 'zoom', 'zoom-blur', 'lines', 'words', 'letters', 'counter', 'underline' ];
 
@@ -60,10 +60,10 @@ async function select( page, canvas, id ) {
 
 /** Shows the fields of the Motion group for the selected element. */
 async function openMotion( page ) {
-	await page.getByText( 'Style', { exact: true } ).filter( { visible: true } ).first().click();
+	await styleTab( page ).click();
 	const startAt = page.locator( '[data-controlkey="_lmStartAt"] input' ).first();
 	if ( ! ( await startAt.isVisible().catch( () => false ) ) ) {
-		await page.getByText( 'Motion', { exact: true } ).filter( { visible: true } ).first().click();
+		await motionGroupTitle( page ).click();
 	}
 	await startAt.waitFor( { state: 'visible', timeout: 10000 } );
 }

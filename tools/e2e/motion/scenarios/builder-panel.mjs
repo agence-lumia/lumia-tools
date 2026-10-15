@@ -3,7 +3,7 @@
 // "Custom" tempo reveals the duration field. Then, on a page with effects: the sparkles
 // icon of the group, the Replay button, the "Show markers" checkbox (kept across a
 // reload of the builder) and the inherited values shown as placeholders.
-import { newPage, login, pageUrl, assert, OUT } from '../lib.mjs';
+import { newPage, login, pageUrl, assert, OUT, styleTab, motionGroupTitle } from '../lib.mjs';
 
 const sleep = ( ms ) => new Promise( ( r ) => setTimeout( r, ms ) );
 
@@ -23,10 +23,10 @@ async function selectAndOpen( page, canvas, id, position = { x: 10, y: 6 } ) {
 	await canvas.evaluate( ( id ) => document.getElementById( `brxe-${ id }` ).scrollIntoView( { block: 'center' } ), id );
 	await canvas.locator( `#brxe-${ id }` ).click( { position, force: true } );
 	await page.locator( `#element-${ id }.active` ).waitFor( { timeout: 10000 } );
-	await page.getByText( 'Style', { exact: true } ).filter( { visible: true } ).first().click();
+	await styleTab( page ).click();
 	const effect = page.locator( '[data-controlkey="_lmEffect"]' ).first();
 	if ( ! ( await effect.isVisible().catch( () => false ) ) ) {
-		await page.locator( '[data-control-group="lm_motion"] .control-group-title' ).first().click();
+		await motionGroupTitle( page ).click();
 	}
 	await effect.waitFor( { state: 'visible', timeout: 10000 } );
 }
@@ -76,8 +76,8 @@ export default async function () {
 	assert( await heading.getAttribute( 'data-script-id' ), 'the canvas heading has no data-script-id' );
 	await heading.click();
 
-	await page.getByText( 'Style', { exact: true } ).first().click();
-	const group = page.locator( '[data-control-group="lm_motion"] .control-group-title' ).first();
+	await styleTab( page ).click();
+	const group = motionGroupTitle( page );
 	await group.waitFor( { timeout: 10000 } );
 	await group.click();
 
@@ -197,6 +197,26 @@ export default async function () {
 	} );
 	assert( ( await placeholder( '_lmDistance' ) ) === '48', `the empty Distance field shows "${ await placeholder( '_lmDistance' ) }", expected the slide-up value 48` );
 	assert( ( await panel.locator( '[data-controlkey="_lmStagger"] input' ).first().inputValue() ) === '', 'the Stagger field is not empty' );
+	// The underline section shows only when the element itself sets the underline effect.
+	const underlineShown = () => panel.locator( '[data-controlkey="_lmUnderlineThickness"]' ).first().isVisible().catch( () => false );
+	assert( ! ( await underlineShown() ), 'the underline section is shown on a slide-up element' );
+
+	// 48 is also the static placeholder (the reference of slide-up): a blur-up element must show its own 20,
+	// which only the live placeholder knows.
+	await selectAndOpen( panel, canvas2, 'bblurb', { x: 60, y: 20 } );
+	await panel.waitForFunction( () => {
+		const input = document.querySelector( '[data-controlkey="_lmDistance"] input' );
+		return input && input.getAttribute( 'placeholder' ) === '20';
+	}, null, { timeout: 5000 } ).catch( async () => {
+		throw new Error( `the empty Distance field of a blur-up element shows "${ await placeholder( '_lmDistance' ) }", expected its value 20` );
+	} );
+
+	await selectAndOpen( panel, canvas2, 'bpreul', { x: 60, y: 10 } );
+	await panel.locator( '[data-controlkey="_lmUnderlineThickness"]' ).first().waitFor( { state: 'visible', timeout: 5000 } ).catch( () => {
+		throw new Error( 'the underline section is hidden on an element that sets the underline effect' );
+	} );
+	await selectAndOpen( panel, canvas2, 'bpre01' );
+	assert( ! ( await underlineShown() ), 'the underline section is still shown after selecting a slide-up element again' );
 
 	// Replay: one replay of the selected element.
 	const replays = () => canvas2.evaluate( () => window.lumiaMotion._debug.stats().replays );

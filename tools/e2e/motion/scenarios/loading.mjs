@@ -35,6 +35,16 @@ async function load( page, slug, query = '' ) {
 }
 
 /**
+ * Waits for the engine: the loader injects the scripts after the first paint, which may come after the
+ * load event, so the requests are not all made when load() returns.
+ */
+async function engineStarted( page, slug ) {
+	await page.waitForFunction( () => window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 5000 } ).catch( () => {
+		throw new Error( `${ slug }: the engine never started` );
+	} );
+}
+
+/**
  * Init script: every frame once the page is visible (lm-ready, or no lm-js at all), the lowest opacity of
  * the entrance elements on screen. window.lmSeen = { frames, ids, low: ['id opacity', ...] } (opacity < 0.9).
  */
@@ -90,6 +100,7 @@ export default async function () {
 	{
 		const page = await newPage();
 		const urls = await load( page, 'lm-e2e-basic' );
+		await engineStarted( page, 'lm-e2e-basic' );
 		for ( const file of [ 'gsap.min.js', 'ScrollTrigger.min.js', 'motion-core.js', 'motion.js' ] ) {
 			assert( urls.some( ( u ) => u.includes( `/${ file }` ) ), `lm-e2e-basic: ${ file } not requested` );
 		}
@@ -155,6 +166,7 @@ export default async function () {
 	{
 		const page = await newPage();
 		const urls = await load( page, 'lm-e2e-text' );
+		await engineStarted( page, 'lm-e2e-text' );
 		assert( urls.some( ( u ) => u.includes( '/SplitText.min.js' ) ), 'lm-e2e-text: SplitText not requested' );
 		const g = await globals( page );
 		assert( g.splitText === 'function' || g.splitText === 'object', `lm-e2e-text: window.SplitText is ${ g.splitText }` );

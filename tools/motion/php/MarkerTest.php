@@ -175,6 +175,14 @@ return [
 		lm_assert( Marker::families( [ '_cssClasses' => 'lm-fadex xlm-fade' ], [], true ) === [], 'a longer name is not the class' );
 		lm_assert( Marker::families( [ '_cssClasses' => [ 'lm-fade' ] ], [], true ) === [], 'not a string' );
 	},
+	'dynamic typed classes are read as Bricks rendered them' => static function (): void {
+		$settings = Marker::with_resolved_classes( [ '_cssClasses' => 'lm-{acf_effect}' ], [ 'brxe-heading', 'lm-fade', '' ] );
+		lm_assert( $settings['_cssClasses'] === 'brxe-heading lm-fade', 'resolved: ' . $settings['_cssClasses'] );
+		lm_assert( Marker::families( $settings, [], false ) === [ 'enter' ], 'the resolved class gives its family' );
+		$plain = Marker::with_resolved_classes( [ '_cssClasses' => 'lm-words' ], [ 'brxe-text', 'other' ] );
+		lm_assert( $plain['_cssClasses'] === 'lm-words', 'a plain field is kept as typed' );
+		lm_assert( Marker::with_resolved_classes( [ '_lmEffect' => 'fade' ], [ 'x' ] ) === [ '_lmEffect' => 'fade' ], 'no field, nothing added' );
+	},
 	'merge_style appends to a string once'            => static function (): void {
 		lm_assert( Marker::merge_style( null, '--lm-a:1;' ) === '--lm-a:1;', 'no style: the declarations alone' );
 		lm_assert( Marker::merge_style( '  ', '--lm-a:1;' ) === '--lm-a:1;', 'a blank style is replaced' );
