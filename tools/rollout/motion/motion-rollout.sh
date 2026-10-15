@@ -30,14 +30,15 @@ ssh -o BatchMode=yes -o ControlMaster=yes -o ControlPath="$SOCK" -o ControlPersi
 trap 'ssh -o ControlPath="$SOCK" -O exit "admin@$HOST" 2>/dev/null || true' EXIT
 R() { ssh -o ControlPath="$SOCK" "admin@$HOST" "$@"; }
 WP() { R "docker exec -i $C wp --allow-root $*"; }
-PHP() { R "docker exec -i $C wp --allow-root eval-file - ${2:-} --user=$ADMIN" < "$HERE/$1"; }
+PHP() { R "docker exec -i $C wp --allow-root eval-file - ${2:-} --user=$ADMIN" < "$HERE/$1" || die "$1 failed"; }
 step() { printf '\n== %s\n' "$*"; }
 die() { printf '\nSTOP: %s\n' "$*" >&2; exit 1; }
 
 URL="$(WP option get home)"
 SITE="$(printf '%s' "$URL" | sed -E 's#https?://##; s#/.*##')"
-ADMIN="$(WP user list --role=administrator --field=user_login --orderby=ID --number=1)"
-[ -n "$ADMIN" ] || die "no administrator found"
+# By ID: a login may hold spaces, which would split over SSH.
+ADMIN="$(WP user list --role=administrator --field=ID --orderby=ID --number=1)"
+[[ "$ADMIN" =~ ^[0-9]+$ ]] || die "no administrator found"
 step "$SITE ($C on $HOST), admin $ADMIN"
 R "docker exec -i $C wp --allow-root eval-file -" < "$HERE/survey.php"
 [ "$(WP option get template)" = bricks ] || die "Bricks is not the active theme"
@@ -58,7 +59,11 @@ fi
 step "Backup"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 R "mkdir -p ~/lumia-backup && docker exec $C wp --allow-root db export - > ~/lumia-backup/$SITE-before-motion-$STAMP.sql && test -s ~/lumia-backup/$SITE-before-motion-$STAMP.sql"
-R "docker exec $C tar -czf - -C /var/www/html/wp-content fluent-snippet-storage > ~/lumia-backup/$SITE-snippets-$STAMP.tgz"
+if R "docker exec $C test -d /var/www/html/wp-content/fluent-snippet-storage"; then
+	R "docker exec $C tar -czf - -C /var/www/html/wp-content fluent-snippet-storage > ~/lumia-backup/$SITE-snippets-$STAMP.tgz"
+else
+	echo "no fluent-snippet-storage folder: no snippet to back up"
+fi
 R "ls -la ~/lumia-backup/ | grep $SITE"
 
 step "Plugin"
@@ -92,8 +97,17 @@ if [ "$TAB" = 1 ]; then
 else
 	step "Class migration (dry run)"
 	WP lumia motion migrate --user="$ADMIN"
+	# A conflict (sk-x and lm-x both exist) leaves sk-x alone: its elements would lose their
+	# effect once the snippet is off. The command only warns, so the JSON is read here.
+	JSON="$(WP lumia motion migrate --format=json --user="$ADMIN")"
+	# WP-CLI warnings may come before the JSON: it starts at the first "{". Unreadable: stop.
+	CONFLICTS="$(python3 -c 'import json, sys
+t = sys.stdin.read()
+print(",".join(json.loads(t[t.index("{"):]).get("conflicts", [])))' <<< "$JSON")" || die "unreadable migrate report: $JSON"
+	[ -z "$CONFLICTS" ] || die "conflicts (an lm-* class already exists for): $CONFLICTS"
 	step "Class migration (apply)"
 	WP lumia motion migrate --apply --user="$ADMIN"
+	WP bricks regenerate_assets
 fi
 
 step "Snippet off"
@@ -106,6 +120,8 @@ R "docker exec $C sh -c 'rm -rf /var/www/html/wp-content/cache/cache-enabler/* 2
 
 step "Front check"
 HTML="$(curl -fsS --compressed "$URL/?lm-rollout=$STAMP")" || die "home page does not answer"
+# Without a query string too: the copy a page cache serves to visitors.
+HTML="$HTML$(curl -fsS --compressed "$URL/")" || die "home page (cached copy) does not answer"
 # Captured first, then searched: `printf | grep -q` under pipefail fails on SIGPIPE when grep matches.
 grep -q 'sk-motion' <<< "$HTML" && die "the former engine is still loaded on the home page"
 grep -q 'lumiaMotionConfig\|data-lm' <<< "$HTML" || echo "note: no Motion effect on the home page"

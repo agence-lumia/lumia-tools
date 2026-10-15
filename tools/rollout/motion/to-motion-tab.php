@@ -118,6 +118,13 @@ foreach ( array_keys( Legacy::CLASS_ALIASES ) as $legacy ) {
 		$left[] = "option $o mentions $legacy";
 	}
 }
+// An effect class referenced outside page content (Bricks components, templates stored in options...)
+// would keep a dangling ID once the class is deleted: its effect would be lost without a word.
+foreach ( array_keys( $effect ) as $class_id ) {
+	foreach ( $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM $wpdb->options WHERE option_value LIKE %s AND option_name NOT IN ('bricks_global_classes', 'bricks_global_classes_locked', 'bricks_global_classes_changes', 'bricks_global_classes_trash') AND option_name NOT LIKE %s", '%"' . $wpdb->esc_like( (string) $class_id ) . '"%', '%transient%' ) ) as $o ) {
+		$blocked[] = "option $o references the class {$effect[ $class_id ][0]} (id $class_id): move it by hand first";
+	}
+}
 if ( $left ) {
 	echo "To check by hand:\n  ", implode( "\n  ", $left ), "\n";
 }

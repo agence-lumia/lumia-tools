@@ -22,6 +22,13 @@ return [
 		lm_assert( $controls['_lmEase']['placeholder'] === 'Smooth (site default)', 'ease: ' . $controls['_lmEase']['placeholder'] );
 		lm_assert( $controls['_lmTempo']['placeholder'] === 'Normal (site default)', 'tempo: ' . $controls['_lmTempo']['placeholder'] );
 		lm_assert( $controls['_lmCounterWidth']['placeholder'] === 'Dynamic width (site default)', 'width: ' . $controls['_lmCounterWidth']['placeholder'] );
+		lm_assert( $controls['_lmEndEdge']['placeholder'] === 'Bottom (site default)', 'end edge: ' . $controls['_lmEndEdge']['placeholder'] );
+	},
+	'former stored values are named as the engine reads them' => static function (): void {
+		$GLOBALS['lm_test_options'] = [ 'lumia_module_motion' => [ 'tempo' => 'exact' ] ];
+		$controls                   = Controls::definitions();
+		$GLOBALS['lm_test_options'] = [];
+		lm_assert( $controls['_lmTempo']['placeholder'] === 'Custom (site default)', 'tempo: ' . $controls['_lmTempo']['placeholder'] );
 	},
 	'empty easing and tempo follow the site settings'   => static function (): void {
 		$GLOBALS['lm_test_options'] = [

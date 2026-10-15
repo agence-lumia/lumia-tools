@@ -287,7 +287,8 @@ class Controls {
 				'label'       => __( 'End: element edge', 'lumia-tools' ),
 				'type'        => 'select',
 				'options'     => $edges,
-				'placeholder' => __( 'Default', 'lumia-tools' ),
+				// Only words and letters have an end; both share it.
+				'placeholder' => self::site_default_placeholder( 'effects.words.end_edge', 'bottom', $edges ),
 			]
 		);
 
@@ -622,6 +623,11 @@ class Controls {
 			$value = is_array( $value ) ? ( $value[ $key ] ?? null ) : null;
 		}
 		$value = is_string( $value ) ? $value : $fallback;
+		// Former values still read by the engine (motion-core.js LEGACY_TEMPO, SettingsSanitizer).
+		$value = [
+			'exact' => 'custom',
+			'lumia' => 'smooth',
+		][ $value ] ?? $value;
 		$label = $labels[ $value ] ?? $labels[ $fallback ] ?? $value;
 
 		/* translators: %s: name of the value set for the whole site, e.g. "Smooth". */
