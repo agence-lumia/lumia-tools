@@ -125,7 +125,7 @@ export default async function () {
 		const g = await globals( page );
 		assert( g.gsap === 'undefined' && g.config === null, `lm-e2e-first: gsap=${ g.gsap } config=${ JSON.stringify( g.config ) }` );
 		const html = await ( await fetch( pageUrl( 'lm-e2e-first' ) ) ).text();
-		assert( ! html.includes( 'lumiaMotionConfig' ) && ! html.includes( 'importmap' ), 'lm-e2e-first: the engine configuration or the counter import map is printed' );
+		assert( ! html.includes( 'lumiaMotionConfig' ) && ! /lumia-motion-counter-js|<script[^>]*motion-counter/.test( html ), 'lm-e2e-first: the engine configuration or the counter script is printed' );
 		assert( /<style id=["']lumia-motion-inline-css["']/.test( html ), 'lm-e2e-first: motion.css is not inline' );
 		const marks = await page.evaluate( () => [ 'fshd', 'fsln', 'fsct' ].map( ( id ) => {
 			const node = document.getElementById( `brxe-${ id }` );

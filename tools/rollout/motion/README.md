@@ -16,6 +16,9 @@ tools/rollout/motion/motion-rollout.sh <host> <cron-container> --apply --motion-
 1. Backup: `~admin/lumia-backup/<site>-before-motion-<date>.sql` and the snippet folder (`.tgz`).
 2. Plugin update (`wp plugin update lumia-tools`, or `--zip`), then version ≥ 2.2.0 and active.
 3. Motion turned on (`activate.php`).
+   Former class names used outside the class fields (a Bricks interaction adding
+   `sk-hover-underline` to menu items, as on maison-aline) stop the run: nothing renames them and
+   nothing styles them once the snippet is off (`legacy-scan.php`).
 4. A published snippet that drives `window.StudioKyneMotion` itself (other than SK Motion) stops the
    run before anything is migrated: it would break silently (facpa's "Interactions" snippet).
 5. Existing site: `wp lumia motion migrate` (dry run, then `--apply`: `sk-*` renamed in place, same ID,
@@ -34,6 +37,17 @@ Traps met while writing it (all handled):
 - `printf … | grep -q` under `pipefail` fails on SIGPIPE when grep matches: outputs are captured,
   then searched with here-strings.
 - UFW `limit` cuts the 6th SSH connection within 30 s: one multiplexed connection for the run.
+- The plugin's updater caches the last GitHub release for 12 h: its transient and WordPress's
+  `update_plugins` are deleted before `wp plugin update`, or a fresh release is not offered.
+- PHP-FPM re-reads changed files every `opcache.revalidate_freq` (60 s in the template): the
+  rebuilt snippet index can take that long to reach the pages, so the front check retries for 90 s.
+- A site in Bricks maintenance mode answers 503 to visitors: check its pages logged in.
+
+Not handled by the script (seen during the 15/10/2026 rollout):
+
+- A site with its own animation snippet loading GSAP and Lenis from a CDN (coyac,
+  "3-scroll-animations-batch"): turn the module's smooth scroll off there, or two Lenis fight.
+- facpa: its "Interactions" snippet drives `window.StudioKyneMotion`; the script refuses the site.
 
 Restore: `docker exec -i <cron> wp --allow-root db import - < <backup>.sql`, then the snippets with
 `docker exec -i <cron> sh -c 'tar -xzf - -C /var/www/html/wp-content' < <snippets>.tgz`, then

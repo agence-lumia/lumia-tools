@@ -73,6 +73,11 @@ if [ -n "$ZIP" ]; then
 	WP plugin install /tmp/lm-rollout.zip --force
 	R "docker exec -u 0 $C rm -f /tmp/lm-rollout.zip"
 else
+	# The plugin's updater caches the last GitHub release it saw (12 h): forget it, and the
+	# WordPress list of updates, or a fresh release is not offered.
+	WP transient delete lumia_github_update_stable >/dev/null 2>&1 || true
+	WP transient delete update_plugins --network >/dev/null 2>&1 || true
+	WP plugin list --name=lumia-tools --fields=version,update_version
 	WP plugin update lumia-tools
 fi
 VERSION="$(WP plugin get lumia-tools --field=version)"
@@ -85,6 +90,12 @@ step "Motion module"
 OUT="$(PHP activate.php)"
 grep -q 'bool(true)' <<< "$OUT" || die "Motion could not be turned on: $OUT"
 
+
+step "Former names outside the class fields"
+# A Bricks interaction that adds sk-hover-underline to menu items (maison-aline) is renamed by
+# nothing and styled by nothing once the snippet is off: fix such places first.
+OUT="$(PHP legacy-scan.php)"; echo "$OUT"
+grep -q '^0 hit(s)$' <<< "$OUT" || die "former class names used outside the class fields: rename them first"
 
 if [ "$TAB" = 1 ]; then
 	step "Effects to the Motion tab (dry run)"
@@ -119,11 +130,21 @@ WP cache flush
 R "docker exec $C sh -c 'rm -rf /var/www/html/wp-content/cache/cache-enabler/* 2>/dev/null; true'"
 
 step "Front check"
-HTML="$(curl -fsS --compressed "$URL/?lm-rollout=$STAMP")" || die "home page does not answer"
-# Without a query string too: the copy a page cache serves to visitors.
-HTML="$HTML$(curl -fsS --compressed "$URL/")" || die "home page (cached copy) does not answer"
-# Captured first, then searched: `printf | grep -q` under pipefail fails on SIGPIPE when grep matches.
-grep -q 'sk-motion' <<< "$HTML" && die "the former engine is still loaded on the home page"
+# PHP-FPM re-reads changed files only every opcache.revalidate_freq (60 s in the template): the
+# snippet index rebuilt above may take that long to reach the pages. Up to 90 s, then stop.
+fetch_home() {
+	HTML="$(curl -fsS --compressed "$URL/?lm-rollout=$STAMP-$1")" || die "home page does not answer"
+	# Without a query string too: the copy a page cache serves to visitors.
+	HTML="$HTML$(curl -fsS --compressed "$URL/")" || die "home page (cached copy) does not answer"
+}
+for TRY in 1 2 3 4 5 6 7 8 9 10; do
+	fetch_home "$TRY"
+	# Captured first, then searched: `printf | grep -q` under pipefail fails on SIGPIPE when grep matches.
+	grep -q 'sk-motion' <<< "$HTML" || break
+	[ "$TRY" = 10 ] && die "the former engine is still loaded on the home page after 90 s"
+	echo "former engine still served (PHP cache), new try in 10 s"
+	sleep 10
+done
 grep -q 'lumiaMotionConfig\|data-lm' <<< "$HTML" || echo "note: no Motion effect on the home page"
 echo "home: ok, former engine gone"
 

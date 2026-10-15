@@ -1,7 +1,8 @@
 /**
  * Lümia Tools - Motion counter adapter
- * Rolls the digits of a counter with NumberFlow (vendor/number-flow, lite build, loaded as a
- * WordPress script module only on the pages that have a counter). Uses the public API of the
+ * Rolls the digits of a counter with NumberFlow (vendor/number-flow, lite build). Not loaded as
+ * it is: tools/motion/js/build-counter.mjs bundles it with NumberFlow into motion-counter.js, a
+ * classic script loaded only on the pages that have a counter. Uses the public API of the
  * lite build only: define(), formatToData(), canAnimate and the data / animated / timing
  * properties of the element.
  *

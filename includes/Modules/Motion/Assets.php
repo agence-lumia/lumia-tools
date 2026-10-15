@@ -17,10 +17,10 @@ defined( 'ABSPATH' ) || exit;
  *   the page has painted, see print_loader(). In the canvas they are printed by WordPress
  *   at priority 20, as usual.
  *
- * The counter is the exception: its NumberFlow modules are WordPress script modules, which a
- * classic theme such as Bricks prints at `wp_footer` priority 10 (import map, then the modules).
- * `enqueue_counter()` runs at that same priority, after the popups of Bricks and before the
- * printing of core, see order_module_printing().
+ * The counter is a classic script too (motion-counter.js, the adapter and NumberFlow bundled by
+ * tools/motion/js/build-counter.mjs), loaded only where a counter is played. It used to be a
+ * set of WordPress script modules: nginx serves `.mjs` as application/octet-stream, which
+ * browsers refuse for a module script, so no counter rolled on the sites.
  *
  * Nothing is loaded in the admin. In the builder, the main window gets the builder
  * stylesheet and the panel script (Replay, markers, inherited placeholders), and the canvas
@@ -38,19 +38,6 @@ final class Assets {
 	const HANDLE_SCROLL        = 'lumia-motion-scroll';
 	const HANDLE_PANEL         = 'lumia-motion-panel';
 	const HANDLE_COUNTER       = 'lumia-motion-counter';
-
-	/**
-	 * Script modules of the counter: import map id => file under assets/front/js/vendor/.
-	 * Dependencies first. esm-env resolves its conditional exports through the import map:
-	 * a browser, neither in development nor Node.
-	 */
-	const COUNTER_MODULES = [
-		'esm-env/browser'     => 'esm-env/true.js',
-		'esm-env/development' => 'esm-env/false.js',
-		'esm-env/node'        => 'esm-env/false.js',
-		'esm-env'             => 'esm-env/index.js',
-		'number-flow/lite'    => 'number-flow/lite.mjs',
-	];
 
 	/** Seconds after which the safety makes every element visible when the engine did not start. */
 	const SAFETY_MS = 3000;
@@ -71,23 +58,9 @@ final class Assets {
 		self::HANDLE_LENIS,
 		self::HANDLE_CORE,
 		self::HANDLE_MOTION,
+		self::HANDLE_COUNTER,
 		self::HANDLE_SCROLL,
 	];
-
-	/**
-	 * URL of the counter entry module on a public page, as core would print it.
-	 *
-	 * @var string
-	 */
-	private string $counter_url = '';
-
-	/**
-	 * URL of the counter entry module withheld from the footer, injected by the loader ('' when
-	 * core prints it, in the canvas or when the import map is not printed in the footer).
-	 *
-	 * @var string
-	 */
-	private string $counter_src = '';
 
 	/**
 	 * Sanitized settings of the module.
@@ -112,115 +85,6 @@ final class Assets {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_styles' ] );
 		add_action( 'wp_head', [ $this, 'print_head_script' ], 1 );
 		add_action( 'wp_footer', [ $this, 'enqueue_scripts' ], 19 );
-		add_action( 'wp_footer', [ $this, 'enqueue_counter' ], 10 );
-		$this->order_module_printing();
-	}
-
-	/**
-	 * Moves the printing of the script modules after enqueue_counter(), at the same priority.
-	 *
-	 * In a classic theme, core prints the import map, the modules and their preloads at
-	 * `wp_footer` priority 10, hooked on `after_setup_theme`; Bricks renders its popups at
-	 * that priority too, hooked earlier (theme load). The counter modules can only be
-	 * enqueued once the popups are rendered (a counter may sit in one), and must be before
-	 * core prints: an import map printed later is ignored by browsers once a module has
-	 * started loading. Hooked on `init`, ours would run after core's printers, so these are
-	 * hooked again, at the same priority, after ours. Only their order within priority 10
-	 * changes; a block theme prints the import map in the head, nothing is moved there.
-	 *
-	 * Between the import map and the modules, withhold_counter() takes the counter entry out
-	 * of the queue on a public page: the loader injects it after the first paint. Only when
-	 * the import map is printed in the footer, so that it still lists the counter modules.
-	 */
-	private function order_module_printing(): void {
-		if ( ! function_exists( 'wp_script_modules' ) ) {
-			return;
-		}
-
-		$modules = wp_script_modules();
-		foreach ( [ 'print_import_map', 'print_enqueued_script_modules', 'print_script_module_preloads' ] as $method ) {
-			$callback = [ $modules, $method ];
-			if ( 10 === has_action( 'wp_footer', $callback ) ) {
-				remove_action( 'wp_footer', $callback, 10 );
-				add_action( 'wp_footer', $callback, 10 );
-				if ( 'print_import_map' === $method ) {
-					add_action( 'wp_footer', [ $this, 'withhold_counter' ], 10 );
-				}
-			}
-		}
-	}
-
-	/**
-	 * Takes the counter entry module out of the queue of a public page, once the import map
-	 * that lists its dependencies is printed, and keeps its URL for the loader.
-	 *
-	 * Printed as a tag, the module and its preloads would be requested while the page is
-	 * parsed, before the first paint. Nothing is preloaded either: the preloads only list the
-	 * dependencies of queued modules. The canvas keeps the tag.
-	 */
-	public function withhold_counter(): void {
-		if ( is_admin() || self::is_builder_main() || self::is_builder_canvas() || ! function_exists( 'wp_dequeue_script_module' ) ) {
-			return;
-		}
-
-		if ( '' === $this->counter_url ) {
-			return;
-		}
-
-		wp_dequeue_script_module( self::HANDLE_COUNTER );
-		$this->counter_src = $this->counter_url;
-	}
-
-	/**
-	 * The NumberFlow modules and the counter adapter, on the pages that have a counter (always
-	 * in the canvas, where any element may become one).
-	 */
-	public function enqueue_counter(): void {
-		if ( is_admin() || self::is_builder_main() || ! function_exists( 'wp_register_script_module' ) ) {
-			return;
-		}
-
-		$canvas = self::is_builder_canvas();
-		if ( ! $canvas && ! in_array( Effects::FAMILY_COUNTER, Marker::engine_families(), true ) ) {
-			return;
-		}
-
-		if ( ! self::has_script( 'motion-counter.mjs' ) ) {
-			return;
-		}
-
-		$vendor = LUMIA_ASSETS_URL . 'front/js/vendor/';
-		foreach ( self::COUNTER_MODULES as $id => $file ) {
-			if ( ! self::has_script( 'vendor/' . $file ) ) {
-				return;
-			}
-			wp_register_script_module( $id, $vendor . $file, self::module_deps( $id ), LUMIA_VERSION );
-		}
-
-		$src = LUMIA_ASSETS_URL . 'front/js/motion-counter.mjs';
-		wp_enqueue_script_module( self::HANDLE_COUNTER, $src, [ 'number-flow/lite' ], LUMIA_VERSION );
-
-		if ( ! $canvas ) {
-			// Same URL as core would print (WP_Script_Modules::get_src()).
-			$src = apply_filters( 'script_module_loader_src', add_query_arg( 'ver', LUMIA_VERSION, $src ), self::HANDLE_COUNTER ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's filter.
-
-			$this->counter_url = is_string( $src ) ? $src : '';
-		}
-	}
-
-	/**
-	 * Static imports of a counter module, as its file writes them.
-	 *
-	 * @param string $id Module id, a key of COUNTER_MODULES.
-	 * @return string[]
-	 */
-	private static function module_deps( string $id ): array {
-		$deps = [
-			'esm-env'          => [ 'esm-env/browser', 'esm-env/development', 'esm-env/node' ],
-			'number-flow/lite' => [ 'esm-env' ],
-		];
-
-		return $deps[ $id ] ?? [];
 	}
 
 	/**
@@ -353,10 +217,9 @@ final class Assets {
 	 * without paint timing, LOADER_FALLBACK_MS at most (a tab opened in the background paints
 	 * nothing). Two frames alone were not enough: Chrome's paint entry carries the time the
 	 * frame was presented, measured 2 ms after the second frame callback had injected the
-	 * counter module. It then appends the scripts with `async = false`:
-	 * they are fetched in parallel and run in order. A script that fails to load adds
-	 * `lm-ready` at once, so nothing waits for the 3 s safety. The counter entry module
-	 * (withhold_counter()) is injected first; its import map stays in the HTML.
+	 * scripts. It then appends the scripts with `async = false`: they are fetched in parallel
+	 * and run in order. A script that fails to load adds `lm-ready` at once, so nothing waits
+	 * for the 3 s safety.
 	 */
 	private function print_loader(): void {
 		$scripts = wp_scripts();
@@ -394,15 +257,14 @@ final class Assets {
 			wp_dequeue_script( $handle );
 		}
 
-		if ( array() === $list && '' === $this->counter_src ) {
+		if ( array() === $list ) {
 			return;
 		}
 
-		$flags  = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES;
-		$module = '' === $this->counter_src ? '' : esc_url_raw( $this->counter_src );
+		$flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES;
 
 		wp_print_inline_script_tag(
-			$before . self::loader_js() . '(' . wp_json_encode( $list, $flags ) . ',' . wp_json_encode( $module, $flags ) . ');',
+			$before . self::loader_js() . '(' . wp_json_encode( $list, $flags ) . ');',
 			[ 'id' => 'lumia-motion-loader' ]
 		);
 	}
@@ -427,16 +289,14 @@ final class Assets {
 	}
 
 	/**
-	 * The loader, a function expression called with the ordered scripts (`[{id, src}]`) and the
-	 * URL of the counter entry module ('' when none).
+	 * The loader, a function expression called with the ordered scripts (`[{id, src}]`).
 	 */
 	private static function loader_js(): string {
-		return '(function(list,module){'
+		return '(function(list){'
 			. 'var d=document,started=false;'
 			. 'function shown(){d.documentElement.classList.add("lm-ready");}'
 			. 'function add(){'
 			. 'if(started){return;}started=true;'
-			. 'if(module){var m=d.createElement("script");m.type="module";m.src=module;m.id="' . self::HANDLE_COUNTER . '-js-module";d.body.appendChild(m);}'
 			. 'list.forEach(function(item){var s=d.createElement("script");s.src=item.src;s.id=item.id;s.async=false;s.onerror=shown;d.body.appendChild(s);});'
 			. '}'
 			. 'function painted(){'
@@ -498,6 +358,13 @@ final class Assets {
 			'window.lumiaMotionConfig=' . wp_json_encode( $this->config( $canvas ), JSON_HEX_TAG | JSON_HEX_AMP ) . ';',
 			'before'
 		);
+
+		// The counter adapter and NumberFlow, where a counter is played (any element may become one
+		// in the canvas). The engine finds window.lumiaMotionCounter whichever runs first.
+		$counters = $canvas || in_array( Effects::FAMILY_COUNTER, Marker::engine_families(), true );
+		if ( $counters && self::has_script( 'motion-counter.js' ) ) {
+			wp_enqueue_script( self::HANDLE_COUNTER, $front . 'motion-counter.js', [], LUMIA_VERSION, self::footer_args() );
+		}
 
 		if ( $canvas && self::has_script( 'motion-builder.js' ) ) {
 			wp_enqueue_script( self::HANDLE_BUILDER, $front . 'motion-builder.js', [ self::HANDLE_MOTION ], LUMIA_VERSION, self::footer_args() );
