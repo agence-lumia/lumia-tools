@@ -29,13 +29,11 @@ class Module extends AbstractModule {
 			return;
 		}
 
-		$settings = $this->get_settings();
+		// Sanitized once per request, so a hand-edited option cannot reach a script or a stylesheet.
+		$settings = SettingsSanitizer::sanitize( $this->get_settings(), static::get_defaults() );
 
 		( new Controls() )->hook();
-		Marker::hook(
-			! empty( $settings['legacy_classes'] ),
-			LoadAnimation::config_from( SettingsSanitizer::sanitize( $settings, static::get_defaults() ) )
-		);
+		Marker::hook( ! empty( $settings['legacy_classes'] ), LoadAnimation::config_from( $settings ) );
 		( new Assets( $settings ) )->hook();
 	}
 

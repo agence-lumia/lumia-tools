@@ -109,7 +109,10 @@
 
   var lenis = new Lenis({
     lerp: intensity(),
-    autoRaf: !gsap,
+    // Never Lenis's own loop: it runs every frame for as long as the page is open (measured: about
+    // 1 % of a desktop core with the page untouched). The GSAP ticker drives it when GSAP is on the
+    // page, a loop that sleeps while nothing scrolls otherwise (see "Loop without GSAP").
+    autoRaf: false,
     syncTouch: false,
     allowNestedScroll: true,
     stopInertiaOnNavigate: true,
@@ -120,6 +123,58 @@
   // GSAP gives seconds, Lenis wants milliseconds.
   function tick(time) {
     lenis.raf(time * 1000);
+  }
+
+  /* ================================================================
+   * LOOP WITHOUT GSAP
+   * ================================================================ */
+
+  // Frames during which an idle Lenis is still driven, so a scroll that ends settles fully.
+  var IDLE_FRAMES = 10;
+  var loopId = 0;
+  var idleFrames = 0;
+
+  function frame(time) {
+    loopId = 0;
+    if (destroyed) {
+      return;
+    }
+    lenis.raf(time);
+    idleFrames = lenis.isScrolling ? 0 : idleFrames + 1;
+    if (idleFrames < IDLE_FRAMES) {
+      loopId = window.requestAnimationFrame(frame);
+    }
+  }
+
+  // Starts the loop again: every input Lenis reads (wheel, touch: "virtual-scroll"), a native
+  // scroll (keyboard, scrollbar, the browser's own anchor jump) and every scrollTo (anchor clicks
+  // call it through the instance too).
+  function wake() {
+    idleFrames = 0;
+    if (!loopId && !destroyed) {
+      // Lenis.raf() steps by the time since its last frame: after a sleep that step is huge and
+      // the smoothing would jump straight to the target. 0 makes the first frame a step of 0.
+      lenis.time = 0;
+      loopId = window.requestAnimationFrame(frame);
+    }
+  }
+
+  if (!gsap || !gsap.ticker) {
+    lenis.on("virtual-scroll", wake);
+    window.addEventListener("scroll", wake, { passive: true });
+    var scrollTo = lenis.scrollTo;
+    lenis.scrollTo = function () {
+      var result = scrollTo.apply(lenis, arguments);
+      wake();
+      return result;
+    };
+    var resume = lenis.start;
+    lenis.start = function () {
+      var result = resume.apply(lenis, arguments);
+      wake();
+      return result;
+    };
+    wake();
   }
 
   if (gsap && gsap.ticker) {
@@ -299,26 +354,72 @@
    * STANDING DOWN
    * ================================================================ */
 
-  // The former snippet may load after this file: look again once the page has loaded.
-  window.addEventListener(
-    "load",
-    function () {
-      if (!formerSnippetLoaded()) {
-        return;
-      }
-      document.removeEventListener(BRICKS_POPUP_OPEN, onPopupOpen);
-      document.removeEventListener(BRICKS_POPUP_CLOSE, onPopupClose);
-      if (observer) {
-        observer.disconnect();
-      }
-      if (gsap && gsap.ticker) {
-        gsap.ticker.remove(tick);
-      }
-      destroyed = true;
-      unmarkMenus();
-      lenis.destroy();
-      delete window.lumiaLenis;
-    },
-    { once: true }
-  );
+  function standDown() {
+    if (destroyed) {
+      return;
+    }
+    document.removeEventListener(BRICKS_POPUP_OPEN, onPopupOpen);
+    document.removeEventListener(BRICKS_POPUP_CLOSE, onPopupClose);
+    if (observer) {
+      observer.disconnect();
+    }
+    if (gsap && gsap.ticker) {
+      gsap.ticker.remove(tick);
+    }
+    window.removeEventListener("scroll", wake);
+    if (loopId) {
+      window.cancelAnimationFrame(loopId);
+      loopId = 0;
+    }
+    destroyed = true;
+    unmarkMenus();
+    lenis.destroy();
+    delete window.lumiaLenis;
+  }
+
+  // The former snippet may load after this file: at the load event, or later still (an optimiser
+  // that delays scripts until the first interaction). This file is itself injected after the
+  // first paint, often after the load event, so waiting for it alone missed the snippet. Its
+  // global is watched instead: the first assignment stores the value as a plain property again
+  // (the snippet works as it always did) and stands down on the next tick.
+  function watchFormerSnippet() {
+    var name = settings.legacyGlobal;
+    if (!name) {
+      return;
+    }
+    if (formerSnippetLoaded()) {
+      standDown();
+      return;
+    }
+    try {
+      Object.defineProperty(window, name, {
+        configurable: true,
+        enumerable: false,
+        get: function () {
+          return undefined;
+        },
+        set: function (value) {
+          Object.defineProperty(window, name, { configurable: true, enumerable: true, writable: true, value: value });
+          if (value) {
+            setTimeout(standDown, 0);
+          }
+        },
+      });
+    } catch (error) {
+      // A global that cannot be watched: look once more at the load event.
+    }
+    if (document.readyState !== "complete") {
+      window.addEventListener(
+        "load",
+        function () {
+          if (formerSnippetLoaded()) {
+            standDown();
+          }
+        },
+        { once: true }
+      );
+    }
+  }
+
+  watchFormerSnippet();
 })();

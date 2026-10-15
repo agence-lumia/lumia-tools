@@ -77,7 +77,7 @@ export default async function () {
 	await heading.click();
 
 	await page.getByText( 'Style', { exact: true } ).first().click();
-	const group = page.getByText( 'Motion', { exact: true } ).first();
+	const group = page.locator( '[data-control-group="lm_motion"] .control-group-title' ).first();
 	await group.waitFor( { timeout: 10000 } );
 	await group.click();
 

@@ -1,9 +1,9 @@
 // Rewrites the generated curve block of assets/front/css/motion.css from the engine springs.
 //   node tools/motion/js/build-curves.mjs           rewrite the block
 //   node tools/motion/js/build-curves.mjs --check   exit 1 if the file differs
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const core = require("../../../assets/front/js/motion-core.js");
@@ -41,7 +41,17 @@ export function render(css) {
 	return css.slice(0, a) + buildBlock() + css.slice(b + END.length);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Run directly, not imported by curves.test.mjs. Both sides are real paths: Node runs a symlinked
+// or relative script under its real path, which a literal comparison with argv[1] would miss.
+function isMain() {
+	try {
+		return !!process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+	} catch {
+		return false;
+	}
+}
+
+if (isMain()) {
 	const current = readFileSync(cssPath, "utf8");
 	const next = render(current);
 	if (process.argv.includes("--check")) {

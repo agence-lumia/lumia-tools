@@ -52,7 +52,7 @@ final class ClassManager {
 	/** A snippet file larger than this is not read. */
 	const SNIPPET_MAX_BYTES = 2097152;
 
-	/** Bytes of a snippet file searched for its status: the header, description included. */
+	/** Bytes of a snippet file searched for its status when it has no header comment block. */
 	const SNIPPET_HEADER_BYTES = 8192;
 
 	/** Transient that keeps the usage for the settings screen. */
@@ -311,7 +311,12 @@ final class ClassManager {
 	 * @param string $source Contents of the file.
 	 */
 	public static function snippet_status( string $source ): string {
-		return 1 === preg_match( '/@status:[ \t]*(\w+)/', substr( $source, 0, self::SNIPPET_HEADER_BYTES ), $match ) ? $match[1] : '';
+		// The header is the first comment block, whatever the length of the description before the
+		// status; without one, its first bytes.
+		$end    = strpos( $source, '*/' );
+		$header = false === $end ? substr( $source, 0, self::SNIPPET_HEADER_BYTES ) : substr( $source, 0, $end );
+
+		return 1 === preg_match( '/@status:[ \t]*(\w+)/', $header, $match ) ? $match[1] : '';
 	}
 
 	/**
@@ -420,7 +425,22 @@ final class ClassManager {
 	 * ================================================================ */
 
 	/**
-	 * Creates the missing Motion classes: empty, locked, in the Motion category.
+	 * Names of the Motion classes create_missing() would create; reads only.
+	 *
+	 * Empty unless Bricks is the active theme.
+	 *
+	 * @return string[]
+	 */
+	public static function missing(): array {
+		if ( ! Module::is_bricks_active() || ! class_exists( '\Bricks\Helpers' ) ) {
+			return [];
+		}
+
+		return self::plan_creation( self::read_classes() );
+	}
+
+	/**
+	 * Creates the missing Motion classes (see missing()): empty, locked, in the Motion category.
 	 *
 	 * Does nothing unless Bricks is the active theme. An existing class is never modified.
 	 *

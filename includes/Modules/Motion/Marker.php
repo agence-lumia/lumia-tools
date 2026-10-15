@@ -427,16 +427,18 @@ final class Marker {
 	 * Appends declarations to the `style` attribute already set on the element.
 	 *
 	 * A string or a list is kept as it is; the declarations are not added twice when the
-	 * filter runs again on attributes it already completed.
+	 * filter runs again on attributes it already completed. Bricks joins a list with spaces,
+	 * so an item added to a list starts with `;`: the last item may not close its declaration.
 	 *
 	 * @param mixed  $existing Current `style` value, if any.
 	 * @param string $inline   Declarations to add.
 	 * @return string|array<int|string, mixed>
 	 */
-	private static function merge_style( $existing, string $inline ) {
+	public static function merge_style( $existing, string $inline ) {
 		if ( is_array( $existing ) ) {
-			if ( ! in_array( $inline, $existing, true ) ) {
-				$existing[] = $inline;
+			$item = ';' . $inline;
+			if ( ! in_array( $item, $existing, true ) ) {
+				$existing[] = $item;
 			}
 
 			return $existing;

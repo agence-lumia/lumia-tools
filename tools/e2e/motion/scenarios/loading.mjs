@@ -7,8 +7,9 @@
 import { foreignRequests, newPage, login, pageUrl, assert, snippet, items } from '../lib.mjs';
 
 const GSAP_FILES = /gsap|ScrollTrigger|SplitText|\/motion\.js(\?|$)/i;
-// Every file of the module a front page may request (the counter modules have their own scenario).
-const MODULE_FILES = /\/(gsap|ScrollTrigger|SplitText|lenis)(\.min)?\.(js|css)|\/motion(-core|-scroll|-builder)?\.(js|css)(\?|$)/;
+// Every file of the module a front page may request. One group, so the end anchor applies to every
+// name (it used to bind to the motion-* alternative only: "/gsap.min.json" matched).
+const MODULE_FILES = /\/(?:(?:gsap|ScrollTrigger|SplitText|lenis)(?:\.min)?|motion(?:-core|-scroll|-builder|-counter)?)\.(?:js|css)(?:\?|$)/;
 const SNIPPET = '4-sk-motion.php';
 const FORMER_CDN = 'https://cdn.jsdelivr.net/**';
 
@@ -204,6 +205,8 @@ export default async function () {
 		await page.waitForTimeout( 300 );
 		const opacities = await page.evaluate( () => [ ...document.querySelectorAll( '[data-lm]' ) ].map( ( n ) => getComputedStyle( n ).opacity ) );
 		assert( opacities.length > 0 && opacities.every( ( o ) => o === '1' ), `blocked GSAP: an element is still hidden (opacity ${ opacities.join( ',' ) })` );
+		// The engine stands down without GSAP, and smooth scroll runs on its own loop: no script error.
+		assert( page.errors.length === 0, `blocked GSAP: page errors: ${ page.errors.join( ' | ' ) }` );
 		await page.context().close();
 	}
 

@@ -50,6 +50,15 @@ final class Assets {
 	 */
 	const LOADER_FALLBACK_MS = 1000;
 
+	/**
+	 * Milliseconds the loader still waits for a paint entry once two animation frames have run.
+	 * Chrome's `first-paint` arrives a few milliseconds after the second frame; a browser with only
+	 * `first-contentful-paint` (Safari, Firefox) sends nothing on a first screen that holds only
+	 * hidden entrances, and used to wait the whole LOADER_FALLBACK_MS. A background tab runs no
+	 * frame, so the fallback still covers it.
+	 */
+	const LOADER_FRAME_GRACE_MS = 100;
+
 	/** Handles of the scripts the loader may inject, in no particular order. */
 	const LOADED_HANDLES = [
 		self::HANDLE_GSAP,
@@ -72,10 +81,10 @@ final class Assets {
 	/**
 	 * Builds the loader.
 	 *
-	 * @param array<string, mixed> $settings Settings of the module; sanitized again here, so a hand-edited option cannot reach a script.
+	 * @param array<string, mixed> $settings Settings of the module, as returned by SettingsSanitizer::sanitize().
 	 */
 	public function __construct( array $settings ) {
-		$this->settings = SettingsSanitizer::sanitize( $settings, Module::get_defaults() );
+		$this->settings = $settings;
 	}
 
 	/**
@@ -215,9 +224,10 @@ final class Assets {
 	 * The loader waits for DOMContentLoaded, then for the first paint entry (`first-paint`, or
 	 * `first-contentful-paint` where only that one exists), two animation frames in a browser
 	 * without paint timing, LOADER_FALLBACK_MS at most (a tab opened in the background paints
-	 * nothing). Two frames alone were not enough: Chrome's paint entry carries the time the
-	 * frame was presented, measured 2 ms after the second frame callback had injected the
-	 * scripts. It then appends the scripts with `async = false`: they are fetched in parallel
+	 * nothing), and LOADER_FRAME_GRACE_MS after two frames (a browser with only
+	 * `first-contentful-paint`, on a first screen with nothing contentful). Two frames alone were
+	 * not enough: Chrome's paint entry carries the time the frame was presented, measured 2 ms
+	 * after the second frame callback had injected the scripts. It then appends the scripts with `async = false`: they are fetched in parallel
 	 * and run in order. A script that fails to load adds `lm-ready` at once, so nothing waits
 	 * for the 3 s safety.
 	 */
@@ -227,6 +237,11 @@ final class Assets {
 		$order   = [];
 		foreach ( $queued as $handle ) {
 			self::resolve_script( $scripts, $handle, $order );
+		}
+
+		// What the loader cannot carry is left to WordPress: the scripts keep their tags.
+		if ( self::loader_unsafe( $scripts, $order ) ) {
+			return;
 		}
 
 		$before = '';
@@ -277,7 +292,8 @@ final class Assets {
 	 * @param string[]    $order   Ordered handles, completed in place.
 	 */
 	private static function resolve_script( \WP_Scripts $scripts, string $handle, array &$order ): void {
-		if ( in_array( $handle, $order, true ) || ! isset( $scripts->registered[ $handle ] ) ) {
+		// A handle WordPress already printed (a dependency of a script of the head) is on the page.
+		if ( in_array( $handle, $order, true ) || in_array( $handle, $scripts->done, true ) || ! isset( $scripts->registered[ $handle ] ) ) {
 			return;
 		}
 
@@ -286,6 +302,36 @@ final class Assets {
 		}
 
 		$order[] = $handle;
+	}
+
+	/**
+	 * Whether a third party attached to a Motion handle something the loader would drop: an
+	 * `after` inline script, `wp_localize_script()` data (kept as `data`), or a change of the
+	 * tag through `script_loader_tag` (attributes, `type`, a CSP nonce). The loader prints no tag
+	 * and only the `before` data, so the page keeps WordPress's deferred tags in these cases.
+	 *
+	 * The tag filter is run on a plain tag: a filter that targets other handles returns it as is.
+	 *
+	 * @param \WP_Scripts $scripts Registry.
+	 * @param string[]    $order   Handles the loader would inject.
+	 */
+	private static function loader_unsafe( \WP_Scripts $scripts, array $order ): bool {
+		foreach ( $order as $handle ) {
+			if ( '' !== trim( (string) $scripts->get_inline_script_data( $handle, 'after' ) ) ) {
+				return true;
+			}
+			if ( '' !== (string) $scripts->get_data( $handle, 'data' ) ) {
+				return true;
+			}
+
+			$src = (string) $scripts->registered[ $handle ]->src;
+			$tag = '<script src="' . esc_url( $src ) . '" id="' . esc_attr( $handle ) . '-js"></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- never printed: a probe of the script_loader_tag filter.
+			if ( apply_filters( 'script_loader_tag', $tag, $handle, $src ) !== $tag ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's filter, as WordPress applies it.
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -304,6 +350,7 @@ final class Assets {
 			. 'var P=window.PerformanceObserver,types=P&&P.supportedEntryTypes||[];'
 			. 'if(types.indexOf("paint")<0){requestAnimationFrame(function(){requestAnimationFrame(add);});return;}'
 			. 'if(performance.getEntriesByType("paint").length){add();return;}'
+			. 'requestAnimationFrame(function(){requestAnimationFrame(function(){setTimeout(add,' . (int) self::LOADER_FRAME_GRACE_MS . ');});});'
 			. 'var o=new P(function(){o.disconnect();add();});o.observe({type:"paint",buffered:true});'
 			. '}'
 			. 'if(d.readyState==="loading"){d.addEventListener("DOMContentLoaded",painted,{once:true});}else{painted();}'

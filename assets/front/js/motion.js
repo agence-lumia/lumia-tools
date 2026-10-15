@@ -94,6 +94,8 @@
   var running = false; // a matchMedia branch is active
   var animate = false; // true in the no-preference branch, outside the builder
   var resizeTimer = 0;
+  var contentTimer = 0;
+  var CONTENT_MS = 50; // Bricks may send several content events for one change (a page, then its results)
   var lastWidth = window.innerWidth;
   var listening = false;
   var branches = 0; // matchMedia branches run so far
@@ -287,7 +289,33 @@
     }
     var effect = (raw.effect || "").toLowerCase() || classEffect(el);
     var rect = el.getBoundingClientRect();
-    return { el: el, effect: effect, raw: raw, above: rect.bottom < 0, onScreen: rect.top < window.innerHeight };
+    // A box-less element (display: none, a closed popup) is neither above nor on screen: its
+    // rectangle is all zeros, which used to read as "on screen" and settled it in a quiet build.
+    var boxed = el.getClientRects().length > 0;
+    return {
+      el: el,
+      effect: effect,
+      raw: raw,
+      above: boxed && rect.bottom < 0,
+      onScreen: boxed && rect.top < window.innerHeight,
+      end: authorEnd(style),
+    };
+  }
+
+  // Opacity and filter an entrance ends at: the element's own values, as the load animation of
+  // the stylesheet does. Read before the engine writes anything (the pre-hide is off by then).
+  function authorEnd(style) {
+    var opacity = parseFloat(style.opacity);
+    var filter = (style.filter || "").trim();
+    return {
+      opacity: isFinite(opacity) ? opacity : 1,
+      filter: filter === "" || filter === "none" ? "" : filter,
+    };
+  }
+
+  // Blur list of an entrance, composed with the author's filter so both ends have the same functions.
+  function blurFilter(px, end) {
+    return "blur(" + px + "px)" + (end && end.filter ? " " + end.filter : "");
   }
 
   // Why an effect is not built, or null when it is ("" = skipped without a message).
@@ -342,7 +370,7 @@
     }
   }
 
-  function create(entry, options) {
+  function create(entry, options, end) {
     var item = {
       id: entry.el.id || "lm-" + ++serial,
       el: entry.el,
@@ -354,6 +382,7 @@
       trigger: null,
       tweens: [],
       inline: saveInline(entry.el),
+      end: end || entry.end || { opacity: 1, filter: "" },
     };
     items.push(item);
     if (itemOf) {
@@ -425,7 +454,7 @@
    * delay and stagger, so both stay in step.
    * ================================================================ */
 
-  function enterFrom(o) {
+  function enterFrom(o, end) {
     var move = {};
     var look = { opacity: 0 };
     if (o.effect === "slide-up" || o.effect === "blur-up") {
@@ -435,7 +464,7 @@
       move.scale = o.scale;
     }
     if (o.effect === "blur" || o.effect === "blur-up" || o.effect === "zoom-blur") {
-      look.filter = "blur(" + o.blur + "px)";
+      look.filter = blurFilter(o.blur, end);
     }
     return { move: move, look: look };
   }
@@ -458,7 +487,7 @@
   }
 
   function enterPlay(options, elements) {
-    var from = enterFrom(options);
+    var from = enterFrom(options, null);
     var moves = Object.keys(from.move).length > 0;
     var bottoms = elements.map(function (el) {
       return el.getBoundingClientRect().bottom;
@@ -507,14 +536,20 @@
     }
 
     var look = {
-      opacity: 1,
+      opacity: function (i, el) {
+        var item = lookup(el);
+        return item ? item.end.opacity : 1;
+      },
       duration: options.tweenDuration,
       ease: options.safeEase,
       delay: options.delay,
       stagger: { each: options.stagger, onComplete: enterFinish },
     };
     if (from.look.filter) {
-      look.filter = "blur(0px)";
+      look.filter = function (i, el) {
+        var item = lookup(el);
+        return blurFilter(0, item && item.end);
+      };
     }
     tweens.push(gsap.to(targets, look));
 
@@ -531,7 +566,7 @@
       var order = [];
       list.forEach(function (item) {
         try {
-          var from = enterFrom(item.options);
+          var from = enterFrom(item.options, item.end);
           gsap.set(item.el, Object.assign({}, from.move, from.look));
           if (!has(groups, item.signature)) {
             groups[item.signature] = [];
@@ -599,7 +634,7 @@
 
     // Builder: the entrance, from the start state, now.
     preview: function (item) {
-      var from = enterFrom(item.options);
+      var from = enterFrom(item.options, item.end);
       gsap.set(item.el, Object.assign({}, from.move, from.look));
       item.state = "pending";
       enterPlay(item.options, [item.el]);
@@ -1107,6 +1142,10 @@
     var list = counterWaiting;
     counterWaiting = [];
     if (!counterAdapter()) {
+      // The event came without a usable adapter: the waiting items are given up on now, as the
+      // timeout would have done, instead of staying pending forever.
+      counterWaiting = list;
+      counterGiveUp();
       return;
     }
     list.forEach(function (item) {
@@ -1385,6 +1424,8 @@
         // What has already shown itself is not hidden again. A scrub is never shown once
         // and for all: it follows the scroll, rebuilt as a scrub.
         var seen = !options.scrub && quiet && entry.onScreen;
+        // A known element may carry the engine's start state: its end was read before that.
+        var end = known ? known.end : entry.end;
         if (known) {
           seen = seen || (!options.scrub && known.state !== "pending");
           kill(known);
@@ -1394,7 +1435,7 @@
           logOnce(el, describe(el) + ": " + options.warnings.join(" "));
         }
 
-        var item = create(entry, options);
+        var item = create(entry, options, end);
         changed = true;
         if (!animate || entry.above || seen) {
           settle(item);
@@ -1488,7 +1529,10 @@
     var changed = false;
     var run = function () {
       changed = sync(scope, recheck, quiet);
-      if (changed && markersOn) {
+      // Builder: drawn again on every read, not only when an item changed. A layout edit (a
+      // margin, a padding, an element added above) moves the elements without changing any
+      // signature, and the markers stayed where the elements used to be.
+      if (markersOn && (changed || BUILDER)) {
         drawMarkers();
       }
     };
@@ -1549,11 +1593,14 @@
   // New content changes the height of the page, hence every start below it: ScrollTrigger
   // 3.15 does not notice a height change by itself (it refreshes on load and resize only).
   function onContent() {
-    if (!running) {
-      return;
-    }
-    build(current, document, BUILDER, false);
-    measure();
+    clearTimeout(contentTimer);
+    contentTimer = setTimeout(function () {
+      if (!running) {
+        return;
+      }
+      build(current, document, BUILDER, false);
+      measure();
+    }, CONTENT_MS);
   }
 
   function onPopupOpen() {
@@ -1574,6 +1621,7 @@
   function unlisten() {
     window.removeEventListener("resize", onResize);
     clearTimeout(resizeTimer);
+    clearTimeout(contentTimer);
     listening = false;
     BRICKS_CONTENT_EVENTS.forEach(function (name) {
       document.removeEventListener(name, onContent);
@@ -1615,6 +1663,10 @@
         current = context;
         running = true;
         var built = false;
+        // The pre-hide goes before the build, in the same task (nothing is painted in between):
+        // read() must see the author's opacity and filter, which an entrance ends at. The build
+        // writes the start states right after.
+        ready();
         try {
           // The first build makes the entrances of what is on screen, unless the page was seen
           // before the engine started; a later one (reduced motion switched during the visit)
@@ -1623,7 +1675,6 @@
         } catch (error) {
           report("start failed: elements shown as they end.", error);
         }
-        ready();
         if (built) {
           measure();
         }

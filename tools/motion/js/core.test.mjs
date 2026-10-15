@@ -270,6 +270,13 @@ test("resolve: empty tempo uses the site tempo", () => {
   near(core.resolve("slide-up", { tempo: "" }, cfg).duration, 0.975, 1e-9);
 });
 
+test("resolve: an empty delay field inherits the site delay, a typed 0 does not", () => {
+  const cfg = JSON.parse(JSON.stringify(CFG));
+  cfg.effects["slide-up"].delay = 0.4;
+  assert.equal(core.resolve("slide-up", { delay: "" }, cfg).delay, 0.4);
+  assert.equal(core.resolve("slide-up", { delay: "0" }, cfg).delay, 0);
+});
+
 test("resolve: delay is taken as is", () => {
   assert.equal(core.resolve("slide-up", { tempo: "slow", delay: "0.3" }, CFG).delay, 0.3);
 });
@@ -278,7 +285,7 @@ test("resolve: stagger from the element is also scaled", () => {
   near(core.resolve("slide-up", { tempo: "fast", stagger: "0.2" }, CFG).stagger, 0.15, 1e-9);
 });
 
-test("resolve: blur alone has a blur and no move of its own", () => {
+test("resolve: blur reads its own blur value, default or typed", () => {
   const o = core.resolve("blur", {}, CFG);
   assert.equal(o.effect, "blur");
   assert.equal(o.blur, 12);

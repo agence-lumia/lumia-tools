@@ -112,14 +112,14 @@ PAGES[ 'lm-e2e-basic' ] = {
 			heading( 'Preset at 80% on phones', { '_lmStartAt:mobile_portrait': '80' }, { id: 'bpremb', classes: [ 'lm-e2e-preset' ] } ),
 			heading( 'Preset, fast and bouncy', { _lmTempo: 'fast', _lmEase: 'bouncy' }, { id: 'bprefb', classes: [ 'lm-e2e-preset' ] } ),
 			// A bouncy curve overshoots: the blur must still never go below 0.
-			heading( 'Blur in, bouncy', { _lmEffect: 'blur-up', _lmEase: 'bouncy', _lmLoad: 'never' }, { id: 'bblurb' } ),
+			heading( 'Blur up, bouncy', { _lmEffect: 'blur-up', _lmEase: 'bouncy', _lmLoad: 'never' }, { id: 'bblurb' } ),
 			spacer( 1200 ),
 		] ),
 		// An animated section: its heading has no setting and must not inherit any.
 		section( [ heading( 'Nested heading, no setting', {}, { id: 'bnesth' } ) ], { id: 'bnest', classes: [ 'lm-fade' ] } ),
 		section( [
 			spacer( 800 ),
-			heading( 'Blur in, none on phones', { _lmEffect: 'blur-up', '_lmEffect:mobile_portrait': 'none' }, { id: 'bblur' } ),
+			heading( 'Blur up, none on phones', { _lmEffect: 'blur-up', '_lmEffect:mobile_portrait': 'none' }, { id: 'bblur' } ),
 			heading( 'Two effect classes', {}, { id: 'bdual', classes: [ 'lm-fade', 'lm-slide-up' ] } ),
 			// Values typed straight into the content, as the builder would never write them.
 			heading(
