@@ -439,3 +439,8 @@ Une seule variante, le défilement de chiffres de NumberFlow, **embarqué tel qu
 - **Boilerplate** : 5 éléments seulement (Accueil : 2, modèle Maintenance : 3) utilisent les anciennes classes ; ils seront refaits à la main dans l'onglet Motion, puis les classes `sk-*` supprimées. Pas d'option de conversion automatique.
 - **Mots et lettres : fin par défaut `bottom 45%`** au lieu de `top -120%`, qui finissait l'effet bien après la lecture. Avec le bord bas, la lettre en cours d'apparition descend de 98 % à 45 % de l'écran quelle que soit la longueur du texte (calcul et mesures : `docs/modules/motion.md`).
 - **Petits points de #27 traités** : texte par défaut de la largeur des compteurs (valeur du site), accès au moteur du canevas entièrement protégé dans `motion-panel.js`, `replay(id)` renvoie `false` pour un soulignement (rien à rejouer).
+
+## 2.2.1 : compteur en script classique (15/10/2026)
+
+- **Constat en production** : nginx (1.31 compris) sert les `.mjs` en `application/octet-stream`, que les navigateurs refusent pour un module ; aucun compteur ne défilait sur les sites (affichés à leur valeur finale). La copie locale tourne sous Apache, d'où l'absence de signal.
+- **Décision** : l'adaptateur et NumberFlow lite sont regroupés en un seul script classique, `motion-counter.js`, généré par `tools/motion/js/build-counter.mjs` (esbuild figé) et vérifié en CI. Chargé comme les autres scripts du moteur, après le premier affichage. La liste de modules (import map) et le réordonnancement de leur impression disparaissent. Les fichiers d'origine restent dans `vendor/`, inchangés.

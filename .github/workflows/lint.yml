@@ -100,6 +100,11 @@ jobs:
       - name: JavaScript unit tests
         run: node --test tools/motion/js/*.test.mjs
 
+      # motion-counter.js is generated (adapter + NumberFlow, one classic script): it must
+      # match its sources and the pinned esbuild.
+      - name: Counter bundle up to date
+        run: node tools/motion/js/build-counter.mjs --check
+
   build:
     name: Release zip
     runs-on: ubuntu-latest

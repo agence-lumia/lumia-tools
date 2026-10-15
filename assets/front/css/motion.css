@@ -342,7 +342,7 @@ html:not(.lenis) [id] {
  * COUNTER AND TEXT
  * ================================================================ */
 
-/* The NumberFlow element of a counter (motion-counter.mjs). Its mask pads the number above
+/* The NumberFlow element of a counter (motion-counter.js). Its mask pads the number above
  * and below, which made the line taller (61.6 px to 84 px measured): the negative margin
  * gives that space back, rounded the way NumberFlow rounds the padding, so the line keeps
  * its height through the whole animation. The width of the digits is the font's own
