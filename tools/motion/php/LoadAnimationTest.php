@@ -370,6 +370,19 @@ return [
 		lm_assert( $other['--lm-load-delay'] === '0s', 'other ' . $other['--lm-load-delay'] );
 		lm_assert( $third['--lm-load-delay'] === '0.2s', 'third ' . $third['--lm-load-delay'] );
 	},
+	'the rank stops adding past the 8th element'          => static function (): void {
+		LoadAnimation::reset();
+		$config = lm_load_config();
+		$delays = [];
+		for ( $i = 0; $i < 30; $i++ ) {
+			$delays[] = lm_load_style( LoadAnimation::attributes( 'slide-up', [], $config ) )['--lm-load-delay'];
+		}
+		// slide-up stagger 0.1: the 8th (rank 7) waits 0.7 s, and so does every later one.
+		lm_assert( $delays[6] === '0.6s', '7th ' . $delays[6] );
+		lm_assert( $delays[7] === '0.7s', '8th ' . $delays[7] );
+		lm_assert( $delays[8] === '0.7s', '9th ' . $delays[8] );
+		lm_assert( $delays[29] === '0.7s', '30th ' . $delays[29] );
+	},
 	'delay plus rank, the stagger scaled by the tempo'    => static function (): void {
 		LoadAnimation::reset();
 		$config = lm_load_config( [ 'tempo' => 'very-slow' ] );

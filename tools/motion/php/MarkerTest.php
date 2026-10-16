@@ -175,6 +175,27 @@ return [
 		lm_assert( Marker::families( [ '_cssClasses' => 'lm-fadex xlm-fade' ], [], true ) === [], 'a longer name is not the class' );
 		lm_assert( Marker::families( [ '_cssClasses' => [ 'lm-fade' ] ], [], true ) === [], 'not a string' );
 	},
+	'dynamic typed classes are read as Bricks rendered them' => static function (): void {
+		$settings = Marker::with_resolved_classes( [ '_cssClasses' => 'lm-{acf_effect}' ], [ 'brxe-heading', 'lm-fade', '' ] );
+		lm_assert( $settings['_cssClasses'] === 'brxe-heading lm-fade', 'resolved: ' . $settings['_cssClasses'] );
+		lm_assert( Marker::families( $settings, [], false ) === [ 'enter' ], 'the resolved class gives its family' );
+		$plain = Marker::with_resolved_classes( [ '_cssClasses' => 'lm-words' ], [ 'brxe-text', 'other' ] );
+		lm_assert( $plain['_cssClasses'] === 'lm-words', 'a plain field is kept as typed' );
+		lm_assert( Marker::with_resolved_classes( [ '_lmEffect' => 'fade' ], [ 'x' ] ) === [ '_lmEffect' => 'fade' ], 'no field, nothing added' );
+	},
+	'merge_style appends to a string once'            => static function (): void {
+		lm_assert( Marker::merge_style( null, '--lm-a:1;' ) === '--lm-a:1;', 'no style: the declarations alone' );
+		lm_assert( Marker::merge_style( '  ', '--lm-a:1;' ) === '--lm-a:1;', 'a blank style is replaced' );
+		lm_assert( Marker::merge_style( 'color:red', '--lm-a:1;' ) === 'color:red;--lm-a:1;', 'an unclosed declaration gets its semicolon' );
+		lm_assert( Marker::merge_style( 'color:red; ', '--lm-a:1;' ) === 'color:red;--lm-a:1;', 'a closed one is not doubled' );
+		lm_assert( Marker::merge_style( 'color:red;--lm-a:1;', '--lm-a:1;' ) === 'color:red;--lm-a:1;', 'a second run adds nothing' );
+	},
+	'merge_style closes the last item of a list'      => static function (): void {
+		$merged = Marker::merge_style( [ 'color:red' ], '--lm-a:1;' );
+		lm_assert( $merged === [ 'color:red', ';--lm-a:1;' ], 'the added item starts with a semicolon' );
+		lm_assert( implode( ' ', $merged ) === 'color:red ;--lm-a:1;', 'joined by Bricks with spaces, the declarations stay apart' );
+		lm_assert( Marker::merge_style( $merged, '--lm-a:1;' ) === $merged, 'a second run adds nothing' );
+	},
 	'a scroll position with += survives inline'       => static function (): void {
 		lm_assert( Marker::inline_style( [ '_lmStart' => 'top+=50 80%' ] ) === '--lm-start:top+=50 80%;', 'top+=50 80%' );
 		lm_assert( Marker::inline_style( [ '_lmEnd' => 'bottom-=20 top' ] ) === '--lm-end:bottom-=20 top;', 'bottom-=20 top' );

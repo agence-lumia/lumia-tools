@@ -80,6 +80,13 @@ final class LoadAnimation {
 	private static ?string $first_root = null;
 
 	/**
+	 * Highest rank that adds to the delay: from the 8th element of a lot on, every one starts with
+	 * the 8th. A query loop of 30 identical cards in the first section would otherwise wait up to
+	 * 2.4 s (stagger 0.08), most of them off screen; capped, at most 0.56 s.
+	 */
+	const MAX_RANK = 7;
+
+	/**
 	 * Load animations already given, by signature: the rank of the next one in its lot.
 	 *
 	 * @var array<string, int>
@@ -366,7 +373,7 @@ final class LoadAnimation {
 		foreach ( $values as $property => $value ) {
 			$style .= $property . ':' . $value . ';';
 			if ( '--lm-load-move-duration' === $property ) {
-				$style .= '--lm-load-delay:' . self::number( $delay + $rank * $stagger ) . 's;';
+				$style .= '--lm-load-delay:' . self::number( $delay + min( $rank, self::MAX_RANK ) * $stagger ) . 's;';
 			}
 		}
 

@@ -9,7 +9,7 @@
 // Same pinned esbuild as tools/build/build-zip.sh; run from the repository root so the
 // path comments esbuild writes are the same on every machine.
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, realpathSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -61,7 +61,16 @@ export function build() {
 	}
 }
 
-const direct = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+// Real paths on both sides: a symlinked or relative argv[1] still counts as a direct run.
+function isMain() {
+	try {
+		return !!process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+	} catch {
+		return false;
+	}
+}
+
+const direct = isMain();
 if (direct) {
 	const next = build();
 	if (process.argv.includes("--check")) {
