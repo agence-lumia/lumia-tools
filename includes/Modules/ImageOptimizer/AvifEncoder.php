@@ -261,9 +261,11 @@ final class AvifEncoder {
 			if ( is_resource( $handle ) ) {
 				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- see above.
 			}
+			// Restored first: clear() or destroy() throwing must not leave the limits of this encode
+			// on the worker.
+			$this->restore_imagick( $previous );
 			$image->clear();
 			$image->destroy();
-			$this->restore_imagick( $previous );
 		}
 	}
 
@@ -293,7 +295,13 @@ final class AvifEncoder {
 				continue;
 			}
 			try {
-				$current = (int) \Imagick::getResourceLimit( $type );
+				// An unlimited resource comes back as a float (2^64 - 1): cast to int it would wrap
+				// to 0 and the restore would set a limit of 0 for the rest of the worker's life.
+				// Such a resource is left alone.
+				$current = \Imagick::getResourceLimit( $type );
+				if ( ! is_int( $current ) || $current <= 0 ) {
+					continue;
+				}
 				\Imagick::setResourceLimit( $type, $value );
 				$previous[ $type ] = $current;
 			} catch ( \Throwable $e ) {
