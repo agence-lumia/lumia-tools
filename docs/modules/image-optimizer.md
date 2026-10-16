@@ -169,6 +169,19 @@ Pitfalls, each measured on the bench:
 - **Files are read through a handle** (`readImageFile`), because ImageMagick parses a path as a file specification (`[0]`, `@list`, `fmt:`).
 - **GD** (only when `avif_engine` is `gd`) keeps no profile and ignores the EXIF orientation: it encodes a picture without a profile or with an sRGB one (the colorants are compared, since compact sRGB profiles are named "uRGB"), and answers `skipped` ("GD cannot preserve the color profile") for the rest. Quality is the setting minus 5.
 - **Presets**: `balanced` is speed 8, `fast` is speed 9. On the bench, 9 saves about 20% of the CPU time (user time, 3 runs) but almost nothing on the wall clock, since aom runs several threads: measure CPU, not seconds. Speed 9 costs +5% on photos but +37% on PNG visuals.
+- **Memory lives outside PHP's `memory_limit`** (issue #29). Out of the box, Imagick's memory limit is the host's RAM (8 GB on the production VPS). Measured in `wordpress:7-php8.5-fpm-alpine` (2 CPU, `memory.peak` of a fresh cgroup), q70, speed 8, 4:4:4:
+
+  | Source | Decoded pixels (anon) | Peak of the encode |
+  |---|---|---|
+  | JPEG 2560x1707 (4.4 MP) | 59 MB | 230 MB |
+  | PNG 2560x2560 with alpha (6.6 MP) | 109 MB | 450 MB |
+  | JPEG 6000x4000 (24 MP) | 284 MB | 1 190 MB |
+
+  The decoded pixels are what ImageMagick's limits govern. During an encode the encoder sets `memory` 256 MB, `map` 512 MB and `thread` 1, then puts the previous values back: the limits are global to the process, and a PHP-FPM worker goes on serving other requests. Past 256 MB the pixel cache moves to a disk file (24 MP: 9 MB of anon memory, plus 297 MB of page cache the kernel can reclaim). That covers images of about 19 MP and more, and changes nothing below. `thread` was already 1 in the production image.
+
+  **The AV1 encoder (libheif + aom) is outside every ImageMagick limit**: about 35 MB per megapixel in 4:4:4 (4:2:0 saves about a third). Hence `MAX_MEGAPIXELS` (16, filter `lumia_image_optimizer_max_megapixels`, `0` turns the check off): a larger image is `skipped` ("image above 16 megapixels"), read from its header before anything is decoded, and stays served as JPEG/PNG. WordPress scales uploads down to 2560 px (`big_image_size_threshold`), so only a site that turns that off ever hits the cap. On the client sites (October 2026) no encoded file is above 6.6 MP. Filter `lumia_image_optimizer_imagick_limits` (`memory`, `map` in bytes, `thread`; a missing or zero value leaves that resource alone).
+
+  Most likely reason the containers hit their 1.5 GB limit on 10/10/2026 (1 230 to 2 640 times, up to 480 MB swapped): the queue runs one encode per site (MySQL lock), at most 450 MB at that size. The same evening, `wp lumia images migrate` made the sizes again from originals of up to 20 MP (WordPress's `WP_Image_Editor_Imagick` sets no memory limit), and reading and writing thousands of files fills the cgroup's page cache. Docker lets a container swap as much as its memory limit, so at that limit the kernel also swaps the idle memory of the PHP-FPM pool.
 
 `JpegMetadata::strip_app1()` removes the EXIF and XMP APP1 segments of a served JPEG **without recompressing**: it walks the markers and copies every other byte (the ICC profile in APP2 included), then renames a temporary over the file. Nothing is removed when the EXIF orientation is not 1 (the browser turns the picture from that tag). WordPress keeps the GPS block in its sub-sizes and in an unscaled main file.
 
@@ -286,6 +299,7 @@ Each is detailed in its section above.
 - Imagick ignores `setImageCompressionQuality()` alone for AVIF: set `setCompressionQuality()` too (encoder).
 - `heic:speed=10` is refused by libheif (encoder).
 - `stripImage()` removes the ICC profile; large profiles must be converted, not dropped (encoder).
+- Imagick memory is outside `memory_limit`, and the AV1 encoder is outside Imagick's own limits: bound the pixels with the limits, the encoder with the megapixel cap (encoder).
 - `Vary: Accept` on every JPEG/PNG answer, AVIF or not, and required by the self-test on the PNG answer too (delivery).
 - No `immutable` on the negotiated files; the one-year `max-age` stays, so a cached AVIF outlives "serve the original format" (delivery).
 - `wp_update_attachment_metadata` runs several times during one upload: queue at the end of the generation only (lifecycle).

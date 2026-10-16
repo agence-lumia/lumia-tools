@@ -32,6 +32,22 @@ final class AvifEncoder {
 	/** MIME types worth an AVIF sibling. */
 	private const MIMES = array( 'image/jpeg', 'image/png' );
 
+	/**
+	 * Images above this many megapixels get no AVIF. The AV1 encoder takes about 35 MB per
+	 * megapixel (4:4:4), outside every ImageMagick limit. Filter `lumia_image_optimizer_max_megapixels`.
+	 */
+	private const MAX_MEGAPIXELS = 16;
+
+	/**
+	 * ImageMagick resource limits during an encode, in bytes (thread: a count). Filter
+	 * `lumia_image_optimizer_imagick_limits`. See docs/modules/image-optimizer.md (pitfalls).
+	 */
+	private const IMAGICK_LIMITS = array(
+		'memory' => 256 * MB_IN_BYTES,
+		'map'    => 512 * MB_IN_BYTES,
+		'thread' => 1,
+	);
+
 	private int $quality;
 
 	private string $speed;
@@ -85,6 +101,10 @@ final class AvifEncoder {
 			$truncated = $this->truncation( $source_path, $mime );
 			if ( '' !== $truncated ) {
 				return new EncodeResult( EncodeResult::FAILED, $source_bytes, null, $truncated );
+			}
+			$oversized = $this->oversize( $source_path );
+			if ( '' !== $oversized ) {
+				return $this->skip( $sibling, $source_bytes, $oversized );
 			}
 
 			$engine = (string) ( $this->processor->get_capabilities()['avif_engine'] ?? '' );
@@ -151,6 +171,32 @@ final class AvifEncoder {
 	}
 
 	/**
+	 * Reason why an image is too large to encode, '' when it is not.
+	 *
+	 * Checked from the header, before anything is decoded. WordPress scales uploads down to
+	 * 2560 px (6.6 MP at most), so only a site that disables `big_image_size_threshold` gets here.
+	 */
+	private function oversize( string $path ): string {
+		$max = apply_filters( 'lumia_image_optimizer_max_megapixels', self::MAX_MEGAPIXELS );
+		$max = is_numeric( $max ) ? (float) $max : (float) self::MAX_MEGAPIXELS;
+		if ( $max <= 0 ) {
+			return '';
+		}
+
+		$size = wp_getimagesize( $path );
+		if ( ! is_array( $size ) ) {
+			return '';
+		}
+
+		$megapixels = (int) $size[0] * (int) $size[1] / 1000000;
+		if ( $megapixels <= $max ) {
+			return '';
+		}
+
+		return sprintf( 'image above %s megapixels (%.1f MP)', rtrim( rtrim( number_format( $max, 1, '.', '' ), '0' ), '.' ), $megapixels );
+	}
+
+	/**
 	 * Reason why a JPEG/PNG is cut short, '' when it is complete.
 	 *
 	 * Imagick decodes a truncated JPEG without an exception (the missing part comes out grey):
@@ -184,11 +230,13 @@ final class AvifEncoder {
 	 * @throws \DomainException When the image cannot be converted faithfully (skip).
 	 */
 	private function encode_with_imagick( string $path, string &$note ): string {
-		$image  = new \Imagick();
 		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- read through a handle: a path is parsed by ImageMagick as a file specification.
 		if ( false === $handle ) {
 			throw new \RuntimeException( 'source file unreadable' );
 		}
+
+		$image    = new \Imagick();
+		$previous = $this->limit_imagick();
 
 		try {
 			$image->readImageFile( $handle );
@@ -213,8 +261,69 @@ final class AvifEncoder {
 			if ( is_resource( $handle ) ) {
 				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- see above.
 			}
+			// Restored first: clear() or destroy() throwing must not leave the limits of this encode
+			// on the worker.
+			$this->restore_imagick( $previous );
 			$image->clear();
 			$image->destroy();
+		}
+	}
+
+	/**
+	 * Caps the memory ImageMagick allocates, which lies outside PHP's `memory_limit`: past the
+	 * `memory` limit, the pixel cache moves to disk instead of growing. The limits are global to
+	 * the process and a PHP-FPM worker serves many requests, so the previous values are returned
+	 * for restore_imagick().
+	 *
+	 * @return array<int, int> Previous limit per resource type.
+	 */
+	private function limit_imagick(): array {
+		$types = array(
+			'memory' => \Imagick::RESOURCETYPE_MEMORY,
+			'map'    => \Imagick::RESOURCETYPE_MAP,
+			'thread' => \Imagick::RESOURCETYPE_THREAD,
+		);
+
+		$limits = apply_filters( 'lumia_image_optimizer_imagick_limits', self::IMAGICK_LIMITS );
+		$limits = is_array( $limits ) ? $limits : self::IMAGICK_LIMITS;
+
+		$previous = array();
+		foreach ( $types as $name => $type ) {
+			// A missing, zero or non-numeric value leaves that resource as ImageMagick has it.
+			$value = isset( $limits[ $name ] ) && is_numeric( $limits[ $name ] ) ? (int) $limits[ $name ] : 0;
+			if ( $value <= 0 ) {
+				continue;
+			}
+			try {
+				// An unlimited resource comes back as a float (2^64 - 1): cast to int it would wrap
+				// to 0 and the restore would set a limit of 0 for the rest of the worker's life.
+				// Such a resource is left alone.
+				$current = \Imagick::getResourceLimit( $type );
+				if ( ! is_int( $current ) || $current <= 0 ) {
+					continue;
+				}
+				\Imagick::setResourceLimit( $type, $value );
+				$previous[ $type ] = $current;
+			} catch ( \Throwable $e ) {
+				continue; // An ImageMagick build that refuses the limit encodes as before.
+			}
+		}
+
+		return $previous;
+	}
+
+	/**
+	 * Puts back the limits saved by limit_imagick().
+	 *
+	 * @param array<int, int> $previous Previous limit per resource type.
+	 */
+	private function restore_imagick( array $previous ): void {
+		foreach ( $previous as $type => $value ) {
+			try {
+				\Imagick::setResourceLimit( $type, $value );
+			} catch ( \Throwable $e ) {
+				continue;
+			}
 		}
 	}
 
