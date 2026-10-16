@@ -78,12 +78,49 @@
     return nodes.length > 0 && nodes.every(isMarker);
   }
 
+  // Changes inside an element that was playing: the engine's own work, or an edit of a child made
+  // during the play (Bricks renders it again). Which one cannot be told apart, so they are read
+  // once the play is over instead of being dropped.
+  var DEFER_MS = 250;
+  var deferred = [];
+  var deferTimer = 0;
+
+  function recheckDeferred() {
+    deferTimer = 0;
+    var motion = engine();
+    deferred = deferred.filter(function (node) {
+      return node.isConnected && motion && typeof motion.playing === "function" && motion.playing(node);
+    });
+    if (deferred.length) {
+      deferTimer = setTimeout(recheckDeferred, DEFER_MS);
+      return;
+    }
+    request();
+  }
+
+  function defer(node) {
+    if (deferred.indexOf(node) === -1) {
+      deferred.push(node);
+    }
+    if (!deferTimer) {
+      deferTimer = setTimeout(recheckDeferred, DEFER_MS);
+    }
+  }
+
   function onMutations(records) {
+    var changed = false;
     for (var i = 0; i < records.length; i++) {
-      if (!ours(records[i]) && !onlyMarkers(records[i])) {
-        request();
-        return;
+      if (onlyMarkers(records[i])) {
+        continue;
       }
+      if (ours(records[i])) {
+        defer(records[i].target);
+        continue;
+      }
+      changed = true;
+    }
+    if (changed) {
+      request();
     }
   }
 
@@ -108,6 +145,9 @@
     clearTimeout(timer);
     timer = 0;
     firstRequest = 0;
+    clearTimeout(deferTimer);
+    deferTimer = 0;
+    deferred = [];
     if (observer) {
       observer.disconnect();
       observer = null;

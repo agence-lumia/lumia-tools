@@ -7,8 +7,9 @@
 import { foreignRequests, newPage, login, pageUrl, assert, snippet, items } from '../lib.mjs';
 
 const GSAP_FILES = /gsap|ScrollTrigger|SplitText|\/motion\.js(\?|$)/i;
-// Every file of the module a front page may request (the counter modules have their own scenario).
-const MODULE_FILES = /\/(gsap|ScrollTrigger|SplitText|lenis)(\.min)?\.(js|css)|\/motion(-core|-scroll|-builder)?\.(js|css)(\?|$)/;
+// Every file of the module a front page may request. One group, so the end anchor applies to every
+// name (it used to bind to the motion-* alternative only: "/gsap.min.json" matched).
+const MODULE_FILES = /\/(?:(?:gsap|ScrollTrigger|SplitText|lenis)(?:\.min)?|motion(?:-core|-scroll|-builder|-counter)?)\.(?:js|css)(?:\?|$)/;
 const SNIPPET = '4-sk-motion.php';
 const FORMER_CDN = 'https://cdn.jsdelivr.net/**';
 
@@ -31,6 +32,16 @@ async function load( page, slug, query = '' ) {
 	const res = await page.goto( pageUrl( slug, query ), { waitUntil: 'load' } );
 	assert( res && res.status() === 200, `${ slug }: status ${ res && res.status() }` );
 	return urls;
+}
+
+/**
+ * Waits for the engine: the loader injects the scripts after the first paint, which may come after the
+ * load event, so the requests are not all made when load() returns.
+ */
+async function engineStarted( page, slug ) {
+	await page.waitForFunction( () => window.lumiaMotion && window.lumiaMotion._debug, null, { timeout: 5000 } ).catch( () => {
+		throw new Error( `${ slug }: the engine never started` );
+	} );
 }
 
 /**
@@ -89,6 +100,7 @@ export default async function () {
 	{
 		const page = await newPage();
 		const urls = await load( page, 'lm-e2e-basic' );
+		await engineStarted( page, 'lm-e2e-basic' );
 		for ( const file of [ 'gsap.min.js', 'ScrollTrigger.min.js', 'motion-core.js', 'motion.js' ] ) {
 			assert( urls.some( ( u ) => u.includes( `/${ file }` ) ), `lm-e2e-basic: ${ file } not requested` );
 		}
@@ -154,6 +166,7 @@ export default async function () {
 	{
 		const page = await newPage();
 		const urls = await load( page, 'lm-e2e-text' );
+		await engineStarted( page, 'lm-e2e-text' );
 		assert( urls.some( ( u ) => u.includes( '/SplitText.min.js' ) ), 'lm-e2e-text: SplitText not requested' );
 		const g = await globals( page );
 		assert( g.splitText === 'function' || g.splitText === 'object', `lm-e2e-text: window.SplitText is ${ g.splitText }` );
@@ -204,6 +217,8 @@ export default async function () {
 		await page.waitForTimeout( 300 );
 		const opacities = await page.evaluate( () => [ ...document.querySelectorAll( '[data-lm]' ) ].map( ( n ) => getComputedStyle( n ).opacity ) );
 		assert( opacities.length > 0 && opacities.every( ( o ) => o === '1' ), `blocked GSAP: an element is still hidden (opacity ${ opacities.join( ',' ) })` );
+		// The engine stands down without GSAP, and smooth scroll runs on its own loop: no script error.
+		assert( page.errors.length === 0, `blocked GSAP: page errors: ${ page.errors.join( ' | ' ) }` );
 		await page.context().close();
 	}
 

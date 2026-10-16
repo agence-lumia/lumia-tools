@@ -133,8 +133,8 @@ return [
 		lm_assert( count( Effects::ENGINE_VARIABLES ) === 20, 'expected 20 engine variables' );
 		lm_assert( count( array_unique( Effects::ENGINE_VARIABLES ) ) === 20, 'duplicate variable' );
 		foreach ( Effects::ENGINE_VARIABLES as $name ) {
-			lm_assert( strpos( $name, 'lm-' ) === 0, "{$name} must start with lm-" );
-			lm_assert( strpos( $name, '--' ) !== 0, "{$name} must not carry the leading dashes" );
+			// A whole name: lm- then lowercase words joined by single dashes (no leading dashes, no "lm-" alone).
+			lm_assert( 1 === preg_match( '/^lm-[a-z]+(?:-[a-z]+)*$/D', $name ), "{$name} is not an lm- property name without its leading dashes" );
 			lm_assert( strpos( $name, 'underline' ) === false, "{$name} is an underline variable" );
 		}
 		lm_assert( in_array( 'lm-ease-custom', Effects::ENGINE_VARIABLES, true ), 'lm-ease-custom' );

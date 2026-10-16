@@ -185,3 +185,12 @@ export function snippet( file, status ) {
 		$s['meta']['status'] = ${ JSON.stringify( status ) }; $m->updateSnippet( ${ JSON.stringify( file ) }, $s['code'], $s['meta'] );
 		\\FluentSnippets\\App\\Helpers\\Helper::cacheSnippetIndex();` );
 }
+
+/**
+ * The Style tab of the Bricks element panel, inside its tab bar: a page-wide "Style" text also matched
+ * the label of a select control.
+ */
+export const styleTab = ( page ) => page.locator( '#bricks-panel-tabs > li' ).filter( { has: page.locator( 'span.label', { hasText: /^Style$/ } ) } ).first();
+
+/** Title of the Motion group of the element panel (its control group key, not its translated title). */
+export const motionGroupTitle = ( page ) => page.locator( '[data-control-group="lm_motion"] .control-group-title' ).first();

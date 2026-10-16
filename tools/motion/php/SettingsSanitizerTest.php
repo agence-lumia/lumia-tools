@@ -165,9 +165,9 @@ return [
 		}
 	},
 	'custom tempo is refused at the global level'   => static function () use ( $lm_defaults ): void {
-		$exact = SettingsSanitizer::sanitize( [ 'tempo' => 'custom' ], $lm_defaults() );
-		$junk  = SettingsSanitizer::sanitize( [ 'tempo' => 'turbo' ], $lm_defaults() );
-		lm_assert( 'normal' === $exact['tempo'], 'custom must become normal' );
+		$custom = SettingsSanitizer::sanitize( [ 'tempo' => 'custom' ], $lm_defaults() );
+		$junk   = SettingsSanitizer::sanitize( [ 'tempo' => 'turbo' ], $lm_defaults() );
+		lm_assert( 'normal' === $custom['tempo'], 'custom must become normal' );
 		lm_assert( 'normal' === $junk['tempo'], 'an unknown tempo must become normal' );
 	},
 	'ease keywords are kept, others fall back'      => static function () use ( $lm_defaults ): void {
@@ -181,6 +181,21 @@ return [
 	'the legacy lumia ease is read as smooth'       => static function () use ( $lm_defaults ): void {
 		$result = SettingsSanitizer::sanitize( [ 'ease' => 'lumia' ], $lm_defaults() );
 		lm_assert( 'smooth' === $result['ease'], 'lumia must become smooth' );
+		$typed = SettingsSanitizer::sanitize( [ 'ease' => ' Lumia ' ], $lm_defaults() );
+		lm_assert( 'smooth' === $typed['ease'], 'a padded, capitalised lumia must become smooth too' );
+		$bouncy = SettingsSanitizer::sanitize( [ 'ease' => 'Bouncy ' ], $lm_defaults() );
+		lm_assert( 'bouncy' === $bouncy['ease'], 'an ease is read trimmed and lowercased, like the engine reads it' );
+	},
+	'an overlong custom curve is refused'           => static function () use ( $lm_defaults ): void {
+		$result = SettingsSanitizer::sanitize(
+			[
+				'ease'        => 'custom',
+				'ease_custom' => 'cubic-bezier(' . str_repeat( ' ', 120 ) . '.2, .8, .2, 1)',
+			],
+			$lm_defaults()
+		);
+		lm_assert( '' === $result['ease_custom'], 'a curve above CURVE_MAX_LENGTH must be cleared before the regex' );
+		lm_assert( 'smooth' === $result['ease'], 'custom without a kept curve must become smooth' );
 	},
 	'custom ease with an invalid curve is refused'  => static function () use ( $lm_defaults ): void {
 		$result = SettingsSanitizer::sanitize(

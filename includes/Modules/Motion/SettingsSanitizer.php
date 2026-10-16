@@ -25,6 +25,9 @@ final class SettingsSanitizer {
 		'lerp'         => [ 0.01, 1.0 ],
 	];
 
+	/** Longest custom curve kept: `cubic-bezier(0.000, -0.000, 0.000, -0.000)` with generous spacing. */
+	const CURVE_MAX_LENGTH = 100;
+
 	/** Builder preview modes. */
 	const BUILDER_PREVIEWS = [ 'replay', 'off' ];
 
@@ -61,8 +64,9 @@ final class SettingsSanitizer {
 			$effects[ $slug ] = $sanitized;
 		}
 
-		// The "lumia" curve of the first trials became "smooth".
-		$ease_input  = 'lumia' === ( $input['ease'] ?? null ) ? 'smooth' : ( $input['ease'] ?? null );
+		// The "lumia" curve of the first trials became "smooth". Trimmed and lowercased like the engine reads it.
+		$ease_input  = is_string( $input['ease'] ?? null ) ? strtolower( trim( $input['ease'] ) ) : null;
+		$ease_input  = 'lumia' === $ease_input ? 'smooth' : $ease_input;
 		$ease        = self::keyword( $ease_input, Effects::EASES, 'smooth', (string) ( $defaults['ease'] ?? 'smooth' ) );
 		$ease_custom = self::sanitize_curve( $input['ease_custom'] ?? '' );
 		if ( 'custom' === $ease && '' === $ease_custom ) {
@@ -225,6 +229,9 @@ final class SettingsSanitizer {
 		}
 
 		$curve = trim( $value );
+		if ( strlen( $curve ) > self::CURVE_MAX_LENGTH ) {
+			return '';
+		}
 
 		return null !== self::parse_bezier( $curve ) ? $curve : '';
 	}

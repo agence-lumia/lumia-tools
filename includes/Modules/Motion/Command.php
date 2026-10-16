@@ -6,8 +6,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * WP-CLI commands of the Motion module: `wp lumia motion classes|migrate`.
  *
- * Both need a user (--user=<admin>): Bricks records who changed the global classes. Design and
- * pitfalls: ClassManager.
+ * Writing needs an administrator (--user=<admin>): Bricks records who changed the global classes.
+ * Listing does not. Design and pitfalls: ClassManager.
  */
 final class Command {
 
@@ -19,7 +19,7 @@ final class Command {
 	 *
 	 * Each class that is missing is created empty, locked, in the Motion category. A class is not
 	 * created while its legacy twin exists (the migration renames the twin), and an existing class is
-	 * never modified.
+	 * never modified. An administrator (--user) is needed only when there is a class to create.
 	 *
 	 * ## OPTIONS
 	 *
@@ -41,7 +41,9 @@ final class Command {
 	 */
 	public function classes( array $args, array $assoc_args ): void {
 		$this->require_bricks();
-		$this->require_user();
+		if ( [] !== ClassManager::missing() ) {
+			$this->require_user();
+		}
 
 		try {
 			$created = ClassManager::create_missing();
@@ -280,11 +282,15 @@ final class Command {
 	}
 
 	/**
-	 * Stops when no user is given: Bricks stores who last changed the classes.
+	 * Stops unless an administrator is given: Bricks stores who last changed the classes, and only
+	 * an administrator may change them.
 	 */
 	private function require_user(): void {
 		if ( 0 === get_current_user_id() ) {
 			\WP_CLI::error( 'Give an administrator with --user=<login or ID>: Bricks records who changed the global classes.' );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			\WP_CLI::error( 'The user given with --user is not an administrator: only an administrator may change the global classes.' );
 		}
 	}
 

@@ -128,10 +128,48 @@ async function plainPage() {
 	assert( state.gsap === 'undefined', `lm-e2e-none: window.gsap is ${ state.gsap }` );
 	assert( state.lenis === 'object', `lm-e2e-none: window.lumiaLenis is ${ state.lenis }` );
 	assert( state.className, 'lm-e2e-none: <html> has no lenis class' );
-	assert( state.autoRaf === true, `lm-e2e-none: autoRaf is ${ state.autoRaf } without GSAP (Lenis has no other clock)` );
+	assert( state.autoRaf === false, `lm-e2e-none: autoRaf is ${ state.autoRaf } (motion-scroll.js runs its own loop)` );
 	assert( state.lerp === 0.1 && state.syncTouch === false, `lm-e2e-none: lerp=${ state.lerp } syncTouch=${ state.syncTouch }` );
 	assert( state.config && state.config.lerp === 0.1, `lm-e2e-none: window.lumiaMotionScroll=${ JSON.stringify( state.config ) }` );
+
 	noErrors( page, 'lm-e2e-none' );
+	await page.context().close();
+}
+
+// Without GSAP (a tall page with no effect, so no engine): the loop of motion-scroll.js sleeps while nothing
+// scrolls, the wheel wakes it and scrolls smoothly (several frames), then it sleeps again.
+async function loopSleeps() {
+	const page = await newPage();
+	await load( page, 'lm-e2e-anchor' );
+	await lenisReady( page );
+	assert( await page.evaluate( () => typeof window.gsap ) === 'undefined', 'loop: GSAP is on the anchor page' );
+
+	await page.evaluate( () => {
+		window.lmFrames = 0;
+		const raf = window.requestAnimationFrame;
+		window.requestAnimationFrame = function ( fn ) {
+			window.lmFrames++;
+			return raf.call( window, fn );
+		};
+	} );
+	await page.waitForTimeout( 1000 );
+	const idle = await page.evaluate( () => window.lmFrames );
+	assert( idle === 0, `loop: ${ idle } frames requested in 1 s with the page untouched (the loop must sleep)` );
+	await page.mouse.move( 700, 450 );
+	const y0 = await page.evaluate( () => window.scrollY );
+	await page.mouse.wheel( 0, 400 );
+	const steps = [];
+	for ( let i = 0; i < 6; i++ ) {
+		await page.waitForTimeout( 50 );
+		steps.push( await page.evaluate( () => window.scrollY ) );
+	}
+	assert( steps[ 0 ] > y0 && steps[ 0 ] < y0 + 400 && steps[ 5 ] > steps[ 0 ], `loop: the wheel did not scroll smoothly from ${ y0 }: ${ steps.join( ', ' ) }` );
+	await page.waitForTimeout( 1500 );
+	const before = await page.evaluate( () => window.lmFrames );
+	await page.waitForTimeout( 1000 );
+	const after = await page.evaluate( () => window.lmFrames );
+	assert( after === before, `loop: the loop did not sleep again (${ after - before } frames in 1 s after the scroll)` );
+	noErrors( page, 'loop' );
 	await page.context().close();
 }
 
@@ -437,14 +475,15 @@ async function formerSnippet() {
 		}
 	}
 
-	// Arriving on an anchor while the former snippet shows up before the load: the landing (one frame after
-	// the load) must not drive the instance that stood down.
+	// Arriving on an anchor while the former snippet shows up as soon as the instance exists: the landing must
+	// not drive the instance that stood down. Since the loader injects the scripts after the first paint, the
+	// instance usually appears after the load, which the "load" listener alone used to miss.
 	const page = await newPage();
 	await page.addInitScript( watchLenis, GLOBAL );
 	await page.goto( pageUrl( 'lm-e2e-anchor' ) + '#target', { waitUntil: 'load' } );
 	await page.waitForTimeout( 600 );
 	const late = await page.evaluate( () => ( { calls: window.lmCalls, lenis: typeof window.lumiaLenis, loadedFirst: window.lmLoadedFirst } ) );
-	assert( late.loadedFirst === false, `former snippet, anchor landing: the instance appeared ${ late.loadedFirst ? 'after the load' : 'never' } (the case is not reproduced)` );
+	assert( late.loadedFirst !== null, 'former snippet, anchor landing: the instance never appeared (the case is not reproduced)' );
 	assert( late.lenis === 'undefined', `former snippet, anchor landing: window.lumiaLenis is ${ late.lenis }` );
 	assert( late.calls === 0, `former snippet, anchor landing: the destroyed Lenis was asked to scroll ${ late.calls } time(s)` );
 	noErrors( page, 'former snippet, anchor landing' );
@@ -500,14 +539,14 @@ async function hiddenAnchor() {
 	}
 }
 
-// A reload in the middle of a page keeps the position when Lenis runs its own clock (no engine on the page), at both widths.
+// A reload in the middle of a page keeps the position when Lenis runs on the loop of motion-scroll.js (no engine on the page), at both widths.
 async function reloadWithoutEngine() {
 	for ( const width of [ 1440, 390 ] ) {
 		const label = `reload without the engine, ${ width } px`;
 		const page = await newPage( { width, height: width > 500 ? 900 : 844 } );
 		await load( page, 'lm-e2e-anchor' );
 		await lenisReady( page );
-		assert( await page.evaluate( () => window.lumiaLenis.options.autoRaf === true && typeof window.gsap === 'undefined' ), `${ label }: the page is not on the Lenis clock` );
+		assert( await page.evaluate( () => window.lumiaLenis.options.autoRaf === false && typeof window.gsap === 'undefined' ), `${ label }: the page is not on the loop of motion-scroll.js` );
 		await page.evaluate( () => window.lumiaLenis.scrollTo( 3000, { immediate: true } ) );
 		assert( near( await stable( page ), 3000, 2 ), `${ label }: could not scroll to 3000` );
 		await page.reload( { waitUntil: 'load' } );
@@ -521,6 +560,7 @@ async function reloadWithoutEngine() {
 
 export default async function () {
 	await plainPage();
+	await loopSleeps();
 	await animatedPage();
 	await anchors();
 	await popups();
