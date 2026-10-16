@@ -279,6 +279,7 @@ return [
 		lm_assert( ClassManager::snippet_status( "<?php\n" . str_repeat( ' ', 9000 ) . '// @status: published' ) === '', 'only the header is read: a mention further down does not count' );
 		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @description: " . str_repeat( 'x', 20000 ) . "\n* @status: published\n*/" ) === 'published', 'the whole header block is read, however long the description' );
 		lm_assert( ClassManager::snippet_status( "<?php\n/*\n* @status: draft\n*/\n// @status: published" ) === 'draft', 'a status after the header block does not count' );
+		lm_assert( ClassManager::snippet_status( "<?php\n" . str_repeat( ' ', 9000 ) . "/*\n* @status: published\n*/" ) === '', 'a comment block far down is not the header' );
 	},
 	'snippet scan of a missing directory is empty'      => static function (): void {
 		lm_assert( ClassManager::snippet_hits( sys_get_temp_dir() . '/lm-does-not-exist-' . bin2hex( random_bytes( 4 ) ) ) === [], 'no directory, no hit' );

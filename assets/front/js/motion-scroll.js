@@ -4,8 +4,9 @@
  * setting is on, and exposes the instance as window.lumiaLenis.
  *
  * - Clock: with GSAP on the page, the GSAP ticker drives Lenis and ScrollTrigger is told
- *   about every Lenis scroll, as the Lenis documentation prescribes. Without GSAP, Lenis
- *   runs its own requestAnimationFrame loop. The test is made here, at load, on
+ *   about every Lenis scroll, as the Lenis documentation prescribes. Without GSAP, a loop of
+ *   this file drives it and sleeps while nothing scrolls (never Lenis's autoRaf, which runs
+ *   every frame for as long as the page is open). The test is made here, at load, on
  *   window.gsap: the order in which the engine and this file run does not matter.
  * - Anchors: a click on a link to the same page scrolls with the height of the header
  *   (--navbar-height) above the target. Lenis owns same-page anchors, so the stylesheet
@@ -153,7 +154,8 @@
     idleFrames = 0;
     if (!loopId && !destroyed) {
       // Lenis.raf() steps by the time since its last frame: after a sleep that step is huge and
-      // the smoothing would jump straight to the target. 0 makes the first frame a step of 0.
+      // the smoothing would jump straight to the target. 0 makes the first frame a step of 0
+      // (`e - (this.time || e)` in Lenis 1.3.26: check it again when Lenis is updated).
       lenis.time = 0;
       loopId = window.requestAnimationFrame(frame);
     }
@@ -391,6 +393,9 @@
       standDown();
       return;
     }
+    // The accessor fits the former snippet as it is built (sk-motion assigns window.<global>
+    // from an IIFE, no top-level declaration). Its getter answers undefined until then, which is
+    // what the legacy check of motion.js reads too.
     try {
       Object.defineProperty(window, name, {
         configurable: true,

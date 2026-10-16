@@ -95,7 +95,7 @@
   var animate = false; // true in the no-preference branch, outside the builder
   var resizeTimer = 0;
   var contentTimer = 0;
-  var CONTENT_MS = 50; // Bricks may send several content events for one change (a page, then its results)
+  var CONTENT_MS = 50; // refresh of the triggers after content events, grouped (a page, then its results)
   var lastWidth = window.innerWidth;
   var listening = false;
   var branches = 0; // matchMedia branches run so far
@@ -1424,8 +1424,10 @@
         // What has already shown itself is not hidden again. A scrub is never shown once
         // and for all: it follows the scroll, rebuilt as a scrub.
         var seen = !options.scrub && quiet && entry.onScreen;
-        // A known element may carry the engine's start state: its end was read before that.
-        var end = known ? known.end : entry.end;
+        // A known element that is pending or playing carries the engine's state: its end was read
+        // before that. Done or final, it shows the author's values again, which may have changed
+        // (an opacity edited in the builder panel).
+        var end = known && (known.state === "pending" || known.state === "playing") ? known.end : entry.end;
         if (known) {
           seen = seen || (!options.scrub && known.state !== "pending");
           kill(known);
@@ -1592,14 +1594,20 @@
 
   // New content changes the height of the page, hence every start below it: ScrollTrigger
   // 3.15 does not notice a height change by itself (it refreshes on load and resize only).
+  // The build runs at once: Bricks inserts the results and sends the event in the same task, and the
+  // start states must be set before the next paint (no pre-hide after lm-ready: a later build let the
+  // new entrances paint in full, then vanish and come back). Only the refresh of every trigger, the
+  // costly part, waits for the events of one change to be over.
   function onContent() {
+    if (!running) {
+      return;
+    }
+    build(current, document, BUILDER, false);
     clearTimeout(contentTimer);
     contentTimer = setTimeout(function () {
-      if (!running) {
-        return;
+      if (running) {
+        measure();
       }
-      build(current, document, BUILDER, false);
-      measure();
     }, CONTENT_MS);
   }
 

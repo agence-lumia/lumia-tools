@@ -52,6 +52,9 @@ final class ClassManager {
 	/** A snippet file larger than this is not read. */
 	const SNIPPET_MAX_BYTES = 2097152;
 
+	/** Offset under which a comment block counts as the header of a snippet file (after `<?php` and a line comment). */
+	const SNIPPET_HEADER_START = 256;
+
 	/** Bytes of a snippet file searched for its status when it has no header comment block. */
 	const SNIPPET_HEADER_BYTES = 8192;
 
@@ -311,9 +314,10 @@ final class ClassManager {
 	 * @param string $source Contents of the file.
 	 */
 	public static function snippet_status( string $source ): string {
-		// The header is the first comment block, whatever the length of the description before the
-		// status; without one, its first bytes.
-		$end    = strpos( $source, '*/' );
+		// The header is the comment block that opens the file, whatever the length of the description
+		// before the status; without one, its first bytes (a comment further down is code, not the header).
+		$start  = strpos( $source, '/*' );
+		$end    = false === $start || $start > self::SNIPPET_HEADER_START ? false : strpos( $source, '*/', $start );
 		$header = false === $end ? substr( $source, 0, self::SNIPPET_HEADER_BYTES ) : substr( $source, 0, $end );
 
 		return 1 === preg_match( '/@status:[ \t]*(\w+)/', $header, $match ) ? $match[1] : '';
