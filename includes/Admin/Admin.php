@@ -60,6 +60,7 @@ class Admin {
 		$this->settings = $settings;
 
 		add_action( 'admin_menu', [ $this, 'add_menu_page' ] );
+		add_filter( 'plugin_action_links_' . plugin_basename( LUMIA_PLUGIN_FILE ), [ $this, 'add_plugin_action_links' ] );
 		add_filter( 'parent_file', [ $this, 'filter_parent_file' ] );
 		add_filter( 'submenu_file', [ $this, 'filter_submenu_file' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
@@ -107,6 +108,32 @@ class Admin {
 		);
 
 		$this->add_submenus();
+	}
+
+	/**
+	 * Adds a "Settings" link before "Deactivate" in the plugins list.
+	 *
+	 * @param array<int|string, string> $links Action links of the plugin row.
+	 * @return array<int|string, string>
+	 */
+	public function add_plugin_action_links( $links ): array {
+		$links = (array) $links;
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $links;
+		}
+
+		$url = add_query_arg(
+			[
+				'page' => $this->slug,
+				'tab'  => 'settings',
+			],
+			admin_url( 'admin.php' )
+		);
+
+		return array_merge(
+			[ 'settings' => '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'lumia-tools' ) . '</a>' ],
+			$links
+		);
 	}
 
 	/**
