@@ -488,7 +488,7 @@ class Module extends AbstractModule {
 				'hide_color_scheme'       => true,
 				'hide_keyboard_shortcuts' => true,
 				'hide_toolbar_toggle'     => true,
-				'hide_app_passwords'      => true,
+				'hide_app_passwords'      => false,
 				'hide_language'           => false,
 				'hide_bio'                => false,
 				'hide_sessions'           => false,
