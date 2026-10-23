@@ -512,6 +512,22 @@ class Controls {
 			]
 		);
 
+		$style_labels = [
+			'odometer' => __( 'Odometer', 'lumia-tools' ),
+			'count'    => __( 'Count', 'lumia-tools' ),
+		];
+
+		$controls['_lmCounterStyle'] = self::variable(
+			'--lm-counter-style',
+			[
+				'label'       => __( 'Counter style', 'lumia-tools' ),
+				'type'        => 'select',
+				'options'     => self::options( Effects::COUNTER_STYLES, $style_labels ),
+				'placeholder' => self::site_default_placeholder( 'effects.counter.counter_style', 'odometer', $style_labels ),
+				'description' => __( 'Odometer: each digit rolls on its column to the final number. Count: the number counts up from the start value (1, 2, 3...).', 'lumia-tools' ),
+			]
+		);
+
 		// The placeholder is the reference value (auto), as for the number fields.
 		$width_labels = [
 			'auto'  => __( 'Dynamic width', 'lumia-tools' ),

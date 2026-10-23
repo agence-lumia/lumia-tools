@@ -36,6 +36,7 @@ $lm_keys = array(
 	'_lmScale',
 	'_lmFromOpacity',
 	'_lmStartValue',
+	'_lmCounterStyle',
 	'_lmCounterWidth',
 	'_lmUnderlineSep',
 	'_lmUnderlineThickness',
@@ -48,7 +49,7 @@ $lm_count = count( $lm_keys );
 $lm_separators = array( '_lmEffectSep', '_lmTriggerSep', '_lmTimingSep', '_lmFeelSep', '_lmParamsSep', '_lmUnderlineSep' );
 
 // Controls that must explain themselves, with their unit.
-$lm_described = array( '_lmLoad', '_lmStartAt', '_lmEndAt', '_lmDuration', '_lmDelay', '_lmStagger', '_lmDistance', '_lmBlur', '_lmScale', '_lmFromOpacity', '_lmStartValue', '_lmCounterWidth', '_lmUnderlineThickness', '_lmUnderlineGap' );
+$lm_described = array( '_lmLoad', '_lmStartAt', '_lmEndAt', '_lmDuration', '_lmDelay', '_lmStagger', '_lmDistance', '_lmBlur', '_lmScale', '_lmFromOpacity', '_lmStartValue', '_lmCounterStyle', '_lmCounterWidth', '_lmUnderlineThickness', '_lmUnderlineGap' );
 
 // Number fields whose empty value shows the inherited one: a static placeholder as fallback.
 $lm_placeholders = array( '_lmDuration', '_lmDelay', '_lmStagger', '_lmDistance', '_lmBlur', '_lmScale', '_lmFromOpacity', '_lmStartValue' );
@@ -73,6 +74,7 @@ $lm_variables = array(
 	'_lmScale'              => '--lm-scale',
 	'_lmFromOpacity'        => '--lm-from-opacity',
 	'_lmStartValue'         => '--lm-start-value',
+	'_lmCounterStyle'       => '--lm-counter-style',
 	'_lmCounterWidth'       => '--lm-counter-width',
 	'_lmUnderlineThickness' => '--lm-underline-thickness',
 	'_lmUnderlineGap'       => '--lm-underline-gap',
@@ -196,6 +198,7 @@ $lm_expect   = array(
 	array( '_lmDuration', 'required', array( '_lmTempo', '=', 'custom' ) ),
 	array( '_lmEaseCustom', 'required', array( '_lmEase', '=', 'custom' ) ),
 	array( '_lmUnderlineColor', 'type', 'color' ),
+	array( '_lmCounterStyle', 'type', 'select' ),
 	array( '_lmCounterWidth', 'type', 'select' ),
 	array( '_lmHelp', 'type', 'info' ),
 );

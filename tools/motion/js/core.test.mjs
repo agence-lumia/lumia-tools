@@ -49,6 +49,7 @@ const CFG = {
       duration: 1.35,
       start_value: 0,
       counter_width: "auto",
+      counter_style: "odometer",
     },
     underline: {},
   },
@@ -318,6 +319,28 @@ test("resolve: counter width, auto by default, fixed when asked", () => {
   assert.notEqual(
     core.signature(core.resolve("counter", {}, CFG)),
     core.signature(core.resolve("counter", { "counter-width": "fixed" }, CFG)),
+  );
+});
+
+test("resolve: counter style, odometer by default, count when asked", () => {
+  assert.equal(core.resolve("counter", {}, CFG).counterStyle, "odometer");
+  assert.equal(core.resolve("counter", { "counter-style": "count" }, CFG).counterStyle, "count");
+  assert.equal(core.resolve("counter", { "counter-style": " COUNT " }, CFG).counterStyle, "count");
+  const site = { ...CFG, effects: { ...CFG.effects, counter: { ...CFG.effects.counter, counter_style: "count" } } };
+  assert.equal(core.resolve("counter", {}, site).counterStyle, "count");
+  assert.equal(core.resolve("counter", { "counter-style": "odometer" }, site).counterStyle, "odometer");
+  const bad = core.resolve("counter", { "counter-style": "flip" }, CFG);
+  assert.equal(bad.counterStyle, "odometer");
+  assert.ok(bad.warnings.some((w) => /counter style/i.test(w)), bad.warnings.join(" "));
+  // A site saved before the setting existed has no counter_style: the odometer, as before.
+  const { counter_style: _, ...former } = CFG.effects.counter;
+  const before = core.resolve("counter", {}, { ...CFG, effects: { ...CFG.effects, counter: former } });
+  assert.equal(before.counterStyle, "odometer");
+  assert.equal(before.warnings.length, 0);
+  assert.equal(core.resolve("fade", { "counter-style": "count" }, CFG).counterStyle, "odometer");
+  assert.notEqual(
+    core.signature(core.resolve("counter", {}, CFG)),
+    core.signature(core.resolve("counter", { "counter-style": "count" }, CFG)),
   );
 });
 
@@ -757,5 +780,90 @@ test("counterEase: a custom curve that would overshoot falls back to smooth", ()
     const got = counter("custom", curve);
     assert.equal(got.easing, smooth, curve);
     assert.match(got.warning, /smooth/, curve);
+  }
+});
+
+test("counterProgress: the curve of counterEase as a function, never past the value", () => {
+  const progress = (ease, custom) => core.counterProgress(core.resolve("counter", { ease, "ease-custom": custom }, CFG));
+
+  const linear = progress("linear", "");
+  for (const p of [0, 0.25, 0.5, 1]) {
+    assert.equal(linear(p), p);
+  }
+
+  // Smooth, and snappy / bouncy which a counter reads as smooth: the exact spring of the linear() token.
+  const smooth = core.spring(core.BOUNCE.smooth).ease;
+  for (const ease of ["smooth", "snappy", "bouncy"]) {
+    const fn = progress(ease, "");
+    for (const p of [0, 0.1, 0.3, 0.6, 0.9, 1]) {
+      assert.equal(fn(p), smooth(p), `${ease} at ${p}`);
+    }
+  }
+
+  const inside = progress("custom", "cubic-bezier(0.2, 0, 0.3, 1)");
+  const ref = core.bezier(0.2, 0, 0.3, 1);
+  for (const p of [0.1, 0.5, 0.9]) {
+    assert.equal(inside(p), ref(p));
+  }
+
+  // A custom curve that would overshoot: smooth, as counterEase says.
+  const over = progress("custom", "cubic-bezier(0.3, 1.4, 0.5, 1)");
+  for (const p of [0.1, 0.5, 0.9]) {
+    assert.equal(over(p), smooth(p));
+  }
+
+  // Monotonic, from 0 to 1: a count never goes back nor past its value.
+  for (const fn of [linear, progress("smooth", ""), inside]) {
+    let last = 0;
+    for (let i = 0; i <= 200; i++) {
+      const v = fn(i / 200);
+      assert.ok(v >= last - 1e-12 && v <= 1, `step ${i}: ${v}`);
+      last = v;
+    }
+    assert.equal(fn(0), 0);
+    assert.equal(fn(1), 1);
+  }
+});
+
+test("formatCounter: digits pads the integer part with zeros, as the fixed odometer", () => {
+  const p = core.parseCounter("1 250");
+  assert.equal(core.formatCounter(5, p, 4), "0 005");
+  assert.equal(core.formatCounter(0, p, 4), "0 000");
+  assert.equal(core.formatCounter(1250, p, 4), "1 250");
+  assert.equal(core.formatCounter(1250, p), "1 250");
+  assert.equal(core.formatCounter(5, p), "5");
+  const d = core.parseCounter("4,8");
+  assert.equal(core.formatCounter(0.25, d, 1), "0,3");
+  assert.equal(core.formatCounter(4.8, d), "4,8");
+});
+
+test("count style: every written frame keeps the format, the last one is the text as written", () => {
+  // What the engine writes on a frame (countWrite): prefix + formatCounter(value) + suffix.
+  const frames = (source, from, digits) => {
+    const fmt = core.parseCounter(source);
+    assert.ok(fmt, source);
+    const ease = core.counterProgress(core.resolve("counter", {}, CFG));
+    const out = [];
+    for (let i = 0; i < 60; i++) {
+      out.push(fmt.prefix + core.formatCounter(from + (fmt.value - from) * ease(i / 60), fmt, digits) + fmt.suffix);
+    }
+    out.push(fmt.prefix + core.formatCounter(fmt.value, fmt, digits) + fmt.suffix);
+    return { fmt, out };
+  };
+  for (const source of ["5", "620", "11 000", "+ 36 000 €", "4,8", "-12", "1.250,75"]) {
+    const { fmt, out } = frames(source, 0);
+    assert.equal(out[out.length - 1], source, source);
+    for (const text of out) {
+      assert.ok(text.startsWith(fmt.prefix) && text.endsWith(fmt.suffix), `${source}: ${text}`);
+      const shown = text.slice(fmt.prefix.length, text.length - fmt.suffix.length);
+      // The decimals of the written value on every frame.
+      const fraction = fmt.decimal ? shown.split(fmt.decimal)[1] || "" : "";
+      assert.equal(fraction.length, fmt.decimals, `${source}: ${text}`);
+    }
+  }
+  // Fixed width: the same number of characters on every frame.
+  const { out } = frames("11 000", 0, 5);
+  for (const text of out) {
+    assert.equal(text.length, "11 000".length, text);
   }
 });
