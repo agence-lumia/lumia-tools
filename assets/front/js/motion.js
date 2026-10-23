@@ -1010,46 +1010,105 @@
   }
 
   // Writes a value in the format of the page (core.formatCounter, the parser's own formatter),
-  // only when the text changes.
+  // only when the text changes. With cells (fixed width in a font without tabular digits), each
+  // digit gets a box of the widest digit's width.
   function countWrite(handle, value) {
     var fmt = handle.fmt;
     var next = fmt.prefix + core.formatCounter(value, fmt, handle.digits) + fmt.suffix;
-    if (handle.text.nodeValue !== next) {
-      handle.text.nodeValue = next;
+    if (handle.last === next) {
+      return;
+    }
+    handle.last = next;
+    var root = handle.root;
+    while (root.firstChild) {
+      root.removeChild(root.firstChild);
+    }
+    if (!handle.cell) {
+      root.appendChild(document.createTextNode(next));
+      return;
+    }
+    var run = "";
+    for (var i = 0; i < next.length; i++) {
+      var ch = next.charAt(i);
+      if (!/\d/.test(ch)) {
+        run += ch;
+        continue;
+      }
+      if (run) {
+        root.appendChild(document.createTextNode(run));
+        run = "";
+      }
+      var box = document.createElement("span");
+      box.style.cssText = "display:inline-block;text-align:center;width:" + handle.cell + "px";
+      box.textContent = ch;
+      root.appendChild(box);
+    }
+    if (run) {
+      root.appendChild(document.createTextNode(run));
     }
   }
 
-  /* Count style: a <span> replaces the text node and shows the value, counted from the start
-   * value to the written one on every frame with the counter curve (core.counterProgress, the
-   * curve the odometer gets as CSS). The span stays once the value is written, as the NumberFlow
-   * element does, and is hidden from assistive technologies the same way (handle.flow). Digits
-   * are tabular, so the number does not jitter while it changes; fixed width pads the integer
-   * part with zeros to the digits of the written value, as the odometer does. */
+  // Width of the widest digit when the font draws them at different widths even with
+  // tabular-nums (no tnum feature: Georgia), else 0. Measured in the shadow root, so in the
+  // element's own font.
+  function countCell(root) {
+    var probes = [];
+    for (var d = 0; d < 10; d++) {
+      var probe = document.createElement("span");
+      probe.style.cssText = "display:inline-block";
+      probe.textContent = String(d);
+      root.appendChild(probe);
+      probes.push(probe);
+    }
+    var min = Infinity;
+    var max = 0;
+    probes.forEach(function (probe) {
+      var w = probe.getBoundingClientRect().width;
+      min = Math.min(min, w);
+      max = Math.max(max, w);
+      root.removeChild(probe);
+    });
+    return max - min > 0.01 ? Math.ceil(max * 100) / 100 : 0;
+  }
+
+  /* Count style: an <lm-count> element replaces the text node and shows the value, counted from
+   * the start value to the written one on every frame with the counter curve
+   * (core.counterProgress, the curve the odometer gets as CSS). A custom tag, as
+   * <lm-number-flow>: theme rules aimed at the spans of a stat (".stat__value span") leave it
+   * alone. It stays once the value is written, as the NumberFlow element does, and is hidden
+   * from assistive technologies the same way (handle.flow). Digits are tabular, so the number
+   * does not jitter while it changes; fixed width pads the integer part with zeros to the digits
+   * of the written value, as the odometer does, and boxes each digit when the font has no
+   * tabular digits (the width would change on every frame). */
   var countAdapter = {
     mount: function (node, fmt, opts) {
-      if (!node || !node.parentNode || !fmt) {
+      var host = document.createElement("lm-count");
+      // The digits live in a shadow root, as NumberFlow's do: innerText leaves them out, so a
+      // rendering crawler reads the number once, from the .lm-sr copy, not "620620". Without
+      // shadow DOM the text stays as written, as the odometer does without canAnimate.
+      if (!node || !node.parentNode || !fmt || typeof host.attachShadow !== "function") {
         return null;
       }
       var o = opts || {};
-      var span = document.createElement("span");
-      span.className = "lm-count";
-      span.style.fontVariantNumeric = "tabular-nums";
-      // The digits live in a shadow root, as NumberFlow's do: innerText leaves them out, so a
-      // rendering crawler reads the number once, from the .lm-sr copy, not "620620".
-      var root = typeof span.attachShadow === "function" ? span.attachShadow({ mode: "open" }) : span;
+      host.style.fontVariantNumeric = "tabular-nums";
       var handle = {
-        flow: span,
+        flow: host,
         node: node,
         fmt: fmt,
-        text: root.appendChild(document.createTextNode("")),
+        root: host.attachShadow({ mode: "open" }),
+        last: null,
+        cell: 0,
         from: typeof o.from === "number" && isFinite(o.from) ? o.from : 0,
         digits: o.fixed ? Math.abs(fmt.value).toFixed(fmt.decimals).split(".")[0].length : 0,
         timer: 0,
         endTimer: 0,
         frame: 0,
       };
+      node.parentNode.replaceChild(host, node);
+      if (o.fixed) {
+        handle.cell = countCell(handle.root);
+      }
       countWrite(handle, handle.from);
-      node.parentNode.replaceChild(span, node);
       return handle;
     },
 
@@ -1089,6 +1148,10 @@
           handle.frame = 0;
           if (t0 < 0) {
             t0 = now;
+            // Counted from the first frame, which may come late (a busy page): the fallback
+            // must not cut the count short.
+            clearTimeout(handle.endTimer);
+            handle.endTimer = setTimeout(end, ms + COUNT_END_MARGIN_MS);
           }
           var p = ms > 0 ? (now - t0) / ms : 1;
           if (p >= 1) {
