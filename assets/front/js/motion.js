@@ -980,6 +980,9 @@
    *
    * Without the adapter after COUNTER_WAIT_MS (blocked file, browser without module
    * support), or when NumberFlow cannot animate in this browser, the text stays as written.
+   *
+   * The count style (options.counterStyle "count") counts the value up instead, written frame
+   * by frame by countAdapter below, with the same interface: it never waits for NumberFlow.
    * ================================================================ */
 
   var COUNTER_WAIT_MS = 3000;
@@ -992,6 +995,132 @@
   function counterAdapter() {
     var adapter = window.lumiaMotionCounter;
     return adapter && typeof adapter.mount === "function" && typeof adapter.play === "function" ? adapter : null;
+  }
+
+  // Margin over the expected end before the count writes its value anyway (a hidden tab runs no frame).
+  var COUNT_END_MARGIN_MS = 150;
+
+  function countStop(handle) {
+    clearTimeout(handle.timer);
+    clearTimeout(handle.endTimer);
+    cancelAnimationFrame(handle.frame);
+    handle.timer = 0;
+    handle.endTimer = 0;
+    handle.frame = 0;
+  }
+
+  // Writes a value in the format of the page (core.formatCounter, the parser's own formatter),
+  // only when the text changes.
+  function countWrite(handle, value) {
+    var fmt = handle.fmt;
+    var next = fmt.prefix + core.formatCounter(value, fmt, handle.digits) + fmt.suffix;
+    if (handle.text.nodeValue !== next) {
+      handle.text.nodeValue = next;
+    }
+  }
+
+  /* Count style: a <span> replaces the text node and shows the value, counted from the start
+   * value to the written one on every frame with the counter curve (core.counterProgress, the
+   * curve the odometer gets as CSS). The span stays once the value is written, as the NumberFlow
+   * element does, and is hidden from assistive technologies the same way (handle.flow). Digits
+   * are tabular, so the number does not jitter while it changes; fixed width pads the integer
+   * part with zeros to the digits of the written value, as the odometer does. */
+  var countAdapter = {
+    mount: function (node, fmt, opts) {
+      if (!node || !node.parentNode || !fmt) {
+        return null;
+      }
+      var o = opts || {};
+      var span = document.createElement("span");
+      span.className = "lm-count";
+      span.style.fontVariantNumeric = "tabular-nums";
+      // The digits live in a shadow root, as NumberFlow's do: innerText leaves them out, so a
+      // rendering crawler reads the number once, from the .lm-sr copy, not "620620".
+      var root = typeof span.attachShadow === "function" ? span.attachShadow({ mode: "open" }) : span;
+      var handle = {
+        flow: span,
+        node: node,
+        fmt: fmt,
+        text: root.appendChild(document.createTextNode("")),
+        from: typeof o.from === "number" && isFinite(o.from) ? o.from : 0,
+        digits: o.fixed ? Math.abs(fmt.value).toFixed(fmt.decimals).split(".")[0].length : 0,
+        timer: 0,
+        endTimer: 0,
+        frame: 0,
+      };
+      countWrite(handle, handle.from);
+      node.parentNode.replaceChild(span, node);
+      return handle;
+    },
+
+    play: function (handle, opts) {
+      if (!handle || !handle.flow.isConnected) {
+        return;
+      }
+      countStop(handle);
+      var o = opts || {};
+      var ms = Math.max(0, (Number(o.duration) || 0) * 1000);
+      var delay = Math.max(0, (Number(o.delay) || 0) * 1000);
+      var ease =
+        typeof o.ease === "function"
+          ? o.ease
+          : function (p) {
+              return p;
+            };
+      var from = handle.from;
+      var to = handle.fmt.value;
+      var ended = false;
+      // The last write is the parsed value itself: the text ends exactly as written.
+      var end = function () {
+        if (ended) {
+          return;
+        }
+        ended = true;
+        countStop(handle);
+        countWrite(handle, to);
+        if (typeof o.onEnd === "function") {
+          o.onEnd();
+        }
+      };
+      handle.timer = setTimeout(function () {
+        handle.timer = 0;
+        var t0 = -1;
+        var tick = function (now) {
+          handle.frame = 0;
+          if (t0 < 0) {
+            t0 = now;
+          }
+          var p = ms > 0 ? (now - t0) / ms : 1;
+          if (p >= 1) {
+            end();
+            return;
+          }
+          countWrite(handle, from + (to - from) * ease(p));
+          handle.frame = requestAnimationFrame(tick);
+        };
+        handle.frame = requestAnimationFrame(tick);
+        handle.endTimer = setTimeout(end, ms + COUNT_END_MARGIN_MS);
+      }, delay);
+    },
+
+    reset: function (handle) {
+      if (!handle) {
+        return;
+      }
+      countStop(handle);
+      if (handle.flow.parentNode) {
+        handle.flow.parentNode.replaceChild(handle.node, handle.flow);
+      }
+    },
+  };
+
+  function isCount(item) {
+    return item.options.counterStyle === "count";
+  }
+
+  // The adapter of an item: the count style is always there, the odometer once motion-counter.js ran.
+  function counterAdapterFor(item) {
+    return isCount(item) ? countAdapter : counterAdapter();
   }
 
   // The text node holding the number and its format, or { reason } when there is none.
@@ -1029,7 +1158,7 @@
 
   // Replaces the number with its NumberFlow element, at the start value. False when it stays as written.
   function counterMount(item) {
-    var adapter = counterAdapter();
+    var adapter = counterAdapterFor(item);
     var source = counterSource(item.el);
     if (source.reason) {
       logOnce(item.el, describe(item.el) + " left as written: " + source.reason + ".");
@@ -1058,7 +1187,11 @@
       }
     }
     if (!handle) {
-      logOnce(item.el, describe(item.el) + " left as written: NumberFlow cannot animate in this browser.");
+      logOnce(
+        item.el,
+        describe(item.el) +
+          (isCount(item) ? " left as written: the counter could not be mounted." : " left as written: NumberFlow cannot animate in this browser.")
+      );
       return false;
     }
     handle.flow.setAttribute("aria-hidden", "true");
@@ -1104,6 +1237,7 @@
       duration: o.tweenDuration,
       delay: o.delay,
       easing: counterEasing(item),
+      ease: core.counterProgress(o),
       onEnd: function () {
         if (item.state === "playing") {
           item.state = "done";
@@ -1176,7 +1310,7 @@
   var counter = {
     start: function (list) {
       list.forEach(function (item) {
-        if (counterAdapter()) {
+        if (counterAdapterFor(item)) {
           counterPrepare(item);
         } else if (counterGaveUp) {
           settle(item);
@@ -1198,7 +1332,7 @@
 
     // Builder: rolls again from the start value.
     preview: function (item) {
-      if (!counterAdapter() || !counterMount(item)) {
+      if (!counterAdapterFor(item) || !counterMount(item)) {
         return;
       }
       item.state = "pending";

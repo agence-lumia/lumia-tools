@@ -394,17 +394,43 @@
       return { easing: "linear", warning: warning };
     }
     if (o.easeKey === "custom" && o.curve) {
-      var v = String(o.curve).split(",").map(parseFloat);
-      if (v.length === 4 && v[1] >= 0 && v[1] <= 1 && v[3] >= 0 && v[3] <= 1) {
+      if (counterBezier(o)) {
         return { easing: "cubic-bezier(" + o.curve + ")", warning: warning };
       }
       warning = "Easing cubic-bezier(" + o.curve + ") goes past the counter value: smooth curve used.";
     }
-    var key = has(BOUNCE, o.easeKey) ? o.easeKey : "smooth";
+    var key = counterSpringKey(o);
     if (!has(counterLinearCache, key)) {
       counterLinearCache[key] = cssLinear(BOUNCE[key]).linear;
     }
     return { easing: counterLinearCache[key], warning: warning };
+  }
+
+  // The custom curve of a counter when both its y values stay in [0, 1], else null.
+  function counterBezier(o) {
+    if (o.easeKey !== "custom" || !o.curve) {
+      return null;
+    }
+    var v = String(o.curve).split(",").map(parseFloat);
+    return v.length === 4 && v[1] >= 0 && v[1] <= 1 && v[3] >= 0 && v[3] <= 1 ? v : null;
+  }
+
+  function counterSpringKey(o) {
+    return has(BOUNCE, o.easeKey) ? o.easeKey : "smooth";
+  }
+
+  // The same curve as counterEase() as a function of the progress (0 to 1 over tweenDuration),
+  // for the count style, which writes the value itself on every frame. The spring is the exact
+  // one, of which counterEase() gives the linear() approximation.
+  function counterProgress(o) {
+    if (o.easeKey === "linear") {
+      return identity;
+    }
+    var v = counterBezier(o);
+    if (v) {
+      return bezier(v[0], v[1], v[2], v[3]);
+    }
+    return spring(BOUNCE[counterSpringKey(o)]).ease;
   }
 
   /* ================================================================
@@ -412,6 +438,7 @@
    * ================================================================ */
 
   var COUNTER_WIDTHS = ["auto", "fixed"];
+  var COUNTER_STYLES = ["odometer", "count"];
 
   var TEMPOS = { "very-fast": 0.5, fast: 0.75, normal: 1, slow: 1.5, "very-slow": 2 };
 
@@ -657,6 +684,19 @@
       counterWidth = typedWidth || (COUNTER_WIDTHS.indexOf(siteWidth) > -1 ? siteWidth : "auto");
     }
 
+    // Counter style: "odometer" rolls the digits (NumberFlow), "count" counts the value up.
+    // Same rule as the width; anything else is "odometer", the behaviour of every earlier counter.
+    var counterStyle = "odometer";
+    if (family === "counter") {
+      var typedStyle = text(raw["counter-style"]).toLowerCase();
+      var siteStyle = text(settings.counter_style).toLowerCase();
+      if (typedStyle !== "" && COUNTER_STYLES.indexOf(typedStyle) === -1) {
+        warnings.push("Invalid counter style " + JSON.stringify(typedStyle) + ": site value used.");
+        typedStyle = "";
+      }
+      counterStyle = typedStyle || (COUNTER_STYLES.indexOf(siteStyle) > -1 ? siteStyle : "odometer");
+    }
+
     return {
       effect: effect,
       family: family,
@@ -679,6 +719,7 @@
       fromOpacity: pickNumber("from_opacity", raw, settings, warnings),
       startValue: pickNumber("start_value", raw, settings, warnings),
       counterWidth: counterWidth,
+      counterStyle: counterStyle,
       warnings: warnings,
     };
   }
@@ -700,6 +741,7 @@
       o.fromOpacity,
       o.startValue,
       o.counterWidth,
+      o.counterStyle,
     ]);
   }
 
@@ -728,12 +770,18 @@
     return out;
   }
 
-  function formatCounter(value, fmt) {
+  // digits (optional): pads the integer part with zeros to that many digits, as the fixed width
+  // of the odometer does ("0 005" on the way to "1 250").
+  function formatCounter(value, fmt, digits) {
     var n = typeof value === "number" && isFinite(value) ? value : 0;
     var decimals = fmt && fmt.decimals > 0 ? fmt.decimals : 0;
     var fixed = Math.abs(n).toFixed(decimals);
     var parts = fixed.split(".");
-    var out = groupDigits(parts[0], (fmt && fmt.group) || "");
+    var integer = parts[0];
+    while (typeof digits === "number" && integer.length < digits && integer.length < 21) {
+      integer = "0" + integer;
+    }
+    var out = groupDigits(integer, (fmt && fmt.group) || "");
     if (parts.length > 1) {
       out += (fmt && fmt.decimal) || ".";
       out += parts[1];
@@ -855,6 +903,7 @@
     cssLinear: cssLinear,
     resolveEase: resolveEase,
     counterEase: counterEase,
+    counterProgress: counterProgress,
     tempoFactor: tempoFactor,
     resolve: resolve,
     signature: signature,

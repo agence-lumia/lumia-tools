@@ -168,6 +168,10 @@ final class SettingsSanitizer {
 			return self::keyword( $value, Effects::COUNTER_WIDTHS, 'auto', (string) $fallback );
 		}
 
+		if ( 'counter_style' === $key ) {
+			return self::keyword( $value, Effects::COUNTER_STYLES, 'odometer', (string) $fallback );
+		}
+
 		if ( 'start_at' === $key || 'end_at' === $key ) {
 			$text = is_string( $value ) ? trim( $value ) : '';
 			return self::is_percent( $text ) ? $text : (string) $fallback;

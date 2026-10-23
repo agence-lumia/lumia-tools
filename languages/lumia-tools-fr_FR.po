@@ -5736,6 +5736,21 @@ msgstr "Opacité de départ"
 msgid "Counter start value"
 msgstr "Valeur de départ du compteur"
 
+msgid "Counter style"
+msgstr "Style du compteur"
+
+msgid "Odometer"
+msgstr "Odomètre"
+
+msgid "Count"
+msgstr "Comptage"
+
+msgid "Odometer: each digit rolls on its column to the final number. Count: the number counts up from the start value (1, 2, 3...)."
+msgstr "Odomètre : chaque chiffre défile sur sa colonne jusqu'au nombre final. Comptage : le nombre compte depuis la valeur de départ (1, 2, 3...)."
+
+msgid "Style"
+msgstr "Style"
+
 msgid "Counter width"
 msgstr "Largeur du compteur"
 

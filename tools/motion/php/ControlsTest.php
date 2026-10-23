@@ -22,6 +22,8 @@ return [
 		lm_assert( $controls['_lmEase']['placeholder'] === 'Smooth (site default)', 'ease: ' . $controls['_lmEase']['placeholder'] );
 		lm_assert( $controls['_lmTempo']['placeholder'] === 'Normal (site default)', 'tempo: ' . $controls['_lmTempo']['placeholder'] );
 		lm_assert( $controls['_lmCounterWidth']['placeholder'] === 'Dynamic width (site default)', 'width: ' . $controls['_lmCounterWidth']['placeholder'] );
+		lm_assert( $controls['_lmCounterStyle']['placeholder'] === 'Odometer (site default)', 'style: ' . $controls['_lmCounterStyle']['placeholder'] );
+		lm_assert( [ 'odometer', 'count' ] === array_keys( $controls['_lmCounterStyle']['options'] ), 'style options' );
 		lm_assert( $controls['_lmEndEdge']['placeholder'] === 'Bottom (site default)', 'end edge: ' . $controls['_lmEndEdge']['placeholder'] );
 	},
 	'former stored values are named as the engine reads them' => static function (): void {
@@ -35,7 +37,12 @@ return [
 			'lumia_module_motion' => [
 				'ease'    => 'bouncy',
 				'tempo'   => 'slow',
-				'effects' => [ 'counter' => [ 'counter_width' => 'fixed' ] ],
+				'effects' => [
+					'counter' => [
+						'counter_width' => 'fixed',
+						'counter_style' => 'count',
+					],
+				],
 			],
 		];
 		$controls                   = Controls::definitions();
@@ -43,6 +50,7 @@ return [
 		lm_assert( $controls['_lmEase']['placeholder'] === 'Bouncy (site default)', 'ease: ' . $controls['_lmEase']['placeholder'] );
 		lm_assert( $controls['_lmTempo']['placeholder'] === 'Slow (site default)', 'tempo: ' . $controls['_lmTempo']['placeholder'] );
 		lm_assert( $controls['_lmCounterWidth']['placeholder'] === 'Fixed width (site default)', 'width: ' . $controls['_lmCounterWidth']['placeholder'] );
+		lm_assert( $controls['_lmCounterStyle']['placeholder'] === 'Count (site default)', 'style: ' . $controls['_lmCounterStyle']['placeholder'] );
 	},
 	'underline controls and stylesheet name the same variables' => static function (): void {
 		$GLOBALS['lm_test_options'] = [];

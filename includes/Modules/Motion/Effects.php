@@ -34,6 +34,9 @@ final class Effects {
 	/** Width of a counter: grows with its digits (auto), or holds every digit from the start (fixed). */
 	const COUNTER_WIDTHS = [ 'auto', 'fixed' ];
 
+	/** Style of a counter: the digits roll on their columns (odometer), or the value counts up frame by frame (count). */
+	const COUNTER_STYLES = [ 'odometer', 'count' ];
+
 	/** Viewport edges accepted for the start and end markers. */
 	const EDGES = [ 'top', 'center', 'bottom' ];
 
@@ -62,6 +65,7 @@ final class Effects {
 		'lm-from-opacity',
 		'lm-start-value',
 		'lm-counter-width',
+		'lm-counter-style',
 		'lm-load',
 	];
 
@@ -91,7 +95,7 @@ final class Effects {
 			'lines'     => [ self::FAMILY_TEXT, false, [ 'distance' ] ],
 			'words'     => [ self::FAMILY_TEXT, true, [ 'from_opacity' ] ],
 			'letters'   => [ self::FAMILY_TEXT, true, [ 'from_opacity' ] ],
-			'counter'   => [ self::FAMILY_COUNTER, false, [ 'start_value', 'counter_width' ] ],
+			'counter'   => [ self::FAMILY_COUNTER, false, [ 'start_value', 'counter_width', 'counter_style' ] ],
 			'underline' => [ self::FAMILY_UNDERLINE, false, [] ],
 		];
 
@@ -113,7 +117,7 @@ final class Effects {
 	/**
 	 * Reference value of every setting, per effect.
 	 *
-	 * Numbers are floats, markers and the counter width are strings. Scrub effects have no
+	 * Numbers are floats, markers and the counter width and style are strings. Scrub effects have no
 	 * `duration` and carry `end_edge` / `end_at`. Underline is CSS only and
 	 * has no value.
 	 *
@@ -178,6 +182,7 @@ final class Effects {
 				'duration'      => 1.35,
 				'start_value'   => 0.0,
 				'counter_width' => 'auto',
+				'counter_style' => 'odometer',
 			],
 			'underline' => [],
 		];
