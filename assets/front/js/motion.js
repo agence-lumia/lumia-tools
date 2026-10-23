@@ -1010,65 +1010,86 @@
   }
 
   // Writes a value in the format of the page (core.formatCounter, the parser's own formatter),
-  // only when the text changes. With cells (fixed width in a font without tabular digits), each
-  // digit gets a box of the widest digit's width.
+  // only when the number changes; the prefix and suffix are written once, at mount. With cells
+  // (fixed width in a font without tabular digits), each digit gets a box of the widest digit's
+  // width, and the boxes are rebuilt only when the shape of the number changes.
   function countWrite(handle, value) {
-    var fmt = handle.fmt;
-    var next = fmt.prefix + core.formatCounter(value, fmt, handle.digits) + fmt.suffix;
-    if (handle.last === next) {
+    var num = core.formatCounter(value, handle.fmt, handle.digits);
+    if (handle.last === num) {
       return;
     }
-    handle.last = next;
-    var root = handle.root;
-    while (root.firstChild) {
-      root.removeChild(root.firstChild);
-    }
+    handle.last = num;
+    var box = handle.num;
     if (!handle.cell) {
-      root.appendChild(document.createTextNode(next));
+      if (box.childNodes.length !== 1 || box.firstChild.nodeType !== 3) {
+        box.textContent = "";
+        box.appendChild(document.createTextNode(""));
+      }
+      box.firstChild.nodeValue = num;
       return;
     }
-    var run = "";
-    for (var i = 0; i < next.length; i++) {
-      var ch = next.charAt(i);
-      if (!/\d/.test(ch)) {
-        run += ch;
-        continue;
+    var shape = num.replace(/\d/g, "0");
+    if (handle.shape !== shape) {
+      handle.shape = shape;
+      box.textContent = "";
+      for (var i = 0; i < num.length; i++) {
+        var ch = num.charAt(i);
+        if (/\d/.test(ch)) {
+          var cell = document.createElement("span");
+          cell.style.cssText = "display:inline-block;text-align:center;width:" + handle.cell + "em";
+          box.appendChild(cell);
+        } else {
+          box.appendChild(document.createTextNode(ch));
+        }
       }
-      if (run) {
-        root.appendChild(document.createTextNode(run));
-        run = "";
-      }
-      var box = document.createElement("span");
-      box.style.cssText = "display:inline-block;text-align:center;width:" + handle.cell + "px";
-      box.textContent = ch;
-      root.appendChild(box);
     }
-    if (run) {
-      root.appendChild(document.createTextNode(run));
+    // Same shape: each digit box gets its digit, in order.
+    var digits = num.replace(/\D/g, "");
+    var k = 0;
+    for (var c = box.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 1) {
+        c.textContent = digits.charAt(k++);
+      }
     }
   }
 
-  // Width of the widest digit when the font draws them at different widths even with
+  // Width of the widest digit, in em, when the font draws them at different widths even with
   // tabular-nums (no tnum feature: Georgia), else 0. Measured in the shadow root, so in the
-  // element's own font.
-  function countCell(root) {
-    var probes = [];
-    for (var d = 0; d < 10; d++) {
-      var probe = document.createElement("span");
-      probe.style.cssText = "display:inline-block";
-      probe.textContent = String(d);
-      root.appendChild(probe);
-      probes.push(probe);
+  // element's own font; offsetWidth ignores the transforms of an entrance still at its start
+  // state, ten digits in a row average the rounding, and em follows a fluid font size.
+  function countCell(handle) {
+    var size = parseFloat(window.getComputedStyle(handle.flow).fontSize);
+    if (!(size > 0)) {
+      return 0;
     }
     var min = Infinity;
     var max = 0;
-    probes.forEach(function (probe) {
-      var w = probe.getBoundingClientRect().width;
+    for (var d = 0; d < 10; d++) {
+      var probe = document.createElement("span");
+      probe.style.cssText = "display:inline-block;white-space:nowrap";
+      probe.textContent = new Array(11).join(String(d));
+      handle.root.appendChild(probe);
+      var w = probe.offsetWidth / 10;
+      handle.root.removeChild(probe);
       min = Math.min(min, w);
       max = Math.max(max, w);
-      root.removeChild(probe);
-    });
-    return max - min > 0.01 ? Math.ceil(max * 100) / 100 : 0;
+    }
+    return max - min > 0.01 ? Math.ceil((max / size) * 1000) / 1000 : 0;
+  }
+
+  // Measures the cells again (web fonts loaded since the mount) and redraws when they changed.
+  function countMeasure(handle) {
+    if (!handle.fixed) {
+      return;
+    }
+    var cell = countCell(handle);
+    if (cell !== handle.cell) {
+      handle.cell = cell;
+      handle.shape = null;
+      handle.last = null;
+      // Boxed digits never break apart; plain text wraps as the written text did.
+      handle.num.style.whiteSpace = cell ? "nowrap" : "";
+    }
   }
 
   /* Count style: an <lm-count> element replaces the text node and shows the value, counted from
@@ -1091,23 +1112,28 @@
       }
       var o = opts || {};
       host.style.fontVariantNumeric = "tabular-nums";
+      var root = host.attachShadow({ mode: "open" });
       var handle = {
         flow: host,
         node: node,
         fmt: fmt,
-        root: host.attachShadow({ mode: "open" }),
+        root: root,
+        num: document.createElement("span"),
         last: null,
+        shape: null,
         cell: 0,
+        fixed: !!o.fixed,
         from: typeof o.from === "number" && isFinite(o.from) ? o.from : 0,
         digits: o.fixed ? Math.abs(fmt.value).toFixed(fmt.decimals).split(".")[0].length : 0,
         timer: 0,
         endTimer: 0,
         frame: 0,
       };
+      root.appendChild(document.createTextNode(fmt.prefix));
+      root.appendChild(handle.num);
+      root.appendChild(document.createTextNode(fmt.suffix));
       node.parentNode.replaceChild(host, node);
-      if (o.fixed) {
-        handle.cell = countCell(handle.root);
-      }
+      countMeasure(handle);
       countWrite(handle, handle.from);
       return handle;
     },
@@ -1143,6 +1169,8 @@
       };
       handle.timer = setTimeout(function () {
         handle.timer = 0;
+        // In view by now, its web fonts almost always loaded: the cells measured at mount may be stale.
+        countMeasure(handle);
         var t0 = -1;
         var tick = function (now) {
           handle.frame = 0;
