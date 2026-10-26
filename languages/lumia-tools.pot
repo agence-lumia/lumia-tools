@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Lümia Tools 2.2.5-dev.1\n"
+"Project-Id-Version: Lümia Tools 2.2.5-dev.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/lumia-tools\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T12:26:25+00:00\n"
+"POT-Creation-Date: 2026-10-26T21:00:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -47,6 +47,7 @@ msgstr ""
 #: includes/Admin/Admin.php:147
 #: includes/Modules/ActivityLog/settings-template.php:31
 #: includes/Modules/ImageOptimizer/settings-template.php:19
+#: includes/Modules/McpConnect/settings-template.php:52
 #: includes/Modules/Smtp/settings-template.php:45
 #: templates/admin/settings.php:57
 #: templates/components/sidebar.php:26
@@ -60,7 +61,7 @@ msgid "Overview"
 msgstr ""
 
 #: includes/Admin/Admin.php:146
-#: includes/Modules/ActivityLog/Module.php:482
+#: includes/Modules/ActivityLog/Module.php:486
 #: templates/admin/modules.php:13
 #: templates/components/sidebar.php:20
 msgid "Modules"
@@ -218,6 +219,7 @@ msgstr ""
 #: includes/Modules/ImageOptimizer/BulkProcessor.php:317
 #: includes/Modules/ImageOptimizer/DeliveryProbe.php:697
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:583
+#: includes/Modules/McpConnect/Module.php:321
 #: includes/Modules/Media/Module.php:424
 #: includes/Modules/MenuCreator/Module.php:956
 #: includes/Modules/MenuCreator/Module.php:977
@@ -250,21 +252,21 @@ msgstr ""
 msgid "Invalid parameters."
 msgstr ""
 
-#: includes/Core/Activator.php:104
-#: includes/Core/Plugin.php:160
+#: includes/Core/Activator.php:105
+#: includes/Core/Plugin.php:169
 msgid "Migration from Studio Kyne Mini Tools complete. You can delete the old plugin."
 msgstr ""
 
 #. translators: %s: identifier of the migration step that failed, e.g. post_meta.
-#: includes/Core/Activator.php:109
-#: includes/Core/Plugin.php:115
+#: includes/Core/Activator.php:110
+#: includes/Core/Plugin.php:124
 #, php-format
 msgid "The migration from Studio Kyne Mini Tools stopped at the %s step: Lümia Tools loads none of its modules until it is complete. Do not delete Studio Kyne Mini Tools before then: its uninstallation would erase the data not migrated yet. Deactivate then reactivate Lümia Tools to resume it."
 msgstr ""
 
 #. translators: %s: database error message.
-#: includes/Core/Activator.php:113
-#: includes/Core/Plugin.php:123
+#: includes/Core/Activator.php:114
+#: includes/Core/Plugin.php:132
 #, php-format
 msgid "Database error: %s"
 msgstr ""
@@ -302,7 +304,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:60
 #: includes/Core/Modules.php:62
-#: includes/Modules/ActivityLog/Events.php:44
+#: includes/Modules/ActivityLog/Events.php:45
 msgid "Login"
 msgstr ""
 
@@ -423,11 +425,25 @@ msgstr ""
 msgid "Animate Bricks elements"
 msgstr ""
 
-#: includes/Core/Plugin.php:127
+#: includes/Core/Modules.php:132
+#: includes/Core/Modules.php:134
+#: includes/Modules/McpConnect/SiteHealth.php:361
+msgid "MCP Connect"
+msgstr ""
+
+#: includes/Core/Modules.php:133
+msgid "Add this site to Claude as a connector, with OAuth sign-in and no password."
+msgstr ""
+
+#: includes/Core/Modules.php:135
+msgid "Connect Claude"
+msgstr ""
+
+#: includes/Core/Plugin.php:136
 msgid "The request ended before this step completed (PHP fatal error or timeout): see the PHP error log."
 msgstr ""
 
-#: includes/Core/Plugin.php:141
+#: includes/Core/Plugin.php:150
 msgid "Studio Kyne Mini Tools is still active: Lümia Tools loads none of its modules until it is deactivated."
 msgstr ""
 
@@ -464,126 +480,155 @@ msgstr ""
 msgid "Lümia Tools settings"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:48
+#: includes/Modules/ActivityLog/Events.php:32
+#: includes/Modules/ActivityLog/Module.php:526
+#: includes/Modules/McpConnect/ConsentPage.php:153
+msgid "Claude (MCP)"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:49
 msgid "Login failed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:52
+#: includes/Modules/ActivityLog/Events.php:53
 msgid "Logout"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:56
+#: includes/Modules/ActivityLog/Events.php:57
 msgid "Content created"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:60
+#: includes/Modules/ActivityLog/Events.php:61
 msgid "Content updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:64
+#: includes/Modules/ActivityLog/Events.php:65
 msgid "Content trashed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:68
+#: includes/Modules/ActivityLog/Events.php:69
 msgid "Content restored"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:72
+#: includes/Modules/ActivityLog/Events.php:73
 msgid "Content deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:76
+#: includes/Modules/ActivityLog/Events.php:77
 msgid "Media added"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:80
+#: includes/Modules/ActivityLog/Events.php:81
 msgid "Media updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:84
+#: includes/Modules/ActivityLog/Events.php:85
 msgid "Media deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:88
+#: includes/Modules/ActivityLog/Events.php:89
 msgid "User created"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:92
+#: includes/Modules/ActivityLog/Events.php:93
 msgid "Profile updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:96
+#: includes/Modules/ActivityLog/Events.php:97
 msgid "Role changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:100
+#: includes/Modules/ActivityLog/Events.php:101
+#: includes/Modules/ActivityLog/Module.php:503
 msgid "User deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:104
+#: includes/Modules/ActivityLog/Events.php:105
 msgid "Password reset"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:108
+#: includes/Modules/ActivityLog/Events.php:109
 msgid "Plugin activated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:112
+#: includes/Modules/ActivityLog/Events.php:113
 msgid "Plugin deactivated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:116
+#: includes/Modules/ActivityLog/Events.php:117
 msgid "Plugin installed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:120
+#: includes/Modules/ActivityLog/Events.php:121
 msgid "Plugin updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:124
+#: includes/Modules/ActivityLog/Events.php:125
 msgid "Plugin deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:128
+#: includes/Modules/ActivityLog/Events.php:129
 msgid "Theme activated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:132
+#: includes/Modules/ActivityLog/Events.php:133
 msgid "Theme installed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:136
+#: includes/Modules/ActivityLog/Events.php:137
 msgid "Theme updated"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:140
+#: includes/Modules/ActivityLog/Events.php:141
 msgid "Theme deleted"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:144
+#: includes/Modules/ActivityLog/Events.php:145
 msgid "Setting changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:148
+#: includes/Modules/ActivityLog/Events.php:149
 msgid "Settings changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:152
+#: includes/Modules/ActivityLog/Events.php:153
 msgid "File editing unlocked (danger mode)"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:156
+#: includes/Modules/ActivityLog/Events.php:157
 msgid "File editing locked again"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Events.php:160
+#: includes/Modules/ActivityLog/Events.php:161
 msgid "File written in danger mode"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:165
+msgid "Claude connection authorized"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:169
+msgid "Claude connection denied"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:173
+msgid "Claude connection revoked"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:177
+msgid "Claude token reuse detected"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Events.php:181
+msgid "Claude client registered"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:166
 #: includes/Modules/ActivityLog/settings-template.php:107
 #: includes/Modules/Database/Module.php:120
 #: includes/Modules/Database/settings-template.php:29
+#: includes/Modules/McpConnect/Module.php:278
+#: includes/Modules/McpConnect/settings-template.php:109
 #: includes/Modules/Media/Module.php:359
 #: includes/Modules/Smtp/Module.php:237
 #: includes/Modules/Smtp/settings-template.php:391
@@ -686,15 +731,18 @@ msgstr ""
 #. translators: 1: label, 2: value.
 #: includes/Modules/ActivityLog/Module.php:414
 #: includes/Modules/Files/Module.php:439
+#: includes/Modules/McpConnect/SiteHealth.php:202
 #, php-format
 msgid "%1$s: %2$s"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:455
+#: includes/Modules/ActivityLog/Module.php:459
 msgid "Title"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:456
+#: includes/Modules/ActivityLog/Module.php:460
+#: includes/Modules/McpConnect/settings-template.php:104
+#: includes/Modules/McpConnect/settings-template.php:310
 #: includes/Modules/MenuCreator/settings-template.php:144
 #: includes/Modules/Smtp/Module.php:254
 #: includes/Modules/Smtp/settings-template.php:365
@@ -702,262 +750,307 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:457
+#: includes/Modules/ActivityLog/Module.php:461
 msgid "Slug"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:458
+#: includes/Modules/ActivityLog/Module.php:462
 msgid "Parent"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:459
+#: includes/Modules/ActivityLog/Module.php:463
 msgid "Publication date"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:460
+#: includes/Modules/ActivityLog/Module.php:464
 msgid "Order"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:461
+#: includes/Modules/ActivityLog/Module.php:465
 msgid "Comments"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:462
+#: includes/Modules/ActivityLog/Module.php:466
 msgid "Author"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:463
+#: includes/Modules/ActivityLog/Module.php:467
 msgctxt "post content field"
 msgid "Content"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:464
+#: includes/Modules/ActivityLog/Module.php:468
 msgid "Excerpt"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:465
+#: includes/Modules/ActivityLog/Module.php:469
 #: includes/Modules/Smtp/settings-template.php:213
 msgid "Password"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:466
+#: includes/Modules/ActivityLog/Module.php:470
 msgid "Page builder"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:467
+#: includes/Modules/ActivityLog/Module.php:471
 msgid "Alt text"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:468
+#: includes/Modules/ActivityLog/Module.php:472
 msgid "Email"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:469
+#: includes/Modules/ActivityLog/Module.php:473
 msgid "Display name"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:470
+#: includes/Modules/ActivityLog/Module.php:474
 msgid "Website"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:471
+#: includes/Modules/ActivityLog/Module.php:475
 #: includes/Modules/ActivityLog/settings-template.php:196
 msgid "Roles"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:472
+#: includes/Modules/ActivityLog/Module.php:476
 msgid "Content reassigned to"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:473
+#: includes/Modules/ActivityLog/Module.php:477
 msgid "File"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:474
+#: includes/Modules/ActivityLog/Module.php:478
 msgid "Folder"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:475
+#: includes/Modules/ActivityLog/Module.php:479
 msgid "Version"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:476
+#: includes/Modules/ActivityLog/Module.php:480
 msgid "Network-wide"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:477
+#: includes/Modules/ActivityLog/Module.php:481
 msgid "File type"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:478
+#: includes/Modules/ActivityLog/Module.php:482
 msgid "Setting"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:479
+#: includes/Modules/ActivityLog/Module.php:483
 msgid "Before"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:480
+#: includes/Modules/ActivityLog/Module.php:484
 msgid "After"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:481
+#: includes/Modules/ActivityLog/Module.php:485
 msgid "Changed fields"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:483
+#: includes/Modules/ActivityLog/Module.php:487
 msgid "Source"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:484
+#: includes/Modules/ActivityLog/Module.php:488
 #: includes/Modules/ActivityLog/settings-template.php:84
 #: includes/Modules/Smtp/settings-template.php:372
 msgid "Until"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:485
+#: includes/Modules/ActivityLog/Module.php:489
 msgid "Reason"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:486
+#: includes/Modules/ActivityLog/Module.php:490
 msgid "Turned on by"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:487
+#: includes/Modules/ActivityLog/Module.php:491
 msgid "Operation"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:491
-msgid "Locked by hand"
-msgstr ""
-
 #: includes/Modules/ActivityLog/Module.php:492
-msgid "One hour elapsed"
+msgid "Connection"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:496
-msgid "Saved from the editor"
+#: includes/Modules/ActivityLog/Module.php:493
+msgid "Connection ID"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:497
-msgid "Uploaded"
+#: includes/Modules/ActivityLog/Module.php:494
+#: includes/Modules/McpConnect/settings-template.php:97
+msgid "Client"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:495
+#: includes/Modules/McpConnect/settings-template.php:98
+msgid "Acts as"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:500
+msgid "Revoked by hand"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:501
-msgid "Web interface"
+msgid "All connections revoked"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:502
-msgid "Web interface (AJAX)"
-msgstr ""
-
-#: includes/Modules/ActivityLog/Module.php:503
-msgid "REST API / block editor"
+msgid "Refresh token reused"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:504
-msgid "Scheduled task"
+msgid "Revoked by the client"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:505
+msgid "Expired"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:509
+msgid "Locked by hand"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:510
+msgid "One hour elapsed"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:515
+msgid "Saved from the editor"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:516
+msgid "Uploaded"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:520
+msgid "Web interface"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:521
+msgid "Web interface (AJAX)"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:522
+msgid "REST API / block editor"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:523
+msgid "Scheduled task"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:524
 msgid "WP-CLI"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:506
+#: includes/Modules/ActivityLog/Module.php:525
 msgid "XML-RPC"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:526
+#: includes/Modules/ActivityLog/Module.php:549
 msgid "Limit reached"
 msgstr ""
 
 #. translators: %d: number of failed attempts logged per hour.
-#: includes/Modules/ActivityLog/Module.php:528
+#: includes/Modules/ActivityLog/Module.php:551
 #, php-format
 msgid "Further failed attempts from this IP are not logged for one hour (at most %d per hour)."
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:551
+#. translators: 1: request source ("Claude (MCP)"), 2: connection label.
+#: includes/Modules/ActivityLog/Module.php:562
+#, php-format
+msgctxt "request source and connection label"
+msgid "%1$s (%2$s)"
+msgstr ""
+
+#: includes/Modules/ActivityLog/Module.php:580
 msgid "enabled"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:551
+#: includes/Modules/ActivityLog/Module.php:580
 msgid "disabled"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:583
+#: includes/Modules/ActivityLog/Module.php:612
 msgid "changed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:598
+#: includes/Modules/ActivityLog/Module.php:627
 msgid "yes"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Module.php:598
+#: includes/Modules/ActivityLog/Module.php:627
 msgid "no"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:658
+#: includes/Modules/ActivityLog/Recorder.php:665
 msgid "Site title"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:659
+#: includes/Modules/ActivityLog/Recorder.php:666
 msgid "Tagline"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:660
+#: includes/Modules/ActivityLog/Recorder.php:667
 msgid "WordPress address (URL)"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:661
+#: includes/Modules/ActivityLog/Recorder.php:668
 msgid "Site address (URL)"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:662
+#: includes/Modules/ActivityLog/Recorder.php:669
 msgid "Administration email"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:663
+#: includes/Modules/ActivityLog/Recorder.php:670
 msgid "Open registration"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:664
+#: includes/Modules/ActivityLog/Recorder.php:671
 msgid "Default role"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:665
+#: includes/Modules/ActivityLog/Recorder.php:672
 msgid "Search engine visibility"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:666
+#: includes/Modules/ActivityLog/Recorder.php:673
 msgid "Permalink structure"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:667
+#: includes/Modules/ActivityLog/Recorder.php:674
 msgid "Site language"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:668
+#: includes/Modules/ActivityLog/Recorder.php:675
 msgid "Timezone"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:669
+#: includes/Modules/ActivityLog/Recorder.php:676
 msgid "Homepage displays"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:670
+#: includes/Modules/ActivityLog/Recorder.php:677
 msgid "Homepage"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:671
+#: includes/Modules/ActivityLog/Recorder.php:678
 msgid "Posts page"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:672
+#: includes/Modules/ActivityLog/Recorder.php:679
 msgid "Comments allowed"
 msgstr ""
 
-#: includes/Modules/ActivityLog/Recorder.php:673
+#: includes/Modules/ActivityLog/Recorder.php:680
 msgid "Comments restricted to registered users"
 msgstr ""
 
@@ -2095,6 +2188,7 @@ msgid "Owner"
 msgstr ""
 
 #: includes/Modules/Files/settings-template.php:77
+#: includes/Modules/McpConnect/settings-template.php:105
 #: includes/Modules/Media/Module.php:372
 msgid "Actions"
 msgstr ""
@@ -2286,6 +2380,7 @@ msgid "Last check"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/delivery-status.php:140
+#: includes/Modules/McpConnect/Module.php:286
 #: includes/Modules/Motion/Controls.php:246
 msgid "Never"
 msgstr ""
@@ -2348,6 +2443,7 @@ msgstr ""
 
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:133
 #: includes/Modules/ImageOptimizer/settings-template.php:274
+#: includes/Modules/McpConnect/Module.php:289
 msgid "Pending"
 msgstr ""
 
@@ -3001,6 +3097,896 @@ msgstr ""
 msgid "Hides the link WordPress displays when a privacy policy page is set."
 msgstr ""
 
+#: includes/Modules/McpConnect/Agent.php:150
+msgid "Content and Bricks"
+msgstr ""
+
+#: includes/Modules/McpConnect/Agent.php:154
+msgid "Content, Bricks and SEO"
+msgstr ""
+
+#: includes/Modules/McpConnect/Agent.php:158
+msgid "Full shop"
+msgstr ""
+
+#: includes/Modules/McpConnect/Agent.php:382
+msgid "This account is used by Claude through MCP Connect and cannot sign in."
+msgstr ""
+
+#: includes/Modules/McpConnect/Agent.php:394
+msgid "This account is used by Claude through MCP Connect and cannot use application passwords."
+msgstr ""
+
+#: includes/Modules/McpConnect/Agent.php:415
+msgid "This account is used by Claude through MCP Connect and has no access to the dashboard."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:134
+msgid "The request does not say which application is connecting (client_id is missing)."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:144
+msgid "The return address of this request is not one the application registered. The connection was not started."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:151
+msgid "Only response_type=code is supported."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:156
+msgid "PKCE with code_challenge_method=S256 is required."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:161
+msgid "The resource parameter must be the MCP server URL of this site."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:166
+msgid "Only the mcp and offline_access scopes are supported."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:172
+msgid "This site only accepts applications from trusted publishers."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:176
+#: includes/Modules/McpConnect/AuthorizationServer.php:310
+#: includes/Modules/McpConnect/BearerAuth.php:110
+msgid "Connections to this site are paused."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:185
+msgid "Too many connection attempts from this address. Wait a few minutes and try again."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:203
+msgid "The authorization request could not be stored."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:294
+#: includes/Modules/McpConnect/ConsentPage.php:361
+#: includes/Modules/McpConnect/ConsentPage.php:366
+msgid "Connection refused"
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:315
+#: includes/Modules/McpConnect/AuthorizationServer.php:591
+#: includes/Modules/McpConnect/ClientRegistry.php:298
+msgid "Too many attempts. Try again later."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:329
+msgid "The grant_type parameter is missing."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:332
+msgid "Only the authorization_code and refresh_token grants are supported."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:346
+msgid "The authorization code is invalid, expired or already used."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:379
+msgid "The resource parameter does not match the authorization request."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:385
+msgid "The code verifier does not match the code challenge."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:440
+msgid "The refresh token is invalid, expired or revoked."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:482
+msgid "The resource parameter does not match this connection."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:489
+msgid "The requested scope exceeds what was granted to this connection."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:548
+msgid "The tokens could not be stored."
+msgstr ""
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:643
+msgid "The registration request must be a JSON object."
+msgstr ""
+
+#: includes/Modules/McpConnect/BearerAuth.php:113
+msgid "Too many failed attempts from this IP address. Try again later."
+msgstr ""
+
+#: includes/Modules/McpConnect/BearerAuth.php:116
+msgid "The access token is invalid or expired."
+msgstr ""
+
+#: includes/Modules/McpConnect/BearerAuth.php:142
+msgid "This access token is only valid for the MCP server of this site."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:116
+msgid "The application did not identify itself with a valid client ID. Only HTTPS client metadata URLs on the standard port are accepted."
+msgstr ""
+
+#. translators: %s: host name of the application that asked for the connection.
+#: includes/Modules/McpConnect/ClientRegistry.php:129
+#, php-format
+msgid "This site only accepts connections from Claude. The application asking to connect is published by %s, which is not a trusted publisher."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:157
+msgid "Too many connection attempts right now. Wait a minute and try again."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:308
+msgid "Too many client registrations from this address. Try again later."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:317
+msgid "redirect_uris must be a non-empty list of HTTPS URLs or loopback HTTP URLs."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:323
+msgid "Only public clients are supported: token_endpoint_auth_method must be \"none\"."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:327
+msgid "Only the authorization_code and refresh_token grant types are supported."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:331
+msgid "Only the code response type is supported."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:362
+msgid "The client could not be registered."
+msgstr ""
+
+#. translators: %s: host name of the application that asked for the connection.
+#: includes/Modules/McpConnect/ClientRegistry.php:441
+#, php-format
+msgid "The description of the application published by %s could not be retrieved."
+msgstr ""
+
+#. translators: %s: host name of the application that asked for the connection.
+#: includes/Modules/McpConnect/ClientRegistry.php:460
+#, php-format
+msgid "The application address %s does not resolve to a public server."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:544
+msgid "The application description does not match its client ID."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:553
+msgid "The application description has no valid redirect URI."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:561
+msgid "The application requires a client authentication method this site does not support. Only public clients can connect."
+msgstr ""
+
+#: includes/Modules/McpConnect/ClientRegistry.php:881
+msgid "This application is not registered on this site."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:50
+#: includes/Modules/McpConnect/ConsentPage.php:70
+#: includes/Modules/McpConnect/ConsentPage.php:303
+#: includes/Modules/McpConnect/ConsentPage.php:502
+#: includes/Modules/McpConnect/ConsentPage.php:509
+msgid "Connect to Claude"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:106
+#: includes/Modules/McpConnect/ConsentPage.php:322
+msgid "MCP Connect is disabled on this site."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:108
+#: includes/Modules/McpConnect/ConsentPage.php:338
+msgid "Your account is not allowed to connect Claude to this site."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:124
+#: includes/Modules/McpConnect/ConsentPage.php:332
+#: includes/Modules/McpConnect/ConsentPage.php:355
+msgid "This connection request has expired. Start again from Claude."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:138
+#: includes/Modules/McpConnect/ConsentPage.php:366
+msgid "This connection request is not valid. Start again from Claude."
+msgstr ""
+
+#. translators: 1: client name (e.g. Claude), 2: site name.
+#: includes/Modules/McpConnect/ConsentPage.php:168
+#, php-format
+msgid "%1$s wants to connect to %2$s"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:182
+msgid "Verified: Claude"
+msgstr ""
+
+#. translators: %s: host name of the client's publisher (e.g. example.com).
+#: includes/Modules/McpConnect/ConsentPage.php:185
+#, php-format
+msgid "Verified publisher: %s"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:193
+msgid "Unverified client: only connect if you started this from a tool you trust."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:200
+msgid "Returns to"
+msgstr ""
+
+#. translators: %s: loopback host name (e.g. localhost).
+#: includes/Modules/McpConnect/ConsentPage.php:207
+#, php-format
+msgid "Claude will return to an application running on your computer (%s)."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:214
+#: includes/Modules/McpConnect/settings-template.php:131
+msgid "Access"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:218
+msgid "Use the tools this site exposes to Claude (MCP), and stay connected (refresh)."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:223
+msgid "Site"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:235
+msgid "Connection name"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:236
+msgid "e.g. Claire, MacBook"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:237
+msgid "Shown in the list of connections and in the activity log."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:241
+msgid "Claude will act as"
+msgstr ""
+
+#. translators: %s: display name of the dedicated account.
+#: includes/Modules/McpConnect/ConsentPage.php:247
+#, php-format
+msgid "The dedicated account %s has permissions your own account does not have, so Claude can only act as you."
+msgstr ""
+
+#. translators: 1: display name of the dedicated account, 2: its login.
+#: includes/Modules/McpConnect/ConsentPage.php:257
+#: includes/Modules/McpConnect/SiteHealth.php:285
+#, php-format
+msgid "%1$s (%2$s)"
+msgstr ""
+
+#. translators: %s: name of the permission preset (e.g. Content and Bricks).
+#: includes/Modules/McpConnect/ConsentPage.php:264
+#, php-format
+msgid "Dedicated account, permissions: %s. Recommended."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:266
+msgid "Dedicated account with limited permissions. Recommended."
+msgstr ""
+
+#. translators: %s: display name of the current user.
+#: includes/Modules/McpConnect/ConsentPage.php:280
+#, php-format
+msgid "You (%s)"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:283
+msgid "Changes will be made in your name, with all your permissions. Use only for one-off administration tasks."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:289
+msgid "Deny"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:290
+msgid "Approve"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:327
+msgid "Invalid request."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:349
+msgid "The dedicated account has permissions your own account does not have: choose to let Claude act as you."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:393
+msgid "The Claude (MCP) account could not be created."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:399
+msgid "The connection could not be saved."
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:510
+msgid "Returning to the application on your computer…"
+msgstr ""
+
+#: includes/Modules/McpConnect/ConsentPage.php:513
+msgid "Return to the application"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:279
+msgid "Could not load the connections."
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:280
+#: includes/Modules/McpConnect/settings-template.php:116
+msgid "No connection yet. Add this site in Claude: see Help."
+msgstr ""
+
+#. translators: %s: number of connections.
+#: includes/Modules/McpConnect/Module.php:282
+#, php-format
+msgid "%s connection(s)"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:283
+msgid "Verified"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:284
+msgid "Unverified"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:285
+msgid "Acts as the approver"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:287
+msgid "(no label)"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:288
+msgctxt "MCP connection status"
+msgid "Active"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:290
+msgid "Revoked"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:291
+msgid "Revoke"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:292
+msgid "Revoke this connection?"
+msgstr ""
+
+#. translators: %s: connection label or client name.
+#: includes/Modules/McpConnect/Module.php:294
+#, php-format
+msgid "\"%s\" will lose access to this site immediately. Claude will ask to connect again."
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:295
+msgid "Revoke every connection?"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:296
+msgid "Every Claude connection to this site loses access immediately. Each one will have to be approved again."
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:297
+#: includes/Modules/McpConnect/settings-template.php:89
+msgid "Revoke all"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:298
+msgid "Copied to the clipboard."
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:299
+msgid "Could not copy: select the text and copy it by hand."
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:300
+msgid "by an administrator"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:301
+msgid "all connections revoked"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:302
+msgid "token reuse detected"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:303
+msgid "user deleted"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:304
+msgid "revoked by the client"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:305
+msgid "expired"
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:350
+msgid "This connection does not exist or is already revoked."
+msgstr ""
+
+#: includes/Modules/McpConnect/Module.php:353
+msgid "Connection revoked."
+msgstr ""
+
+#. translators: %s: number of connections revoked.
+#: includes/Modules/McpConnect/Module.php:365
+#, php-format
+msgid "%s connection revoked."
+msgid_plural "%s connections revoked."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Modules/McpConnect/settings-template.php:32
+msgid "Administrators (manage_options)"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:33
+msgid "Editors and administrators (edit_others_pages)"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:38
+msgid "OK"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:39
+msgid "Required"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:40
+msgid "Recommended"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:41
+msgid "Info"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:50
+msgid "MCP Connect module sections"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:51
+#: includes/Modules/McpConnect/settings-template.php:71
+msgid "Connections"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:53
+msgid "Help"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:60
+msgid "MCP Connect is turned off by the LUMIA_DISABLE_MCP_CONNECT constant in wp-config.php: Claude cannot discover, sign in to or use this site. Connections are kept and work again once the constant is removed."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:72
+msgid "Each approval in Claude creates a connection. Revoking it cuts its access immediately; Claude then asks to connect again."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:80
+msgctxt "MCP Connect status"
+msgid "Off"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:82
+msgid "Paused"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:83
+msgid "Every request from Claude is refused until connections are resumed in Settings."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:85
+#: includes/Modules/MenuCreator/Module.php:1320
+#: includes/Modules/MenuCreator/settings-template.php:152
+#: templates/admin/dashboard.php:91
+msgid "Active"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:96
+#: includes/Modules/MenuCreator/Module.php:1378
+msgid "Label"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:99
+msgid "Approved by"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:100
+msgid "Created"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:101
+msgid "Last used"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:102
+msgid "Last IP"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:103
+msgid "Refresh token expires"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:132
+msgid "Who may connect Claude, and what Claude may do once connected."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:138
+msgid "Pause all connections"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:139
+msgid "To cut everything without the admin (locked out, emergency), add define( 'LUMIA_DISABLE_MCP_CONNECT', true ); to wp-config.php."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:141
+msgid "Every request from Claude is refused and no new connection can be approved. Connections are kept and work again when you resume."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:153
+msgid "Who can approve a connection"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:162
+msgid "Permissions of the Claude account"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:170
+msgid "Claude acts through a dedicated account that cannot sign in by itself. It can never manage plugins, users or site settings, whatever the preset."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:182
+msgid "Clients"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:183
+msgid "Which applications may ask to connect."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:188
+msgid "Trusted publishers only"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:189
+msgid "Only applications published by Anthropic (claude.ai) can request a connection: Claude, Claude Code and Claude Desktop."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:201
+msgid "Dynamic client registration"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:202
+msgid "Lets MCP clients that do not publish their identity register themselves. Off unless a client you use requires it."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:213
+msgid "Self-registered clients are unverified: anyone can register one under any name. While \"Trusted publishers only\" is on, they are always refused."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:218
+msgid "Delete unused registered clients after (days)"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:230
+msgid "Tokens"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:231
+msgid "Claude renews its access token on its own with the refresh token. A connection unused for longer than the refresh token lifetime must be approved again."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:236
+msgid "Access token lifetime (minutes)"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:241
+msgid "Refresh token lifetime (days)"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:258
+msgid "Add this site to Claude"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:259
+msgid "The URL to paste in Claude when adding a custom connector."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:265
+msgid "MCP server URL"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:268
+#: includes/Modules/McpConnect/settings-template.php:300
+msgid "Copy"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:273
+msgid "In Claude, open Settings > Connectors and choose Add custom connector."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:274
+msgid "Paste the URL above. Leave Client ID and Client Secret empty."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:275
+msgid "Click Connect: Claude opens the sign-in page of this site."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:276
+msgid "Sign in to WordPress if asked, check the request, then approve it."
+msgstr ""
+
+#. translators: %s: users allowed to approve, e.g. "Administrators (manage_options)".
+#: includes/Modules/McpConnect/settings-template.php:282
+#, php-format
+msgid "Only these users can approve a connection: %s."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:292
+msgid "Claude Code"
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:293
+msgid "Run this command, then /mcp in Claude Code to sign in."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:312
+msgid "What this site needs for Claude to connect."
+msgstr ""
+
+#: includes/Modules/McpConnect/settings-template.php:313
+msgid "Site Health also checks the discovery documents and the Authorization header."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:44
+msgid "MCP Connect discovery documents"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:49
+msgid "MCP Connect Authorization header"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:55
+msgid "MCP Connect environment"
+msgstr ""
+
+#. translators: 1: URL, 2: error message.
+#: includes/Modules/McpConnect/SiteHealth.php:100
+#, php-format
+msgid "%1$s could not be reached: %2$s"
+msgstr ""
+
+#. translators: 1: URL, 2: HTTP status code.
+#: includes/Modules/McpConnect/SiteHealth.php:104
+#, php-format
+msgid "%1$s answered HTTP %2$s instead of 200."
+msgstr ""
+
+#. translators: %s: URL.
+#: includes/Modules/McpConnect/SiteHealth.php:107
+#, php-format
+msgid "%s did not return the expected document (another plugin or a cache may answer instead)."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:122
+msgid "Claude cannot discover how to sign in to this site"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:123
+msgid "Claude reads two documents under /.well-known/ to find the sign-in page. They are not served correctly:"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:127
+msgid "Pretty permalinks must be enabled: with plain permalinks WordPress never receives these paths."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:134
+msgid "The MCP Connect discovery documents are served over plain HTTP"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:135
+msgid "The documents answer, but with http:// addresses. Claude only connects to sites served over HTTPS: set the site address to https."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:140
+msgid "Claude can discover how to sign in to this site"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:141
+msgid "Both discovery documents answer under /.well-known/ with this site's addresses."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:157
+msgid "The Authorization header reaches WordPress"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:158
+msgid "The tokens Claude sends with each request are visible to the site."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:164
+msgid "The web server removes the Authorization header"
+msgstr ""
+
+#. translators: %s: HTTP status code.
+#: includes/Modules/McpConnect/SiteHealth.php:170
+#, php-format
+msgid "HTTP %s"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:173
+msgid "The Authorization header could not be checked"
+msgstr ""
+
+#. translators: %s: error message or HTTP status.
+#: includes/Modules/McpConnect/SiteHealth.php:176
+#, php-format
+msgid "The site could not call itself to run the check (%s). Loopback requests may be blocked by the host or a firewall."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:182
+msgid "Claude authenticates every request with an Authorization header, which this server does not pass to PHP: every connection would be refused. Depending on the server:"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:184
+msgid "Apache or LiteSpeed: in .htaccess, before the WordPress rules, add"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:185
+msgid "nginx with PHP-FPM: in the PHP location, add"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:214
+msgid "MCP Connect has everything it needs"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:215
+msgid "MCP Adapter, permalinks, HTTPS and the Claude agent account are in place."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:222
+msgid "MCP Connect cannot work on this site yet"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:223
+msgid "MCP Connect works with limitations"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:244
+msgid "Not active: install and activate the MCP Adapter plugin."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:246
+msgid "Active (version unknown)"
+msgstr ""
+
+#. translators: 1: installed version, 2: minimum version.
+#: includes/Modules/McpConnect/SiteHealth.php:249
+#, php-format
+msgid "Version %1$s: version %2$s or later is required."
+msgstr ""
+
+#. translators: %s: version number.
+#: includes/Modules/McpConnect/SiteHealth.php:252
+#, php-format
+msgid "Version %s"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:256
+msgid "MCP Adapter"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:263
+msgid "Permalinks"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:265
+msgid "Pretty permalinks"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:266
+msgid "Plain permalinks: the discovery documents cannot be served. Choose any other structure in Settings > Permalinks."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:272
+msgid "HTTPS"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:274
+msgid "The site address uses HTTPS"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:275
+msgid "The site address uses plain HTTP: Claude only connects to HTTPS sites."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:282
+msgid "Claude account"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:286
+msgid "Missing: it is created again on the next visit of an administrator to the admin."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:293
+msgid "Role preset"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:300
+msgid "The Claude account can edit with Bricks"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:303
+msgid "Bricks is active but the Claude role has no builder access: grant it in Bricks > Settings > Builder access."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:306
+#: includes/Modules/Motion/settings-template.php:27
+msgid "Bricks is not the active theme"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:310
+msgid "Bricks builder access"
+msgstr ""
+
+#. translators: 1: URL path Claude requests at the server root, 2: URL of the document on this site.
+#: includes/Modules/McpConnect/SiteHealth.php:424
+#, php-format
+msgid "This site lives under a path, so Claude asks the server root for %1$s. Rewrite that path, at the web server level, to %2$s."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:437
+msgid "A 403 usually means the web server blocks /.well-known/ before WordPress. On nginx, add this to the site configuration:"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:439
+msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
+msgstr ""
+
 #: includes/Modules/Media/Module.php:56
 msgid "Red"
 msgstr ""
@@ -3228,12 +4214,6 @@ msgstr ""
 msgid "Draft"
 msgstr ""
 
-#: includes/Modules/MenuCreator/Module.php:1320
-#: includes/Modules/MenuCreator/settings-template.php:152
-#: templates/admin/dashboard.php:91
-msgid "Active"
-msgstr ""
-
 #: includes/Modules/MenuCreator/Module.php:1322
 msgid "Your changes will be lost. Continue?"
 msgstr ""
@@ -3431,10 +4411,6 @@ msgstr ""
 
 #: includes/Modules/MenuCreator/Module.php:1377
 msgid "Leave empty to show this link to everyone who sees this menu."
-msgstr ""
-
-#: includes/Modules/MenuCreator/Module.php:1378
-msgid "Label"
 msgstr ""
 
 #: includes/Modules/MenuCreator/Module.php:1379
@@ -4684,10 +5660,6 @@ msgstr ""
 
 #: includes/Modules/Motion/Controls.php:718
 msgid "Off"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:27
-msgid "Bricks is not the active theme"
 msgstr ""
 
 #: includes/Modules/Motion/settings-template.php:28
