@@ -28,7 +28,9 @@ defined( 'ABSPATH' ) || exit;
  * - The raw-request test (Discovery::is_protected_request()) decides whether
  *   the token is looked up; restrict_dispatch() then refuses, at dispatch
  *   time, any route other than the MCP one for a request authenticated by a
- *   token, whatever the way the route was chosen.
+ *   token, whatever the way the route was chosen. Only the outermost dispatch
+ *   is held to that: the internal rest_do_request() calls an ability makes
+ *   while the MCP route's callbacks run (enter_mcp() / leave_mcp()) pass.
  */
 final class BearerAuth {
 
@@ -55,6 +57,13 @@ final class BearerAuth {
 	 * @var array<string, mixed>|null
 	 */
 	private static ?array $connection = null;
+
+	/**
+	 * The MCP route request whose callbacks are running, null outside them.
+	 * The dispatches made meanwhile (an ability calling rest_do_request()) are
+	 * part of the MCP call and are not held to the audience check.
+	 */
+	private static ?\WP_REST_Request $mcp_request = null;
 
 	/**
 	 * `determine_current_user` @30: the connection's acting user when the
@@ -127,6 +136,13 @@ final class BearerAuth {
 	 * override, `/batch/v1`), and the route it finally dispatches is the only
 	 * one that matters.
 	 *
+	 * The filter fires for every dispatch, internal ones included: an ability
+	 * wrapping a REST endpoint (rest_do_request( '/wc/v3/products' )) dispatches
+	 * again while the MCP route's callback runs. Such a nested dispatch is part
+	 * of the MCP call, runs as the same user under the same capability checks,
+	 * and passes. Any other dispatch (before the MCP route's callbacks start or
+	 * after they end, `_embed` links included) is refused.
+	 *
 	 * @param mixed                  $result  Response so far (null to dispatch).
 	 * @param \WP_REST_Server|mixed  $server  Server.
 	 * @param \WP_REST_Request|mixed $request Request.
@@ -135,11 +151,53 @@ final class BearerAuth {
 	public static function restrict_dispatch( $result, $server, $request ) {
 		unset( $server );
 
-		if ( null === self::$connection || ! $request instanceof \WP_REST_Request || Discovery::is_mcp_route( $request->get_route() ) ) {
+		if ( null === self::$connection || null !== self::$mcp_request || ! $request instanceof \WP_REST_Request || Discovery::is_mcp_route( $request->get_route() ) ) {
 			return $result;
 		}
 
 		return new \WP_Error( 'invalid_token', __( 'This access token is only valid for the MCP server of this site.', 'lumia-tools' ), [ 'status' => 401 ] );
+	}
+
+	/**
+	 * `rest_request_before_callbacks` (early): the permission and route
+	 * callbacks of the MCP route start. Only the outermost MCP request is
+	 * recorded, and only for a request authenticated by a token.
+	 *
+	 * @param mixed                  $response Response so far.
+	 * @param mixed                  $handler  Route handler.
+	 * @param \WP_REST_Request|mixed $request  Request.
+	 * @return mixed
+	 */
+	public static function enter_mcp( $response, $handler, $request ) {
+		unset( $handler );
+
+		if ( null !== self::$connection && null === self::$mcp_request && $request instanceof \WP_REST_Request && Discovery::is_mcp_route( $request->get_route() ) ) {
+			self::$mcp_request = $request;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * `rest_request_after_callbacks` (late), and `rest_post_dispatch` as a
+	 * fallback: the callbacks of the MCP route are over. WordPress applies the
+	 * first after every `rest_request_before_callbacks`, error paths included
+	 * (permission refused, WP_Error from the callback); the second, applied by
+	 * serve_request() to the outer request, covers anything in between.
+	 *
+	 * @param mixed                  $response Response.
+	 * @param mixed                  $context  Handler or server (unused).
+	 * @param \WP_REST_Request|mixed $request  Request.
+	 * @return mixed
+	 */
+	public static function leave_mcp( $response, $context, $request ) {
+		unset( $context );
+
+		if ( null !== self::$mcp_request && $request === self::$mcp_request ) {
+			self::$mcp_request = null;
+		}
+
+		return $response;
 	}
 
 	/**

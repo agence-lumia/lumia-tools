@@ -16,8 +16,12 @@ use Lumia\Tools\Core\Compat;
  * - The account only exists to carry OAuth connections: it cannot sign in with
  *   a password (it has none anyone knows), cannot use application passwords
  *   and never sees the dashboard.
- * - The role is rebuilt from the preset whenever it drifts, so a capability
- *   added by hand or by another plugin does not survive the next sync.
+ * - The role is resynced to the preset on every admin page load of an
+ *   administrator, and the dedicated account is reset to that role alone
+ *   (reset_account()), so a capability or a second role added by hand or by
+ *   another plugin, on the role or on the account, does not survive the next
+ *   one. Between two syncs, deny_forbidden_caps() keeps FORBIDDEN_CAPS out of
+ *   the account at check time.
  */
 final class Agent {
 
@@ -37,8 +41,10 @@ final class Agent {
 	const DEFAULT_PRESET = 'content_bricks';
 
 	/**
-	 * Capabilities the role never gets, whatever the preset or the filter says:
-	 * each one hands over the site (settings, code, users).
+	 * Capabilities the role never gets, whatever the preset or the filter says
+	 * (dropped by capabilities()), and that a locked agent never holds, whatever
+	 * its role or account says (denied by deny_forbidden_caps()): each one hands
+	 * over the site (settings, code, users).
 	 */
 	const FORBIDDEN_CAPS = [
 		'manage_options',
@@ -65,6 +71,17 @@ final class Agent {
 		'export',
 		'import',
 		'bricks_execute_code',
+		// Multisite: Files and Database require manage_network_options there.
+		'manage_network',
+		'manage_network_options',
+		'manage_network_users',
+		'manage_network_plugins',
+		'manage_network_themes',
+		'manage_sites',
+		'create_sites',
+		'delete_sites',
+		'upgrade_network',
+		'setup_network',
 	];
 
 	/** Maximum `-N` suffix tried when the preferred login or email is taken. */
@@ -196,8 +213,10 @@ final class Agent {
 	/**
 	 * Creates the role, or resets its capabilities to the preset.
 	 *
-	 * Called on every admin page load of an administrator (through ensure()):
-	 * when nothing changed it only compares two arrays. When something did, the
+	 * Called on every admin page load of an administrator
+	 * (Module::maybe_ensure_agent()), on activation, on a preset change and on
+	 * an approval in agent mode (through ensure()): when nothing changed it
+	 * only compares two arrays. When something did, the
 	 * role is dropped and recreated (two option writes) rather than updated cap
 	 * by cap (one write per capability). Users keep the role in between: they
 	 * store its name, not its capabilities.
@@ -229,6 +248,7 @@ final class Agent {
 
 		$user_id = self::user_id();
 		if ( $user_id > 0 ) {
+			self::reset_account( $user_id );
 			return $user_id;
 		}
 
@@ -248,6 +268,33 @@ final class Agent {
 		}
 
 		return $user_id;
+	}
+
+	/**
+	 * Resets the dedicated account to the agent role alone: drops any second
+	 * role and any capability granted on the account itself. sync_role() only
+	 * rebuilds the role, and the capabilities of an `administrator` or
+	 * `shop_manager` role added to the account would otherwise stay live for
+	 * every connection. Writes nothing when the account is already clean.
+	 */
+	public static function reset_account( int $user_id ): void {
+		$user = get_userdata( $user_id );
+		if ( ! $user instanceof \WP_User ) {
+			return;
+		}
+
+		if ( [ self::ROLE ] !== array_values( (array) $user->roles ) ) {
+			$user->set_role( self::ROLE );
+		}
+
+		// $user->caps mixes role names (role => true) with capabilities granted
+		// on the account: only the latter are removed.
+		foreach ( array_keys( (array) $user->caps ) as $cap ) {
+			$cap = (string) $cap;
+			if ( self::ROLE !== $cap && null === get_role( $cap ) ) {
+				$user->remove_cap( $cap );
+			}
+		}
 	}
 
 	/**
@@ -366,6 +413,35 @@ final class Agent {
 		}
 
 		return self::user_id() === (int) $user->ID || 1 === count( (array) $user->roles );
+	}
+
+	/**
+	 * `user_has_cap` (late): a locked agent (the dedicated account, or a user
+	 * whose single role is the agent role) never holds FORBIDDEN_CAPS, even when
+	 * a role editor, another plugin or Bricks' role settings wrote one on the
+	 * role or the account since the last sync_role(). A real person who was
+	 * also given the role is left alone, like for the sign-in.
+	 *
+	 * @param array<string, bool>|mixed $allcaps Capabilities the user holds.
+	 * @param mixed                     $caps    Primitive capabilities checked.
+	 * @param mixed                     $args    Arguments of the check.
+	 * @param \WP_User|mixed            $user    User checked.
+	 * @return array<string, bool>|mixed
+	 */
+	public static function deny_forbidden_caps( $allcaps, $caps, $args, $user ) {
+		unset( $caps, $args );
+
+		if ( ! is_array( $allcaps ) || ! $user instanceof \WP_User || ! self::is_locked_agent( $user ) ) {
+			return $allcaps;
+		}
+
+		foreach ( self::FORBIDDEN_CAPS as $cap ) {
+			if ( isset( $allcaps[ $cap ] ) ) {
+				$allcaps[ $cap ] = false;
+			}
+		}
+
+		return $allcaps;
 	}
 
 	/**

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T21:00:38+00:00\n"
+"POT-Creation-Date: 2026-10-26T21:26:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -219,7 +219,7 @@ msgstr ""
 #: includes/Modules/ImageOptimizer/BulkProcessor.php:317
 #: includes/Modules/ImageOptimizer/DeliveryProbe.php:697
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:583
-#: includes/Modules/McpConnect/Module.php:321
+#: includes/Modules/McpConnect/Module.php:332
 #: includes/Modules/Media/Module.php:424
 #: includes/Modules/MenuCreator/Module.php:956
 #: includes/Modules/MenuCreator/Module.php:977
@@ -627,7 +627,7 @@ msgstr ""
 #: includes/Modules/ActivityLog/settings-template.php:107
 #: includes/Modules/Database/Module.php:120
 #: includes/Modules/Database/settings-template.php:29
-#: includes/Modules/McpConnect/Module.php:278
+#: includes/Modules/McpConnect/Module.php:289
 #: includes/Modules/McpConnect/settings-template.php:109
 #: includes/Modules/Media/Module.php:359
 #: includes/Modules/Smtp/Module.php:237
@@ -2380,7 +2380,7 @@ msgid "Last check"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/delivery-status.php:140
-#: includes/Modules/McpConnect/Module.php:286
+#: includes/Modules/McpConnect/Module.php:297
 #: includes/Modules/Motion/Controls.php:246
 msgid "Never"
 msgstr ""
@@ -2443,7 +2443,7 @@ msgstr ""
 
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:133
 #: includes/Modules/ImageOptimizer/settings-template.php:274
-#: includes/Modules/McpConnect/Module.php:289
+#: includes/Modules/McpConnect/Module.php:300
 msgid "Pending"
 msgstr ""
 
@@ -3097,27 +3097,27 @@ msgstr ""
 msgid "Hides the link WordPress displays when a privacy policy page is set."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:150
+#: includes/Modules/McpConnect/Agent.php:154
 msgid "Content and Bricks"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:154
+#: includes/Modules/McpConnect/Agent.php:158
 msgid "Content, Bricks and SEO"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:158
+#: includes/Modules/McpConnect/Agent.php:162
 msgid "Full shop"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:382
+#: includes/Modules/McpConnect/Agent.php:417
 msgid "This account is used by Claude through MCP Connect and cannot sign in."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:394
+#: includes/Modules/McpConnect/Agent.php:429
 msgid "This account is used by Claude through MCP Connect and cannot use application passwords."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:415
+#: includes/Modules/McpConnect/Agent.php:450
 msgid "This account is used by Claude through MCP Connect and has no access to the dashboard."
 msgstr ""
 
@@ -3151,7 +3151,7 @@ msgstr ""
 
 #: includes/Modules/McpConnect/AuthorizationServer.php:176
 #: includes/Modules/McpConnect/AuthorizationServer.php:310
-#: includes/Modules/McpConnect/BearerAuth.php:110
+#: includes/Modules/McpConnect/BearerAuth.php:119
 msgid "Connections to this site are paused."
 msgstr ""
 
@@ -3170,7 +3170,7 @@ msgid "Connection refused"
 msgstr ""
 
 #: includes/Modules/McpConnect/AuthorizationServer.php:315
-#: includes/Modules/McpConnect/AuthorizationServer.php:591
+#: includes/Modules/McpConnect/AuthorizationServer.php:598
 #: includes/Modules/McpConnect/ClientRegistry.php:298
 msgid "Too many attempts. Try again later."
 msgstr ""
@@ -3183,47 +3183,47 @@ msgstr ""
 msgid "Only the authorization_code and refresh_token grants are supported."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:346
+#: includes/Modules/McpConnect/AuthorizationServer.php:349
 msgid "The authorization code is invalid, expired or already used."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:379
+#: includes/Modules/McpConnect/AuthorizationServer.php:386
 msgid "The resource parameter does not match the authorization request."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:385
+#: includes/Modules/McpConnect/AuthorizationServer.php:392
 msgid "The code verifier does not match the code challenge."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:440
+#: includes/Modules/McpConnect/AuthorizationServer.php:447
 msgid "The refresh token is invalid, expired or revoked."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:482
+#: includes/Modules/McpConnect/AuthorizationServer.php:489
 msgid "The resource parameter does not match this connection."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:489
+#: includes/Modules/McpConnect/AuthorizationServer.php:496
 msgid "The requested scope exceeds what was granted to this connection."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:548
+#: includes/Modules/McpConnect/AuthorizationServer.php:555
 msgid "The tokens could not be stored."
 msgstr ""
 
-#: includes/Modules/McpConnect/AuthorizationServer.php:643
+#: includes/Modules/McpConnect/AuthorizationServer.php:650
 msgid "The registration request must be a JSON object."
 msgstr ""
 
-#: includes/Modules/McpConnect/BearerAuth.php:113
+#: includes/Modules/McpConnect/BearerAuth.php:122
 msgid "Too many failed attempts from this IP address. Try again later."
 msgstr ""
 
-#: includes/Modules/McpConnect/BearerAuth.php:116
+#: includes/Modules/McpConnect/BearerAuth.php:125
 msgid "The access token is invalid or expired."
 msgstr ""
 
-#: includes/Modules/McpConnect/BearerAuth.php:142
+#: includes/Modules/McpConnect/BearerAuth.php:158
 msgid "This access token is only valid for the MCP server of this site."
 msgstr ""
 
@@ -3446,115 +3446,115 @@ msgstr ""
 msgid "Return to the application"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:279
+#: includes/Modules/McpConnect/Module.php:290
 msgid "Could not load the connections."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:280
+#: includes/Modules/McpConnect/Module.php:291
 #: includes/Modules/McpConnect/settings-template.php:116
 msgid "No connection yet. Add this site in Claude: see Help."
 msgstr ""
 
 #. translators: %s: number of connections.
-#: includes/Modules/McpConnect/Module.php:282
+#: includes/Modules/McpConnect/Module.php:293
 #, php-format
 msgid "%s connection(s)"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:283
+#: includes/Modules/McpConnect/Module.php:294
 msgid "Verified"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:284
+#: includes/Modules/McpConnect/Module.php:295
 msgid "Unverified"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:285
+#: includes/Modules/McpConnect/Module.php:296
 msgid "Acts as the approver"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:287
+#: includes/Modules/McpConnect/Module.php:298
 msgid "(no label)"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:288
+#: includes/Modules/McpConnect/Module.php:299
 msgctxt "MCP connection status"
 msgid "Active"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:290
+#: includes/Modules/McpConnect/Module.php:301
 msgid "Revoked"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:291
+#: includes/Modules/McpConnect/Module.php:302
 msgid "Revoke"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:292
+#: includes/Modules/McpConnect/Module.php:303
 msgid "Revoke this connection?"
 msgstr ""
 
 #. translators: %s: connection label or client name.
-#: includes/Modules/McpConnect/Module.php:294
+#: includes/Modules/McpConnect/Module.php:305
 #, php-format
 msgid "\"%s\" will lose access to this site immediately. Claude will ask to connect again."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:295
+#: includes/Modules/McpConnect/Module.php:306
 msgid "Revoke every connection?"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:296
+#: includes/Modules/McpConnect/Module.php:307
 msgid "Every Claude connection to this site loses access immediately. Each one will have to be approved again."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:297
+#: includes/Modules/McpConnect/Module.php:308
 #: includes/Modules/McpConnect/settings-template.php:89
 msgid "Revoke all"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:298
+#: includes/Modules/McpConnect/Module.php:309
 msgid "Copied to the clipboard."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:299
+#: includes/Modules/McpConnect/Module.php:310
 msgid "Could not copy: select the text and copy it by hand."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:300
+#: includes/Modules/McpConnect/Module.php:311
 msgid "by an administrator"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:301
+#: includes/Modules/McpConnect/Module.php:312
 msgid "all connections revoked"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:302
+#: includes/Modules/McpConnect/Module.php:313
 msgid "token reuse detected"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:303
+#: includes/Modules/McpConnect/Module.php:314
 msgid "user deleted"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:304
+#: includes/Modules/McpConnect/Module.php:315
 msgid "revoked by the client"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:305
+#: includes/Modules/McpConnect/Module.php:316
 msgid "expired"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:350
+#: includes/Modules/McpConnect/Module.php:361
 msgid "This connection does not exist or is already revoked."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:353
+#: includes/Modules/McpConnect/Module.php:364
 msgid "Connection revoked."
 msgstr ""
 
 #. translators: %s: number of connections revoked.
-#: includes/Modules/McpConnect/Module.php:365
+#: includes/Modules/McpConnect/Module.php:376
 #, php-format
 msgid "%s connection revoked."
 msgid_plural "%s connections revoked."

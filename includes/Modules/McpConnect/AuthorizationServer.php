@@ -338,7 +338,10 @@ final class AuthorizationServer {
 	 * Everything is checked before the code is consumed, so a request without
 	 * the right verifier cannot burn the legitimate client's code. A code seen
 	 * twice is a replay: the connection is revoked, which also deletes any
-	 * token issued from it (OAuth 2.1 §4.1.3).
+	 * token issued from it (OAuth 2.1 §4.1.3). Only when the replay names the
+	 * code's own client_id, tested first (as refresh() does): codes travel in
+	 * URLs (history, logs, the loopback callback), and a third party reading a
+	 * used one must not be able to kill the connection with it.
 	 *
 	 * @param array<string, mixed> $params Body parameters.
 	 */
@@ -357,6 +360,13 @@ final class AuthorizationServer {
 		}
 
 		$connection_id = $code['connection_id'];
+		$bound         = $code['data'];
+
+		// Before the reuse test: a request naming another client cannot
+		// revoke this connection.
+		if ( self::value( $params, 'client_id' ) !== (string) ( $bound['client_id'] ?? '' ) ) {
+			return self::oauth_error( 'invalid_grant', $invalid );
+		}
 
 		if ( 0 !== $code['used'] ) {
 			Connections::revoke( $connection_id, 'reuse' );
@@ -367,10 +377,7 @@ final class AuthorizationServer {
 			return self::oauth_error( 'invalid_grant', $invalid );
 		}
 
-		$bound = $code['data'];
-
-		if ( self::value( $params, 'client_id' ) !== (string) ( $bound['client_id'] ?? '' )
-			|| self::value( $params, 'redirect_uri' ) !== (string) ( $bound['redirect_uri'] ?? '' ) ) {
+		if ( self::value( $params, 'redirect_uri' ) !== (string) ( $bound['redirect_uri'] ?? '' ) ) {
 			return self::oauth_error( 'invalid_grant', $invalid );
 		}
 

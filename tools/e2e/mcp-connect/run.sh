@@ -388,6 +388,21 @@ for route in /wp/v2/users/me /wp/v2/settings; do
 	check_no_re "3 ?rest_route=MCP + POST rest_route=$route -> no data" "$(body "$r")" 'claude-mcp|"title":|"slug":'
 done
 check_eq "3 the token still works on the MCP route" "$(mcp_status "$AT")" 200
+# An ability wrapping a REST endpoint dispatches again (rest_do_request())
+# while the MCP route's callback runs: the audience check must let that nested
+# dispatch through, only the outermost one is held to the MCP route.
+mcp_session "$AT"
+r=$(execute_ability "$AT" e2e/nested-rest '{"route":"/wp/v2/posts"}')
+check_re "3 nested rest_do_request(/wp/v2/posts) during the MCP call -> 200" "$r" '\\?"status\\?":200'
+check_no_re "3 nested rest_do_request(/wp/v2/posts) -> no invalid_token" "$r" 'invalid_token|only valid for the MCP server'
+r=$(execute_ability "$AT" e2e/nested-rest '{"route":"/wp/v2/settings"}')
+check_re "3 nested rest_do_request(/wp/v2/settings) -> refused by capability (403), not by the audience" "$r" '\\?"status\\?":403'
+# After the MCP call the bracket is closed: the outer audience checks above
+# still hold on a fresh request.
+r=$(curl -s -i -H "Authorization: Bearer $AT" "$BASE_URL/wp-json/wp/v2/settings")
+check_eq "3 token on /wp/v2/settings after a nested call -> 401" "$(status "$r")" 401
+r=$(curl_np -s -i -H "Authorization: Bearer $AT" --data-urlencode "rest_route=/wp/v2/settings" "$MCP")
+check_re "3 MCP path + POST rest_route=/wp/v2/settings after a nested call -> 401/403" "$(status "$r")" '^40[13]$'
 r=$(mcp_raw "$UNKNOWN_AT" "$MCP_INIT")
 check_eq "3 unknown token -> 401" "$(status "$r")" 401
 check_re "3 unknown token -> error=invalid_token" "$(header "$r" www-authenticate)" 'error="invalid_token"'
@@ -480,9 +495,15 @@ r=$(exchange "$C_CODE" "$C_VERIFIER")
 check_eq "5 the code still works after the failed attempts -> 200" "$(status "$r")" 200
 C_AT=$(json_str "$(body "$r")" access_token)
 C_CONN=$(conn_of "$C_AT")
+# A used code replayed under another client_id (a third party that read it in
+# a log or the browser history): refused, the connection survives.
+r=$(token_req grant_type=authorization_code "code=$C_CODE" "redirect_uri=$REDIRECT" "client_id=https://claude.ai/oauth/other" "code_verifier=$C_VERIFIER")
+check_eq "5 code replay with another client_id -> invalid_grant" "$(json_str "$(body "$r")" error)" invalid_grant
+check_eq "5 code replay with another client_id keeps the connection" "$(conn_status "$C_CONN")" active
+check_eq "5 access token still works after the foreign replay" "$(mcp_status "$C_AT")" 200
 r=$(exchange "$C_CODE" "$C_VERIFIER")
 check_eq "5 code replay -> invalid_grant" "$(json_str "$(body "$r")" error)" invalid_grant
-check_eq "5 code replay revokes the connection" "$(conn_status "$C_CONN")" revoked
+check_eq "5 code replay with the code's client_id revokes the connection" "$(conn_status "$C_CONN")" revoked
 check_eq "5 access token from the replayed code -> 401" "$(mcp_status "$C_AT")" 401
 flow_code "E2E expired"
 sql "UPDATE $T_TOKENS SET expires_at = '2000-01-01 00:00:00' WHERE token_hash = '$(sha256 "$CODE")'"
@@ -711,6 +732,39 @@ r=$(curl -s -o /dev/null -w '%{http_code}' -H 'X-E2E-User: claude-mcp' "$BASE_UR
 check_eq "9 claude-mcp on /wp-admin/ -> 403" "$r" 403
 r=$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo user_can($u, "manage_options") ? "yes" : "no", "/", get_role("lumia_mcp_agent")->has_cap("manage_options") ? "yes" : "no", "/", user_can($u, "edit_users") ? "yes" : "no";')
 check_eq "9 agent has no manage_options / edit_users" "$r" "no/no/no"
+
+# Forbidden capabilities written on the role between two admin loads (role
+# editor, another plugin, Bricks' role settings): denied at check time, then
+# dropped from the role by the next administrator page load. The connection is
+# approved first: the consent is an admin page load, which would resync.
+flow "E2E forbidden caps"
+F_AT=$AT
+F_RT=$RT
+CAPS_PHP='$u = get_user_by("login", "claude-mcp"); $r = get_role("lumia_mcp_agent"); echo $r->has_cap("manage_options") ? "yes" : "no", "/", $r->has_cap("bricks_execute_code") ? "yes" : "no", "/", user_can($u, "manage_options") ? "yes" : "no", "/", user_can($u, "bricks_execute_code") ? "yes" : "no";'
+wpcli cap add lumia_mcp_agent manage_options bricks_execute_code >/dev/null
+check_eq "9 manage_options + bricks_execute_code written on the role, denied to the agent" "$(wpcli eval "$CAPS_PHP")" "yes/yes/no/no"
+mcp_session "$F_AT"
+r=$(execute_ability "$F_AT" e2e/nested-rest '{"route":"/wp/v2/settings"}')
+check_re "9 through the token: /wp/v2/settings (manage_options) still refused -> 403" "$r" '\\?"status\\?":403'
+r=$(execute_ability "$F_AT" core/get-site-info)
+check_no_re "9 through the token: core/get-site-info (manage_options) not served" "$r" '\\?"(admin_email|siteurl|url)\\?":'
+check_re "9 through the token: core/get-site-info denied" "$r" '[Pp]ermission|not allowed|isError\\?":true|"error"'
+curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
+check_eq "9 admin page load drops the forbidden caps from the role" "$(wpcli eval "$CAPS_PHP")" "no/no/no/no"
+wpcli cap add lumia_mcp_agent edit_dashboard >/dev/null
+curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
+check_eq "9 admin page load drops any capability outside the preset" "$(wpcli eval 'echo get_role("lumia_mcp_agent")->has_cap("edit_dashboard") ? "yes" : "no";')" no
+check_eq "9 the connection still works after the resync" "$(mcp_status "$F_AT")" 200
+# Drift on the account itself (second role, capability granted to the user):
+# the role resync does not see it, reset_account() must.
+wpcli user add-role claude-mcp editor >/dev/null
+wpcli user add-cap claude-mcp delete_others_pages >/dev/null
+check_eq "9 account drift present (second role + user cap)" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo count($u->roles), "/", isset($u->caps["delete_others_pages"]) ? "yes" : "no";')" "2/yes"
+curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
+check_eq "9 admin page load resets the account to the agent role alone" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo implode(",", $u->roles), "/", isset($u->caps["delete_others_pages"]) ? "yes" : "no";')" "lumia_mcp_agent/no"
+check_eq "9 manage_network_options is a forbidden cap" "$(wpcli eval 'echo in_array("manage_network_options", \Lumia\Tools\Modules\McpConnect\Agent::FORBIDDEN_CAPS, true) ? "yes" : "no";')" yes
+check_eq "9 the connection still works after the account reset" "$(mcp_status "$F_AT")" 200
+curl -s -o /dev/null --data-urlencode "token=$F_RT" "$OAUTH/revoke"
 
 # Role changed by hand: the account no longer counts as the agent, and the next
 # administrator page load gives the role back (else every new agent

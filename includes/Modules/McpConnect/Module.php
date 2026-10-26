@@ -50,12 +50,20 @@ final class Module extends AbstractModule {
 			// Late, so a response short-circuited by another plugin (a REST
 			// cache) is replaced too.
 			add_filter( 'rest_pre_dispatch', [ BearerAuth::class, 'restrict_dispatch' ], 999, 3 );
+			// Bracket the MCP route's callbacks: the internal dispatches an
+			// ability makes meanwhile are part of the MCP call.
+			add_filter( 'rest_request_before_callbacks', [ BearerAuth::class, 'enter_mcp' ], -999, 3 );
+			add_filter( 'rest_request_after_callbacks', [ BearerAuth::class, 'leave_mcp' ], 999, 3 );
+			add_filter( 'rest_post_dispatch', [ BearerAuth::class, 'leave_mcp' ], 999, 3 );
 			add_filter( 'rest_post_dispatch', [ Discovery::class, 'challenge' ], 10, 3 );
 		}
 
 		// The agent account must never sign in by itself, whatever the state
 		// of the protocol: it only exists to be acted as through a token.
 		add_filter( 'wp_authenticate_user', [ Agent::class, 'block_login' ], 10, 2 );
+		// The forbidden capabilities are also denied at check time: one written
+		// on the role (or the account) since the last resync never takes effect.
+		add_filter( 'user_has_cap', [ Agent::class, 'deny_forbidden_caps' ], 999, 4 );
 		add_action( 'wp_authenticate_application_password_errors', [ Agent::class, 'block_app_passwords' ], 10, 2 );
 		add_action( 'delete_user', [ $this, 'on_delete_user' ] );
 
@@ -241,20 +249,24 @@ final class Module extends AbstractModule {
 	}
 
 	/**
-	 * Recreates the role or the agent user when missing (activation through a
-	 * configuration import, user deleted by hand). Cheap check first: the
-	 * full ensure() writes the role.
+	 * `admin_init`, administrators only (AJAX left out): recreates the role or
+	 * the agent user when missing (activation through a configuration import,
+	 * user deleted by hand), otherwise resyncs the role to the preset. Cheap
+	 * when nothing drifted: sync_role() compares two arrays and writes nothing.
 	 */
 	public function maybe_ensure_agent(): void {
 		if ( wp_doing_ajax() || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		if ( null !== get_role( Agent::ROLE ) && Agent::user_id() > 0 ) {
+		if ( null === get_role( Agent::ROLE ) || Agent::user_id() <= 0 ) {
+			Agent::ensure();
 			return;
 		}
 
-		Agent::ensure();
+		$preset = self::settings()['agent_preset'] ?? Agent::DEFAULT_PRESET;
+		Agent::sync_role( is_string( $preset ) ? $preset : Agent::DEFAULT_PRESET );
+		Agent::reset_account( Agent::user_id() );
 	}
 
 	/* ================================================================
