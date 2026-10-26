@@ -1,0 +1,303 @@
+/* ================================================================
+ * MCP Connect: connections list, help tab, consent page
+ * ================================================================ */
+
+/* The hidden attribute loses against the display:flex of the components
+   (empty state): restore it. */
+.lumia-mc [hidden] {
+  display: none !important;
+}
+
+/* ---- Toolbar ---- */
+
+.lumia-mc__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.lumia-mc__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--lumia-text-secondary);
+}
+
+/* ---- Table (same frame as the SMTP and activity log lists) ---- */
+
+.lumia-mc__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius);
+  background: var(--lumia-surface);
+}
+
+.lumia-mc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lumia-mc__table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--lumia-text-muted);
+  background: var(--lumia-n50);
+  border-bottom: 1px solid var(--lumia-border);
+  white-space: nowrap;
+}
+
+.lumia-mc__table td {
+  padding: 8px 12px;
+  vertical-align: middle;
+  color: var(--lumia-text);
+  border-bottom: 1px solid var(--lumia-border);
+}
+
+.lumia-mc__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.lumia-mc__table tbody tr:hover {
+  background: var(--lumia-n50);
+}
+
+.lumia-mc__row--revoked td {
+  color: var(--lumia-text-muted);
+}
+
+/* Client, acting user: the name, then a badge underneath. */
+.lumia-mc__client,
+.lumia-mc__acting,
+.lumia-mc__status-cell {
+  white-space: nowrap;
+}
+
+.lumia-mc__client > span:first-child,
+.lumia-mc__acting > span:first-child {
+  display: block;
+}
+
+.lumia-mc__badge {
+  margin-top: 2px;
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+.lumia-mc__label span {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.lumia-mc__muted span {
+  font-weight: 400;
+  color: var(--lumia-text-muted);
+}
+
+.lumia-mc__date,
+.lumia-mc__ip {
+  white-space: nowrap;
+  color: var(--lumia-text-secondary);
+}
+
+.lumia-mc__reason {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--lumia-text-muted);
+}
+
+.lumia-mc__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lumia-mc__state {
+  padding: 32px 12px !important;
+  text-align: center;
+  color: var(--lumia-text-muted) !important;
+}
+
+.lumia-mc__empty {
+  border: 1px dashed var(--lumia-border);
+  border-radius: var(--lumia-radius);
+}
+
+/* ---- Help tab ---- */
+
+.lumia-mc__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.lumia-mc__copy .lumia-input,
+.lumia-mc__copy .lumia-mc__code {
+  flex: 1 1 320px;
+  min-width: 0;
+  max-width: none;
+}
+
+.lumia-mc__copy .lumia-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+.lumia-mc__code {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  color: var(--lumia-text);
+  background: var(--lumia-n50);
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+}
+
+.lumia-mc__code code {
+  padding: 0;
+  font: inherit;
+  background: none;
+}
+
+.lumia-mc__steps {
+  margin: 16px 0 8px 20px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--lumia-text);
+}
+
+.lumia-mc__steps li {
+  margin-bottom: 4px;
+}
+
+.lumia-mc__check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.lumia-mc__check .lumia-badge {
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+/* ================================================================
+ * Consent page (admin.php?page=lumia-mcp-consent)
+ * Standalone screen outside the plugin layout: .lumia-admin-wrap is kept
+ * for the component scoping, but not its full-height app frame.
+ * ================================================================ */
+
+.lumia-admin-wrap.lumia-mcp-consent {
+  height: auto;
+  min-height: calc(100vh - 32px);
+  overflow: visible;
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+.lumia-mcp-consent__panel {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.lumia-mcp-consent__client {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lumia-mcp-consent__client .lumia-card__title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.lumia-mcp-consent__client .lumia-card__desc {
+  overflow-wrap: anywhere;
+}
+
+.lumia-mcp-consent__logo {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--lumia-radius-sm);
+  object-fit: contain;
+}
+
+.lumia-mcp-consent__verified {
+  margin: 0 0 16px;
+}
+
+.lumia-mcp-consent__verified .lumia-badge,
+.lumia-mcp-consent .lumia-notice {
+  gap: 6px;
+}
+
+.lumia-mcp-consent .lumia-notice {
+  display: flex;
+  align-items: flex-start;
+}
+
+.lumia-mcp-consent .lumia-server-table {
+  margin-bottom: 20px;
+}
+
+.lumia-mcp-consent__form .lumia-input {
+  width: 100%;
+  max-width: none;
+}
+
+.lumia-mcp-consent__choices {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.lumia-mcp-consent__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--lumia-border);
+  border-radius: var(--lumia-radius-sm);
+  cursor: pointer;
+}
+
+.lumia-mcp-consent__choice:has(input:checked) {
+  border-color: var(--lumia-accent);
+  background: var(--lumia-accent-light);
+}
+
+.lumia-mcp-consent__choice input {
+  margin-top: 3px;
+}
+
+.lumia-mcp-consent__choice .lumia-form__help {
+  display: block;
+  margin-top: 2px;
+}
+
+.lumia-mcp-consent .lumia-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}

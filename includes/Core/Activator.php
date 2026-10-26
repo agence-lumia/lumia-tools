@@ -31,6 +31,7 @@ class Activator {
 		'activity_log'    => \Lumia\Tools\Modules\ActivityLog\Module::class,
 		'smtp'            => \Lumia\Tools\Modules\Smtp\Module::class,
 		'motion'          => \Lumia\Tools\Modules\Motion\Module::class,
+		'mcp_connect'     => \Lumia\Tools\Modules\McpConnect\Module::class,
 	];
 
 	/**
