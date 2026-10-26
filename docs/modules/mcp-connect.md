@@ -10,6 +10,22 @@ Checked on the Docker bench (WordPress 7.1.3, Apache, MCP Adapter 0.7.1): missin
 
 Also checked on boilerplate.agence-lumia.com (Dokploy, Traefik, nginx, PHP-FPM, Lümia 2.2.4 + the spike files, Cache Enabler and Redis active), once `/.well-known/oauth-` was let through nginx (below): the same checks pass with `https` URLs everywhere, which proves that the `Authorization` header reaches PHP-FPM through Traefik and nginx and that `home_url()` / `rest_url()` are `https` behind the proxy; Claude Code with the Bearer header lists the 51 abilities of the site.
 
+The spike was removed from boilerplate afterwards (files and `nginx-security.conf` restored from backups).
+
+## What Claude actually sends
+
+Captured by the `/authorize` spy on boilerplate (claude.ai web, 2026-10-26) and read from the published client metadata documents:
+
+| Client | `client_id` (CIMD URL) | `redirect_uris` in its metadata | Requested `scope` |
+|---|---|---|---|
+| claude.ai (hosted apps) | `https://claude.ai/oauth/mcp-oauth-client-metadata` (`client_name` "Claude") | `https://claude.ai/api/mcp/auth_callback` only | `mcp offline_access` |
+| Claude Code | `https://claude.ai/oauth/claude-code-client-metadata` (`client_name` "Claude Code") | `http://localhost/callback`, `http://127.0.0.1/callback` | — |
+
+- Both documents declare `token_endpoint_auth_method: none`. The hosted one also lists the `urn:ietf:params:oauth:grant-type:jwt-bearer` grant (Enterprise managed auth, out of scope): the authorization server must ignore grant types it does not support rather than reject the client.
+- `https://claude.com/api/mcp/auth_callback` is **not** in use yet. Rather than hard-coding a list of Claude callbacks, the module should accept exactly the `redirect_uris` of the fetched metadata document (loopback port excepted): the day Anthropic adds `claude.com`, its document will say so.
+- Claude added `offline_access` to the challenge's `scope="mcp"` on its own, because the authorization server metadata lists it.
+- The claude.ai "Add custom connector" dialog read the discovery documents before connecting: it showed "Sign in now" and "Use Claude's published identity (CIMD)" as **Detected**. It also lets a user add up to four static request headers sent alongside the OAuth token.
+
 ## Hook-in on the MCP Adapter
 
 - The Adapter never reads the `Authorization` header itself. Its transport `permission_callback` is `current_user_can( 'read' )` (filter `mcp_adapter_default_transport_permission_user_capability`) when no custom callback is given, so authenticating a user on `determine_current_user` is enough. Its sessions (`Mcp-Session-Id`) live in that user's meta: they work unchanged for a Bearer user.
