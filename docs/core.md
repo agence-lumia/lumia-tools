@@ -14,7 +14,9 @@ plugins_loaded → Plugin::instance() (singleton)
 
 `Admin` is instantiated in the same `Plugin` constructor, only when `is_admin()`.
 
-**On hold.** If Studio Kyne Mini Tools is loaded in the request, or its migration stopped half-way (`FromSkmt::on_hold()`), `Plugin` registers no module and no `Admin`: only the updater, the text domain and an admin notice. See [Migration from SKMT](#migration-from-skmt-coremigrationfromskmt).
+**On hold.** If Studio Kyne Mini Tools is loaded in the request, or its migration stopped half-way (`FromSkmt::on_hold()`), `Plugin` registers no module and no `Admin`: only the updater, the text domain and an admin notice. See [Migration from SKMT](#migration-from-skmt-coremigrationfromskmt). Code hooked before `plugins_loaded` cannot rely on that: it asks `Plugin::is_on_hold()` (a public wrapper of `FromSkmt::on_hold()`, meaningful from `plugins_loaded` on) and stays inert.
+
+**Before the bootstrap.** One thing runs at plugin file load, outside this sequence: `lumia-tools.php` calls `McpConnect\Discovery::boot()`, which adds the MCP Connect Bearer filter on `determine_current_user` when the module flag is on in the raw `lumia_settings` option. `_wp_get_current_user()` caches its first answer for the whole request, an anonymous user included, so a filter added on `plugins_loaded` or in `Module::init()` loses to any plugin resolving the user earlier. Everything else of that module waits for `init()`; see [modules/mcp-connect.md](modules/mcp-connect.md#hook-timing-pitfalls).
 
 ## Autoloader
 
@@ -44,6 +46,7 @@ Each module is a class extending `AbstractModule` (which implements `ModuleInter
 - `static get_defaults(): array` — nested array of defaults, merged recursively by `get_module_settings()`
 - `static get_uninstall_keys(): array` — declares `options`, `meta` (**post** meta), `user_meta`, `post_type`, `taxonomy`, `tables` (own tables, **without prefix**, dropped with `DROP TABLE`) and `cron` (scheduled task hooks) for the uninstall cleanup; every key is optional. The two meta channels live in different tables: a user meta declared under `meta` is never deleted. The `cron` hooks are also unscheduled by `Deactivator` when the plugin is deactivated: without that, WordPress kept firing every day a hook nobody listens to. Both use `wp_unschedule_hook()`: `wp_clear_scheduled_hook()` only removes the events scheduled **without arguments**, and an event carried over from SKMT with its arguments survived it.
 - `static uninstall_files(): void` (optional, not in the interface) — files a module created outside its options, removed by `uninstall.php` **before** the module's keys (it may read them). Only the Image Optimizer has one (`uploads/.htaccess` block, AVIF siblings, `uploads/lumia-tools/`).
+- `static uninstall_data(): void` (optional, not in the interface) — data a module created outside its declared keys that needs WordPress functions to go cleanly (users, roles), called by `uninstall.php` right after `uninstall_files()` and **before** the keys are deleted (it may read them). Only MCP Connect has one: it deletes the `claude-mcp` account (its content reassigned to an administrator), the `lumia_mcp_agent` role, and reads `lumia_mcp_agent_user_id` to find the account.
 
 Optional overrides: `get_admin_css()`, `get_admin_js()`, `get_admin_js_deps()`, `get_admin_js_data()`, `to_form_payload()`, `get_export_extras()` / `import_extras()`, `get_required_capability()`, `on_activate()`, `on_deactivate()`.
 
@@ -132,7 +135,7 @@ Sites migrated from the former name may still define `SKMT_*` constants in `wp-c
 - `Compat::constant( 'SMTP_USER' )` / `Compat::has_constant( 'SMTP_USER' )`: `LUMIA_SMTP_USER` first, `SKMT_SMTP_USER` as a fallback (`null` / `false` if neither exists). Covers `DISABLE_LOGIN_URL`, `SMTP_USER`, `SMTP_PASSWORD`, `BREVO_API_KEY`, `ENCRYPTION_KEY`.
 - `Compat::apply_filters( 'custom_login_redirect', $value, ...$args )` / `Compat::do_action( 'register_modules', ...$args )`: if something is hooked on `skmt_*`, it runs first through `apply_filters_deprecated()` / `do_action_deprecated()` (version `2.0.0`, notice in `WP_DEBUG`), then `lumia_*` runs. Covers `module_definitions`, `register_modules`, `custom_login_redirect`, `db_table_owner_aliases`, `activity_log_post_types`, `activity_log_content_meta_keys`, `activity_log_tracked_options`, `activity_log_record`, `mc_editor_excluded_slugs`.
 
-The admin help texts only mention the `LUMIA_*` names. A new public filter, action or wp-config constant is added through `Compat` only if a site could already have used its `skmt_` / `SKMT_` ancestor. Checked on the Docker bench by `tools/e2e/run.sh assert-compat`.
+The admin help texts only mention the `LUMIA_*` names. A new public filter, action or wp-config constant is added through `Compat` only if a site could already have used its `skmt_` / `SKMT_` ancestor. Exception to that rule: MCP Connect reads `LUMIA_DISABLE_MCP_CONNECT` and its filters `lumia_mcp_connect_trusted_publishers`, `lumia_mcp_connect_approver_capability` and `lumia_mcp_connect_agent_capabilities` through `Compat` although they have no ancestor (the legacy lookup simply finds nothing). Checked on the Docker bench by `tools/e2e/run.sh assert-compat`.
 
 ## Migration from SKMT (`Core\Migration\FromSkmt`)
 
@@ -238,7 +241,7 @@ Any request data goes through `sanitize_text_field( wp_unslash( $_POST[...] ) )`
 
 ## Icons
 
-Icons are inline SVGs rendered through `Admin::render_icon(string $icon, string $size, string $extra_class)`. The available icons are defined in `Admin::get_icon_paths()`: `layout-dashboard`, `package`, `settings`, `image`, `check-circle`, `info`, `shield`, `bell`, `x`, `log-in`, `folder`, `chevron-down`, `palette`, `menu`, `database`, `eye-off`, `folder-tree`, `history`, `mail`.
+Icons are inline SVGs rendered through `Admin::render_icon(string $icon, string $size, string $extra_class)`, or its static twin `Admin::icon()` (same arguments) for markup rendered without the `Admin` instance in scope, such as the MCP Connect consent page. An unknown name falls back to `package`. The available icons are defined in `Admin::get_icon_paths()`: `layout-dashboard`, `package`, `settings`, `image`, `check-circle`, `info`, `shield`, `bell`, `x`, `log-in`, `folder`, `chevron-down`, `palette`, `menu`, `database`, `eye-off`, `mail`, `history`, `folder-tree`, `sparkles`, `plug`, `copy`, `trash-2`, `badge-check`, `triangle-alert`, `circle-pause`, `key-round`.
 
 **Never invent or hand-draw an SVG.** All the icons come from [Lucide](https://lucide.dev) (lucide-static v1.34.0). For an icon missing from `get_icon_paths()` or from a module's JS, fetch the official file as is. Do not approximate by editing another icon's path, do not make up coordinates: the result looks broken and departs from the rest of the interface. This also applies to the modules' inline JS SVGs (folder icons in `assets/admin/js/modules/media.js`).
 

@@ -20,7 +20,7 @@ Internal plugin documentation, excluded from the release ZIPs. `CLAUDE.md` at th
 | Database | [modules/database.md](modules/database.md) | identifier validation, `normalize_sql()`, SQL editor, export |
 | ActivityLog | [modules/activity-log.md](modules/activity-log.md) | dedicated table, logging pitfalls (auto-draft, Gutenberg, Bricks), brute-force ceiling, purge, CSV export |
 | Smtp | [modules/smtp.md](modules/smtp.md) | `phpmailer_init` rather than a replaced `wp_mail()`, global PHPMailer, sender and Return-Path, password encrypted and left out of the export, log, transcript masking |
-| McpConnect | [modules/mcp-connect.md](modules/mcp-connect.md) | spike (#46): Bearer hook-in on the MCP Adapter, `401` challenge, discovery documents, hosting pitfalls (nginx `.well-known`, `Authorization` header, CSP) |
+| McpConnect | [modules/mcp-connect.md](modules/mcp-connect.md) | OAuth 2.1 flow (discovery, authorize, consent in wp-admin, token, Bearer on the MCP route only), hook timing (boot at file load, `?rest_route=` on the front controller), hashed tokens and atomic consume, CIMD SSRF guards and what Claude sends, DCR, agent role and presets, Site Health, hosting pitfalls (nginx `.well-known`, `Authorization` header, CSP `form-action`), known limits |
 | Motion | [modules/motion.md](modules/motion.md) | Bricks panel and `--lm-*` cascade, tempo and spring curves, inline overrides (components, loops), conditional loading, Lenis, accessibility of split text, `sk-*` migration, bundled GSAP/Lenis hashes |
 
 Each module page documents the **pitfalls and decisions** (what broke, why the solution is the one it is), not the code itself: the code reads from `includes/Modules/<Module>/`.

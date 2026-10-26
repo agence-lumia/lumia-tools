@@ -9,7 +9,7 @@ Requires WordPress 6.9+ and PHP 8.0+. The interface is in English and ships with
 - Modular architecture: enable only the modules you need
 - Modern, fast custom admin interface
 - Updates through GitHub (Stable and Dev channels)
-- Eleven modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP, Motion
+- Twelve modules: Image Optimizer, Security, White Label, Menu Creator, Login, Files, Database, Media, Activity Log, SMTP, Motion, MCP Connect
 
 ## Installation
 
@@ -119,6 +119,17 @@ In Settings > Updates:
 - Counters roll with [NumberFlow](https://number-flow.barvian.me/) (dynamic or fixed width), and screen readers always get the written value
 - Loaded only on the pages that use an effect; GSAP, Lenis and NumberFlow bundled, no CDN; optional Lenis smooth scrolling
 - Clear Bricks panel (sections, units, Replay, "Show markers", inherited values as placeholders); `wp lumia motion migrate` for sites using the former snippet
+
+### MCP Connect
+
+- Adds the site to Claude (claude.ai, Desktop, Cowork, Claude Code) as a custom connector: paste `https://<site>/wp-json/mcp/mcp-adapter-default-server` in Settings > Connectors > Add custom connector, leave Client ID and Secret empty, then approve in WordPress. No proxy, no application password
+- Requires the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (0.7 or later), pretty permalinks and HTTPS
+- OAuth 2.1 authorization server per site: discovery documents (RFC 9728, RFC 8414), PKCE S256, client metadata documents (CIMD) with SSRF guards, optional dynamic client registration (off by default), revocation endpoint
+- Consent screen in wp-admin, showing who asks, where the browser returns and which account Claude will act as; optional connection label
+- Claude acts through a dedicated `claude-mcp` account that cannot sign in by itself, with a permission preset (Content and Bricks; Content, Bricks, SEO; Full shop) that never includes plugins, users or site settings
+- Tokens stored hashed, accepted on the MCP route only; refresh tokens rotated, and a reused one revokes the connection
+- Connections list with Revoke and Revoke all, a pause switch, and every change made through Claude marked with its connection in the Activity Log
+- Site Health tests for the discovery documents, the `Authorization` header and the environment. If you are locked out, `define( 'LUMIA_DISABLE_MCP_CONNECT', true );` in `wp-config.php` turns the whole protocol off
 
 ## Architecture
 
