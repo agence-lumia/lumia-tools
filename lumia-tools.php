@@ -33,6 +33,13 @@ define( 'LUMIA_ASSETS_URL', LUMIA_PLUGIN_URL . 'assets/' );
 require_once LUMIA_INCLUDES_DIR . 'Core/Autoloader.php';
 Lumia\Tools\Core\Autoloader::register();
 
+// MCP Connect spike (#46), only with its wp-config constants. Hooked at file
+// load, not on plugins_loaded: the first wp_get_current_user() caches the user
+// for the whole request, and an earlier plugin would lock it to anonymous.
+if ( Lumia\Tools\Modules\McpConnect\Spike::enabled() ) {
+	( new Lumia\Tools\Modules\McpConnect\Spike() )->init();
+}
+
 // Bootstrap
 add_action(
 	'plugins_loaded',
