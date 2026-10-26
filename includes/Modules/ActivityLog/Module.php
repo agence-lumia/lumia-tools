@@ -384,7 +384,7 @@ class Module extends AbstractModule {
 			'object'    => $this->object_label( $row ),
 			'object_id' => (int) $row['object_id'],
 			'link'      => $this->object_link( (string) $row['object_type'], (int) $row['object_id'] ),
-			'details'   => $this->detail_lines( $details ),
+			'details'   => $this->detail_lines( $details, (string) $row['event_group'] ),
 		];
 	}
 
@@ -448,49 +448,68 @@ class Module extends AbstractModule {
 	 * Detail of an event as "label / value" lines, ready to display.
 	 *
 	 * @param array<string, mixed> $details
+	 * @param string               $group   Event group: the reasons of an MCP
+	 *                                      revocation share their keys
+	 *                                      (`manual`, `expired`) with the
+	 *                                      Files danger mode, not their text.
 	 * @return array<int, array{0: string, 1: string}>
 	 */
-	private function detail_lines( array $details ): array {
+	private function detail_lines( array $details, string $group = '' ): array {
 		$labels = [
-			'title'        => __( 'Title', 'lumia-tools' ),
-			'status'       => __( 'Status', 'lumia-tools' ),
-			'slug'         => __( 'Slug', 'lumia-tools' ),
-			'parent'       => __( 'Parent', 'lumia-tools' ),
-			'date'         => __( 'Publication date', 'lumia-tools' ),
-			'order'        => __( 'Order', 'lumia-tools' ),
-			'comments'     => __( 'Comments', 'lumia-tools' ),
-			'author'       => __( 'Author', 'lumia-tools' ),
-			'content'      => _x( 'Content', 'post content field', 'lumia-tools' ),
-			'excerpt'      => __( 'Excerpt', 'lumia-tools' ),
-			'password'     => __( 'Password', 'lumia-tools' ),
-			'builder'      => __( 'Page builder', 'lumia-tools' ),
-			'alt'          => __( 'Alt text', 'lumia-tools' ),
-			'email'        => __( 'Email', 'lumia-tools' ),
-			'display_name' => __( 'Display name', 'lumia-tools' ),
-			'url'          => __( 'Website', 'lumia-tools' ),
-			'roles'        => __( 'Roles', 'lumia-tools' ),
-			'reassign'     => __( 'Content reassigned to', 'lumia-tools' ),
-			'file'         => __( 'File', 'lumia-tools' ),
-			'stylesheet'   => __( 'Folder', 'lumia-tools' ),
-			'version'      => __( 'Version', 'lumia-tools' ),
-			'network'      => __( 'Network-wide', 'lumia-tools' ),
-			'mime'         => __( 'File type', 'lumia-tools' ),
-			'label'        => __( 'Setting', 'lumia-tools' ),
-			'from'         => __( 'Before', 'lumia-tools' ),
-			'to'           => __( 'After', 'lumia-tools' ),
-			'paths'        => __( 'Changed fields', 'lumia-tools' ),
-			'modules'      => __( 'Modules', 'lumia-tools' ),
-			'via'          => __( 'Source', 'lumia-tools' ),
-			'until'        => __( 'Until', 'lumia-tools' ),
-			'reason'       => __( 'Reason', 'lumia-tools' ),
-			'enabled_by'   => __( 'Turned on by', 'lumia-tools' ),
-			'operation'    => __( 'Operation', 'lumia-tools' ),
+			'title'         => __( 'Title', 'lumia-tools' ),
+			'status'        => __( 'Status', 'lumia-tools' ),
+			'slug'          => __( 'Slug', 'lumia-tools' ),
+			'parent'        => __( 'Parent', 'lumia-tools' ),
+			'date'          => __( 'Publication date', 'lumia-tools' ),
+			'order'         => __( 'Order', 'lumia-tools' ),
+			'comments'      => __( 'Comments', 'lumia-tools' ),
+			'author'        => __( 'Author', 'lumia-tools' ),
+			'content'       => _x( 'Content', 'post content field', 'lumia-tools' ),
+			'excerpt'       => __( 'Excerpt', 'lumia-tools' ),
+			'password'      => __( 'Password', 'lumia-tools' ),
+			'builder'       => __( 'Page builder', 'lumia-tools' ),
+			'alt'           => __( 'Alt text', 'lumia-tools' ),
+			'email'         => __( 'Email', 'lumia-tools' ),
+			'display_name'  => __( 'Display name', 'lumia-tools' ),
+			'url'           => __( 'Website', 'lumia-tools' ),
+			'roles'         => __( 'Roles', 'lumia-tools' ),
+			'reassign'      => __( 'Content reassigned to', 'lumia-tools' ),
+			'file'          => __( 'File', 'lumia-tools' ),
+			'stylesheet'    => __( 'Folder', 'lumia-tools' ),
+			'version'       => __( 'Version', 'lumia-tools' ),
+			'network'       => __( 'Network-wide', 'lumia-tools' ),
+			'mime'          => __( 'File type', 'lumia-tools' ),
+			'label'         => __( 'Setting', 'lumia-tools' ),
+			'from'          => __( 'Before', 'lumia-tools' ),
+			'to'            => __( 'After', 'lumia-tools' ),
+			'paths'         => __( 'Changed fields', 'lumia-tools' ),
+			'modules'       => __( 'Modules', 'lumia-tools' ),
+			'via'           => __( 'Source', 'lumia-tools' ),
+			'until'         => __( 'Until', 'lumia-tools' ),
+			'reason'        => __( 'Reason', 'lumia-tools' ),
+			'enabled_by'    => __( 'Turned on by', 'lumia-tools' ),
+			'operation'     => __( 'Operation', 'lumia-tools' ),
+			'connection'    => __( 'Connection', 'lumia-tools' ),
+			'connection_id' => __( 'Connection ID', 'lumia-tools' ),
+			'client'        => __( 'Client', 'lumia-tools' ),
+			'acting_user'   => __( 'Acts as', 'lumia-tools' ),
 		];
 
-		$reasons = [
-			'manual'  => __( 'Locked by hand', 'lumia-tools' ),
-			'expired' => __( 'One hour elapsed', 'lumia-tools' ),
-		];
+		if ( 'mcp' === $group ) {
+			$reasons = [
+				'manual'       => __( 'Revoked by hand', 'lumia-tools' ),
+				'all'          => __( 'All connections revoked', 'lumia-tools' ),
+				'reuse'        => __( 'Refresh token reused', 'lumia-tools' ),
+				'user_deleted' => __( 'User deleted', 'lumia-tools' ),
+				'token'        => __( 'Revoked by the client', 'lumia-tools' ),
+				'expired'      => __( 'Expired', 'lumia-tools' ),
+			];
+		} else {
+			$reasons = [
+				'manual'  => __( 'Locked by hand', 'lumia-tools' ),
+				'expired' => __( 'One hour elapsed', 'lumia-tools' ),
+			];
+		}
 
 		$operations = [
 			'save'   => __( 'Saved from the editor', 'lumia-tools' ),
@@ -504,7 +523,11 @@ class Module extends AbstractModule {
 			'cron'   => __( 'Scheduled task', 'lumia-tools' ),
 			'cli'    => __( 'WP-CLI', 'lumia-tools' ),
 			'xmlrpc' => __( 'XML-RPC', 'lumia-tools' ),
+			'mcp'    => __( 'Claude (MCP)', 'lumia-tools' ),
 		];
+
+		// An MCP request names its connection on the "Source" line itself.
+		$connection = isset( $details['connection'] ) && is_scalar( $details['connection'] ) ? (string) $details['connection'] : '';
 
 		$lines = [];
 
@@ -534,6 +557,12 @@ class Module extends AbstractModule {
 				$value = $this->status_label( $value );
 			} elseif ( 'via' === $key ) {
 				$value = $channels[ $value ] ?? (string) $value;
+				if ( '' !== $connection ) {
+					/* translators: 1: request source ("Claude (MCP)"), 2: connection label. */
+					$value = sprintf( _x( '%1$s (%2$s)', 'request source and connection label', 'lumia-tools' ), $value, $connection );
+				}
+			} elseif ( 'connection' === $key && '' !== $connection && isset( $details['via'] ) ) {
+				continue;
 			} elseif ( 'reason' === $key ) {
 				$value = $reasons[ $value ] ?? (string) $value;
 			} elseif ( 'operation' === $key ) {
