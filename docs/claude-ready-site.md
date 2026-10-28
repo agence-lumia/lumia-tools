@@ -18,7 +18,7 @@ define( 'WP_DEBUG_LOG', '/path/outside/the/webroot/debug.log' );
 define( 'WP_DEBUG_DISPLAY', false );
 ```
 
-Never define `DISALLOW_UNFILTERED_HTML` (no JavaScript for Claude), `DISALLOW_FILE_MODS` (no plugin installs or updates) or `DISALLOW_FILE_EDIT`. The MCP Connect Help tab and Site Health list what still blocks.
+Never define `DISALLOW_UNFILTERED_HTML` (no JavaScript for Claude) or `DISALLOW_FILE_MODS` (no plugin installs or updates, and Lümia Tools then leaves the two constants above off). `DISALLOW_FILE_EDIT`, which the hosting template sets, only closes WordPress' file editors: it blocks nothing Claude needs. The MCP Connect Help tab and Site Health list what still blocks.
 
 ## Plugins
 
