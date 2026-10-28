@@ -252,6 +252,13 @@ final class Agent {
 			return;
 		}
 
+		// A site whose wp-config.php forbids file changes or the code editors
+		// keeps administrators from running code: unfiltered uploads (a .php
+		// file in uploads/) and Bricks PHP would reopen that door.
+		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) || ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) ) {
+			return;
+		}
+
 		foreach ( self::CODE_CONSTANTS as $name ) {
 			if ( ! defined( $name ) ) {
 				define( $name, true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- WordPress' and Bricks' own constants.

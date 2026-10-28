@@ -400,9 +400,11 @@ final class SiteHealth {
 		} elseif ( defined( 'ALLOW_UNFILTERED_UPLOADS' ) && ALLOW_UNFILTERED_UPLOADS ) {
 			$uploads = 'lumia' === Agent::constant_source( 'ALLOW_UNFILTERED_UPLOADS' )
 				? __( 'Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set by Lümia Tools).', 'lumia-tools' )
-				: __( 'Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set in wp-config.php).', 'lumia-tools' );
+				: __( 'Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set outside Lümia Tools).', 'lumia-tools' );
+		} elseif ( defined( 'ALLOW_UNFILTERED_UPLOADS' ) ) {
+			$uploads = __( 'ALLOW_UNFILTERED_UPLOADS is set to false outside Lümia Tools: Claude uploads the file types WordPress allows.', 'lumia-tools' );
 		} else {
-			$uploads = __( 'ALLOW_UNFILTERED_UPLOADS is set to false in wp-config.php: Claude uploads the file types WordPress allows.', 'lumia-tools' );
+			$uploads = self::constants_not_defined();
 		}
 
 		$checks['uploads'] = [
@@ -418,13 +420,26 @@ final class SiteHealth {
 				'value' => $php
 					? ( 'lumia' === Agent::constant_source( 'BRICKS_ENABLE_PHP_ABILITIES' )
 						? __( 'On (BRICKS_ENABLE_PHP_ABILITIES set by Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI.', 'lumia-tools' )
-						: __( 'On (BRICKS_ENABLE_PHP_ABILITIES set in wp-config.php): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI.', 'lumia-tools' ) )
-					: __( 'Off: BRICKS_ENABLE_PHP_ABILITIES is set to false in wp-config.php.', 'lumia-tools' ),
+						: __( 'On (BRICKS_ENABLE_PHP_ABILITIES set outside Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI.', 'lumia-tools' ) )
+					: ( defined( 'BRICKS_ENABLE_PHP_ABILITIES' )
+						? __( 'Off: BRICKS_ENABLE_PHP_ABILITIES is set to false outside Lümia Tools.', 'lumia-tools' )
+						: self::constants_not_defined() ),
 				'state' => 'info',
 			];
 		}
 
 		return $checks;
+	}
+
+	/**
+	 * Why Lümia Tools did not define a code constant (Agent::define_code_constants()).
+	 */
+	private static function constants_not_defined(): string {
+		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) || ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) ) {
+			return __( 'Not set: wp-config.php forbids file changes or the code editors (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), so Lümia Tools does not open this.', 'lumia-tools' );
+		}
+
+		return __( 'Not set yet: Lümia Tools sets it from the next page load (MCP Connect active, Administrator preset).', 'lumia-tools' );
 	}
 
 	/**

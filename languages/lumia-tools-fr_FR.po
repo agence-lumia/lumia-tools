@@ -7079,22 +7079,30 @@ msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent envoye
 msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set by Lümia Tools)."
 msgstr "Claude peut envoyer tous les types de fichiers (ALLOW_UNFILTERED_UPLOADS défini par Lümia Tools)."
 
-#: includes/Modules/McpConnect/SiteHealth.php:403
-msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set in wp-config.php)."
-msgstr "Claude peut envoyer tous les types de fichiers (ALLOW_UNFILTERED_UPLOADS défini dans wp-config.php)."
-
-#: includes/Modules/McpConnect/SiteHealth.php:405
-msgid "ALLOW_UNFILTERED_UPLOADS is set to false in wp-config.php: Claude uploads the file types WordPress allows."
-msgstr "ALLOW_UNFILTERED_UPLOADS vaut false dans wp-config.php : Claude envoie les types de fichiers autorisés par WordPress."
-
 #: includes/Modules/McpConnect/SiteHealth.php:420
 msgid "On (BRICKS_ENABLE_PHP_ABILITIES set by Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
 msgstr "Active (BRICKS_ENABLE_PHP_ABILITIES défini par Lümia Tools) : Claude peut exécuter du PHP via bricks/execute-php une fois celle-ci activée dans Bricks > AI."
 
-#: includes/Modules/McpConnect/SiteHealth.php:421
-msgid "On (BRICKS_ENABLE_PHP_ABILITIES set in wp-config.php): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
-msgstr "Active (BRICKS_ENABLE_PHP_ABILITIES défini dans wp-config.php) : Claude peut exécuter du PHP via bricks/execute-php une fois celle-ci activée dans Bricks > AI."
+#: includes/Modules/McpConnect/SiteHealth.php:403
+msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set outside Lümia Tools)."
+msgstr "Claude peut envoyer tous les types de fichiers (ALLOW_UNFILTERED_UPLOADS défini en dehors de Lümia Tools)."
 
-#: includes/Modules/McpConnect/SiteHealth.php:422
-msgid "Off: BRICKS_ENABLE_PHP_ABILITIES is set to false in wp-config.php."
-msgstr "Inactive : BRICKS_ENABLE_PHP_ABILITIES vaut false dans wp-config.php."
+#: includes/Modules/McpConnect/SiteHealth.php:405
+msgid "ALLOW_UNFILTERED_UPLOADS is set to false outside Lümia Tools: Claude uploads the file types WordPress allows."
+msgstr "ALLOW_UNFILTERED_UPLOADS vaut false en dehors de Lümia Tools : Claude envoie les types de fichiers autorisés par WordPress."
+
+#: includes/Modules/McpConnect/SiteHealth.php:423
+msgid "On (BRICKS_ENABLE_PHP_ABILITIES set outside Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
+msgstr "Active (BRICKS_ENABLE_PHP_ABILITIES défini en dehors de Lümia Tools) : Claude peut exécuter du PHP via bricks/execute-php une fois celle-ci activée dans Bricks > AI."
+
+#: includes/Modules/McpConnect/SiteHealth.php:425
+msgid "Off: BRICKS_ENABLE_PHP_ABILITIES is set to false outside Lümia Tools."
+msgstr "Inactive : BRICKS_ENABLE_PHP_ABILITIES vaut false en dehors de Lümia Tools."
+
+#: includes/Modules/McpConnect/SiteHealth.php:439
+msgid "Not set: wp-config.php forbids file changes or the code editors (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), so Lümia Tools does not open this."
+msgstr "Non défini : wp-config.php interdit les modifications de fichiers ou les éditeurs de code (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), Lümia Tools ne l'ouvre donc pas."
+
+#: includes/Modules/McpConnect/SiteHealth.php:442
+msgid "Not set yet: Lümia Tools sets it from the next page load (MCP Connect active, Administrator preset)."
+msgstr "Pas encore défini : Lümia Tools le définit dès le prochain chargement de page (MCP Connect actif, préréglage Administrateur)."

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T16:43:47+00:00\n"
+"POT-Creation-Date: 2026-10-28T16:46:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -428,7 +428,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:132
 #: includes/Core/Modules.php:134
-#: includes/Modules/McpConnect/SiteHealth.php:473
+#: includes/Modules/McpConnect/SiteHealth.php:488
 msgid "MCP Connect"
 msgstr ""
 
@@ -3259,15 +3259,15 @@ msgctxt "MCP Connect permission preset"
 msgid "Editor"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:662
+#: includes/Modules/McpConnect/Agent.php:669
 msgid "This account is used by Claude through MCP Connect and cannot sign in."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:674
+#: includes/Modules/McpConnect/Agent.php:681
 msgid "This account is used by Claude through MCP Connect and cannot use application passwords."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:695
+#: includes/Modules/McpConnect/Agent.php:702
 msgid "This account is used by Claude through MCP Connect and has no access to the dashboard."
 msgstr ""
 
@@ -4216,44 +4216,52 @@ msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set by Lümia T
 msgstr ""
 
 #: includes/Modules/McpConnect/SiteHealth.php:403
-msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set in wp-config.php)."
+msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set outside Lümia Tools)."
 msgstr ""
 
 #: includes/Modules/McpConnect/SiteHealth.php:405
-msgid "ALLOW_UNFILTERED_UPLOADS is set to false in wp-config.php: Claude uploads the file types WordPress allows."
+msgid "ALLOW_UNFILTERED_UPLOADS is set to false outside Lümia Tools: Claude uploads the file types WordPress allows."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:409
+#: includes/Modules/McpConnect/SiteHealth.php:411
 msgid "File types"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:417
+#: includes/Modules/McpConnect/SiteHealth.php:419
 msgid "Bricks PHP ability"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:420
+#: includes/Modules/McpConnect/SiteHealth.php:422
 msgid "On (BRICKS_ENABLE_PHP_ABILITIES set by Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:421
-msgid "On (BRICKS_ENABLE_PHP_ABILITIES set in wp-config.php): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
+#: includes/Modules/McpConnect/SiteHealth.php:423
+msgid "On (BRICKS_ENABLE_PHP_ABILITIES set outside Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:422
-msgid "Off: BRICKS_ENABLE_PHP_ABILITIES is set to false in wp-config.php."
+#: includes/Modules/McpConnect/SiteHealth.php:425
+msgid "Off: BRICKS_ENABLE_PHP_ABILITIES is set to false outside Lümia Tools."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:439
+msgid "Not set: wp-config.php forbids file changes or the code editors (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), so Lümia Tools does not open this."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:442
+msgid "Not set yet: Lümia Tools sets it from the next page load (MCP Connect active, Administrator preset)."
 msgstr ""
 
 #. translators: 1: URL path Claude requests at the server root, 2: URL of the document on this site.
-#: includes/Modules/McpConnect/SiteHealth.php:536
+#: includes/Modules/McpConnect/SiteHealth.php:551
 #, php-format
 msgid "This site lives under a path, so Claude asks the server root for %1$s. Rewrite that path, at the web server level, to %2$s."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:549
+#: includes/Modules/McpConnect/SiteHealth.php:564
 msgid "A 403 usually means the web server blocks /.well-known/ before WordPress. On nginx, add this to the site configuration:"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:551
+#: includes/Modules/McpConnect/SiteHealth.php:566
 msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
 msgstr ""
 
