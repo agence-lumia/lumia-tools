@@ -751,9 +751,12 @@ check_no_re "9 through the token: core/get-site-info (manage_options) not served
 check_re "9 through the token: core/get-site-info denied" "$r" '[Pp]ermission|not allowed|isError\\?":true|"error"'
 curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
 check_eq "9 admin page load drops the forbidden caps from the role" "$(wpcli eval "$CAPS_PHP")" "no/no/no/no"
-wpcli cap add lumia_mcp_agent edit_dashboard >/dev/null
+# The Editor preset follows the administrator role: a capability no role holds
+# is outside it.
+wpcli cap add lumia_mcp_agent e2e_drift_cap >/dev/null
 curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
-check_eq "9 admin page load drops any capability outside the preset" "$(wpcli eval 'echo get_role("lumia_mcp_agent")->has_cap("edit_dashboard") ? "yes" : "no";')" no
+check_eq "9 admin page load drops any capability outside the preset" "$(wpcli eval 'echo get_role("lumia_mcp_agent")->has_cap("e2e_drift_cap") ? "yes" : "no";')" no
+check_eq "9 Editor preset: menus and comments, from the administrator role" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo user_can($u, "edit_theme_options") ? "yes" : "no", "/", user_can($u, "moderate_comments") ? "yes" : "no";')" "yes/yes"
 check_eq "9 the connection still works after the resync" "$(mcp_status "$F_AT")" 200
 # Drift on the account itself (second role, capability granted to the user):
 # the role resync does not see it, reset_account() must.
@@ -764,6 +767,18 @@ curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-to
 check_eq "9 admin page load resets the account to the agent role alone" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo implode(",", $u->roles), "/", isset($u->caps["delete_others_pages"]) ? "yes" : "no";')" "lumia_mcp_agent/no"
 check_eq "9 manage_network_options is a forbidden cap" "$(wpcli eval 'echo in_array("manage_network_options", \Lumia\Tools\Modules\McpConnect\Agent::FORBIDDEN_CAPS, true) ? "yes" : "no";')" yes
 check_eq "9 the connection still works after the account reset" "$(mcp_status "$F_AT")" 200
+# Administrator preset: every capability of an administrator, none denied at
+# check time; back to Editor, the forbidden ones are gone again.
+set_setting agent_preset "'admin'"
+curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
+check_eq "9 Administrator preset: manage_options + edit_users granted" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo user_can($u, "manage_options") ? "yes" : "no", "/", user_can($u, "edit_users") ? "yes" : "no";')" "yes/yes"
+mcp_session "$F_AT"
+r=$(execute_ability "$F_AT" core/get-site-info)
+check_re "9 Administrator preset: core/get-site-info served through the token" "$r" '\\?"(admin_email|siteurl|url)\\?":'
+set_setting agent_preset "'content_bricks'"
+curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
+check_eq "9 a 2.3.0 preset reads as Editor: manage_options gone, edit_theme_options kept" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo user_can($u, "manage_options") ? "yes" : "no", "/", user_can($u, "edit_theme_options") ? "yes" : "no";')" "no/yes"
+set_setting agent_preset "'editor'"
 curl -s -o /dev/null --data-urlencode "token=$F_RT" "$OAUTH/revoke"
 
 # Role changed by hand: the account no longer counts as the agent, and the next

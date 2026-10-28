@@ -288,11 +288,27 @@ final class SiteHealth {
 		];
 
 		$presets          = Agent::presets();
-		$preset           = (string) Module::settings()['agent_preset'];
 		$checks['preset'] = [
-			'label' => __( 'Role preset', 'lumia-tools' ),
-			'value' => (string) ( $presets[ $preset ]['label'] ?? $preset ),
+			'label' => __( 'Claude account permissions', 'lumia-tools' ),
+			'value' => (string) ( $presets[ Agent::current_preset() ]['label'] ?? '' ),
 			'state' => 'info',
+		];
+
+		switch ( Agent::bricks_abilities_status() ) {
+			case 'ok':
+				$abilities = [ __( 'On: Claude can edit pages, templates and the design system with Bricks', 'lumia-tools' ), 'good' ];
+				break;
+			case 'off':
+				$abilities = [ __( 'Off: Claude connects but has no tool to edit the site. Turn on "Enable Bricks abilities" in Bricks > AI.', 'lumia-tools' ), 'recommended' ];
+				break;
+			default:
+				$abilities = [ __( 'Bricks is not the active theme', 'lumia-tools' ), 'info' ];
+		}
+
+		$checks['bricks_abilities'] = [
+			'label' => __( 'Bricks abilities', 'lumia-tools' ),
+			'value' => $abilities[0],
+			'state' => $abilities[1],
 		];
 
 		switch ( Agent::bricks_status() ) {

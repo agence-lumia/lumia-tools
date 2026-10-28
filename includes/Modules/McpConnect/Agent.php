@@ -11,8 +11,8 @@ use Lumia\Tools\Core\Compat;
  *
  * - A dedicated account rather than the approver's: what Claude does is
  *   attributed to it in the revisions and the Activity Log, and its
- *   permissions come from a preset that never reaches the site settings,
- *   plugins, themes or users.
+ *   permissions come from a preset: Editor (the default) never reaches the
+ *   site settings, plugins, themes, users or code; Administrator does.
  * - The account only exists to carry OAuth connections: it cannot sign in with
  *   a password (it has none anyone knows), cannot use application passwords
  *   and never sees the dashboard.
@@ -21,7 +21,7 @@ use Lumia\Tools\Core\Compat;
  *   (reset_account()), so a capability or a second role added by hand or by
  *   another plugin, on the role or on the account, does not survive the next
  *   one. Between two syncs, deny_forbidden_caps() keeps FORBIDDEN_CAPS out of
- *   the account at check time.
+ *   the account at check time (Editor preset).
  */
 final class Agent {
 
@@ -37,14 +37,21 @@ final class Agent {
 	/** Display name of the role and of the account (a product name: not translated). */
 	const DISPLAY_NAME = 'Claude (MCP)';
 
-	/** Preset used when the setting is unknown. */
-	const DEFAULT_PRESET = 'content_bricks';
+	/** Preset with every capability of the site, except FORBIDDEN_CAPS. */
+	const PRESET_EDITOR = 'editor';
+
+	/** Preset with every capability of an administrator. */
+	const PRESET_ADMIN = 'admin';
+
+	/** Preset used when the setting is unknown (former presets included). */
+	const DEFAULT_PRESET = self::PRESET_EDITOR;
 
 	/**
-	 * Capabilities the role never gets, whatever the preset or the filter says
-	 * (dropped by capabilities()), and that a locked agent never holds, whatever
-	 * its role or account says (denied by deny_forbidden_caps()): each one hands
-	 * over the site (settings, code, users).
+	 * Capabilities the Editor preset never gets, whatever the filter says
+	 * (dropped by capabilities()), and that a locked agent never holds under
+	 * it, whatever its role or account says (denied by deny_forbidden_caps()):
+	 * each one hands over the site (settings, code, users). The Administrator
+	 * preset keeps them all.
 	 */
 	const FORBIDDEN_CAPS = [
 		'manage_options',
@@ -63,7 +70,6 @@ final class Agent {
 		'edit_themes',
 		'update_themes',
 		'delete_themes',
-		'edit_theme_options',
 		'update_core',
 		'unfiltered_upload',
 		'unfiltered_html',
@@ -71,6 +77,10 @@ final class Agent {
 		'export',
 		'import',
 		'bricks_execute_code',
+		// Legacy user levels: some plugins still read level_10 as "administrator".
+		'level_8',
+		'level_9',
+		'level_10',
 		// Multisite: Files and Database require manage_network_options there.
 		'manage_network',
 		'manage_network_options',
@@ -84,16 +94,49 @@ final class Agent {
 		'setup_network',
 	];
 
+	/** Option holding the Bricks global settings. */
+	const BRICKS_SETTINGS_OPTION = 'bricks_global_settings';
+
 	/** Maximum `-N` suffix tried when the preferred login or email is taken. */
 	const MAX_SUFFIX = 50;
 
 	/**
 	 * Permission presets offered in the settings.
 	 *
+	 * Both follow the administrator role rather than a fixed list, so whatever
+	 * a plugin grants administrators (WooCommerce, Rank Math, a form or booking
+	 * plugin) Claude gets too, without a preset per stack. Editor then drops
+	 * FORBIDDEN_CAPS (capabilities()); Administrator keeps everything.
+	 *
 	 * @return array<string, array{label: string, caps: array<string, bool>}>
 	 */
 	public static function presets(): array {
-		$content = self::grant(
+		$admin = self::administrator_caps();
+
+		return [
+			self::PRESET_EDITOR => [
+				'label' => _x( 'Editor', 'MCP Connect permission preset', 'lumia-tools' ),
+				'caps'  => $admin,
+			],
+			self::PRESET_ADMIN  => [
+				'label' => _x( 'Administrator', 'MCP Connect permission preset', 'lumia-tools' ),
+				'caps'  => $admin,
+			],
+		];
+	}
+
+	/**
+	 * Capabilities granted to the administrator role, plus builder access.
+	 *
+	 * Bricks gives administrators the builder without a capability on the role,
+	 * so `bricks_full_access` is added (harmless where Bricks is absent). With
+	 * no administrator role (renamed), the editor role and the core content
+	 * capabilities are the floor.
+	 *
+	 * @return array<string, bool>
+	 */
+	private static function administrator_caps(): array {
+		$caps = self::grant(
 			[
 				'read',
 				'edit_posts',
@@ -101,87 +144,59 @@ final class Agent {
 				'edit_published_posts',
 				'publish_posts',
 				'delete_posts',
+				'delete_others_posts',
 				'delete_published_posts',
 				'edit_pages',
 				'edit_others_pages',
 				'edit_published_pages',
 				'publish_pages',
 				'delete_pages',
+				'delete_others_pages',
 				'delete_published_pages',
 				'edit_private_posts',
 				'read_private_posts',
+				'delete_private_posts',
 				'edit_private_pages',
 				'read_private_pages',
+				'delete_private_pages',
 				'upload_files',
 				'manage_categories',
+				'moderate_comments',
+				'edit_theme_options',
 				'bricks_full_access',
 			]
 		);
 
-		// Rank Math capabilities: harmless where Rank Math is not installed.
-		$seo = $content + self::grant(
-			[
-				'rank_math_titles',
-				'rank_math_general',
-				'rank_math_sitemap',
-				'rank_math_404_monitor',
-				'rank_math_redirections',
-				'rank_math_link_builder',
-				'rank_math_onpage_general',
-				'rank_math_onpage_advanced',
-				'rank_math_onpage_snippet',
-				'rank_math_onpage_social',
-				'rank_math_content_ai',
-				'rank_math_site_analysis',
-				'rank_math_analytics',
-			]
-		);
+		foreach ( [ 'administrator', 'editor' ] as $name ) {
+			$role = get_role( $name );
+			if ( $role instanceof \WP_Role ) {
+				foreach ( $role->capabilities as $cap => $grant ) {
+					if ( $grant ) {
+						$caps[ (string) $cap ] = true;
+					}
+				}
+			}
+		}
 
-		$shop = $seo + self::grant(
-			[
-				'manage_woocommerce',
-				'view_woocommerce_reports',
-				'edit_products',
-				'edit_others_products',
-				'edit_published_products',
-				'publish_products',
-				'read_private_products',
-				'delete_products',
-				'delete_published_products',
-				'edit_shop_orders',
-				'edit_others_shop_orders',
-				'read_shop_order',
-				'read_private_shop_orders',
-				'publish_shop_orders',
-				'edit_shop_coupons',
-				'edit_others_shop_coupons',
-				'publish_shop_coupons',
-				'manage_product_terms',
-				'edit_product_terms',
-				'assign_product_terms',
-			]
-		);
+		return $caps;
+	}
 
-		return [
-			'content_bricks'     => [
-				'label' => __( 'Content and Bricks', 'lumia-tools' ),
-				'caps'  => $content,
-			],
-			'content_bricks_seo' => [
-				'label' => __( 'Content, Bricks and SEO', 'lumia-tools' ),
-				'caps'  => $seo,
-			],
-			'full_shop'          => [
-				'label' => __( 'Full shop', 'lumia-tools' ),
-				'caps'  => $shop,
-			],
-		];
+	/**
+	 * Preset stored in the settings, the default one when it is unknown (a
+	 * preset of 2.3.0, "Content and Bricks" and the like, reads as Editor).
+	 * Runs on every capability check of the agent (deny_forbidden_caps()): it
+	 * does not build the presets.
+	 */
+	public static function current_preset(): string {
+		$preset = Module::settings()['agent_preset'] ?? '';
+
+		return in_array( $preset, [ self::PRESET_EDITOR, self::PRESET_ADMIN ], true ) ? $preset : self::DEFAULT_PRESET;
 	}
 
 	/**
 	 * Capabilities of a preset, after the `lumia_mcp_connect_agent_capabilities`
-	 * filter. An unknown preset falls back to the default one; the forbidden
-	 * capabilities are dropped after the filter.
+	 * filter. An unknown preset falls back to the default one; under Editor the
+	 * forbidden capabilities are dropped after the filter.
 	 *
 	 * @return array<string, bool>
 	 */
@@ -196,9 +211,10 @@ final class Agent {
 			$filtered = $presets[ $preset ]['caps'];
 		}
 
-		$caps = [];
+		$forbidden = self::forbidden_caps( $preset );
+		$caps      = [];
 		foreach ( $filtered as $cap => $grant ) {
-			if ( ! is_string( $cap ) || '' === $cap || in_array( $cap, self::FORBIDDEN_CAPS, true ) ) {
+			if ( ! is_string( $cap ) || '' === $cap || in_array( $cap, $forbidden, true ) ) {
 				continue;
 			}
 			$caps[ $cap ] = (bool) $grant;
@@ -208,6 +224,16 @@ final class Agent {
 		$caps['read'] = true;
 
 		return $caps;
+	}
+
+	/**
+	 * Capabilities a preset never grants: FORBIDDEN_CAPS under Editor, none
+	 * under Administrator.
+	 *
+	 * @return string[]
+	 */
+	public static function forbidden_caps( string $preset ): array {
+		return self::PRESET_ADMIN === $preset ? [] : self::FORBIDDEN_CAPS;
 	}
 
 	/**
@@ -243,8 +269,7 @@ final class Agent {
 	 * account id (0 if it could not be created).
 	 */
 	public static function ensure(): int {
-		$preset = Module::settings()['agent_preset'] ?? self::DEFAULT_PRESET;
-		self::sync_role( is_string( $preset ) ? $preset : self::DEFAULT_PRESET );
+		self::sync_role( self::current_preset() );
 
 		$user_id = self::user_id();
 		if ( $user_id > 0 ) {
@@ -378,15 +403,15 @@ final class Agent {
 	 * edit_others_pages) only when they hold every capability of the active
 	 * preset themselves: otherwise approving would give their own Claude
 	 * session rights they do not have (Bricks builder, shop management…).
+	 * Since the presets follow the administrator role, that is rarely the case
+	 * for an editor: they connect Claude as themselves.
 	 */
 	public static function can_delegate( \WP_User $approver ): bool {
 		if ( user_can( $approver, 'manage_options' ) ) {
 			return true;
 		}
 
-		$preset = Module::settings()['agent_preset'] ?? self::DEFAULT_PRESET;
-
-		foreach ( self::capabilities( is_string( $preset ) ? $preset : self::DEFAULT_PRESET ) as $cap => $grant ) {
+		foreach ( self::capabilities( self::current_preset() ) as $cap => $grant ) {
 			if ( $grant && ! user_can( $approver, $cap ) ) {
 				return false;
 			}
@@ -416,10 +441,11 @@ final class Agent {
 	}
 
 	/**
-	 * `user_has_cap` (late): a locked agent (the dedicated account, or a user
-	 * whose single role is the agent role) never holds FORBIDDEN_CAPS, even when
-	 * a role editor, another plugin or Bricks' role settings wrote one on the
-	 * role or the account since the last sync_role(). A real person who was
+	 * `user_has_cap` (late): under the Editor preset, a locked agent (the
+	 * dedicated account, or a user whose single role is the agent role) never
+	 * holds FORBIDDEN_CAPS, even when a role editor, another plugin or Bricks'
+	 * role settings wrote one on the role or the account since the last
+	 * sync_role(). A real person who was
 	 * also given the role is left alone, like for the sign-in.
 	 *
 	 * @param array<string, bool>|mixed $allcaps Capabilities the user holds.
@@ -435,7 +461,7 @@ final class Agent {
 			return $allcaps;
 		}
 
-		foreach ( self::FORBIDDEN_CAPS as $cap ) {
+		foreach ( self::forbidden_caps( self::current_preset() ) as $cap ) {
 			if ( isset( $allcaps[ $cap ] ) ) {
 				$allcaps[ $cap ] = false;
 			}
@@ -516,6 +542,38 @@ final class Agent {
 		}
 
 		return 'missing';
+	}
+
+	/**
+	 * Whether Bricks registers its abilities (Bricks > AI > "Enable Bricks
+	 * abilities", global setting `abilitiesApi`, Bricks 2.4 or later). Off by
+	 * default in Bricks: the MCP Adapter then only lists the core read-only
+	 * abilities, and Claude, though connected, cannot edit anything.
+	 *
+	 * @return string 'not_bricks' | 'ok' | 'off'
+	 */
+	public static function bricks_abilities_status(): string {
+		if ( 'bricks' !== get_template() ) {
+			return 'not_bricks';
+		}
+
+		$settings = get_option( self::BRICKS_SETTINGS_OPTION, [] );
+
+		return is_array( $settings ) && ! empty( $settings['abilitiesApi'] ) ? 'ok' : 'off';
+	}
+
+	/**
+	 * Turns the Bricks abilities on, on a Bricks site where they are off.
+	 */
+	public static function enable_bricks_abilities(): void {
+		if ( 'off' !== self::bricks_abilities_status() ) {
+			return;
+		}
+
+		$settings                 = get_option( self::BRICKS_SETTINGS_OPTION, [] );
+		$settings                 = is_array( $settings ) ? $settings : [];
+		$settings['abilitiesApi'] = true;
+		update_option( self::BRICKS_SETTINGS_OPTION, $settings );
 	}
 
 	/**

@@ -126,7 +126,7 @@ In Settings > Updates:
 - Requires the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (0.7 or later), pretty permalinks and HTTPS
 - OAuth 2.1 authorization server per site: discovery documents (RFC 9728, RFC 8414), PKCE S256, client metadata documents (CIMD) with SSRF guards, optional dynamic client registration (off by default), revocation endpoint
 - Consent screen in wp-admin, showing who asks, where the browser returns and which account Claude will act as; optional connection label
-- Claude acts through a dedicated `claude-mcp` account that cannot sign in by itself, with a permission preset (Content and Bricks; Content, Bricks, SEO; Full shop) that never includes plugins, users or site settings
+- Claude acts through a dedicated `claude-mcp` account that cannot sign in by itself, with a permission preset: Editor (default, everything administrators can do with the content whatever the plugins, never plugins, users, site settings or code) or Administrator (every right); the Bricks abilities are turned on with the module
 - Tokens stored hashed, accepted on the MCP route only; refresh tokens rotated, and a reused one revokes the connection
 - Connections list with Revoke and Revoke all, a pause switch, and every change made through Claude marked with its connection in the Activity Log
 - Site Health tests for the discovery documents, the `Authorization` header and the environment. If you are locked out, `define( 'LUMIA_DISABLE_MCP_CONNECT', true );` in `wp-config.php` turns the whole protocol off

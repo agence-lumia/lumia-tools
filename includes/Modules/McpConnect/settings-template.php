@@ -23,7 +23,7 @@ $mc_disabled  = (bool) Compat::constant( 'DISABLE_MCP_CONNECT' );
 $mc_paused    = ! empty( $module_settings['paused'] );
 $mc_url       = Discovery::resource_url();
 $mc_presets   = Agent::presets();
-$mc_preset    = (string) $module_settings['agent_preset'];
+$mc_preset    = Agent::current_preset();
 $mc_approver  = (string) $module_settings['approver_capability'];
 $mc_checks    = SiteHealth::checks();
 $mc_cli_name  = sanitize_title( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
@@ -167,11 +167,17 @@ $mc_badges = [
 					</select>
 				</div>
 			</div>
-			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. It can never manage plugins, users or site settings, whatever the preset.', 'lumia-tools' ); ?></p>
+			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Editor: everything an administrator can do with the content, whatever the plugins (pages, Bricks, media, menus, shop, SEO, forms…), but never the site settings, plugins, themes, users or code. Administrator: every right of an administrator.', 'lumia-tools' ); ?></p>
 
-			<?php if ( 'recommended' === ( $mc_checks['bricks']['state'] ?? '' ) ) : ?>
-				<div class="lumia-notice lumia-notice--warning"><?php echo esc_html( $mc_checks['bricks']['value'] ); ?></div>
+			<?php if ( Agent::PRESET_ADMIN === $mc_preset ) : ?>
+				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it.', 'lumia-tools' ); ?></div>
 			<?php endif; ?>
+
+			<?php foreach ( [ 'bricks_abilities', 'bricks' ] as $mc_key ) : ?>
+				<?php if ( 'recommended' === ( $mc_checks[ $mc_key ]['state'] ?? '' ) ) : ?>
+					<div class="lumia-notice lumia-notice--warning"><?php echo esc_html( $mc_checks[ $mc_key ]['value'] ); ?></div>
+				<?php endif; ?>
+			<?php endforeach; ?>
 		</div>
 	</div>
 
