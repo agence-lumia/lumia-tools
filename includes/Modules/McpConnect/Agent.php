@@ -77,6 +77,14 @@ final class Agent {
 		'export',
 		'import',
 		'bricks_execute_code',
+		// Plugin capabilities that hand over the site although granted outside
+		// manage_options: role editing (Members), .htaccess and role manager
+		// (Rank Math).
+		'edit_roles',
+		'create_roles',
+		'delete_roles',
+		'rank_math_edit_htaccess',
+		'rank_math_role_manager',
 		// Legacy user levels: some plugins still read level_10 as "administrator".
 		'level_8',
 		'level_9',
@@ -93,6 +101,12 @@ final class Agent {
 		'upgrade_network',
 		'setup_network',
 	];
+
+	/**
+	 * Prefixes of plugin capabilities the Editor preset never gets, like
+	 * FORBIDDEN_CAPS: a whole family that edits roles (User Role Editor).
+	 */
+	const FORBIDDEN_PREFIXES = [ 'ure_' ];
 
 	/** Option holding the Bricks global settings. */
 	const BRICKS_SETTINGS_OPTION = 'bricks_global_settings';
@@ -211,10 +225,9 @@ final class Agent {
 			$filtered = $presets[ $preset ]['caps'];
 		}
 
-		$forbidden = self::forbidden_caps( $preset );
-		$caps      = [];
+		$caps = [];
 		foreach ( $filtered as $cap => $grant ) {
-			if ( ! is_string( $cap ) || '' === $cap || in_array( $cap, $forbidden, true ) ) {
+			if ( ! is_string( $cap ) || '' === $cap || self::is_forbidden( $cap, $preset ) ) {
 				continue;
 			}
 			$caps[ $cap ] = (bool) $grant;
@@ -227,13 +240,25 @@ final class Agent {
 	}
 
 	/**
-	 * Capabilities a preset never grants: FORBIDDEN_CAPS under Editor, none
-	 * under Administrator.
-	 *
-	 * @return string[]
+	 * Whether a preset never grants a capability: FORBIDDEN_CAPS and
+	 * FORBIDDEN_PREFIXES under Editor, nothing under Administrator.
 	 */
-	public static function forbidden_caps( string $preset ): array {
-		return self::PRESET_ADMIN === $preset ? [] : self::FORBIDDEN_CAPS;
+	public static function is_forbidden( string $cap, string $preset ): bool {
+		if ( self::PRESET_ADMIN === $preset ) {
+			return false;
+		}
+
+		if ( in_array( $cap, self::FORBIDDEN_CAPS, true ) ) {
+			return true;
+		}
+
+		foreach ( self::FORBIDDEN_PREFIXES as $prefix ) {
+			if ( 0 === strpos( $cap, $prefix ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -443,10 +468,10 @@ final class Agent {
 	/**
 	 * `user_has_cap` (late): under the Editor preset, a locked agent (the
 	 * dedicated account, or a user whose single role is the agent role) never
-	 * holds FORBIDDEN_CAPS, even when a role editor, another plugin or Bricks'
-	 * role settings wrote one on the role or the account since the last
-	 * sync_role(). A real person who was
-	 * also given the role is left alone, like for the sign-in.
+	 * holds a forbidden capability (is_forbidden()), even when a role editor,
+	 * another plugin or Bricks' role settings wrote one on the role or the
+	 * account since the last sync_role(). A real person who was also given the
+	 * role is left alone, like for the sign-in.
 	 *
 	 * @param array<string, bool>|mixed $allcaps Capabilities the user holds.
 	 * @param mixed                     $caps    Primitive capabilities checked.
@@ -461,8 +486,13 @@ final class Agent {
 			return $allcaps;
 		}
 
-		foreach ( self::forbidden_caps( self::current_preset() ) as $cap ) {
-			if ( isset( $allcaps[ $cap ] ) ) {
+		$preset = self::current_preset();
+		if ( self::PRESET_ADMIN === $preset ) {
+			return $allcaps;
+		}
+
+		foreach ( $allcaps as $cap => $grant ) {
+			if ( $grant && self::is_forbidden( (string) $cap, $preset ) ) {
 				$allcaps[ $cap ] = false;
 			}
 		}
@@ -550,11 +580,15 @@ final class Agent {
 	 * default in Bricks: the MCP Adapter then only lists the core read-only
 	 * abilities, and Claude, though connected, cannot edit anything.
 	 *
-	 * @return string 'not_bricks' | 'ok' | 'off'
+	 * @return string 'not_bricks' | 'unsupported' | 'ok' | 'off'
 	 */
 	public static function bricks_abilities_status(): string {
 		if ( 'bricks' !== get_template() ) {
 			return 'not_bricks';
+		}
+
+		if ( ! defined( 'BRICKS_VERSION' ) || version_compare( (string) constant( 'BRICKS_VERSION' ), '2.4', '<' ) ) {
+			return 'unsupported';
 		}
 
 		$settings = get_option( self::BRICKS_SETTINGS_OPTION, [] );

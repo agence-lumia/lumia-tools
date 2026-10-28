@@ -258,7 +258,9 @@ final class ConsentPage {
 								</strong>
 								<span class="lumia-form__help">
 									<?php
-									if ( '' !== $preset_name ) {
+									if ( Agent::PRESET_ADMIN === Agent::current_preset() ) {
+										esc_html_e( 'Dedicated account with every right of an administrator: whoever holds this connection controls the whole site.', 'lumia-tools' );
+									} elseif ( '' !== $preset_name ) {
 										/* translators: %s: name of the permission preset (Editor or Administrator). */
 										echo esc_html( sprintf( __( 'Dedicated account, permissions: %s. Recommended.', 'lumia-tools' ), $preset_name ) );
 									} else {

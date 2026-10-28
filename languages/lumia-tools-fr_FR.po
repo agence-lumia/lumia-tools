@@ -6519,8 +6519,16 @@ msgid "Permissions of the Claude account"
 msgstr "Droits du compte Claude"
 
 #: includes/Modules/McpConnect/settings-template.php:170
-msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: everything an administrator can do with the content, whatever the plugins (pages, Bricks, media, menus, shop, SEO, forms…), but never the site settings, plugins, themes, users or code. Administrator: every right of an administrator."
-msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Éditeur : tout ce qu'un administrateur peut faire sur le contenu, quelles que soient les extensions (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages du site, les extensions, les thèmes, les utilisateurs ni le code. Administrateur : tous les droits d'un administrateur."
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator."
+msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Éditeur : ce que peut faire un administrateur, y compris ce que lui donnent les extensions (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code. Administrateur : tous les droits d'un administrateur."
+
+#: includes/Modules/McpConnect/ConsentPage.php:262
+msgid "Dedicated account with every right of an administrator: whoever holds this connection controls the whole site."
+msgstr "Compte dédié avec tous les droits d'un administrateur : quiconque détient cette connexion contrôle tout le site."
+
+#: includes/Modules/McpConnect/SiteHealth.php:305
+msgid "Bricks 2.4 or later is needed for Claude to edit with Bricks."
+msgstr "Bricks 2.4 ou plus récent est nécessaire pour que Claude puisse modifier avec Bricks."
 
 #: includes/Modules/McpConnect/settings-template.php:173
 msgid "Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it."

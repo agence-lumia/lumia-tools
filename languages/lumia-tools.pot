@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T14:42:43+00:00\n"
+"POT-Creation-Date: 2026-10-28T14:49:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -427,7 +427,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:132
 #: includes/Core/Modules.php:134
-#: includes/Modules/McpConnect/SiteHealth.php:377
+#: includes/Modules/McpConnect/SiteHealth.php:380
 msgid "MCP Connect"
 msgstr ""
 
@@ -3097,25 +3097,25 @@ msgstr ""
 msgid "Hides the link WordPress displays when a privacy policy page is set."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:118
+#: includes/Modules/McpConnect/Agent.php:132
 msgctxt "MCP Connect permission preset"
 msgid "Editor"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:122
+#: includes/Modules/McpConnect/Agent.php:136
 msgctxt "MCP Connect permission preset"
 msgid "Administrator"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:484
+#: includes/Modules/McpConnect/Agent.php:514
 msgid "This account is used by Claude through MCP Connect and cannot sign in."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:496
+#: includes/Modules/McpConnect/Agent.php:526
 msgid "This account is used by Claude through MCP Connect and cannot use application passwords."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:517
+#: includes/Modules/McpConnect/Agent.php:547
 msgid "This account is used by Claude through MCP Connect and has no access to the dashboard."
 msgstr ""
 
@@ -3162,8 +3162,8 @@ msgid "The authorization request could not be stored."
 msgstr ""
 
 #: includes/Modules/McpConnect/AuthorizationServer.php:294
-#: includes/Modules/McpConnect/ConsentPage.php:360
-#: includes/Modules/McpConnect/ConsentPage.php:365
+#: includes/Modules/McpConnect/ConsentPage.php:362
+#: includes/Modules/McpConnect/ConsentPage.php:367
 msgid "Connection refused"
 msgstr ""
 
@@ -3293,30 +3293,30 @@ msgstr ""
 
 #: includes/Modules/McpConnect/ConsentPage.php:50
 #: includes/Modules/McpConnect/ConsentPage.php:70
-#: includes/Modules/McpConnect/ConsentPage.php:302
-#: includes/Modules/McpConnect/ConsentPage.php:501
-#: includes/Modules/McpConnect/ConsentPage.php:508
+#: includes/Modules/McpConnect/ConsentPage.php:304
+#: includes/Modules/McpConnect/ConsentPage.php:503
+#: includes/Modules/McpConnect/ConsentPage.php:510
 msgid "Connect to Claude"
 msgstr ""
 
 #: includes/Modules/McpConnect/ConsentPage.php:106
-#: includes/Modules/McpConnect/ConsentPage.php:321
+#: includes/Modules/McpConnect/ConsentPage.php:323
 msgid "MCP Connect is disabled on this site."
 msgstr ""
 
 #: includes/Modules/McpConnect/ConsentPage.php:108
-#: includes/Modules/McpConnect/ConsentPage.php:337
+#: includes/Modules/McpConnect/ConsentPage.php:339
 msgid "Your account is not allowed to connect Claude to this site."
 msgstr ""
 
 #: includes/Modules/McpConnect/ConsentPage.php:124
-#: includes/Modules/McpConnect/ConsentPage.php:331
-#: includes/Modules/McpConnect/ConsentPage.php:354
+#: includes/Modules/McpConnect/ConsentPage.php:333
+#: includes/Modules/McpConnect/ConsentPage.php:356
 msgid "This connection request has expired. Start again from Claude."
 msgstr ""
 
 #: includes/Modules/McpConnect/ConsentPage.php:138
-#: includes/Modules/McpConnect/ConsentPage.php:365
+#: includes/Modules/McpConnect/ConsentPage.php:367
 msgid "This connection request is not valid. Start again from Claude."
 msgstr ""
 
@@ -3392,55 +3392,59 @@ msgstr ""
 msgid "%1$s (%2$s)"
 msgstr ""
 
+#: includes/Modules/McpConnect/ConsentPage.php:262
+msgid "Dedicated account with every right of an administrator: whoever holds this connection controls the whole site."
+msgstr ""
+
 #. translators: %s: name of the permission preset (Editor or Administrator).
-#: includes/Modules/McpConnect/ConsentPage.php:263
+#: includes/Modules/McpConnect/ConsentPage.php:265
 #, php-format
 msgid "Dedicated account, permissions: %s. Recommended."
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:265
+#: includes/Modules/McpConnect/ConsentPage.php:267
 msgid "Dedicated account with limited permissions. Recommended."
 msgstr ""
 
 #. translators: %s: display name of the current user.
-#: includes/Modules/McpConnect/ConsentPage.php:279
+#: includes/Modules/McpConnect/ConsentPage.php:281
 #, php-format
 msgid "You (%s)"
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:282
+#: includes/Modules/McpConnect/ConsentPage.php:284
 msgid "Changes will be made in your name, with all your permissions. Use only for one-off administration tasks."
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:288
+#: includes/Modules/McpConnect/ConsentPage.php:290
 msgid "Deny"
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:289
+#: includes/Modules/McpConnect/ConsentPage.php:291
 msgid "Approve"
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:326
+#: includes/Modules/McpConnect/ConsentPage.php:328
 msgid "Invalid request."
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:348
+#: includes/Modules/McpConnect/ConsentPage.php:350
 msgid "The dedicated account has permissions your own account does not have: choose to let Claude act as you."
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:392
+#: includes/Modules/McpConnect/ConsentPage.php:394
 msgid "The Claude (MCP) account could not be created."
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:398
+#: includes/Modules/McpConnect/ConsentPage.php:400
 msgid "The connection could not be saved."
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:509
+#: includes/Modules/McpConnect/ConsentPage.php:511
 msgid "Returning to the application on your computer…"
 msgstr ""
 
-#: includes/Modules/McpConnect/ConsentPage.php:512
+#: includes/Modules/McpConnect/ConsentPage.php:514
 msgid "Return to the application"
 msgstr ""
 
@@ -3674,7 +3678,7 @@ msgid "Permissions of the Claude account"
 msgstr ""
 
 #: includes/Modules/McpConnect/settings-template.php:170
-msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: everything an administrator can do with the content, whatever the plugins (pages, Bricks, media, menus, shop, SEO, forms…), but never the site settings, plugins, themes, users or code. Administrator: every right of an administrator."
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator."
 msgstr ""
 
 #: includes/Modules/McpConnect/settings-template.php:173
@@ -3967,38 +3971,42 @@ msgid "Off: Claude connects but has no tool to edit the site. Turn on \"Enable B
 msgstr ""
 
 #: includes/Modules/McpConnect/SiteHealth.php:305
-#: includes/Modules/McpConnect/SiteHealth.php:322
+msgid "Bricks 2.4 or later is needed for Claude to edit with Bricks."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:308
+#: includes/Modules/McpConnect/SiteHealth.php:325
 #: includes/Modules/Motion/settings-template.php:27
 msgid "Bricks is not the active theme"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:309
+#: includes/Modules/McpConnect/SiteHealth.php:312
 msgid "Bricks abilities"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:316
+#: includes/Modules/McpConnect/SiteHealth.php:319
 msgid "The Claude account can edit with Bricks"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:319
+#: includes/Modules/McpConnect/SiteHealth.php:322
 msgid "Bricks is active but the Claude role has no builder access: grant it in Bricks > Settings > Builder access."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:326
+#: includes/Modules/McpConnect/SiteHealth.php:329
 msgid "Bricks builder access"
 msgstr ""
 
 #. translators: 1: URL path Claude requests at the server root, 2: URL of the document on this site.
-#: includes/Modules/McpConnect/SiteHealth.php:440
+#: includes/Modules/McpConnect/SiteHealth.php:443
 #, php-format
 msgid "This site lives under a path, so Claude asks the server root for %1$s. Rewrite that path, at the web server level, to %2$s."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:453
+#: includes/Modules/McpConnect/SiteHealth.php:456
 msgid "A 403 usually means the web server blocks /.well-known/ before WordPress. On nginx, add this to the site configuration:"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:455
+#: includes/Modules/McpConnect/SiteHealth.php:458
 msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
 msgstr ""
 

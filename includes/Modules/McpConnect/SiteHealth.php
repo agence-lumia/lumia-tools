@@ -301,6 +301,9 @@ final class SiteHealth {
 			case 'off':
 				$abilities = [ __( 'Off: Claude connects but has no tool to edit the site. Turn on "Enable Bricks abilities" in Bricks > AI.', 'lumia-tools' ), 'recommended' ];
 				break;
+			case 'unsupported':
+				$abilities = [ __( 'Bricks 2.4 or later is needed for Claude to edit with Bricks.', 'lumia-tools' ), 'recommended' ];
+				break;
 			default:
 				$abilities = [ __( 'Bricks is not the active theme', 'lumia-tools' ), 'info' ];
 		}

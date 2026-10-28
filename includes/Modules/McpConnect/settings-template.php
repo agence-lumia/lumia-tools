@@ -167,7 +167,7 @@ $mc_badges = [
 					</select>
 				</div>
 			</div>
-			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Editor: everything an administrator can do with the content, whatever the plugins (pages, Bricks, media, menus, shop, SEO, forms…), but never the site settings, plugins, themes, users or code. Administrator: every right of an administrator.', 'lumia-tools' ); ?></p>
+			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator.', 'lumia-tools' ); ?></p>
 
 			<?php if ( Agent::PRESET_ADMIN === $mc_preset ) : ?>
 				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it.', 'lumia-tools' ); ?></div>
