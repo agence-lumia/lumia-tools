@@ -435,8 +435,8 @@ final class SiteHealth {
 	 * Why Lümia Tools did not define a code constant (Agent::define_code_constants()).
 	 */
 	private static function constants_not_defined(): string {
-		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) || ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) ) {
-			return __( 'Not set: wp-config.php forbids file changes or the code editors (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), so Lümia Tools does not open this.', 'lumia-tools' );
+		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) ) {
+			return __( 'Not set: wp-config.php forbids file changes (DISALLOW_FILE_MODS), so Lümia Tools does not open this.', 'lumia-tools' );
 		}
 
 		return __( 'Not set yet: Lümia Tools sets it from the next page load (MCP Connect active, Administrator preset).', 'lumia-tools' );

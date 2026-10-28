@@ -252,10 +252,14 @@ final class Agent {
 			return;
 		}
 
-		// A site whose wp-config.php forbids file changes or the code editors
-		// keeps administrators from running code: unfiltered uploads (a .php
-		// file in uploads/) and Bricks PHP would reopen that door.
-		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) || ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) ) {
+		// A site whose wp-config.php forbids any file change (DISALLOW_FILE_MODS)
+		// keeps administrators from putting code on it: unfiltered uploads (a
+		// .php file in uploads/) and Bricks PHP would reopen that door.
+		// DISALLOW_FILE_EDIT does not count: it only closes WordPress' file
+		// editors, which the agency template turns off on every site, while
+		// the Administrator preset already runs code through Bricks and
+		// snippets.
+		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) ) {
 			return;
 		}
 

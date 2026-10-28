@@ -7099,10 +7099,10 @@ msgstr "Active (BRICKS_ENABLE_PHP_ABILITIES défini en dehors de Lümia Tools) :
 msgid "Off: BRICKS_ENABLE_PHP_ABILITIES is set to false outside Lümia Tools."
 msgstr "Inactive : BRICKS_ENABLE_PHP_ABILITIES vaut false en dehors de Lümia Tools."
 
-#: includes/Modules/McpConnect/SiteHealth.php:439
-msgid "Not set: wp-config.php forbids file changes or the code editors (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), so Lümia Tools does not open this."
-msgstr "Non défini : wp-config.php interdit les modifications de fichiers ou les éditeurs de code (DISALLOW_FILE_MODS, DISALLOW_FILE_EDIT), Lümia Tools ne l'ouvre donc pas."
-
 #: includes/Modules/McpConnect/SiteHealth.php:442
 msgid "Not set yet: Lümia Tools sets it from the next page load (MCP Connect active, Administrator preset)."
 msgstr "Pas encore défini : Lümia Tools le définit dès le prochain chargement de page (MCP Connect actif, préréglage Administrateur)."
+
+#: includes/Modules/McpConnect/SiteHealth.php:439
+msgid "Not set: wp-config.php forbids file changes (DISALLOW_FILE_MODS), so Lümia Tools does not open this."
+msgstr "Non défini : wp-config.php interdit les modifications de fichiers (DISALLOW_FILE_MODS), Lümia Tools ne l'ouvre donc pas."
