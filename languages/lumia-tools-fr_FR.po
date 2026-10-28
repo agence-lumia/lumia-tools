@@ -6879,18 +6879,6 @@ msgstr "Claude peut installer, mettre à jour et supprimer des extensions."
 msgid "Bricks PHP ability"
 msgstr "Capacité PHP de Bricks"
 
-#: includes/Modules/McpConnect/SiteHealth.php:394
-msgid "On: Claude can run PHP through bricks/execute-php (also enable it in Bricks > AI)."
-msgstr "Active : Claude peut exécuter du PHP via bricks/execute-php (à activer aussi dans Bricks > AI)."
-
-#: includes/Modules/McpConnect/SiteHealth.php:395
-msgid "Off: add define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); to wp-config.php and enable bricks/execute-php in Bricks > AI for Claude to run PHP."
-msgstr "Inactive : ajoutez define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); dans wp-config.php et activez bricks/execute-php dans Bricks > AI pour que Claude puisse exécuter du PHP."
-
-#: includes/Modules/McpConnect/settings-template.php:171
-msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, unfiltered uploads (with ALLOW_UNFILTERED_UPLOADS) and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
-msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Administrateur (par défaut) : tous les droits d'un administrateur, plus le JavaScript, les envois de fichiers sans filtre (avec ALLOW_UNFILTERED_UPLOADS) et l'exécution de code Bricks. Éditeur : ce qu'un administrateur peut faire, y compris ce que les extensions lui accordent (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code."
-
 #: includes/Modules/McpConnect/SiteHealth.php:384
 msgid "On a multisite network only super admins may install, update or remove plugins: Claude cannot."
 msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent installer, mettre à jour ou supprimer des extensions : Claude ne le peut pas."
@@ -6898,14 +6886,6 @@ msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent instal
 #: includes/Modules/McpConnect/SiteHealth.php:399
 msgid "File types"
 msgstr "Types de fichiers"
-
-#: includes/Modules/McpConnect/SiteHealth.php:401
-msgid "Claude can upload any file type."
-msgstr "Claude peut envoyer tous les types de fichiers."
-
-#: includes/Modules/McpConnect/SiteHealth.php:402
-msgid "Claude can upload the file types WordPress allows. For any type (SVG, fonts, JSON), add define( 'ALLOW_UNFILTERED_UPLOADS', true ); to wp-config.php."
-msgstr "Claude peut envoyer les types de fichiers autorisés par WordPress. Pour tous les types (SVG, polices, JSON), ajoutez define( 'ALLOW_UNFILTERED_UPLOADS', true ); dans wp-config.php."
 
 #: includes/Modules/ActivityLog/Events.php:185
 msgid "Claude action"
@@ -7086,3 +7066,35 @@ msgstr "Charger GSAP sur toutes les pages"
 #: includes/Modules/Motion/settings-template.php:390
 msgid "For animations kept in a snippet plugin (FluentSnippets), which no page shows: GSAP, ScrollTrigger and SplitText then load on every page, after the first paint."
 msgstr "Pour les animations rangées dans une extension de snippets (FluentSnippets), qu'aucune page ne montre : GSAP, ScrollTrigger et SplitText se chargent alors sur toutes les pages, après le premier affichage."
+
+#: includes/Modules/McpConnect/settings-template.php:173
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, any file type and Bricks code execution, including PHP. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
+msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Administrateur (par défaut) : tous les droits d'un administrateur, plus le JavaScript, tous les types de fichiers et l'exécution de code Bricks, PHP compris. Éditeur : ce qu'un administrateur peut faire, y compris ce que les extensions lui accordent (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code."
+
+#: includes/Modules/McpConnect/SiteHealth.php:399
+msgid "On a multisite network only super admins may upload any file type: Claude uploads the types WordPress allows."
+msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent envoyer tous les types de fichiers : Claude envoie les types autorisés par WordPress."
+
+#: includes/Modules/McpConnect/SiteHealth.php:402
+msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set by Lümia Tools)."
+msgstr "Claude peut envoyer tous les types de fichiers (ALLOW_UNFILTERED_UPLOADS défini par Lümia Tools)."
+
+#: includes/Modules/McpConnect/SiteHealth.php:403
+msgid "Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set in wp-config.php)."
+msgstr "Claude peut envoyer tous les types de fichiers (ALLOW_UNFILTERED_UPLOADS défini dans wp-config.php)."
+
+#: includes/Modules/McpConnect/SiteHealth.php:405
+msgid "ALLOW_UNFILTERED_UPLOADS is set to false in wp-config.php: Claude uploads the file types WordPress allows."
+msgstr "ALLOW_UNFILTERED_UPLOADS vaut false dans wp-config.php : Claude envoie les types de fichiers autorisés par WordPress."
+
+#: includes/Modules/McpConnect/SiteHealth.php:420
+msgid "On (BRICKS_ENABLE_PHP_ABILITIES set by Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
+msgstr "Active (BRICKS_ENABLE_PHP_ABILITIES défini par Lümia Tools) : Claude peut exécuter du PHP via bricks/execute-php une fois celle-ci activée dans Bricks > AI."
+
+#: includes/Modules/McpConnect/SiteHealth.php:421
+msgid "On (BRICKS_ENABLE_PHP_ABILITIES set in wp-config.php): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI."
+msgstr "Active (BRICKS_ENABLE_PHP_ABILITIES défini dans wp-config.php) : Claude peut exécuter du PHP via bricks/execute-php une fois celle-ci activée dans Bricks > AI."
+
+#: includes/Modules/McpConnect/SiteHealth.php:422
+msgid "Off: BRICKS_ENABLE_PHP_ABILITIES is set to false in wp-config.php."
+msgstr "Inactive : BRICKS_ENABLE_PHP_ABILITIES vaut false dans wp-config.php."

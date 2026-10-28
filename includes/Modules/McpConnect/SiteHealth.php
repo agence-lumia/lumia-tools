@@ -393,13 +393,21 @@ final class SiteHealth {
 		];
 
 		// map_meta_cap() refuses unfiltered_upload without the constant, and to
-		// anyone but a super admin on a network.
-		$uploads           = defined( 'ALLOW_UNFILTERED_UPLOADS' ) && ALLOW_UNFILTERED_UPLOADS && ! is_multisite();
+		// anyone but a super admin on a network. Agent::define_code_constants()
+		// sets it unless wp-config.php did.
+		if ( is_multisite() ) {
+			$uploads = __( 'On a multisite network only super admins may upload any file type: Claude uploads the types WordPress allows.', 'lumia-tools' );
+		} elseif ( defined( 'ALLOW_UNFILTERED_UPLOADS' ) && ALLOW_UNFILTERED_UPLOADS ) {
+			$uploads = 'lumia' === Agent::constant_source( 'ALLOW_UNFILTERED_UPLOADS' )
+				? __( 'Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set by Lümia Tools).', 'lumia-tools' )
+				: __( 'Claude can upload any file type (ALLOW_UNFILTERED_UPLOADS set in wp-config.php).', 'lumia-tools' );
+		} else {
+			$uploads = __( 'ALLOW_UNFILTERED_UPLOADS is set to false in wp-config.php: Claude uploads the file types WordPress allows.', 'lumia-tools' );
+		}
+
 		$checks['uploads'] = [
 			'label' => __( 'File types', 'lumia-tools' ),
-			'value' => $uploads
-				? __( 'Claude can upload any file type.', 'lumia-tools' )
-				: __( "Claude can upload the file types WordPress allows. For any type (SVG, fonts, JSON), add define( 'ALLOW_UNFILTERED_UPLOADS', true ); to wp-config.php.", 'lumia-tools' ),
+			'value' => $uploads,
 			'state' => 'info',
 		];
 
@@ -408,8 +416,10 @@ final class SiteHealth {
 			$checks['php'] = [
 				'label' => __( 'Bricks PHP ability', 'lumia-tools' ),
 				'value' => $php
-					? __( 'On: Claude can run PHP through bricks/execute-php (also enable it in Bricks > AI).', 'lumia-tools' )
-					: __( "Off: add define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); to wp-config.php and enable bricks/execute-php in Bricks > AI for Claude to run PHP.", 'lumia-tools' ),
+					? ( 'lumia' === Agent::constant_source( 'BRICKS_ENABLE_PHP_ABILITIES' )
+						? __( 'On (BRICKS_ENABLE_PHP_ABILITIES set by Lümia Tools): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI.', 'lumia-tools' )
+						: __( 'On (BRICKS_ENABLE_PHP_ABILITIES set in wp-config.php): Claude can run PHP through bricks/execute-php once it is enabled in Bricks > AI.', 'lumia-tools' ) )
+					: __( 'Off: BRICKS_ENABLE_PHP_ABILITIES is set to false in wp-config.php.', 'lumia-tools' ),
 				'state' => 'info',
 			];
 		}

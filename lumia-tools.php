@@ -38,6 +38,10 @@ Lumia\Tools\Core\Autoloader::register();
 // for the whole request, and an earlier plugin would lock it to anonymous.
 // boot() only reads the raw module flag; everything else waits for init().
 Lumia\Tools\Modules\McpConnect\Discovery::boot();
+// Under the Administrator preset: BRICKS_ENABLE_PHP_ABILITIES and
+// ALLOW_UNFILTERED_UPLOADS, when wp-config.php does not set them. At file
+// load, before the theme (Bricks) loads.
+Lumia\Tools\Modules\McpConnect\Agent::define_code_constants();
 
 // Bootstrap
 add_action(
