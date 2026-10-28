@@ -267,18 +267,44 @@ final class Agent {
 	 * set or removed). One autoloaded option read otherwise.
 	 */
 	public static function maybe_sync(): void {
+		$stored = get_option( self::SYNC_OPTION );
 		$marker = self::current_preset() . '|' . LUMIA_VERSION;
-		if ( get_option( self::SYNC_OPTION ) === $marker ) {
+		if ( $stored === $marker ) {
 			return;
 		}
+
+		// No marker yet: the first request on 2.4.0 or later. Until then Editor
+		// was the default and was stored without anyone choosing it (the
+		// activation writes the defaults, the form always posts the select):
+		// it moves to Administrator once. A later choice of Editor stands.
+		if ( false === $stored ) {
+			self::migrate_editor_default();
+			$marker = self::current_preset() . '|' . LUMIA_VERSION;
+		}
+
+		// Marker first: concurrent requests after an update then skip the
+		// resync instead of each rewriting the role.
+		update_option( self::SYNC_OPTION, $marker, true );
 
 		self::sync_role( self::current_preset() );
 		$user_id = self::user_id();
 		if ( $user_id > 0 ) {
 			self::reset_account( $user_id );
 		}
+	}
 
-		update_option( self::SYNC_OPTION, $marker, true );
+	/**
+	 * Rewrites a stored Editor preset to Administrator, the default since
+	 * 2.4.0. Runs once per site, from maybe_sync().
+	 */
+	private static function migrate_editor_default(): void {
+		$settings = get_option( Module::OPTION );
+		if ( ! is_array( $settings ) || self::PRESET_EDITOR !== ( $settings['agent_preset'] ?? '' ) ) {
+			return;
+		}
+
+		$settings['agent_preset'] = self::PRESET_ADMIN;
+		update_option( Module::OPTION, $settings );
 	}
 
 	/**

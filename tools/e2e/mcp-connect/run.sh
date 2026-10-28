@@ -728,10 +728,18 @@ wpcli eval '$o = get_option("lumia_module_mcp_connect", []); unset($o["agent_pre
 CODE_PHP='$u = get_user_by("login", "claude-mcp"); $r = get_role("lumia_mcp_agent"); foreach (["manage_options", "unfiltered_html", "unfiltered_upload", "bricks_execute_code", "bricks_full_access"] as $c) { echo $r->has_cap($c) ? "y" : "n"; } echo "/", user_can($u, "unfiltered_html") ? "yes" : "no";'
 check_eq "9 default preset Administrator: role resynced without an admin load, code caps granted" "$(wpcli eval "$CODE_PHP")" "yyyyy/yes"
 check_eq "9 sync marker written" "$(wpcli eval 'echo strtok((string) get_option("lumia_mcp_agent_sync"), "|");')" admin
+# Upgrade from 2.3.x: Editor was stored without being chosen; it moves to
+# Administrator once (no marker yet), and a later Editor stands.
+set_setting agent_preset "'editor'"
+wpcli eval 'delete_option("lumia_mcp_agent_sync");' >/dev/null
+check_eq "9 upgrade: stored Editor migrated once to Administrator" "$(wpcli eval '$o = get_option("lumia_module_mcp_connect"); echo $o["agent_preset"];')" admin
+set_setting agent_preset "'editor'"
+check_eq "9 Editor chosen after the migration stands" "$(wpcli eval 'echo \Lumia\Tools\Modules\McpConnect\Agent::current_preset();')" editor
+set_setting agent_preset "'admin'"
 # LUMIA_MCP_AGENT_PRESET forces the preset, whatever is stored.
 wpcli config set LUMIA_MCP_AGENT_PRESET editor >/dev/null
 opcache_wait
-check_eq "9 constant editor -> role resynced to Editor" "$(wpcli eval "$CODE_PHP")" "nnnnn/no"
+check_eq "9 constant editor -> role resynced to Editor (builder access kept)" "$(wpcli eval "$CODE_PHP")" "nnnny/no"
 check_re "9 constant -> preset select disabled" "$(curl -s -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools&tab=module_mcp_connect" | tr -d '\r\n\t')" 'id="lumia_mc_preset"[^>]*disabled'
 wpcli config set LUMIA_MCP_AGENT_PRESET bogus >/dev/null
 opcache_wait

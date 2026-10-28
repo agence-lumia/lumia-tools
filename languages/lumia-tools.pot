@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T16:00:52+00:00\n"
+"POT-Creation-Date: 2026-10-28T16:06:42+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -427,7 +427,7 @@ msgstr ""
 
 #: includes/Core/Modules.php:132
 #: includes/Core/Modules.php:134
-#: includes/Modules/McpConnect/SiteHealth.php:446
+#: includes/Modules/McpConnect/SiteHealth.php:463
 msgid "MCP Connect"
 msgstr ""
 
@@ -465,7 +465,7 @@ msgid "Users"
 msgstr ""
 
 #: includes/Modules/ActivityLog/Events.php:27
-#: includes/Modules/McpConnect/SiteHealth.php:382
+#: includes/Modules/McpConnect/SiteHealth.php:390
 msgid "Plugins"
 msgstr ""
 
@@ -743,7 +743,7 @@ msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:460
 #: includes/Modules/McpConnect/settings-template.php:105
-#: includes/Modules/McpConnect/settings-template.php:319
+#: includes/Modules/McpConnect/settings-template.php:320
 #: includes/Modules/MenuCreator/settings-template.php:144
 #: includes/Modules/Smtp/Module.php:254
 #: includes/Modules/Smtp/settings-template.php:365
@@ -3108,15 +3108,15 @@ msgctxt "MCP Connect permission preset"
 msgid "Editor"
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:588
+#: includes/Modules/McpConnect/Agent.php:614
 msgid "This account is used by Claude through MCP Connect and cannot sign in."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:600
+#: includes/Modules/McpConnect/Agent.php:626
 msgid "This account is used by Claude through MCP Connect and cannot use application passwords."
 msgstr ""
 
-#: includes/Modules/McpConnect/Agent.php:621
+#: includes/Modules/McpConnect/Agent.php:647
 msgid "This account is used by Claude through MCP Connect and has no access to the dashboard."
 msgstr ""
 
@@ -3679,117 +3679,117 @@ msgid "Permissions of the Claude account"
 msgstr ""
 
 #: includes/Modules/McpConnect/settings-template.php:171
-msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, any file type and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, unfiltered uploads (with ALLOW_UNFILTERED_UPLOADS) and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
 msgstr ""
 
 #: includes/Modules/McpConnect/settings-template.php:174
 msgid "Set by the LUMIA_MCP_AGENT_PRESET constant in wp-config.php: remove it to choose here."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:176
+#: includes/Modules/McpConnect/settings-template.php:177
 msgid "Anyone holding a connection controls the whole site, code included: revoke the connections once the work is done."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:191
+#: includes/Modules/McpConnect/settings-template.php:192
 msgid "Clients"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:192
+#: includes/Modules/McpConnect/settings-template.php:193
 msgid "Which applications may ask to connect."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:197
+#: includes/Modules/McpConnect/settings-template.php:198
 msgid "Trusted publishers only"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:198
+#: includes/Modules/McpConnect/settings-template.php:199
 msgid "Only applications published by Anthropic (claude.ai) can request a connection: Claude, Claude Code and Claude Desktop."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:210
+#: includes/Modules/McpConnect/settings-template.php:211
 msgid "Dynamic client registration"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:211
+#: includes/Modules/McpConnect/settings-template.php:212
 msgid "Lets MCP clients that do not publish their identity register themselves. Off unless a client you use requires it."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:222
+#: includes/Modules/McpConnect/settings-template.php:223
 msgid "Self-registered clients are unverified: anyone can register one under any name. While \"Trusted publishers only\" is on, they are always refused."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:227
+#: includes/Modules/McpConnect/settings-template.php:228
 msgid "Delete unused registered clients after (days)"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:239
+#: includes/Modules/McpConnect/settings-template.php:240
 msgid "Tokens"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:240
+#: includes/Modules/McpConnect/settings-template.php:241
 msgid "Claude renews its access token on its own with the refresh token. A connection unused for longer than the refresh token lifetime must be approved again."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:245
+#: includes/Modules/McpConnect/settings-template.php:246
 msgid "Access token lifetime (minutes)"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:250
+#: includes/Modules/McpConnect/settings-template.php:251
 msgid "Refresh token lifetime (days)"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:267
+#: includes/Modules/McpConnect/settings-template.php:268
 msgid "Add this site to Claude"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:268
+#: includes/Modules/McpConnect/settings-template.php:269
 msgid "The URL to paste in Claude when adding a custom connector."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:274
+#: includes/Modules/McpConnect/settings-template.php:275
 msgid "MCP server URL"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:277
-#: includes/Modules/McpConnect/settings-template.php:309
+#: includes/Modules/McpConnect/settings-template.php:278
+#: includes/Modules/McpConnect/settings-template.php:310
 msgid "Copy"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:282
+#: includes/Modules/McpConnect/settings-template.php:283
 msgid "In Claude, open Settings > Connectors and choose Add custom connector."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:283
+#: includes/Modules/McpConnect/settings-template.php:284
 msgid "Paste the URL above. Leave Client ID and Client Secret empty."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:284
+#: includes/Modules/McpConnect/settings-template.php:285
 msgid "Click Connect: Claude opens the sign-in page of this site."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:285
+#: includes/Modules/McpConnect/settings-template.php:286
 msgid "Sign in to WordPress if asked, check the request, then approve it."
 msgstr ""
 
 #. translators: %s: users allowed to approve, e.g. "Administrators (manage_options)".
-#: includes/Modules/McpConnect/settings-template.php:291
+#: includes/Modules/McpConnect/settings-template.php:292
 #, php-format
 msgid "Only these users can approve a connection: %s."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:301
+#: includes/Modules/McpConnect/settings-template.php:302
 msgid "Claude Code"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:302
+#: includes/Modules/McpConnect/settings-template.php:303
 msgid "Run this command, then /mcp in Claude Code to sign in."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:321
+#: includes/Modules/McpConnect/settings-template.php:322
 msgid "What this site needs for Claude to connect."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:322
+#: includes/Modules/McpConnect/settings-template.php:323
 msgid "Site Health also checks the discovery documents and the Authorization header."
 msgstr ""
 
@@ -4028,37 +4028,53 @@ msgstr ""
 msgid "Claude can write JavaScript, CSS and HTML in pages and Bricks scripts."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:384
+#: includes/Modules/McpConnect/SiteHealth.php:382
 msgid "File changes are disallowed on this site (DISALLOW_FILE_MODS in wp-config.php): Claude cannot install or update plugins."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:385
+#: includes/Modules/McpConnect/SiteHealth.php:384
+msgid "On a multisite network only super admins may install, update or remove plugins: Claude cannot."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:386
 msgid "Claude can install, update and remove plugins."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:392
+#: includes/Modules/McpConnect/SiteHealth.php:399
+msgid "File types"
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:401
+msgid "Claude can upload any file type."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:402
+msgid "Claude can upload the file types WordPress allows. For any type (SVG, fonts, JSON), add define( 'ALLOW_UNFILTERED_UPLOADS', true ); to wp-config.php."
+msgstr ""
+
+#: includes/Modules/McpConnect/SiteHealth.php:409
 msgid "Bricks PHP ability"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:394
+#: includes/Modules/McpConnect/SiteHealth.php:411
 msgid "On: Claude can run PHP through bricks/execute-php (also enable it in Bricks > AI)."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:395
+#: includes/Modules/McpConnect/SiteHealth.php:412
 msgid "Off: add define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); to wp-config.php and enable bricks/execute-php in Bricks > AI for Claude to run PHP."
 msgstr ""
 
 #. translators: 1: URL path Claude requests at the server root, 2: URL of the document on this site.
-#: includes/Modules/McpConnect/SiteHealth.php:509
+#: includes/Modules/McpConnect/SiteHealth.php:526
 #, php-format
 msgid "This site lives under a path, so Claude asks the server root for %1$s. Rewrite that path, at the web server level, to %2$s."
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:522
+#: includes/Modules/McpConnect/SiteHealth.php:539
 msgid "A 403 usually means the web server blocks /.well-known/ before WordPress. On nginx, add this to the site configuration:"
 msgstr ""
 
-#: includes/Modules/McpConnect/SiteHealth.php:524
+#: includes/Modules/McpConnect/SiteHealth.php:541
 msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
 msgstr ""
 

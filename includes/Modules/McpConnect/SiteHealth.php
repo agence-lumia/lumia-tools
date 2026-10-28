@@ -377,13 +377,30 @@ final class SiteHealth {
 			],
 		];
 
-		$file_mods         = ! wp_is_file_mod_allowed( 'lumia_mcp_connect' );
+		// The context map_meta_cap() itself passes for install_plugins and the like.
+		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) ) {
+			$plugins = [ __( 'File changes are disallowed on this site (DISALLOW_FILE_MODS in wp-config.php): Claude cannot install or update plugins.', 'lumia-tools' ), 'recommended' ];
+		} elseif ( is_multisite() ) {
+			$plugins = [ __( 'On a multisite network only super admins may install, update or remove plugins: Claude cannot.', 'lumia-tools' ), 'recommended' ];
+		} else {
+			$plugins = [ __( 'Claude can install, update and remove plugins.', 'lumia-tools' ), 'good' ];
+		}
+
 		$checks['plugins'] = [
 			'label' => __( 'Plugins', 'lumia-tools' ),
-			'value' => $file_mods
-				? __( 'File changes are disallowed on this site (DISALLOW_FILE_MODS in wp-config.php): Claude cannot install or update plugins.', 'lumia-tools' )
-				: __( 'Claude can install, update and remove plugins.', 'lumia-tools' ),
-			'state' => $file_mods ? 'recommended' : 'good',
+			'value' => $plugins[0],
+			'state' => $plugins[1],
+		];
+
+		// map_meta_cap() refuses unfiltered_upload without the constant, and to
+		// anyone but a super admin on a network.
+		$uploads           = defined( 'ALLOW_UNFILTERED_UPLOADS' ) && ALLOW_UNFILTERED_UPLOADS && ! is_multisite();
+		$checks['uploads'] = [
+			'label' => __( 'File types', 'lumia-tools' ),
+			'value' => $uploads
+				? __( 'Claude can upload any file type.', 'lumia-tools' )
+				: __( "Claude can upload the file types WordPress allows. For any type (SVG, fonts, JSON), add define( 'ALLOW_UNFILTERED_UPLOADS', true ); to wp-config.php.", 'lumia-tools' ),
+			'state' => 'info',
 		];
 
 		if ( 'bricks' === get_template() ) {

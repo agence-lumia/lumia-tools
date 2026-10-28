@@ -168,11 +168,12 @@ $mc_badges = [
 					</select>
 				</div>
 			</div>
-			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, any file type and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code.', 'lumia-tools' ); ?></p>
+			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, unfiltered uploads (with ALLOW_UNFILTERED_UPLOADS) and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code.', 'lumia-tools' ); ?></p>
 
 			<?php if ( $mc_forced ) : ?>
 				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Set by the LUMIA_MCP_AGENT_PRESET constant in wp-config.php: remove it to choose here.', 'lumia-tools' ); ?></div>
-			<?php elseif ( Agent::PRESET_ADMIN === $mc_preset ) : ?>
+			<?php endif; ?>
+			<?php if ( Agent::PRESET_ADMIN === $mc_preset ) : ?>
 				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Anyone holding a connection controls the whole site, code included: revoke the connections once the work is done.', 'lumia-tools' ); ?></div>
 			<?php endif; ?>
 
