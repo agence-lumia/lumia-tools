@@ -6906,3 +6906,167 @@ msgstr "Claude peut envoyer tous les types de fichiers."
 #: includes/Modules/McpConnect/SiteHealth.php:402
 msgid "Claude can upload the file types WordPress allows. For any type (SVG, fonts, JSON), add define( 'ALLOW_UNFILTERED_UPLOADS', true ); to wp-config.php."
 msgstr "Claude peut envoyer les types de fichiers autorisés par WordPress. Pour tous les types (SVG, polices, JSON), ajoutez define( 'ALLOW_UNFILTERED_UPLOADS', true ); dans wp-config.php."
+
+#: includes/Modules/ActivityLog/Events.php:185
+msgid "Claude action"
+msgstr "Action de Claude"
+
+#: includes/Modules/McpConnect/Abilities/Cache.php:16
+msgid "Caches"
+msgstr "Caches"
+
+#: includes/Modules/McpConnect/Abilities/Cache.php:20
+msgid "Purge the page cache (Cache Enabler, WP Rocket, LiteSpeed and others), the object cache, OPcache and expired transients."
+msgstr "Vider le cache des pages (Cache Enabler, WP Rocket, LiteSpeed et autres), le cache objet, OPcache et les transients expirés."
+
+#: includes/Modules/McpConnect/Abilities/Cache.php:30
+msgid "Purge the caches"
+msgstr "Vider les caches"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:20
+msgid "Diagnostics"
+msgstr "Diagnostic"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:24
+msgid "Read the environment (versions, plugins, constants, limits) and the debug log, clear the debug log."
+msgstr "Lire l'environnement (versions, extensions, constantes, limites) et le journal de débogage, vider le journal de débogage."
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:34
+msgid "Get the site environment"
+msgstr "Lire l'environnement du site"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:42
+msgid "Read the error log"
+msgstr "Lire le journal d'erreurs"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:73
+msgid "Clear the debug log"
+msgstr "Vider le journal de débogage"
+
+#: includes/Modules/McpConnect/Abilities/HttpProbe.php:31
+msgid "Page checks"
+msgstr "Vérification des pages"
+
+#: includes/Modules/McpConnect/Abilities/HttpProbe.php:35
+msgid "Request a page of this site (this site only) and read its status, headers, redirections, HTML or SEO tags."
+msgstr "Demander une page de ce site (ce site uniquement) et lire son statut, ses en-têtes, ses redirections, son HTML ou ses balises SEO."
+
+#: includes/Modules/McpConnect/Abilities/HttpProbe.php:45
+msgid "Request a page of the site"
+msgstr "Demander une page du site"
+
+#: includes/Modules/McpConnect/Abilities/Options.php:49
+msgid "Read, write and delete WordPress options (plugin settings), except those that would cut the connection."
+msgstr "Lire, écrire et supprimer des options WordPress (réglages des extensions), sauf celles qui couperaient la connexion."
+
+#: includes/Modules/McpConnect/Abilities/Options.php:64
+msgid "Read an option"
+msgstr "Lire une option"
+
+#: includes/Modules/McpConnect/Abilities/Options.php:79
+msgid "Write an option"
+msgstr "Écrire une option"
+
+#: includes/Modules/McpConnect/Abilities/Options.php:106
+msgid "Delete an option"
+msgstr "Supprimer une option"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:21
+msgid "List, install, update, activate, deactivate and delete plugins (never Lümia Tools nor the MCP Adapter)."
+msgstr "Lister, installer, mettre à jour, activer, désactiver et supprimer des extensions (jamais Lümia Tools ni le MCP Adapter)."
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:36
+msgid "List the plugins"
+msgstr "Lister les extensions"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:51
+msgid "Install a plugin"
+msgstr "Installer une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:73
+msgid "Update a plugin"
+msgstr "Mettre à jour une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:83
+msgid "Activate a plugin"
+msgstr "Activer une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:94
+msgid "Deactivate a plugin"
+msgstr "Désactiver une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:105
+msgid "Delete a plugin"
+msgstr "Supprimer une extension"
+
+#: includes/Modules/McpConnect/Abilities/Registry.php:72
+msgid "Site tools for Claude: diagnostics, page checks, caches, plugins, options, snippets and SEO."
+msgstr "Outils du site pour Claude : diagnostic, vérification des pages, caches, extensions, options, snippets et SEO."
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:44
+msgid "SEO (Rank Math)"
+msgstr "SEO (Rank Math)"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:48
+msgid "Write the Rank Math SEO of posts and pages (title, description, keyword, robots, canonical, social) and manage redirections."
+msgstr "Écrire le SEO Rank Math des articles et des pages (titre, description, mot-clé, robots, canonique, réseaux sociaux) et gérer les redirections."
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:97
+msgid "Read the SEO fields of a post"
+msgstr "Lire les champs SEO d'un contenu"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:107
+msgid "Write the SEO fields of a post"
+msgstr "Écrire les champs SEO d'un contenu"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:121
+msgid "Save a redirection"
+msgstr "Enregistrer une redirection"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:167
+msgid "Delete redirections"
+msgstr "Supprimer des redirections"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:23
+msgid "Snippets (FluentSnippets)"
+msgstr "Snippets (FluentSnippets)"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:27
+msgid "List, read, create, update, publish and delete FluentSnippets snippets (PHP, CSS, JS, HTML)."
+msgstr "Lister, lire, créer, modifier, publier et supprimer des snippets FluentSnippets (PHP, CSS, JS, HTML)."
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:80
+msgid "List the snippets"
+msgstr "Lister les snippets"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:94
+msgid "Read a snippet"
+msgstr "Lire un snippet"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:104
+msgid "Create a snippet"
+msgstr "Créer un snippet"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:114
+msgid "Update a snippet"
+msgstr "Modifier un snippet"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:134
+msgid "Delete a snippet"
+msgstr "Supprimer un snippet"
+
+#: includes/Modules/McpConnect/settings-template.php:194
+msgid "Tools for Claude"
+msgstr "Outils pour Claude"
+
+#: includes/Modules/McpConnect/settings-template.php:195
+msgid "The lumia/* abilities Claude can use on this site, on top of the Bricks ones. Each one still checks the rights of the Claude account."
+msgstr "Les capacités lumia/* que Claude peut utiliser sur ce site, en plus de celles de Bricks. Chacune vérifie toujours les droits du compte Claude."
+
+#: includes/Modules/McpConnect/settings-template.php:199
+msgid "The Abilities API needs WordPress 6.9 or later: these tools are not available on this site."
+msgstr "L'API des capacités nécessite WordPress 6.9 ou plus récent : ces outils ne sont pas disponibles sur ce site."
+
+#: includes/Modules/McpConnect/settings-template.php:207
+msgid "Plugin not active"
+msgstr "Extension inactive"

@@ -180,6 +180,10 @@ class Events {
 				'group' => 'mcp',
 				'label' => __( 'Claude client registered', 'lumia-tools' ),
 			],
+			'mcp_ability_executed'       => [
+				'group' => 'mcp',
+				'label' => __( 'Claude action', 'lumia-tools' ),
+			],
 		];
 	}
 

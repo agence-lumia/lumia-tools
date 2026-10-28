@@ -5,6 +5,7 @@ defined( 'ABSPATH' ) || exit;
 
 use Lumia\Tools\Core\AbstractModule;
 use Lumia\Tools\Core\Compat;
+use Lumia\Tools\Modules\McpConnect\Abilities\Registry;
 
 /**
  * MCP Connect module: adds the site to Claude as a custom connector, signed in
@@ -71,6 +72,10 @@ final class Module extends AbstractModule {
 		// never load an admin page, where the role is otherwise resynced.
 		Agent::maybe_sync();
 
+		// The lumia/* abilities, whatever the state of the protocol: an
+		// application password reaches them through the Adapter too.
+		Registry::boot();
+
 		add_action( self::CRON_HOOK, [ Store::class, 'purge_expired' ] );
 
 		// Scheduled here and not only on activation: a module activated by a
@@ -130,6 +135,7 @@ final class Module extends AbstractModule {
 			'dcr_purge_days'      => min( self::DCR_PURGE_MAX, max( self::DCR_PURGE_MIN, absint( $settings['dcr_purge_days'] ?? $defaults['dcr_purge_days'] ) ) ),
 			'agent_preset'        => in_array( $preset, $presets, true ) ? $preset : (string) $defaults['agent_preset'],
 			'approver_capability' => in_array( $approver, self::APPROVER_CAPABILITIES, true ) ? $approver : (string) $defaults['approver_capability'],
+			'abilities'           => self::sanitize_families( $settings['abilities'] ?? null, self::settings()['abilities'] ?? [] ),
 		];
 
 		$previous = Agent::current_preset();
@@ -147,6 +153,22 @@ final class Module extends AbstractModule {
 	}
 
 	/**
+	 * Configuration import: stored abilities are a complete list, but the
+	 * import drops the false values before save_settings(); the `_sent`
+	 * marker the form posts tells it a missing family means off.
+	 *
+	 * @param array<string, mixed> $stored Settings as exported.
+	 * @return array<string, mixed>
+	 */
+	public function to_form_payload( array $stored ): array {
+		if ( isset( $stored['abilities'] ) && is_array( $stored['abilities'] ) ) {
+			$stored['abilities']['_sent'] = true;
+		}
+
+		return $stored;
+	}
+
+	/**
 	 * @return array<string, mixed>
 	 */
 	public static function get_defaults(): array {
@@ -159,7 +181,36 @@ final class Module extends AbstractModule {
 			'dcr_purge_days'      => 30,
 			'agent_preset'        => Agent::DEFAULT_PRESET,
 			'approver_capability' => 'manage_options',
+			'abilities'           => array_fill_keys( array_keys( Registry::FAMILIES ), true ),
 		];
+	}
+
+	/**
+	 * Families of lumia/* abilities turned on: a checkbox per family, every
+	 * known key rebuilt (an unchecked box is absent from the form). The form
+	 * posts `abilities[_sent]`: without it (a configuration exported before
+	 * 2.4.0, a payload without the key) the current families are kept rather
+	 * than all turned off; a family the stored value does not know is on.
+	 *
+	 * @param mixed $families Posted families.
+	 * @param mixed $current  Stored families.
+	 * @return array<string, bool>
+	 */
+	private static function sanitize_families( $families, $current ): array {
+		$current = is_array( $current ) ? $current : [];
+		$sent    = is_array( $families ) && ! empty( $families['_sent'] );
+		$out     = [];
+		foreach ( array_keys( Registry::FAMILIES ) as $key ) {
+			if ( $sent ) {
+				$out[ $key ] = ! empty( $families[ $key ] );
+			} elseif ( is_array( $families ) && array_key_exists( $key, $families ) ) {
+				$out[ $key ] = ! empty( $families[ $key ] );
+			} else {
+				$out[ $key ] = ! array_key_exists( $key, $current ) || ! empty( $current[ $key ] );
+			}
+		}
+
+		return $out;
 	}
 
 	/**
