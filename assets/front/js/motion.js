@@ -2115,6 +2115,10 @@
   stubQueue.forEach(whenReady);
 
   function startAll() {
+    // destroy() before the start: nothing runs, the callbacks included.
+    if (!media) {
+      return;
+    }
     start();
     flushReady();
   }

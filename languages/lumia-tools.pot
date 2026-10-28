@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T16:23:24+00:00\n"
+"POT-Creation-Date: 2026-10-28T16:31:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: lumia-tools\n"
@@ -220,7 +220,7 @@ msgstr ""
 #: includes/Modules/ImageOptimizer/BulkProcessor.php:317
 #: includes/Modules/ImageOptimizer/DeliveryProbe.php:697
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:583
-#: includes/Modules/McpConnect/Module.php:370
+#: includes/Modules/McpConnect/Module.php:397
 #: includes/Modules/Media/Module.php:424
 #: includes/Modules/MenuCreator/Module.php:956
 #: includes/Modules/MenuCreator/Module.php:977
@@ -634,7 +634,7 @@ msgstr ""
 #: includes/Modules/ActivityLog/settings-template.php:107
 #: includes/Modules/Database/Module.php:120
 #: includes/Modules/Database/settings-template.php:29
-#: includes/Modules/McpConnect/Module.php:327
+#: includes/Modules/McpConnect/Module.php:354
 #: includes/Modules/McpConnect/settings-template.php:112
 #: includes/Modules/Media/Module.php:359
 #: includes/Modules/Smtp/Module.php:237
@@ -749,7 +749,7 @@ msgstr ""
 
 #: includes/Modules/ActivityLog/Module.php:460
 #: includes/Modules/McpConnect/settings-template.php:107
-#: includes/Modules/McpConnect/settings-template.php:354
+#: includes/Modules/McpConnect/settings-template.php:355
 #: includes/Modules/MenuCreator/settings-template.php:144
 #: includes/Modules/Smtp/Module.php:254
 #: includes/Modules/Smtp/settings-template.php:365
@@ -2387,7 +2387,7 @@ msgid "Last check"
 msgstr ""
 
 #: includes/Modules/ImageOptimizer/delivery-status.php:140
-#: includes/Modules/McpConnect/Module.php:335
+#: includes/Modules/McpConnect/Module.php:362
 #: includes/Modules/Motion/Controls.php:246
 msgid "Never"
 msgstr ""
@@ -2450,7 +2450,7 @@ msgstr ""
 
 #: includes/Modules/ImageOptimizer/MediaLibrary.php:133
 #: includes/Modules/ImageOptimizer/settings-template.php:274
-#: includes/Modules/McpConnect/Module.php:338
+#: includes/Modules/McpConnect/Module.php:365
 msgid "Pending"
 msgstr ""
 
@@ -2957,7 +2957,7 @@ msgstr ""
 
 #: includes/Modules/Login/settings-template.php:36
 #: includes/Modules/Login/settings-template.php:250
-#: includes/Modules/McpConnect/Abilities/Options.php:45
+#: includes/Modules/McpConnect/Abilities/Options.php:50
 msgid "Options"
 msgstr ""
 
@@ -3149,19 +3149,19 @@ msgstr ""
 msgid "Request a page of the site"
 msgstr ""
 
-#: includes/Modules/McpConnect/Abilities/Options.php:49
+#: includes/Modules/McpConnect/Abilities/Options.php:54
 msgid "Read, write and delete WordPress options (plugin settings), except those that would cut the connection."
 msgstr ""
 
-#: includes/Modules/McpConnect/Abilities/Options.php:64
+#: includes/Modules/McpConnect/Abilities/Options.php:69
 msgid "Read an option"
 msgstr ""
 
-#: includes/Modules/McpConnect/Abilities/Options.php:79
+#: includes/Modules/McpConnect/Abilities/Options.php:84
 msgid "Write an option"
 msgstr ""
 
-#: includes/Modules/McpConnect/Abilities/Options.php:106
+#: includes/Modules/McpConnect/Abilities/Options.php:111
 msgid "Delete an option"
 msgstr ""
 
@@ -3600,115 +3600,115 @@ msgstr ""
 msgid "Return to the application"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:328
+#: includes/Modules/McpConnect/Module.php:355
 msgid "Could not load the connections."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:329
+#: includes/Modules/McpConnect/Module.php:356
 #: includes/Modules/McpConnect/settings-template.php:119
 msgid "No connection yet. Add this site in Claude: see Help."
 msgstr ""
 
 #. translators: %s: number of connections.
-#: includes/Modules/McpConnect/Module.php:331
+#: includes/Modules/McpConnect/Module.php:358
 #, php-format
 msgid "%s connection(s)"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:332
+#: includes/Modules/McpConnect/Module.php:359
 msgid "Verified"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:333
+#: includes/Modules/McpConnect/Module.php:360
 msgid "Unverified"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:334
+#: includes/Modules/McpConnect/Module.php:361
 msgid "Acts as the approver"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:336
+#: includes/Modules/McpConnect/Module.php:363
 msgid "(no label)"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:337
+#: includes/Modules/McpConnect/Module.php:364
 msgctxt "MCP connection status"
 msgid "Active"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:339
+#: includes/Modules/McpConnect/Module.php:366
 msgid "Revoked"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:340
+#: includes/Modules/McpConnect/Module.php:367
 msgid "Revoke"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:341
+#: includes/Modules/McpConnect/Module.php:368
 msgid "Revoke this connection?"
 msgstr ""
 
 #. translators: %s: connection label or client name.
-#: includes/Modules/McpConnect/Module.php:343
+#: includes/Modules/McpConnect/Module.php:370
 #, php-format
 msgid "\"%s\" will lose access to this site immediately. Claude will ask to connect again."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:344
+#: includes/Modules/McpConnect/Module.php:371
 msgid "Revoke every connection?"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:345
+#: includes/Modules/McpConnect/Module.php:372
 msgid "Every Claude connection to this site loses access immediately. Each one will have to be approved again."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:346
+#: includes/Modules/McpConnect/Module.php:373
 #: includes/Modules/McpConnect/settings-template.php:92
 msgid "Revoke all"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:347
+#: includes/Modules/McpConnect/Module.php:374
 msgid "Copied to the clipboard."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:348
+#: includes/Modules/McpConnect/Module.php:375
 msgid "Could not copy: select the text and copy it by hand."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:349
+#: includes/Modules/McpConnect/Module.php:376
 msgid "by an administrator"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:350
+#: includes/Modules/McpConnect/Module.php:377
 msgid "all connections revoked"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:351
+#: includes/Modules/McpConnect/Module.php:378
 msgid "token reuse detected"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:352
+#: includes/Modules/McpConnect/Module.php:379
 msgid "user deleted"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:353
+#: includes/Modules/McpConnect/Module.php:380
 msgid "revoked by the client"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:354
+#: includes/Modules/McpConnect/Module.php:381
 msgid "expired"
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:399
+#: includes/Modules/McpConnect/Module.php:426
 msgid "This connection does not exist or is already revoked."
 msgstr ""
 
-#: includes/Modules/McpConnect/Module.php:402
+#: includes/Modules/McpConnect/Module.php:429
 msgid "Connection revoked."
 msgstr ""
 
 #. translators: %s: number of connections revoked.
-#: includes/Modules/McpConnect/Module.php:414
+#: includes/Modules/McpConnect/Module.php:441
 #, php-format
 msgid "%s connection revoked."
 msgid_plural "%s connections revoked."
@@ -3853,110 +3853,110 @@ msgstr ""
 msgid "The Abilities API needs WordPress 6.9 or later: these tools are not available on this site."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:207
+#: includes/Modules/McpConnect/settings-template.php:208
 msgid "Plugin not active"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:226
+#: includes/Modules/McpConnect/settings-template.php:227
 msgid "Clients"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:227
+#: includes/Modules/McpConnect/settings-template.php:228
 msgid "Which applications may ask to connect."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:232
+#: includes/Modules/McpConnect/settings-template.php:233
 msgid "Trusted publishers only"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:233
+#: includes/Modules/McpConnect/settings-template.php:234
 msgid "Only applications published by Anthropic (claude.ai) can request a connection: Claude, Claude Code and Claude Desktop."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:245
+#: includes/Modules/McpConnect/settings-template.php:246
 msgid "Dynamic client registration"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:246
+#: includes/Modules/McpConnect/settings-template.php:247
 msgid "Lets MCP clients that do not publish their identity register themselves. Off unless a client you use requires it."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:257
+#: includes/Modules/McpConnect/settings-template.php:258
 msgid "Self-registered clients are unverified: anyone can register one under any name. While \"Trusted publishers only\" is on, they are always refused."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:262
+#: includes/Modules/McpConnect/settings-template.php:263
 msgid "Delete unused registered clients after (days)"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:274
+#: includes/Modules/McpConnect/settings-template.php:275
 msgid "Tokens"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:275
+#: includes/Modules/McpConnect/settings-template.php:276
 msgid "Claude renews its access token on its own with the refresh token. A connection unused for longer than the refresh token lifetime must be approved again."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:280
+#: includes/Modules/McpConnect/settings-template.php:281
 msgid "Access token lifetime (minutes)"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:285
+#: includes/Modules/McpConnect/settings-template.php:286
 msgid "Refresh token lifetime (days)"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:302
+#: includes/Modules/McpConnect/settings-template.php:303
 msgid "Add this site to Claude"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:303
+#: includes/Modules/McpConnect/settings-template.php:304
 msgid "The URL to paste in Claude when adding a custom connector."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:309
+#: includes/Modules/McpConnect/settings-template.php:310
 msgid "MCP server URL"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:312
-#: includes/Modules/McpConnect/settings-template.php:344
+#: includes/Modules/McpConnect/settings-template.php:313
+#: includes/Modules/McpConnect/settings-template.php:345
 msgid "Copy"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:317
+#: includes/Modules/McpConnect/settings-template.php:318
 msgid "In Claude, open Settings > Connectors and choose Add custom connector."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:318
+#: includes/Modules/McpConnect/settings-template.php:319
 msgid "Paste the URL above. Leave Client ID and Client Secret empty."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:319
+#: includes/Modules/McpConnect/settings-template.php:320
 msgid "Click Connect: Claude opens the sign-in page of this site."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:320
+#: includes/Modules/McpConnect/settings-template.php:321
 msgid "Sign in to WordPress if asked, check the request, then approve it."
 msgstr ""
 
 #. translators: %s: users allowed to approve, e.g. "Administrators (manage_options)".
-#: includes/Modules/McpConnect/settings-template.php:326
+#: includes/Modules/McpConnect/settings-template.php:327
 #, php-format
 msgid "Only these users can approve a connection: %s."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:336
+#: includes/Modules/McpConnect/settings-template.php:337
 msgid "Claude Code"
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:337
+#: includes/Modules/McpConnect/settings-template.php:338
 msgid "Run this command, then /mcp in Claude Code to sign in."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:356
+#: includes/Modules/McpConnect/settings-template.php:357
 msgid "What this site needs for Claude to connect."
 msgstr ""
 
-#: includes/Modules/McpConnect/settings-template.php:357
+#: includes/Modules/McpConnect/settings-template.php:358
 msgid "Site Health also checks the discovery documents and the Authorization header."
 msgstr ""
 
@@ -6001,7 +6001,7 @@ msgid "Builder"
 msgstr ""
 
 #: includes/Modules/Motion/settings-template.php:137
-#: includes/Modules/Motion/settings-template.php:416
+#: includes/Modules/Motion/settings-template.php:417
 msgid "Compatibility"
 msgstr ""
 
@@ -6045,145 +6045,145 @@ msgstr ""
 msgid "The underline effect has no reference value: it is styled with the CSS variables --lm-underline-thickness, --lm-underline-gap, --lm-underline-color and --lm-underline-duration."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:299
-#: includes/Modules/Motion/settings-template.php:306
-msgid "Smooth scrolling"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:300
-msgid "Eases the mouse wheel on desktop. Touch screens keep their native scrolling."
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:307
-msgid "Loaded on every public page, with or without animation, so the scroll feels the same everywhere."
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:325
-msgid "Intensity"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:326
-msgid "Between 0.01 and 1. A low value glides for longer, 1 follows the wheel with no easing."
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:353
-msgid "Builder preview"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:354
-msgid "Elements always appear in their final state in the builder, so the page can be built without hidden content."
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:360
-msgid "Animation preview"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:361
-msgid "Replaying plays an element once when one of its Motion settings changes."
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:365
-msgid "Replay on change"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:366
-msgid "Never animate"
-msgstr ""
-
-#: includes/Modules/Motion/settings-template.php:382
+#: includes/Modules/Motion/settings-template.php:298
 msgid "Custom animations"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:383
+#: includes/Modules/Motion/settings-template.php:299
 msgid "GSAP animations written by hand. A script calling lumiaMotion.ready() in a Bricks Code element or in the page settings loads GSAP and ScrollTrigger on that page by itself."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:389
+#: includes/Modules/Motion/settings-template.php:305
 msgid "Load GSAP on every page"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:390
+#: includes/Modules/Motion/settings-template.php:306
 msgid "For animations kept in a snippet plugin (FluentSnippets), which no page shows: GSAP, ScrollTrigger and SplitText then load on every page, after the first paint."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:417
+#: includes/Modules/Motion/settings-template.php:334
+#: includes/Modules/Motion/settings-template.php:341
+msgid "Smooth scrolling"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:335
+msgid "Eases the mouse wheel on desktop. Touch screens keep their native scrolling."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:342
+msgid "Loaded on every public page, with or without animation, so the scroll feels the same everywhere."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:360
+msgid "Intensity"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:361
+msgid "Between 0.01 and 1. A low value glides for longer, 1 follows the wheel with no easing."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:388
+msgid "Builder preview"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:389
+msgid "Elements always appear in their final state in the builder, so the page can be built without hidden content."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:395
+msgid "Animation preview"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:396
+msgid "Replaying plays an element once when one of its Motion settings changes."
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:400
+msgid "Replay on change"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:401
+msgid "Never animate"
+msgstr ""
+
+#: includes/Modules/Motion/settings-template.php:418
 msgid "For sites that used the former animation snippet of the agency."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:423
+#: includes/Modules/Motion/settings-template.php:424
 msgid "Former class names"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:424
+#: includes/Modules/Motion/settings-template.php:425
 msgid "Keeps the classes of the former snippet working until the content is moved to the lm- classes. Turn it off once the migration is done."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:450
+#: includes/Modules/Motion/settings-template.php:451
 msgid "Migration"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:451
+#: includes/Modules/Motion/settings-template.php:452
 msgid "Moves the content from the former classes to the lm- classes. It runs once per site, from the command line, and keeps every element and its animation."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:457
+#: includes/Modules/Motion/settings-template.php:458
 msgid "The content could not be read to count the former classes."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:460
+#: includes/Modules/Motion/settings-template.php:461
 msgid "No former class is left on this site. The compatibility setting above can be turned off."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:464
+#: includes/Modules/Motion/settings-template.php:465
 msgid "Former classes"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:465
+#: includes/Modules/Motion/settings-template.php:466
 msgid "Global classes that still carry a former name."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:473
+#: includes/Modules/Motion/settings-template.php:474
 msgid "Elements concerned"
 msgstr ""
 
 #. translators: %s: number of pages, headers, footers and templates.
-#: includes/Modules/Motion/settings-template.php:479
+#: includes/Modules/Motion/settings-template.php:480
 #, php-format
 msgid "Spread over %s pages, headers, footers or templates."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:492
+#: includes/Modules/Motion/settings-template.php:493
 msgid "Selectors that will stop matching"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:493
+#: includes/Modules/Motion/settings-template.php:494
 msgid "Custom CSS that targets a class that is renamed. The content then carries the new name and the compatibility setting does not bring the old one back, so fix these before or right after the migration. They are listed, never rewritten."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:501
+#: includes/Modules/Motion/settings-template.php:502
 msgid "Kept working by compatibility"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:502
+#: includes/Modules/Motion/settings-template.php:503
 msgid "Former names typed in a CSS classes field, former underline variables, and selectors of classes that keep their name. They stop working when the compatibility setting is turned off."
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:510
+#: includes/Modules/Motion/settings-template.php:511
 msgid "Published snippets"
 msgstr ""
 
-#: includes/Modules/Motion/settings-template.php:511
+#: includes/Modules/Motion/settings-template.php:512
 msgid "FluentSnippets files that are published and still name the former classes. Deactivate or delete them."
 msgstr ""
 
 #. translators: 1: a WP-CLI command that previews the migration, 2: the same command that applies it.
-#: includes/Modules/Motion/settings-template.php:524
+#: includes/Modules/Motion/settings-template.php:525
 #, php-format
 msgid "Preview it with %1$s, which writes nothing and lists everything it found. Apply it with %2$s."
 msgstr ""
 
 #. translators: %s: name of the former animation snippet.
-#: includes/Modules/Motion/settings-template.php:537
+#: includes/Modules/Motion/settings-template.php:538
 #, php-format
 msgid "Then deactivate (or delete) the \"%s\" snippet in FluentSnippets, purge the page cache, check the site, and turn off the compatibility setting above once nothing is kept working by it."
 msgstr ""

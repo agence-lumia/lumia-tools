@@ -216,12 +216,16 @@ final class Assets {
 
 		$this->register_libraries();
 
-		if ( $engine ) {
-			$this->enqueue_engine( $canvas, $splitting );
-		}
-
+		// Smooth scroll first: queued before the engine, Lenis and motion-scroll.js run before
+		// motion.js, so when the engine starts (and runs the lumiaMotion.ready() callbacks, in
+		// the microtask after motion.js when the fonts are already there) Lenis exists and
+		// drives ScrollTrigger. motion-scroll.js depends on GSAP and ScrollTrigger itself.
 		if ( $this->scroll_wanted() ) {
 			$this->enqueue_scroll( $engine );
+		}
+
+		if ( $engine ) {
+			$this->enqueue_engine( $canvas, $splitting );
 		}
 
 		if ( ! $canvas ) {
@@ -404,9 +408,11 @@ final class Assets {
 	 * @return array{split: bool}|null
 	 */
 	private function custom_gsap(): ?array {
-		$post_id = is_singular() ? (int) get_queried_object_id() : 0;
-		if ( $post_id > 0 ) {
-			CustomGsap::observe_page( get_post_meta( $post_id, CustomGsap::PAGE_SETTINGS_META, true ) );
+		// The queried content when it is a post of any type: a singular page, and also the posts
+		// page or a shop page shown as an archive.
+		$object = get_queried_object();
+		if ( $object instanceof \WP_Post ) {
+			CustomGsap::observe_page( get_post_meta( $object->ID, CustomGsap::PAGE_SETTINGS_META, true ) );
 		}
 
 		$found = CustomGsap::found();
@@ -414,12 +420,12 @@ final class Assets {
 			$found = [ 'split' => true ];
 		}
 
-		$filtered = Compat::apply_filters( 'motion_custom_gsap', null !== $found, $found );
-		if ( false === $filtered ) {
+		// Truthy or falsy, like any boolean filter; false turns every source off, the setting too.
+		if ( ! Compat::apply_filters( 'motion_custom_gsap', null !== $found, $found ) ) {
 			return null;
 		}
 
-		return $found ?? ( true === $filtered ? [ 'split' => false ] : null );
+		return $found ?? [ 'split' => false ];
 	}
 
 	/**
