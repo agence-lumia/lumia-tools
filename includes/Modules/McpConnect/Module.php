@@ -153,6 +153,22 @@ final class Module extends AbstractModule {
 	}
 
 	/**
+	 * Configuration import: stored abilities are a complete list, but the
+	 * import drops the false values before save_settings(); the `_sent`
+	 * marker the form posts tells it a missing family means off.
+	 *
+	 * @param array<string, mixed> $stored Settings as exported.
+	 * @return array<string, mixed>
+	 */
+	public function to_form_payload( array $stored ): array {
+		if ( isset( $stored['abilities'] ) && is_array( $stored['abilities'] ) ) {
+			$stored['abilities']['_sent'] = true;
+		}
+
+		return $stored;
+	}
+
+	/**
 	 * @return array<string, mixed>
 	 */
 	public static function get_defaults(): array {
