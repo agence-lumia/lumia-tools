@@ -130,6 +130,7 @@ In Settings > Updates:
 - Tokens stored hashed, accepted on the MCP route only; refresh tokens rotated, and a reused one revokes the connection
 - Connections list with Revoke and Revoke all, a pause switch, and every change made through Claude marked with its connection in the Activity Log
 - Site Health tests for the discovery documents, the `Authorization` header and the environment. If you are locked out, `define( 'LUMIA_DISABLE_MCP_CONNECT', true );` in `wp-config.php` turns the whole protocol off
+- Tools for Claude (`lumia/*` abilities, through the Abilities API and the MCP Adapter): environment and error log, requests on the site's own pages with an SEO extract, cache purge, plugins (never Lumia Tools nor the MCP Adapter deactivated), options, FluentSnippets snippets, Rank Math post SEO and redirections
 
 ## Architecture
 

@@ -15,5 +15,6 @@ parameters:
     scanFiles:
         - tools/phpstan-bricks.stub
         - tools/phpstan-wpcli.stub
+        - tools/phpstan-abilities.stub
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true

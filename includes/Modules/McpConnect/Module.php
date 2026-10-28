@@ -5,6 +5,7 @@ defined( 'ABSPATH' ) || exit;
 
 use Lumia\Tools\Core\AbstractModule;
 use Lumia\Tools\Core\Compat;
+use Lumia\Tools\Modules\McpConnect\Abilities\Registry;
 
 /**
  * MCP Connect module: adds the site to Claude as a custom connector, signed in
@@ -71,6 +72,10 @@ final class Module extends AbstractModule {
 		// never load an admin page, where the role is otherwise resynced.
 		Agent::maybe_sync();
 
+		// The lumia/* abilities, whatever the state of the protocol: an
+		// application password reaches them through the Adapter too.
+		Registry::boot();
+
 		add_action( self::CRON_HOOK, [ Store::class, 'purge_expired' ] );
 
 		// Scheduled here and not only on activation: a module activated by a
@@ -130,6 +135,7 @@ final class Module extends AbstractModule {
 			'dcr_purge_days'      => min( self::DCR_PURGE_MAX, max( self::DCR_PURGE_MIN, absint( $settings['dcr_purge_days'] ?? $defaults['dcr_purge_days'] ) ) ),
 			'agent_preset'        => in_array( $preset, $presets, true ) ? $preset : (string) $defaults['agent_preset'],
 			'approver_capability' => in_array( $approver, self::APPROVER_CAPABILITIES, true ) ? $approver : (string) $defaults['approver_capability'],
+			'abilities'           => self::sanitize_families( $settings['abilities'] ?? null ),
 		];
 
 		$previous = Agent::current_preset();
@@ -159,7 +165,25 @@ final class Module extends AbstractModule {
 			'dcr_purge_days'      => 30,
 			'agent_preset'        => Agent::DEFAULT_PRESET,
 			'approver_capability' => 'manage_options',
+			'abilities'           => array_fill_keys( array_keys( Registry::FAMILIES ), true ),
 		];
+	}
+
+	/**
+	 * Families of lumia/* abilities turned on: a checkbox per family, every
+	 * known key rebuilt (an unchecked box is absent from the form).
+	 *
+	 * @param mixed $families Posted families.
+	 * @return array<string, bool>
+	 */
+	private static function sanitize_families( $families ): array {
+		$families = is_array( $families ) ? $families : [];
+		$out      = [];
+		foreach ( array_keys( Registry::FAMILIES ) as $key ) {
+			$out[ $key ] = ! empty( $families[ $key ] );
+		}
+
+		return $out;
 	}
 
 	/**

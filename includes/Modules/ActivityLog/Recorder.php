@@ -116,6 +116,7 @@ class Recorder {
 		add_action( 'lumia_mcp_connect_revoked', [ $this, 'on_mcp_revoked' ], 10, 2 );
 		add_action( 'lumia_mcp_connect_refresh_reuse', [ $this, 'on_mcp_refresh_reuse' ], 10, 1 );
 		add_action( 'lumia_mcp_connect_client_registered', [ $this, 'on_mcp_client_registered' ], 10, 2 );
+		add_action( 'lumia_mcp_ability_executed', [ $this, 'on_mcp_ability_executed' ], 10, 2 );
 	}
 
 	/* ================================================================
@@ -847,6 +848,18 @@ class Recorder {
 		$name      = '' !== (string) $client_name ? (string) $client_name : $client_id;
 
 		$this->record( 'mcp_client_registered', 'mcp_connection', 0, $name, [ 'client' => $client_id ], new \WP_User( 0 ), false );
+	}
+
+	/**
+	 * A lumia/* ability that changed something (snippet, cache, option,
+	 * plugin, SEO): the ability name and its short arguments, never code or
+	 * values (McpConnect\Abilities\Registry::log()).
+	 *
+	 * @param string               $ability Full ability name.
+	 * @param array<string, mixed> $details Short arguments.
+	 */
+	public function on_mcp_ability_executed( $ability, $details ): void {
+		$this->record( 'mcp_ability_executed', 'mcp_ability', 0, (string) $ability, is_array( $details ) ? $details : [] );
 	}
 
 	/**
