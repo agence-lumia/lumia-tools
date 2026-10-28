@@ -87,6 +87,7 @@ final class SettingsSanitizer {
 			],
 			'legacy_classes'  => self::checked( $input['legacy_classes'] ?? null ),
 			'builder_preview' => self::keyword( $input['builder_preview'] ?? null, self::BUILDER_PREVIEWS, 'replay', (string) ( $defaults['builder_preview'] ?? 'replay' ) ),
+			'gsap_everywhere' => self::checked( $input['gsap_everywhere'] ?? null ),
 		];
 	}
 

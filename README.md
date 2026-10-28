@@ -119,6 +119,7 @@ In Settings > Updates:
 - Counters roll with [NumberFlow](https://number-flow.barvian.me/) (dynamic or fixed width), and screen readers always get the written value
 - Loaded only on the pages that use an effect; GSAP, Lenis and NumberFlow bundled, no CDN; optional Lenis smooth scrolling
 - Clear Bricks panel (sections, units, Replay, "Show markers", inherited values as placeholders); `wp lumia motion migrate` for sites using the former snippet
+- Custom GSAP animations through `lumiaMotion.ready()` (page custom code, Code element or a snippet): GSAP, ScrollTrigger and SplitText loaded on demand by the same loader
 
 ### MCP Connect
 

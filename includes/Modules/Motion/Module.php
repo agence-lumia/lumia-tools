@@ -85,6 +85,7 @@ class Module extends AbstractModule {
 			],
 			'legacy_classes'  => true,
 			'builder_preview' => 'replay',
+			'gsap_everywhere' => false,
 		];
 	}
 

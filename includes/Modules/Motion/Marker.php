@@ -106,6 +106,9 @@ final class Marker {
 			return $attributes;
 		}
 
+		// A Code element whose script runs a custom animation asks for GSAP.
+		CustomGsap::observe_element( $element->settings );
+
 		$settings = self::with_resolved_classes( $element->settings, $attributes['_root']['class'] ?? null );
 		$data     = is_array( $element->element ) ? $element->element : [];
 		$classes  = self::classes_of( $settings );
