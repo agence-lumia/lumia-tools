@@ -721,6 +721,27 @@ check_eq "8 constant removed -> token works" "$(mcp_status "$AT")" 200
 # ================================================================== 9. Agent
 
 section "9. Agent account"
+# Administrator is the default preset (2.4.0): with nothing stored, the role is
+# resynced to it on the next request (Agent::maybe_sync(), no admin load needed)
+# and holds the code capabilities even if the administrator role lacks them.
+wpcli eval '$o = get_option("lumia_module_mcp_connect", []); unset($o["agent_preset"]); update_option("lumia_module_mcp_connect", $o); delete_option("lumia_mcp_agent_sync"); get_role("administrator")->remove_cap("unfiltered_upload");' >/dev/null
+CODE_PHP='$u = get_user_by("login", "claude-mcp"); $r = get_role("lumia_mcp_agent"); foreach (["manage_options", "unfiltered_html", "unfiltered_upload", "bricks_execute_code", "bricks_full_access"] as $c) { echo $r->has_cap($c) ? "y" : "n"; } echo "/", user_can($u, "unfiltered_html") ? "yes" : "no";'
+check_eq "9 default preset Administrator: role resynced without an admin load, code caps granted" "$(wpcli eval "$CODE_PHP")" "yyyyy/yes"
+check_eq "9 sync marker written" "$(wpcli eval 'echo strtok((string) get_option("lumia_mcp_agent_sync"), "|");')" admin
+# LUMIA_MCP_AGENT_PRESET forces the preset, whatever is stored.
+wpcli config set LUMIA_MCP_AGENT_PRESET editor >/dev/null
+opcache_wait
+check_eq "9 constant editor -> role resynced to Editor" "$(wpcli eval "$CODE_PHP")" "nnnnn/no"
+check_re "9 constant -> preset select disabled" "$(curl -s -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools&tab=module_mcp_connect" | tr -d '\r\n\t')" 'id="lumia_mc_preset"[^>]*disabled'
+wpcli config set LUMIA_MCP_AGENT_PRESET bogus >/dev/null
+opcache_wait
+check_eq "9 constant with an unknown value -> ignored (default Administrator)" "$(wpcli eval 'echo \Lumia\Tools\Modules\McpConnect\Agent::current_preset();')" admin
+wpcli config delete LUMIA_MCP_AGENT_PRESET >/dev/null
+opcache_wait
+wpcli eval 'get_role("administrator")->add_cap("unfiltered_upload");' >/dev/null
+# The rest of this section checks the Editor preset.
+set_setting agent_preset "'editor'"
+wpcli eval '\Lumia\Tools\Modules\McpConnect\Agent::sync_role("editor");' >/dev/null
 r=$(wpcli eval '$u = get_user_by("login", "claude-mcp"); $r = apply_filters("wp_authenticate_user", $u, "x"); echo is_wp_error($r) ? $r->get_error_code() : "ALLOWED";')
 check_eq "9 wp_authenticate_user refuses claude-mcp" "$r" lumia_mcp_agent_login
 AGENT_PASS="e2e-agent-$RANDOM-$RANDOM"
@@ -778,8 +799,9 @@ r=$(execute_ability "$F_AT" core/get-site-info)
 check_re "9 Administrator preset: core/get-site-info served through the token" "$r" '\\?"(admin_email|siteurl|url)\\?":'
 set_setting agent_preset "'content_bricks'"
 curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
-check_eq "9 a 2.3.0 preset reads as Editor: manage_options gone, edit_theme_options kept" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo user_can($u, "manage_options") ? "yes" : "no", "/", user_can($u, "edit_theme_options") ? "yes" : "no";')" "no/yes"
+check_eq "9 a 2.3.0 preset reads as the default, Administrator" "$(wpcli eval '$u = get_user_by("login", "claude-mcp"); echo user_can($u, "manage_options") ? "yes" : "no", "/", user_can($u, "edit_theme_options") ? "yes" : "no";')" "yes/yes"
 set_setting agent_preset "'editor'"
+curl -s -o /dev/null -b "$ADMIN_JAR" "$BASE_URL/wp-admin/admin.php?page=lumia-tools"
 curl -s -o /dev/null --data-urlencode "token=$F_RT" "$OAUTH/revoke"
 
 # Role changed by hand: the account no longer counts as the agent, and the next

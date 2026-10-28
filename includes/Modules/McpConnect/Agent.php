@@ -11,8 +11,9 @@ use Lumia\Tools\Core\Compat;
  *
  * - A dedicated account rather than the approver's: what Claude does is
  *   attributed to it in the revisions and the Activity Log, and its
- *   permissions come from a preset: Editor (the default) never reaches the
- *   site settings, plugins, themes, users or code; Administrator does.
+ *   permissions come from a preset: Administrator (the default) holds every
+ *   right of an administrator plus the code rights (CODE_CAPS); Editor never
+ *   reaches the site settings, plugins, themes, users or code.
  * - The account only exists to carry OAuth connections: it cannot sign in with
  *   a password (it has none anyone knows), cannot use application passwords
  *   and never sees the dashboard.
@@ -43,8 +44,36 @@ final class Agent {
 	/** Preset with every capability of an administrator. */
 	const PRESET_ADMIN = 'admin';
 
-	/** Preset used when the setting is unknown (former presets included). */
-	const DEFAULT_PRESET = self::PRESET_EDITOR;
+	/**
+	 * Preset used when nothing chose one: no stored setting, an unknown value
+	 * (a preset of 2.3.0) or an invalid constant. The agency wants Claude to
+	 * work on the whole site; a site that saved Editor keeps it.
+	 */
+	const DEFAULT_PRESET = self::PRESET_ADMIN;
+
+	/**
+	 * Option recording the preset and plugin version the role was last synced
+	 * for (autoloaded, a few bytes). A token request never loads an admin page,
+	 * so without it a new default preset or a new capability of a release
+	 * would only reach the role on the next administrator visit.
+	 */
+	const SYNC_OPTION = 'lumia_mcp_agent_sync';
+
+	/**
+	 * Capabilities the Administrator preset always grants, even when the
+	 * administrator role lacks them: JavaScript in pages and Bricks scripts
+	 * (`unfiltered_html`), any file type (`unfiltered_upload`, which WordPress
+	 * still gates behind ALLOW_UNFILTERED_UPLOADS), Bricks code execution and
+	 * builder access. Bricks writes its own code capability per role from its
+	 * settings: the agent gets it from the preset, so saving those settings
+	 * cannot take it away for longer than one resync.
+	 */
+	const CODE_CAPS = [
+		'unfiltered_html',
+		'unfiltered_upload',
+		'bricks_execute_code',
+		'bricks_full_access',
+	];
 
 	/**
 	 * Capabilities the Editor preset never gets, whatever the filter says
@@ -128,12 +157,12 @@ final class Agent {
 		$admin = self::administrator_caps();
 
 		return [
-			self::PRESET_EDITOR => [
-				'label' => _x( 'Editor', 'MCP Connect permission preset', 'lumia-tools' ),
-				'caps'  => $admin,
-			],
 			self::PRESET_ADMIN  => [
 				'label' => _x( 'Administrator', 'MCP Connect permission preset', 'lumia-tools' ),
+				'caps'  => array_merge( $admin, self::grant( self::CODE_CAPS ) ),
+			],
+			self::PRESET_EDITOR => [
+				'label' => _x( 'Editor', 'MCP Connect permission preset', 'lumia-tools' ),
 				'caps'  => $admin,
 			],
 		];
@@ -196,15 +225,60 @@ final class Agent {
 	}
 
 	/**
-	 * Preset stored in the settings, the default one when it is unknown (a
-	 * preset of 2.3.0, "Content and Bricks" and the like, reads as Editor).
+	 * Active preset: the LUMIA_MCP_AGENT_PRESET constant when it holds a known
+	 * preset, then the stored setting, then the default one (a preset of
+	 * 2.3.0, "Content and Bricks" and the like, reads as the default).
 	 * Runs on every capability check of the agent (deny_forbidden_caps()): it
 	 * does not build the presets.
 	 */
 	public static function current_preset(): string {
+		$forced = self::forced_preset();
+		if ( null !== $forced ) {
+			return $forced;
+		}
+
 		$preset = Module::settings()['agent_preset'] ?? '';
 
-		return in_array( $preset, [ self::PRESET_EDITOR, self::PRESET_ADMIN ], true ) ? $preset : self::DEFAULT_PRESET;
+		return self::is_preset( $preset ) ? (string) $preset : self::DEFAULT_PRESET;
+	}
+
+	/**
+	 * Preset forced by the LUMIA_MCP_AGENT_PRESET constant, null when it is not
+	 * defined or holds no known preset (the setting then applies).
+	 */
+	public static function forced_preset(): ?string {
+		$constant = Compat::constant( 'MCP_AGENT_PRESET' );
+
+		return self::is_preset( $constant ) ? (string) $constant : null;
+	}
+
+	/**
+	 * Whether a value names a preset.
+	 *
+	 * @param mixed $value Value to check.
+	 */
+	private static function is_preset( $value ): bool {
+		return in_array( $value, [ self::PRESET_EDITOR, self::PRESET_ADMIN ], true );
+	}
+
+	/**
+	 * `init`: resyncs the role and the account once after the preset or the
+	 * plugin version changed (an update, a new default preset, the constant
+	 * set or removed). One autoloaded option read otherwise.
+	 */
+	public static function maybe_sync(): void {
+		$marker = self::current_preset() . '|' . LUMIA_VERSION;
+		if ( get_option( self::SYNC_OPTION ) === $marker ) {
+			return;
+		}
+
+		self::sync_role( self::current_preset() );
+		$user_id = self::user_id();
+		if ( $user_id > 0 ) {
+			self::reset_account( $user_id );
+		}
+
+		update_option( self::SYNC_OPTION, $marker, true );
 	}
 
 	/**
@@ -648,6 +722,7 @@ final class Agent {
 
 		remove_role( self::ROLE );
 		delete_option( self::USER_OPTION );
+		delete_option( self::SYNC_OPTION );
 	}
 
 	/**

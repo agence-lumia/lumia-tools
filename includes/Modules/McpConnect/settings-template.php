@@ -24,6 +24,7 @@ $mc_paused    = ! empty( $module_settings['paused'] );
 $mc_url       = Discovery::resource_url();
 $mc_presets   = Agent::presets();
 $mc_preset    = Agent::current_preset();
+$mc_forced    = null !== Agent::forced_preset();
 $mc_approver  = (string) $module_settings['approver_capability'];
 $mc_checks    = SiteHealth::checks();
 $mc_cli_name  = sanitize_title( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
@@ -160,20 +161,22 @@ $mc_badges = [
 
 				<div class="lumia-form__group">
 					<label for="lumia_mc_preset" class="lumia-form__label"><?php esc_html_e( 'Permissions of the Claude account', 'lumia-tools' ); ?></label>
-					<select id="lumia_mc_preset" name="lumia_module_settings[agent_preset]" class="lumia-select lumia-select--sm">
+					<select id="lumia_mc_preset" name="lumia_module_settings[agent_preset]" class="lumia-select lumia-select--sm" <?php disabled( $mc_forced ); ?>>
 						<?php foreach ( $mc_presets as $mc_value => $mc_data ) : ?>
 							<option value="<?php echo esc_attr( (string) $mc_value ); ?>" <?php selected( $mc_preset, (string) $mc_value ); ?>><?php echo esc_html( (string) $mc_data['label'] ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</div>
 			</div>
-			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator.', 'lumia-tools' ); ?></p>
+			<p class="lumia-form__help"><?php esc_html_e( 'Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, any file type and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code.', 'lumia-tools' ); ?></p>
 
-			<?php if ( Agent::PRESET_ADMIN === $mc_preset ) : ?>
-				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it.', 'lumia-tools' ); ?></div>
+			<?php if ( $mc_forced ) : ?>
+				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Set by the LUMIA_MCP_AGENT_PRESET constant in wp-config.php: remove it to choose here.', 'lumia-tools' ); ?></div>
+			<?php elseif ( Agent::PRESET_ADMIN === $mc_preset ) : ?>
+				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'Anyone holding a connection controls the whole site, code included: revoke the connections once the work is done.', 'lumia-tools' ); ?></div>
 			<?php endif; ?>
 
-			<?php foreach ( [ 'bricks_abilities', 'bricks' ] as $mc_key ) : ?>
+			<?php foreach ( [ 'code', 'plugins', 'bricks_abilities', 'bricks' ] as $mc_key ) : ?>
 				<?php if ( 'recommended' === ( $mc_checks[ $mc_key ]['state'] ?? '' ) ) : ?>
 					<div class="lumia-notice lumia-notice--warning"><?php echo esc_html( $mc_checks[ $mc_key ]['value'] ); ?></div>
 				<?php endif; ?>

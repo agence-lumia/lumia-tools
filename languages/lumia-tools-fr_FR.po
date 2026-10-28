@@ -6518,10 +6518,6 @@ msgstr "Qui peut autoriser une connexion"
 msgid "Permissions of the Claude account"
 msgstr "Droits du compte Claude"
 
-#: includes/Modules/McpConnect/settings-template.php:170
-msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator."
-msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Éditeur : ce que peut faire un administrateur, y compris ce que lui donnent les extensions (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code. Administrateur : tous les droits d'un administrateur."
-
 #: includes/Modules/McpConnect/ConsentPage.php:262
 msgid "Dedicated account with every right of an administrator: whoever holds this connection controls the whole site."
 msgstr "Compte dédié avec tous les droits d'un administrateur : quiconque détient cette connexion contrôle tout le site."
@@ -6529,10 +6525,6 @@ msgstr "Compte dédié avec tous les droits d'un administrateur : quiconque dét
 #: includes/Modules/McpConnect/SiteHealth.php:305
 msgid "Bricks 2.4 or later is needed for Claude to edit with Bricks."
 msgstr "Bricks 2.4 ou plus récent est nécessaire pour que Claude puisse modifier avec Bricks."
-
-#: includes/Modules/McpConnect/settings-template.php:173
-msgid "Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it."
-msgstr "Claude peut modifier les réglages du site, installer des extensions et gérer les utilisateurs : quiconque détient une connexion contrôle tout le site. Choisissez Éditeur sauf si une tâche l'exige."
 
 #: includes/Modules/McpConnect/settings-template.php:182
 msgid "Clients"
@@ -6839,3 +6831,62 @@ msgstr "Un 403 signifie généralement que le serveur web bloque /.well-known/ a
 #: includes/Modules/McpConnect/SiteHealth.php:439
 msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
 msgstr "Sur Apache ou LiteSpeed, vérifiez qu'aucune règle du serveur ou du .htaccess ne refuse les chemins commençant par un point."
+
+#: includes/Modules/McpConnect/settings-template.php:171
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, any file type and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
+msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Administrateur (par défaut) : tous les droits d'un administrateur, plus le JavaScript, tous les types de fichiers et l'exécution de code Bricks. Éditeur : ce qu'un administrateur peut faire, y compris ce que les extensions lui accordent (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code."
+
+#: includes/Modules/McpConnect/settings-template.php:174
+msgid "Set by the LUMIA_MCP_AGENT_PRESET constant in wp-config.php: remove it to choose here."
+msgstr "Défini par la constante LUMIA_MCP_AGENT_PRESET dans wp-config.php : retirez-la pour choisir ici."
+
+#: includes/Modules/McpConnect/settings-template.php:176
+msgid "Anyone holding a connection controls the whole site, code included: revoke the connections once the work is done."
+msgstr "Toute connexion active contrôle l'ensemble du site, code compris : révoquez les connexions une fois le travail terminé."
+
+#. translators: %s: name of the permission preset.
+#: includes/Modules/McpConnect/SiteHealth.php:297
+#, php-format
+msgid "%s (set by LUMIA_MCP_AGENT_PRESET in wp-config.php)"
+msgstr "%s (défini par LUMIA_MCP_AGENT_PRESET dans wp-config.php)"
+
+#: includes/Modules/McpConnect/SiteHealth.php:356
+#: includes/Modules/McpConnect/SiteHealth.php:374
+msgid "Code"
+msgstr "Code"
+
+#: includes/Modules/McpConnect/SiteHealth.php:357
+msgid "Editor preset: Claude cannot write JavaScript or PHP, change the settings or manage plugins."
+msgstr "Préréglage Éditeur : Claude ne peut ni écrire de JavaScript ou de PHP, ni modifier les réglages, ni gérer les extensions."
+
+#: includes/Modules/McpConnect/SiteHealth.php:365
+msgid "Blocked by DISALLOW_UNFILTERED_HTML in wp-config.php: Claude cannot write JavaScript in pages or Bricks scripts."
+msgstr "Bloqué par DISALLOW_UNFILTERED_HTML dans wp-config.php : Claude ne peut pas écrire de JavaScript dans les pages ni dans les scripts Bricks."
+
+#: includes/Modules/McpConnect/SiteHealth.php:367
+msgid "On a multisite network only super admins may write JavaScript: Claude cannot."
+msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent écrire du JavaScript : Claude ne le peut pas."
+
+#: includes/Modules/McpConnect/SiteHealth.php:369
+msgid "Claude can write JavaScript, CSS and HTML in pages and Bricks scripts."
+msgstr "Claude peut écrire du JavaScript, du CSS et du HTML dans les pages et les scripts Bricks."
+
+#: includes/Modules/McpConnect/SiteHealth.php:384
+msgid "File changes are disallowed on this site (DISALLOW_FILE_MODS in wp-config.php): Claude cannot install or update plugins."
+msgstr "Les modifications de fichiers sont interdites sur ce site (DISALLOW_FILE_MODS dans wp-config.php) : Claude ne peut pas installer ni mettre à jour d'extensions."
+
+#: includes/Modules/McpConnect/SiteHealth.php:385
+msgid "Claude can install, update and remove plugins."
+msgstr "Claude peut installer, mettre à jour et supprimer des extensions."
+
+#: includes/Modules/McpConnect/SiteHealth.php:392
+msgid "Bricks PHP ability"
+msgstr "Capacité PHP de Bricks"
+
+#: includes/Modules/McpConnect/SiteHealth.php:394
+msgid "On: Claude can run PHP through bricks/execute-php (also enable it in Bricks > AI)."
+msgstr "Active : Claude peut exécuter du PHP via bricks/execute-php (à activer aussi dans Bricks > AI)."
+
+#: includes/Modules/McpConnect/SiteHealth.php:395
+msgid "Off: add define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); to wp-config.php and enable bricks/execute-php in Bricks > AI for Claude to run PHP."
+msgstr "Inactive : ajoutez define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); dans wp-config.php et activez bricks/execute-php dans Bricks > AI pour que Claude puisse exécuter du PHP."
