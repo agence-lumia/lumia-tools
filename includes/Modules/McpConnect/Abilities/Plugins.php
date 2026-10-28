@@ -81,7 +81,7 @@ final class Plugins implements Family {
 			],
 			'activate-plugin'   => [
 				'label'       => __( 'Activate a plugin', 'lumia-tools' ),
-				'description' => 'Activates an installed plugin. A plugin whose activation fails (fatal error) stays inactive and the error is returned.',
+				'description' => 'Activates an installed plugin. An activation error the plugin reports is returned; a fatal error in its main file ends the request instead (the plugin then stays inactive): check lumia/read-error-log.',
 				'input'       => [ 'plugin' => $plugin ],
 				'required'    => [ 'plugin' ],
 				'execute'     => [ self::class, 'activate' ],
@@ -242,26 +242,31 @@ final class Plugins implements Family {
 		$active   = is_plugin_active( $file );
 		$skin     = new \WP_Ajax_Upgrader_Skin();
 		$upgrader = new \Plugin_Upgrader( $skin );
-		$result   = $upgrader->upgrade( $file );
+
+		try {
+			$result = $upgrader->upgrade( $file );
+		} finally {
+			// Outside cron, the upgrader deactivates the plugin silently before
+			// the copy and leaves the reactivation to the update screen in a
+			// browser; a failed copy is rolled back but stays deactivated. It is
+			// put back the same silent way whatever happened: no activation
+			// hook, and no include of a main file this request may already have
+			// loaded (Lümia Tools itself, the MCP Adapter, which carry this
+			// connection).
+			wp_clean_plugins_cache();
+			if ( $active && ! is_plugin_active( $file ) ) {
+				$plugins   = (array) get_option( 'active_plugins', [] );
+				$plugins[] = $file;
+				sort( $plugins );
+				update_option( 'active_plugins', array_values( array_unique( $plugins ) ) );
+			}
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 		if ( true !== $result ) {
 			return self::skin_error( $skin, 'No update was installed (already up to date, or the update source refused).' );
-		}
-
-		wp_clean_plugins_cache();
-		// Outside cron, the upgrader deactivates the plugin silently before the
-		// copy and leaves the reactivation to the update screen in a browser.
-		// It is put back the same silent way: no activation hook, and no
-		// include of a main file this request may already have loaded (Lumia
-		// Tools itself, the MCP Adapter).
-		if ( $active && ! is_plugin_active( $file ) ) {
-			$plugins   = (array) get_option( 'active_plugins', [] );
-			$plugins[] = $file;
-			sort( $plugins );
-			update_option( 'active_plugins', array_values( array_unique( $plugins ) ) );
 		}
 
 		return [

@@ -33,6 +33,11 @@ final class Options implements Family {
 		'nonce_key',
 		'nonce_salt',
 		'secret_key',
+		'secure_auth_key',
+		'secure_auth_salt',
+		// Would let anyone who registers become an administrator.
+		'default_role',
+		'users_can_register',
 	];
 
 	/** Option name prefixes refused the same way. */
@@ -77,7 +82,7 @@ final class Options implements Family {
 			],
 			'update-option' => [
 				'label'       => __( 'Write an option', 'lumia-tools' ),
-				'description' => 'Writes a WordPress option. `value` replaces the whole value; with `merge` true and an array value, only the given keys are changed (recursively), which is what to use for plugin settings stored as arrays. Read it first with lumia/get-option. Refused for siteurl, home, active_plugins, template, stylesheet, cron, the salts and the lumia_* options.',
+				'description' => 'Writes a WordPress option. `value` replaces the whole value; with `merge` true and an array value, only the given keys are changed (recursively), which is what to use for plugin settings stored as arrays. Read it first with lumia/get-option. Refused for siteurl, home, active_plugins, template, stylesheet, cron, the salts, default_role, users_can_register, the roles and the lumia_* options.',
 				'input'       => [
 					'name'     => $name,
 					'value'    => [
@@ -229,7 +234,16 @@ final class Options implements Family {
 			return Registry::error( 'invalid_input', '`name` is required.' );
 		}
 
-		$lower = strtolower( $name );
+		// option_name is compared by MySQL with a case- and accent-insensitive
+		// collation: "sitéurl" would match the siteurl row. Only plain names
+		// are accepted, and the deny list is checked on the name as stored.
+		if ( ! preg_match( '/^[A-Za-z0-9_\-.:]+$/', $name ) ) {
+			return Registry::error( 'invalid_option_name', 'Option names may only hold letters a-z, digits, _ - . and :.' );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the stored spelling of one name, read once.
+		$stored = $wpdb->get_var( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", $name ) );
+		$lower  = strtolower( is_string( $stored ) ? $stored : $name );
 		// The roles option is named after the table prefix: wp_user_roles.
 		$roles = $wpdb instanceof \wpdb ? strtolower( $wpdb->get_blog_prefix() . 'user_roles' ) : '';
 

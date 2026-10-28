@@ -198,6 +198,7 @@ $mc_badges = [
 			<?php if ( ! function_exists( 'wp_register_ability' ) ) : ?>
 				<div class="lumia-notice lumia-notice--warning"><?php esc_html_e( 'The Abilities API needs WordPress 6.9 or later: these tools are not available on this site.', 'lumia-tools' ); ?></div>
 			<?php endif; ?>
+			<input type="hidden" name="lumia_module_settings[abilities][_sent]" value="1">
 			<?php foreach ( $mc_families as $mc_family => $mc_info ) : ?>
 				<div class="lumia-option">
 					<div class="lumia-option__content">

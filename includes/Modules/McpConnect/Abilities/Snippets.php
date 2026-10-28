@@ -243,8 +243,8 @@ final class Snippets implements Family {
 			return $snippet;
 		}
 
-		$meta = array_merge( is_array( $snippet['meta'] ) ? $snippet['meta'] : [], self::meta_from( $args ) );
-		$code = array_key_exists( 'code', $args ) ? (string) $args['code'] : (string) $snippet['code'];
+		$meta = array_merge( $snippet['meta'], self::meta_from( $args ) );
+		$code = array_key_exists( 'code', $args ) ? (string) $args['code'] : $snippet['code'];
 
 		$result = \FluentSnippets\App\Helpers\Helper::updateSnippet(
 			[
@@ -302,10 +302,10 @@ final class Snippets implements Family {
 			return $snippet;
 		}
 
-		$meta           = is_array( $snippet['meta'] ) ? $snippet['meta'] : [];
+		$meta           = $snippet['meta'];
 		$meta['status'] = 'published' === $status ? 'published' : 'draft';
 
-		$result = ( new \FluentSnippets\App\Model\Snippet() )->updateSnippet( $file, (string) $snippet['code'], $meta );
+		$result = ( new \FluentSnippets\App\Model\Snippet() )->updateSnippet( $file, $snippet['raw'], $meta );
 		if ( is_wp_error( $result ) ) {
 			return self::explain( $result );
 		}
@@ -322,7 +322,7 @@ final class Snippets implements Family {
 	 * A snippet by file name, read by FluentSnippets' model; the name must be a
 	 * plain file name (no path).
 	 *
-	 * @return array{meta: mixed, code: mixed, status: mixed}|\WP_Error
+	 * @return array{meta: array<string, mixed>, code: string, raw: string, status: mixed}|\WP_Error
 	 */
 	private static function find( string $file ) {
 		if ( '' === $file || sanitize_file_name( $file ) !== $file || '.php' !== substr( $file, -4 ) ) {
@@ -337,9 +337,21 @@ final class Snippets implements Family {
 			return Registry::error( 'invalid_snippet', 'No snippet named "' . $file . '".' );
 		}
 
+		$meta = is_array( $snippet['meta'] ?? null ) ? $snippet['meta'] : [];
+		$raw  = (string) ( $snippet['code'] ?? '' );
+		$code = $raw;
+		// FluentSnippets stores a PHP snippet with its opening tag, and refuses
+		// one sent back with it: the editable code drops it, as its own
+		// SnippetsController::editableCode() does. `raw` is what the model
+		// writes back as is (set_status()).
+		if ( 'PHP' === ( $meta['type'] ?? '' ) ) {
+			$code = ltrim( (string) preg_replace( '/^<\?php/', '', $code ), PHP_EOL );
+		}
+
 		return [
-			'meta'   => $snippet['meta'] ?? [],
-			'code'   => $snippet['code'] ?? '',
+			'meta'   => $meta,
+			'code'   => $code,
+			'raw'    => $raw,
 			'status' => $snippet['status'] ?? 'draft',
 		];
 	}
