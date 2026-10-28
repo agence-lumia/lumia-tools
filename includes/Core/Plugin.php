@@ -54,6 +54,15 @@ class Plugin {
 	}
 
 	/**
+	 * Whether the plugin is on hold (no module runs). For code hooked before
+	 * plugins_loaded, such as the MCP Connect Bearer filter, which must stay
+	 * inert while on hold. Meaningful from plugins_loaded on.
+	 */
+	public static function is_on_hold(): bool {
+		return FromSkmt::on_hold();
+	}
+
+	/**
 	 * Initializes the plugin.
 	 */
 	private function init(): void {

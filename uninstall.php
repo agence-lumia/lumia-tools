@@ -46,6 +46,12 @@ foreach ( $module_classes as $id => $class ) {
 		$class::uninstall_files();
 	}
 
+	// Data a module created outside its declared keys (MCP Connect: the agent
+	// role and its dedicated user). Before the options go: it reads them.
+	if ( method_exists( $class, 'uninstall_data' ) ) {
+		$class::uninstall_data();
+	}
+
 	$keys = $class::get_uninstall_keys();
 
 	foreach ( $keys['options'] ?? [] as $option_key ) {

@@ -96,6 +96,12 @@ $field_labels = [
 	'from_opacity'  => __( 'Starting opacity', 'lumia-tools' ),
 	'start_value'   => __( 'Starting value', 'lumia-tools' ),
 	'counter_width' => __( 'Width', 'lumia-tools' ),
+	'counter_style' => __( 'Style', 'lumia-tools' ),
+];
+
+$counter_style_labels = [
+	'odometer' => __( 'Odometer', 'lumia-tools' ),
+	'count'    => __( 'Count', 'lumia-tools' ),
 ];
 
 $counter_width_labels = [
@@ -240,6 +246,12 @@ $number_ranges = [
 										<select id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $name ); ?>" class="lumia-select lumia-select--sm">
 											<?php foreach ( Effects::COUNTER_WIDTHS as $width ) : ?>
 												<option value="<?php echo esc_attr( $width ); ?>" <?php selected( (string) $value, $width ); ?>><?php echo esc_html( $counter_width_labels[ $width ] ?? $width ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									<?php elseif ( 'counter_style' === $key ) : ?>
+										<select id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $name ); ?>" class="lumia-select lumia-select--sm">
+											<?php foreach ( Effects::COUNTER_STYLES as $counter_style ) : ?>
+												<option value="<?php echo esc_attr( $counter_style ); ?>" <?php selected( (string) $value, $counter_style ); ?>><?php echo esc_html( $counter_style_labels[ $counter_style ] ?? $counter_style ); ?></option>
 											<?php endforeach; ?>
 										</select>
 									<?php elseif ( 'start_at' === $key || 'end_at' === $key ) : ?>

@@ -128,6 +128,14 @@ class Modules {
 				'class'       => 'Lumia\\Tools\\Modules\\Motion\\Module',
 				'icon'        => 'sparkles',
 			],
+			'mcp_connect'     => [
+				'name'        => __( 'MCP Connect', 'lumia-tools' ),
+				'description' => __( 'Add this site to Claude as a connector, with OAuth sign-in and no password.', 'lumia-tools' ),
+				'menu_label'  => __( 'MCP Connect', 'lumia-tools' ),
+				'menu_desc'   => __( 'Connect Claude', 'lumia-tools' ),
+				'class'       => 'Lumia\\Tools\\Modules\\McpConnect\\Module',
+				'icon'        => 'plug',
+			],
 		];
 
 		/**

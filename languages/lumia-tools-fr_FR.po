@@ -5736,6 +5736,21 @@ msgstr "Opacité de départ"
 msgid "Counter start value"
 msgstr "Valeur de départ du compteur"
 
+msgid "Counter style"
+msgstr "Style du compteur"
+
+msgid "Odometer"
+msgstr "Odomètre"
+
+msgid "Count"
+msgstr "Comptage"
+
+msgid "Odometer: each digit rolls on its column to the final number. Count: the number counts up from the start value (1, 2, 3...)."
+msgstr "Odomètre : chaque chiffre défile sur sa colonne jusqu'au nombre final. Comptage : le nombre compte depuis la valeur de départ (1, 2, 3...)."
+
+msgid "Style"
+msgstr "Style"
+
 msgid "Counter width"
 msgstr "Largeur du compteur"
 
@@ -5867,3 +5882,938 @@ msgstr "Lettres au défilement"
 
 msgid "Hover underline"
 msgstr "Soulignement au survol"
+
+#: includes/Core/Modules.php:132
+#: includes/Core/Modules.php:134
+#: includes/Modules/McpConnect/SiteHealth.php:361
+msgid "MCP Connect"
+msgstr "MCP Connect"
+
+#: includes/Core/Modules.php:133
+msgid "Add this site to Claude as a connector, with OAuth sign-in and no password."
+msgstr "Ajoute ce site à Claude comme connecteur, avec une connexion OAuth et sans mot de passe."
+
+#: includes/Core/Modules.php:135
+msgid "Connect Claude"
+msgstr "Connecter Claude"
+
+#: includes/Modules/ActivityLog/Events.php:32
+#: includes/Modules/ActivityLog/Module.php:526
+#: includes/Modules/McpConnect/ConsentPage.php:153
+msgid "Claude (MCP)"
+msgstr "Claude (MCP)"
+
+#: includes/Modules/ActivityLog/Events.php:165
+msgid "Claude connection authorized"
+msgstr "Connexion Claude autorisée"
+
+#: includes/Modules/ActivityLog/Events.php:169
+msgid "Claude connection denied"
+msgstr "Connexion Claude refusée"
+
+#: includes/Modules/ActivityLog/Events.php:173
+msgid "Claude connection revoked"
+msgstr "Connexion Claude révoquée"
+
+#: includes/Modules/ActivityLog/Events.php:177
+msgid "Claude token reuse detected"
+msgstr "Réutilisation d'un jeton Claude détectée"
+
+#: includes/Modules/ActivityLog/Events.php:181
+msgid "Claude client registered"
+msgstr "Client Claude enregistré"
+
+#: includes/Modules/ActivityLog/Module.php:492
+msgid "Connection"
+msgstr "Connexion"
+
+#: includes/Modules/ActivityLog/Module.php:493
+msgid "Connection ID"
+msgstr "ID de la connexion"
+
+#: includes/Modules/ActivityLog/Module.php:494
+#: includes/Modules/McpConnect/settings-template.php:97
+msgid "Client"
+msgstr "Client"
+
+#: includes/Modules/ActivityLog/Module.php:495
+#: includes/Modules/McpConnect/settings-template.php:98
+msgid "Acts as"
+msgstr "Agit en tant que"
+
+#: includes/Modules/ActivityLog/Module.php:500
+msgid "Revoked by hand"
+msgstr "Révoquée manuellement"
+
+#: includes/Modules/ActivityLog/Module.php:501
+msgid "All connections revoked"
+msgstr "Toutes les connexions révoquées"
+
+#: includes/Modules/ActivityLog/Module.php:502
+msgid "Refresh token reused"
+msgstr "Jeton de renouvellement réutilisé"
+
+#: includes/Modules/ActivityLog/Module.php:504
+msgid "Revoked by the client"
+msgstr "Révoquée par le client"
+
+#: includes/Modules/ActivityLog/Module.php:505
+msgid "Expired"
+msgstr "Expiration"
+
+#. translators: 1: request source ("Claude (MCP)"), 2: connection label.
+#: includes/Modules/ActivityLog/Module.php:562
+msgctxt "request source and connection label"
+msgid "%1$s (%2$s)"
+msgstr "%1$s (%2$s)"
+
+#: includes/Modules/McpConnect/Agent.php:150
+msgid "Content and Bricks"
+msgstr "Contenu et Bricks"
+
+#: includes/Modules/McpConnect/Agent.php:154
+msgid "Content, Bricks and SEO"
+msgstr "Contenu, Bricks et SEO"
+
+#: includes/Modules/McpConnect/Agent.php:158
+msgid "Full shop"
+msgstr "Boutique complète"
+
+#: includes/Modules/McpConnect/Agent.php:382
+msgid "This account is used by Claude through MCP Connect and cannot sign in."
+msgstr "Ce compte est utilisé par Claude via MCP Connect et ne peut pas se connecter."
+
+#: includes/Modules/McpConnect/Agent.php:394
+msgid "This account is used by Claude through MCP Connect and cannot use application passwords."
+msgstr "Ce compte est utilisé par Claude via MCP Connect et ne peut pas utiliser de mots de passe d'application."
+
+#: includes/Modules/McpConnect/Agent.php:415
+msgid "This account is used by Claude through MCP Connect and has no access to the dashboard."
+msgstr "Ce compte est utilisé par Claude via MCP Connect et n'a pas accès au tableau de bord."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:134
+msgid "The request does not say which application is connecting (client_id is missing)."
+msgstr "La demande n'indique pas quelle application se connecte (client_id manquant)."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:144
+msgid "The return address of this request is not one the application registered. The connection was not started."
+msgstr "L'adresse de retour de cette demande ne fait pas partie de celles enregistrées par l'application. La connexion n'a pas été lancée."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:151
+msgid "Only response_type=code is supported."
+msgstr "Seul response_type=code est pris en charge."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:156
+msgid "PKCE with code_challenge_method=S256 is required."
+msgstr "PKCE avec code_challenge_method=S256 est obligatoire."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:161
+msgid "The resource parameter must be the MCP server URL of this site."
+msgstr "Le paramètre resource doit être l'URL du serveur MCP de ce site."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:166
+msgid "Only the mcp and offline_access scopes are supported."
+msgstr "Seules les portées mcp et offline_access sont prises en charge."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:172
+msgid "This site only accepts applications from trusted publishers."
+msgstr "Ce site n'accepte que les applications de fournisseurs de confiance."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:176
+#: includes/Modules/McpConnect/AuthorizationServer.php:310
+#: includes/Modules/McpConnect/BearerAuth.php:110
+msgid "Connections to this site are paused."
+msgstr "Les connexions à ce site sont suspendues."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:185
+msgid "Too many connection attempts from this address. Wait a few minutes and try again."
+msgstr "Trop de tentatives de connexion depuis cette adresse. Patientez quelques minutes, puis réessayez."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:203
+msgid "The authorization request could not be stored."
+msgstr "La demande d'autorisation n'a pas pu être enregistrée."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:294
+#: includes/Modules/McpConnect/ConsentPage.php:361
+#: includes/Modules/McpConnect/ConsentPage.php:366
+msgid "Connection refused"
+msgstr "Connexion refusée"
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:315
+#: includes/Modules/McpConnect/AuthorizationServer.php:591
+#: includes/Modules/McpConnect/ClientRegistry.php:298
+msgid "Too many attempts. Try again later."
+msgstr "Trop de tentatives. Réessayez plus tard."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:329
+msgid "The grant_type parameter is missing."
+msgstr "Le paramètre grant_type est manquant."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:332
+msgid "Only the authorization_code and refresh_token grants are supported."
+msgstr "Seuls les grants authorization_code et refresh_token sont pris en charge."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:346
+msgid "The authorization code is invalid, expired or already used."
+msgstr "Le code d'autorisation est invalide, expiré ou déjà utilisé."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:379
+msgid "The resource parameter does not match the authorization request."
+msgstr "Le paramètre resource ne correspond pas à la demande d'autorisation."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:385
+msgid "The code verifier does not match the code challenge."
+msgstr "Le code verifier ne correspond pas au code challenge."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:440
+msgid "The refresh token is invalid, expired or revoked."
+msgstr "Le jeton de renouvellement est invalide, expiré ou révoqué."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:482
+msgid "The resource parameter does not match this connection."
+msgstr "Le paramètre resource ne correspond pas à cette connexion."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:489
+msgid "The requested scope exceeds what was granted to this connection."
+msgstr "La portée demandée dépasse celle accordée à cette connexion."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:548
+msgid "The tokens could not be stored."
+msgstr "Les jetons n'ont pas pu être enregistrés."
+
+#: includes/Modules/McpConnect/AuthorizationServer.php:643
+msgid "The registration request must be a JSON object."
+msgstr "La demande d'enregistrement doit être un objet JSON."
+
+#: includes/Modules/McpConnect/BearerAuth.php:113
+msgid "Too many failed attempts from this IP address. Try again later."
+msgstr "Trop de tentatives échouées depuis cette adresse IP. Réessayez plus tard."
+
+#: includes/Modules/McpConnect/BearerAuth.php:116
+msgid "The access token is invalid or expired."
+msgstr "Le jeton d'accès est invalide ou expiré."
+
+#: includes/Modules/McpConnect/BearerAuth.php:142
+msgid "This access token is only valid for the MCP server of this site."
+msgstr "Ce jeton d'accès n'est valable que pour le serveur MCP de ce site."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:116
+msgid "The application did not identify itself with a valid client ID. Only HTTPS client metadata URLs on the standard port are accepted."
+msgstr "L'application ne s'est pas identifiée avec un identifiant client valide. Seules les URL de métadonnées client en HTTPS sur le port standard sont acceptées."
+
+#. translators: %s: host name of the application that asked for the connection.
+#: includes/Modules/McpConnect/ClientRegistry.php:129
+msgid "This site only accepts connections from Claude. The application asking to connect is published by %s, which is not a trusted publisher."
+msgstr "Ce site n'accepte que les connexions de Claude. L'application qui demande à se connecter est publiée par %s, qui n'est pas un fournisseur de confiance."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:157
+msgid "Too many connection attempts right now. Wait a minute and try again."
+msgstr "Trop de tentatives de connexion en ce moment. Patientez une minute, puis réessayez."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:308
+msgid "Too many client registrations from this address. Try again later."
+msgstr "Trop d'enregistrements de clients depuis cette adresse. Réessayez plus tard."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:317
+msgid "redirect_uris must be a non-empty list of HTTPS URLs or loopback HTTP URLs."
+msgstr "redirect_uris doit être une liste non vide d'URL HTTPS ou d'URL HTTP de bouclage locale (loopback)."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:323
+msgid "Only public clients are supported: token_endpoint_auth_method must be \"none\"."
+msgstr "Seuls les clients publics sont pris en charge : token_endpoint_auth_method doit valoir « none »."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:327
+msgid "Only the authorization_code and refresh_token grant types are supported."
+msgstr "Seuls les types de grant authorization_code et refresh_token sont pris en charge."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:331
+msgid "Only the code response type is supported."
+msgstr "Seul le type de réponse code est pris en charge."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:362
+msgid "The client could not be registered."
+msgstr "Le client n'a pas pu être enregistré."
+
+#. translators: %s: host name of the application that asked for the connection.
+#: includes/Modules/McpConnect/ClientRegistry.php:441
+msgid "The description of the application published by %s could not be retrieved."
+msgstr "La description de l'application publiée par %s n'a pas pu être récupérée."
+
+#. translators: %s: host name of the application that asked for the connection.
+#: includes/Modules/McpConnect/ClientRegistry.php:460
+msgid "The application address %s does not resolve to a public server."
+msgstr "L'adresse de l'application %s ne pointe pas vers un serveur public."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:544
+msgid "The application description does not match its client ID."
+msgstr "La description de l'application ne correspond pas à son identifiant client."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:553
+msgid "The application description has no valid redirect URI."
+msgstr "La description de l'application ne contient aucune URI de redirection valide."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:561
+msgid "The application requires a client authentication method this site does not support. Only public clients can connect."
+msgstr "L'application exige une méthode d'authentification client que ce site ne prend pas en charge. Seuls les clients publics peuvent se connecter."
+
+#: includes/Modules/McpConnect/ClientRegistry.php:881
+msgid "This application is not registered on this site."
+msgstr "Cette application n'est pas enregistrée sur ce site."
+
+#: includes/Modules/McpConnect/ConsentPage.php:50
+#: includes/Modules/McpConnect/ConsentPage.php:70
+#: includes/Modules/McpConnect/ConsentPage.php:303
+#: includes/Modules/McpConnect/ConsentPage.php:502
+#: includes/Modules/McpConnect/ConsentPage.php:509
+msgid "Connect to Claude"
+msgstr "Se connecter à Claude"
+
+#: includes/Modules/McpConnect/ConsentPage.php:106
+#: includes/Modules/McpConnect/ConsentPage.php:322
+msgid "MCP Connect is disabled on this site."
+msgstr "MCP Connect est désactivé sur ce site."
+
+#: includes/Modules/McpConnect/ConsentPage.php:108
+#: includes/Modules/McpConnect/ConsentPage.php:338
+msgid "Your account is not allowed to connect Claude to this site."
+msgstr "Votre compte n'est pas autorisé à connecter Claude à ce site."
+
+#: includes/Modules/McpConnect/ConsentPage.php:124
+#: includes/Modules/McpConnect/ConsentPage.php:332
+#: includes/Modules/McpConnect/ConsentPage.php:355
+msgid "This connection request has expired. Start again from Claude."
+msgstr "Cette demande de connexion a expiré. Recommencez depuis Claude."
+
+#: includes/Modules/McpConnect/ConsentPage.php:138
+#: includes/Modules/McpConnect/ConsentPage.php:366
+msgid "This connection request is not valid. Start again from Claude."
+msgstr "Cette demande de connexion n'est pas valide. Recommencez depuis Claude."
+
+#. translators: 1: client name (e.g. Claude), 2: site name.
+#: includes/Modules/McpConnect/ConsentPage.php:168
+msgid "%1$s wants to connect to %2$s"
+msgstr "%1$s souhaite se connecter à %2$s"
+
+#: includes/Modules/McpConnect/ConsentPage.php:182
+msgid "Verified: Claude"
+msgstr "Vérifié : Claude"
+
+#. translators: %s: host name of the client's publisher (e.g. example.com).
+#: includes/Modules/McpConnect/ConsentPage.php:185
+msgid "Verified publisher: %s"
+msgstr "Fournisseur vérifié : %s"
+
+#: includes/Modules/McpConnect/ConsentPage.php:193
+msgid "Unverified client: only connect if you started this from a tool you trust."
+msgstr "Client non vérifié : ne vous connectez que si vous avez lancé cette demande depuis un outil de confiance."
+
+#: includes/Modules/McpConnect/ConsentPage.php:200
+msgid "Returns to"
+msgstr "Retour vers"
+
+#. translators: %s: loopback host name (e.g. localhost).
+#: includes/Modules/McpConnect/ConsentPage.php:207
+msgid "Claude will return to an application running on your computer (%s)."
+msgstr "Claude reviendra vers une application qui tourne sur votre ordinateur (%s)."
+
+#: includes/Modules/McpConnect/ConsentPage.php:214
+#: includes/Modules/McpConnect/settings-template.php:131
+msgid "Access"
+msgstr "Accès"
+
+#: includes/Modules/McpConnect/ConsentPage.php:218
+msgid "Use the tools this site exposes to Claude (MCP), and stay connected (refresh)."
+msgstr "Utiliser les outils que ce site expose à Claude (MCP) et rester connecté (renouvellement)."
+
+#: includes/Modules/McpConnect/ConsentPage.php:223
+msgid "Site"
+msgstr "Site"
+
+#: includes/Modules/McpConnect/ConsentPage.php:235
+msgid "Connection name"
+msgstr "Nom de la connexion"
+
+#: includes/Modules/McpConnect/ConsentPage.php:236
+msgid "e.g. Claire, MacBook"
+msgstr "ex : Claire, MacBook"
+
+#: includes/Modules/McpConnect/ConsentPage.php:237
+msgid "Shown in the list of connections and in the activity log."
+msgstr "Affiché dans la liste des connexions et dans le journal d'activité."
+
+#: includes/Modules/McpConnect/ConsentPage.php:241
+msgid "Claude will act as"
+msgstr "Claude agira en tant que"
+
+#. translators: %s: display name of the dedicated account.
+#: includes/Modules/McpConnect/ConsentPage.php:247
+msgid "The dedicated account %s has permissions your own account does not have, so Claude can only act as you."
+msgstr "Le compte dédié %s a des droits que votre propre compte n'a pas : Claude ne peut donc agir qu'en votre nom."
+
+#. translators: 1: display name of the dedicated account, 2: its login.
+#: includes/Modules/McpConnect/ConsentPage.php:257
+#: includes/Modules/McpConnect/SiteHealth.php:285
+msgid "%1$s (%2$s)"
+msgstr "%1$s (%2$s)"
+
+#. translators: %s: name of the permission preset (e.g. Content and Bricks).
+#: includes/Modules/McpConnect/ConsentPage.php:264
+msgid "Dedicated account, permissions: %s. Recommended."
+msgstr "Compte dédié, droits : %s. Recommandé."
+
+#: includes/Modules/McpConnect/ConsentPage.php:266
+msgid "Dedicated account with limited permissions. Recommended."
+msgstr "Compte dédié aux droits limités. Recommandé."
+
+#. translators: %s: display name of the current user.
+#: includes/Modules/McpConnect/ConsentPage.php:280
+msgid "You (%s)"
+msgstr "Vous (%s)"
+
+#: includes/Modules/McpConnect/ConsentPage.php:283
+msgid "Changes will be made in your name, with all your permissions. Use only for one-off administration tasks."
+msgstr "Les modifications seront faites en votre nom, avec tous vos droits. À réserver aux tâches d'administration ponctuelles."
+
+#: includes/Modules/McpConnect/ConsentPage.php:289
+msgid "Deny"
+msgstr "Refuser"
+
+#: includes/Modules/McpConnect/ConsentPage.php:290
+msgid "Approve"
+msgstr "Autoriser"
+
+#: includes/Modules/McpConnect/ConsentPage.php:327
+msgid "Invalid request."
+msgstr "Requête invalide."
+
+#: includes/Modules/McpConnect/ConsentPage.php:349
+msgid "The dedicated account has permissions your own account does not have: choose to let Claude act as you."
+msgstr "Le compte dédié a des droits que votre propre compte n'a pas : choisissez de laisser Claude agir en votre nom."
+
+#: includes/Modules/McpConnect/ConsentPage.php:393
+msgid "The Claude (MCP) account could not be created."
+msgstr "Le compte Claude (MCP) n'a pas pu être créé."
+
+#: includes/Modules/McpConnect/ConsentPage.php:399
+msgid "The connection could not be saved."
+msgstr "La connexion n'a pas pu être enregistrée."
+
+#: includes/Modules/McpConnect/ConsentPage.php:510
+msgid "Returning to the application on your computer…"
+msgstr "Retour à l'application sur votre ordinateur…"
+
+#: includes/Modules/McpConnect/ConsentPage.php:513
+msgid "Return to the application"
+msgstr "Revenir à l'application"
+
+#: includes/Modules/McpConnect/Module.php:279
+msgid "Could not load the connections."
+msgstr "Impossible de charger les connexions."
+
+#: includes/Modules/McpConnect/Module.php:280
+#: includes/Modules/McpConnect/settings-template.php:116
+msgid "No connection yet. Add this site in Claude: see Help."
+msgstr "Aucune connexion pour l'instant. Ajoutez ce site dans Claude : voir l'onglet Aide."
+
+#. translators: %s: number of connections.
+#: includes/Modules/McpConnect/Module.php:282
+msgid "%s connection(s)"
+msgstr "%s connexion(s)"
+
+#: includes/Modules/McpConnect/Module.php:283
+msgid "Verified"
+msgstr "Vérifié"
+
+#: includes/Modules/McpConnect/Module.php:284
+msgid "Unverified"
+msgstr "Non vérifié"
+
+#: includes/Modules/McpConnect/Module.php:285
+msgid "Acts as the approver"
+msgstr "Agit au nom de l'approbateur"
+
+#: includes/Modules/McpConnect/Module.php:287
+msgid "(no label)"
+msgstr "(sans nom)"
+
+#: includes/Modules/McpConnect/Module.php:288
+msgctxt "MCP connection status"
+msgid "Active"
+msgstr "Active"
+
+#: includes/Modules/McpConnect/Module.php:290
+msgid "Revoked"
+msgstr "Révoquée"
+
+#: includes/Modules/McpConnect/Module.php:291
+msgid "Revoke"
+msgstr "Révoquer"
+
+#: includes/Modules/McpConnect/Module.php:292
+msgid "Revoke this connection?"
+msgstr "Révoquer cette connexion ?"
+
+#. translators: %s: connection label or client name.
+#: includes/Modules/McpConnect/Module.php:294
+msgid "\"%s\" will lose access to this site immediately. Claude will ask to connect again."
+msgstr "« %s » perdra immédiatement l'accès à ce site. Claude demandera à se reconnecter."
+
+#: includes/Modules/McpConnect/Module.php:295
+msgid "Revoke every connection?"
+msgstr "Révoquer toutes les connexions ?"
+
+#: includes/Modules/McpConnect/Module.php:296
+msgid "Every Claude connection to this site loses access immediately. Each one will have to be approved again."
+msgstr "Toutes les connexions de Claude à ce site perdent immédiatement leur accès. Chacune devra être autorisée à nouveau."
+
+#: includes/Modules/McpConnect/Module.php:297
+#: includes/Modules/McpConnect/settings-template.php:89
+msgid "Revoke all"
+msgstr "Tout révoquer"
+
+#: includes/Modules/McpConnect/Module.php:298
+msgid "Copied to the clipboard."
+msgstr "Copié dans le presse-papiers."
+
+#: includes/Modules/McpConnect/Module.php:299
+msgid "Could not copy: select the text and copy it by hand."
+msgstr "Copie impossible : sélectionnez le texte et copiez-le manuellement."
+
+#: includes/Modules/McpConnect/Module.php:300
+msgid "by an administrator"
+msgstr "par un administrateur"
+
+#: includes/Modules/McpConnect/Module.php:301
+msgid "all connections revoked"
+msgstr "toutes les connexions révoquées"
+
+#: includes/Modules/McpConnect/Module.php:302
+msgid "token reuse detected"
+msgstr "réutilisation de jeton détectée"
+
+#: includes/Modules/McpConnect/Module.php:303
+msgid "user deleted"
+msgstr "utilisateur supprimé"
+
+#: includes/Modules/McpConnect/Module.php:304
+msgid "revoked by the client"
+msgstr "révoquée par le client"
+
+#: includes/Modules/McpConnect/Module.php:305
+msgid "expired"
+msgstr "expirée"
+
+#: includes/Modules/McpConnect/Module.php:350
+msgid "This connection does not exist or is already revoked."
+msgstr "Cette connexion n'existe pas ou est déjà révoquée."
+
+#: includes/Modules/McpConnect/Module.php:353
+msgid "Connection revoked."
+msgstr "Connexion révoquée."
+
+#. translators: %s: number of connections revoked.
+#: includes/Modules/McpConnect/Module.php:365
+msgid "%s connection revoked."
+msgid_plural "%s connections revoked."
+msgstr[0] "%s connexion révoquée."
+msgstr[1] "%s connexions révoquées."
+
+#: includes/Modules/McpConnect/settings-template.php:32
+msgid "Administrators (manage_options)"
+msgstr "Administrateurs (manage_options)"
+
+#: includes/Modules/McpConnect/settings-template.php:33
+msgid "Editors and administrators (edit_others_pages)"
+msgstr "Éditeurs et administrateurs (edit_others_pages)"
+
+#: includes/Modules/McpConnect/settings-template.php:38
+msgid "OK"
+msgstr "OK"
+
+#: includes/Modules/McpConnect/settings-template.php:39
+msgid "Required"
+msgstr "Requis"
+
+#: includes/Modules/McpConnect/settings-template.php:40
+msgid "Recommended"
+msgstr "Recommandé"
+
+#: includes/Modules/McpConnect/settings-template.php:41
+msgid "Info"
+msgstr "Info"
+
+#: includes/Modules/McpConnect/settings-template.php:50
+msgid "MCP Connect module sections"
+msgstr "Sections du module MCP Connect"
+
+#: includes/Modules/McpConnect/settings-template.php:51
+#: includes/Modules/McpConnect/settings-template.php:71
+msgid "Connections"
+msgstr "Connexions"
+
+#: includes/Modules/McpConnect/settings-template.php:53
+msgid "Help"
+msgstr "Aide"
+
+#: includes/Modules/McpConnect/settings-template.php:60
+msgid "MCP Connect is turned off by the LUMIA_DISABLE_MCP_CONNECT constant in wp-config.php: Claude cannot discover, sign in to or use this site. Connections are kept and work again once the constant is removed."
+msgstr "MCP Connect est désactivé par la constante LUMIA_DISABLE_MCP_CONNECT dans wp-config.php : Claude ne peut ni découvrir ce site, ni s'y connecter, ni l'utiliser. Les connexions sont conservées et fonctionnent à nouveau dès que la constante est retirée."
+
+#: includes/Modules/McpConnect/settings-template.php:72
+msgid "Each approval in Claude creates a connection. Revoking it cuts its access immediately; Claude then asks to connect again."
+msgstr "Chaque autorisation donnée dans Claude crée une connexion. La révoquer coupe aussitôt son accès ; Claude demande alors à se reconnecter."
+
+#: includes/Modules/McpConnect/settings-template.php:80
+msgctxt "MCP Connect status"
+msgid "Off"
+msgstr "Désactivé"
+
+#: includes/Modules/McpConnect/settings-template.php:82
+msgid "Paused"
+msgstr "En pause"
+
+#: includes/Modules/McpConnect/settings-template.php:83
+msgid "Every request from Claude is refused until connections are resumed in Settings."
+msgstr "Toute requête de Claude est refusée jusqu'à la reprise des connexions dans l'onglet Réglages."
+
+#: includes/Modules/McpConnect/settings-template.php:99
+msgid "Approved by"
+msgstr "Autorisée par"
+
+#: includes/Modules/McpConnect/settings-template.php:100
+msgid "Created"
+msgstr "Création"
+
+#: includes/Modules/McpConnect/settings-template.php:101
+msgid "Last used"
+msgstr "Dernière utilisation"
+
+#: includes/Modules/McpConnect/settings-template.php:102
+msgid "Last IP"
+msgstr "Dernière IP"
+
+#: includes/Modules/McpConnect/settings-template.php:103
+msgid "Refresh token expires"
+msgstr "Expiration du jeton de renouvellement"
+
+#: includes/Modules/McpConnect/settings-template.php:132
+msgid "Who may connect Claude, and what Claude may do once connected."
+msgstr "Qui peut connecter Claude, et ce que Claude peut faire une fois connecté."
+
+#: includes/Modules/McpConnect/settings-template.php:138
+msgid "Pause all connections"
+msgstr "Suspendre toutes les connexions"
+
+#: includes/Modules/McpConnect/settings-template.php:139
+msgid "To cut everything without the admin (locked out, emergency), add define( 'LUMIA_DISABLE_MCP_CONNECT', true ); to wp-config.php."
+msgstr "Pour tout couper sans passer par l'admin (accès perdu, urgence), ajoutez define( 'LUMIA_DISABLE_MCP_CONNECT', true ); dans wp-config.php."
+
+#: includes/Modules/McpConnect/settings-template.php:141
+msgid "Every request from Claude is refused and no new connection can be approved. Connections are kept and work again when you resume."
+msgstr "Toute requête de Claude est refusée et aucune nouvelle connexion ne peut être autorisée. Les connexions sont conservées et fonctionnent à nouveau à la reprise."
+
+#: includes/Modules/McpConnect/settings-template.php:153
+msgid "Who can approve a connection"
+msgstr "Qui peut autoriser une connexion"
+
+#: includes/Modules/McpConnect/settings-template.php:162
+msgid "Permissions of the Claude account"
+msgstr "Droits du compte Claude"
+
+#: includes/Modules/McpConnect/settings-template.php:170
+msgid "Claude acts through a dedicated account that cannot sign in by itself. It can never manage plugins, users or site settings, whatever the preset."
+msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Il ne peut jamais gérer les extensions, les utilisateurs ni les réglages du site, quel que soit le profil choisi."
+
+#: includes/Modules/McpConnect/settings-template.php:182
+msgid "Clients"
+msgstr "Clients"
+
+#: includes/Modules/McpConnect/settings-template.php:183
+msgid "Which applications may ask to connect."
+msgstr "Les applications qui peuvent demander à se connecter."
+
+#: includes/Modules/McpConnect/settings-template.php:188
+msgid "Trusted publishers only"
+msgstr "Fournisseurs de confiance uniquement"
+
+#: includes/Modules/McpConnect/settings-template.php:189
+msgid "Only applications published by Anthropic (claude.ai) can request a connection: Claude, Claude Code and Claude Desktop."
+msgstr "Seules les applications publiées par Anthropic (claude.ai) peuvent demander une connexion : Claude, Claude Code et Claude Desktop."
+
+#: includes/Modules/McpConnect/settings-template.php:201
+msgid "Dynamic client registration"
+msgstr "Enregistrement dynamique des clients"
+
+#: includes/Modules/McpConnect/settings-template.php:202
+msgid "Lets MCP clients that do not publish their identity register themselves. Off unless a client you use requires it."
+msgstr "Permet aux clients MCP qui ne publient pas leur identité de s'enregistrer eux-mêmes. À laisser désactivé, sauf si un client que vous utilisez l'exige."
+
+#: includes/Modules/McpConnect/settings-template.php:213
+msgid "Self-registered clients are unverified: anyone can register one under any name. While \"Trusted publishers only\" is on, they are always refused."
+msgstr "Les clients auto-enregistrés ne sont pas vérifiés : n'importe qui peut en enregistrer un sous n'importe quel nom. Tant que « Fournisseurs de confiance uniquement » est activé, ils sont toujours refusés."
+
+#: includes/Modules/McpConnect/settings-template.php:218
+msgid "Delete unused registered clients after (days)"
+msgstr "Supprimer les clients enregistrés inutilisés après (jours)"
+
+#: includes/Modules/McpConnect/settings-template.php:230
+msgid "Tokens"
+msgstr "Jetons"
+
+#: includes/Modules/McpConnect/settings-template.php:231
+msgid "Claude renews its access token on its own with the refresh token. A connection unused for longer than the refresh token lifetime must be approved again."
+msgstr "Claude renouvelle seul son jeton d'accès grâce au jeton de renouvellement. Une connexion inutilisée plus longtemps que la durée de vie du jeton de renouvellement doit être autorisée à nouveau."
+
+#: includes/Modules/McpConnect/settings-template.php:236
+msgid "Access token lifetime (minutes)"
+msgstr "Durée de vie du jeton d'accès (minutes)"
+
+#: includes/Modules/McpConnect/settings-template.php:241
+msgid "Refresh token lifetime (days)"
+msgstr "Durée de vie du jeton de renouvellement (jours)"
+
+#: includes/Modules/McpConnect/settings-template.php:258
+msgid "Add this site to Claude"
+msgstr "Ajouter ce site à Claude"
+
+#: includes/Modules/McpConnect/settings-template.php:259
+msgid "The URL to paste in Claude when adding a custom connector."
+msgstr "L'URL à coller dans Claude lors de l'ajout d'un connecteur personnalisé."
+
+#: includes/Modules/McpConnect/settings-template.php:265
+msgid "MCP server URL"
+msgstr "URL du serveur MCP"
+
+#: includes/Modules/McpConnect/settings-template.php:268
+#: includes/Modules/McpConnect/settings-template.php:300
+msgid "Copy"
+msgstr "Copier"
+
+#: includes/Modules/McpConnect/settings-template.php:273
+msgid "In Claude, open Settings > Connectors and choose Add custom connector."
+msgstr "Dans Claude, ouvrez Paramètres > Connecteurs et choisissez Ajouter un connecteur personnalisé."
+
+#: includes/Modules/McpConnect/settings-template.php:274
+msgid "Paste the URL above. Leave Client ID and Client Secret empty."
+msgstr "Collez l'URL ci-dessus. Laissez vides les champs Client ID et Client Secret."
+
+#: includes/Modules/McpConnect/settings-template.php:275
+msgid "Click Connect: Claude opens the sign-in page of this site."
+msgstr "Cliquez sur Connecter : Claude ouvre la page de connexion de ce site."
+
+#: includes/Modules/McpConnect/settings-template.php:276
+msgid "Sign in to WordPress if asked, check the request, then approve it."
+msgstr "Connectez-vous à WordPress si besoin, vérifiez la demande, puis autorisez-la."
+
+#. translators: %s: users allowed to approve, e.g. "Administrators (manage_options)".
+#: includes/Modules/McpConnect/settings-template.php:282
+msgid "Only these users can approve a connection: %s."
+msgstr "Seuls ces utilisateurs peuvent autoriser une connexion : %s."
+
+#: includes/Modules/McpConnect/settings-template.php:292
+msgid "Claude Code"
+msgstr "Claude Code"
+
+#: includes/Modules/McpConnect/settings-template.php:293
+msgid "Run this command, then /mcp in Claude Code to sign in."
+msgstr "Lancez cette commande, puis /mcp dans Claude Code pour vous connecter."
+
+#: includes/Modules/McpConnect/settings-template.php:312
+msgid "What this site needs for Claude to connect."
+msgstr "Ce dont ce site a besoin pour que Claude puisse se connecter."
+
+#: includes/Modules/McpConnect/settings-template.php:313
+msgid "Site Health also checks the discovery documents and the Authorization header."
+msgstr "La Santé du site vérifie aussi les documents de découverte et l'en-tête Authorization."
+
+#: includes/Modules/McpConnect/SiteHealth.php:44
+msgid "MCP Connect discovery documents"
+msgstr "Documents de découverte de MCP Connect"
+
+#: includes/Modules/McpConnect/SiteHealth.php:49
+msgid "MCP Connect Authorization header"
+msgstr "En-tête Authorization de MCP Connect"
+
+#: includes/Modules/McpConnect/SiteHealth.php:55
+msgid "MCP Connect environment"
+msgstr "Environnement de MCP Connect"
+
+#. translators: 1: URL, 2: error message.
+#: includes/Modules/McpConnect/SiteHealth.php:100
+msgid "%1$s could not be reached: %2$s"
+msgstr "%1$s est injoignable : %2$s"
+
+#. translators: 1: URL, 2: HTTP status code.
+#: includes/Modules/McpConnect/SiteHealth.php:104
+msgid "%1$s answered HTTP %2$s instead of 200."
+msgstr "%1$s a répondu HTTP %2$s au lieu de 200."
+
+#. translators: %s: URL.
+#: includes/Modules/McpConnect/SiteHealth.php:107
+msgid "%s did not return the expected document (another plugin or a cache may answer instead)."
+msgstr "%s n'a pas renvoyé le document attendu (une autre extension ou un cache répond peut-être à sa place)."
+
+#: includes/Modules/McpConnect/SiteHealth.php:122
+msgid "Claude cannot discover how to sign in to this site"
+msgstr "Claude ne peut pas découvrir comment se connecter à ce site"
+
+#: includes/Modules/McpConnect/SiteHealth.php:123
+msgid "Claude reads two documents under /.well-known/ to find the sign-in page. They are not served correctly:"
+msgstr "Claude lit deux documents sous /.well-known/ pour trouver la page de connexion. Ils ne sont pas servis correctement :"
+
+#: includes/Modules/McpConnect/SiteHealth.php:127
+msgid "Pretty permalinks must be enabled: with plain permalinks WordPress never receives these paths."
+msgstr "Les permaliens lisibles doivent être activés : avec les permaliens simples, WordPress ne reçoit jamais ces chemins."
+
+#: includes/Modules/McpConnect/SiteHealth.php:134
+msgid "The MCP Connect discovery documents are served over plain HTTP"
+msgstr "Les documents de découverte de MCP Connect sont servis en HTTP simple"
+
+#: includes/Modules/McpConnect/SiteHealth.php:135
+msgid "The documents answer, but with http:// addresses. Claude only connects to sites served over HTTPS: set the site address to https."
+msgstr "Les documents répondent, mais avec des adresses en http://. Claude ne se connecte qu'aux sites servis en HTTPS : passez l'adresse du site en https."
+
+#: includes/Modules/McpConnect/SiteHealth.php:140
+msgid "Claude can discover how to sign in to this site"
+msgstr "Claude peut découvrir comment se connecter à ce site"
+
+#: includes/Modules/McpConnect/SiteHealth.php:141
+msgid "Both discovery documents answer under /.well-known/ with this site's addresses."
+msgstr "Les deux documents de découverte répondent sous /.well-known/ avec les adresses de ce site."
+
+#: includes/Modules/McpConnect/SiteHealth.php:157
+msgid "The Authorization header reaches WordPress"
+msgstr "L'en-tête Authorization parvient à WordPress"
+
+#: includes/Modules/McpConnect/SiteHealth.php:158
+msgid "The tokens Claude sends with each request are visible to the site."
+msgstr "Les jetons que Claude envoie avec chaque requête sont visibles par le site."
+
+#: includes/Modules/McpConnect/SiteHealth.php:164
+msgid "The web server removes the Authorization header"
+msgstr "Le serveur web supprime l'en-tête Authorization"
+
+#. translators: %s: HTTP status code.
+#: includes/Modules/McpConnect/SiteHealth.php:170
+msgid "HTTP %s"
+msgstr "HTTP %s"
+
+#: includes/Modules/McpConnect/SiteHealth.php:173
+msgid "The Authorization header could not be checked"
+msgstr "L'en-tête Authorization n'a pas pu être vérifié"
+
+#. translators: %s: error message or HTTP status.
+#: includes/Modules/McpConnect/SiteHealth.php:176
+msgid "The site could not call itself to run the check (%s). Loopback requests may be blocked by the host or a firewall."
+msgstr "Le site n'a pas pu s'appeler lui-même pour effectuer la vérification (%s). Les requêtes en boucle locale (loopback) sont peut-être bloquées par l'hébergeur ou un pare-feu."
+
+#: includes/Modules/McpConnect/SiteHealth.php:182
+msgid "Claude authenticates every request with an Authorization header, which this server does not pass to PHP: every connection would be refused. Depending on the server:"
+msgstr "Claude authentifie chaque requête avec un en-tête Authorization, que ce serveur ne transmet pas à PHP : toutes les connexions seraient refusées. Selon le serveur :"
+
+#: includes/Modules/McpConnect/SiteHealth.php:184
+msgid "Apache or LiteSpeed: in .htaccess, before the WordPress rules, add"
+msgstr "Apache ou LiteSpeed : dans le .htaccess, avant les règles de WordPress, ajoutez"
+
+#: includes/Modules/McpConnect/SiteHealth.php:185
+msgid "nginx with PHP-FPM: in the PHP location, add"
+msgstr "nginx avec PHP-FPM : dans la location PHP, ajoutez"
+
+#: includes/Modules/McpConnect/SiteHealth.php:214
+msgid "MCP Connect has everything it needs"
+msgstr "MCP Connect dispose de tout ce dont il a besoin"
+
+#: includes/Modules/McpConnect/SiteHealth.php:215
+msgid "MCP Adapter, permalinks, HTTPS and the Claude agent account are in place."
+msgstr "MCP Adapter, les permaliens, le HTTPS et le compte agent de Claude sont en place."
+
+#: includes/Modules/McpConnect/SiteHealth.php:222
+msgid "MCP Connect cannot work on this site yet"
+msgstr "MCP Connect ne peut pas encore fonctionner sur ce site"
+
+#: includes/Modules/McpConnect/SiteHealth.php:223
+msgid "MCP Connect works with limitations"
+msgstr "MCP Connect fonctionne avec des limitations"
+
+#: includes/Modules/McpConnect/SiteHealth.php:244
+msgid "Not active: install and activate the MCP Adapter plugin."
+msgstr "Inactif : installez et activez l'extension MCP Adapter."
+
+#: includes/Modules/McpConnect/SiteHealth.php:246
+msgid "Active (version unknown)"
+msgstr "Actif (version inconnue)"
+
+#. translators: 1: installed version, 2: minimum version.
+#: includes/Modules/McpConnect/SiteHealth.php:249
+msgid "Version %1$s: version %2$s or later is required."
+msgstr "Version %1$s : la version %2$s ou ultérieure est requise."
+
+#. translators: %s: version number.
+#: includes/Modules/McpConnect/SiteHealth.php:252
+msgid "Version %s"
+msgstr "Version %s"
+
+#: includes/Modules/McpConnect/SiteHealth.php:256
+msgid "MCP Adapter"
+msgstr "MCP Adapter"
+
+#: includes/Modules/McpConnect/SiteHealth.php:263
+msgid "Permalinks"
+msgstr "Permaliens"
+
+#: includes/Modules/McpConnect/SiteHealth.php:265
+msgid "Pretty permalinks"
+msgstr "Permaliens lisibles"
+
+#: includes/Modules/McpConnect/SiteHealth.php:266
+msgid "Plain permalinks: the discovery documents cannot be served. Choose any other structure in Settings > Permalinks."
+msgstr "Permaliens simples : les documents de découverte ne peuvent pas être servis. Choisissez n'importe quelle autre structure dans Réglages > Permaliens."
+
+#: includes/Modules/McpConnect/SiteHealth.php:272
+msgid "HTTPS"
+msgstr "HTTPS"
+
+#: includes/Modules/McpConnect/SiteHealth.php:274
+msgid "The site address uses HTTPS"
+msgstr "L'adresse du site utilise HTTPS"
+
+#: includes/Modules/McpConnect/SiteHealth.php:275
+msgid "The site address uses plain HTTP: Claude only connects to HTTPS sites."
+msgstr "L'adresse du site utilise HTTP simple : Claude ne se connecte qu'aux sites en HTTPS."
+
+#: includes/Modules/McpConnect/SiteHealth.php:282
+msgid "Claude account"
+msgstr "Compte Claude"
+
+#: includes/Modules/McpConnect/SiteHealth.php:286
+msgid "Missing: it is created again on the next visit of an administrator to the admin."
+msgstr "Manquant : il sera recréé à la prochaine visite d'un administrateur dans l'admin."
+
+#: includes/Modules/McpConnect/SiteHealth.php:293
+msgid "Role preset"
+msgstr "Profil de droits"
+
+#: includes/Modules/McpConnect/SiteHealth.php:300
+msgid "The Claude account can edit with Bricks"
+msgstr "Le compte Claude peut modifier avec Bricks"
+
+#: includes/Modules/McpConnect/SiteHealth.php:303
+msgid "Bricks is active but the Claude role has no builder access: grant it in Bricks > Settings > Builder access."
+msgstr "Bricks est actif mais le rôle de Claude n'a pas accès au builder : accordez-le dans Bricks > Settings > Builder access."
+
+#: includes/Modules/McpConnect/SiteHealth.php:310
+msgid "Bricks builder access"
+msgstr "Accès au builder Bricks"
+
+#. translators: 1: URL path Claude requests at the server root, 2: URL of the document on this site.
+#: includes/Modules/McpConnect/SiteHealth.php:424
+msgid "This site lives under a path, so Claude asks the server root for %1$s. Rewrite that path, at the web server level, to %2$s."
+msgstr "Ce site est installé dans un sous-dossier : Claude demande donc %1$s à la racine du serveur. Réécrivez ce chemin, au niveau du serveur web, vers %2$s."
+
+#: includes/Modules/McpConnect/SiteHealth.php:437
+msgid "A 403 usually means the web server blocks /.well-known/ before WordPress. On nginx, add this to the site configuration:"
+msgstr "Un 403 signifie généralement que le serveur web bloque /.well-known/ avant WordPress. Sur nginx, ajoutez ceci à la configuration du site :"
+
+#: includes/Modules/McpConnect/SiteHealth.php:439
+msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
+msgstr "Sur Apache ou LiteSpeed, vérifiez qu'aucune règle du serveur ou du .htaccess ne refuse les chemins commençant par un point."

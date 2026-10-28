@@ -109,6 +109,13 @@ class Recorder {
 		add_action( 'lumia_files_danger_mode_enabled', [ $this, 'on_danger_mode_enabled' ], 10, 2 );
 		add_action( 'lumia_files_danger_mode_disabled', [ $this, 'on_danger_mode_disabled' ], 10, 2 );
 		add_action( 'lumia_files_danger_mode_write', [ $this, 'on_danger_mode_write' ], 10, 2 );
+
+		// MCP Connect (see McpConnect\Connections).
+		add_action( 'lumia_mcp_connect_authorized', [ $this, 'on_mcp_authorized' ], 10, 1 );
+		add_action( 'lumia_mcp_connect_denied', [ $this, 'on_mcp_denied' ], 10, 2 );
+		add_action( 'lumia_mcp_connect_revoked', [ $this, 'on_mcp_revoked' ], 10, 2 );
+		add_action( 'lumia_mcp_connect_refresh_reuse', [ $this, 'on_mcp_refresh_reuse' ], 10, 1 );
+		add_action( 'lumia_mcp_connect_client_registered', [ $this, 'on_mcp_client_registered' ], 10, 2 );
 	}
 
 	/* ================================================================
@@ -733,6 +740,154 @@ class Recorder {
 	 */
 	public function on_danger_mode_write( $path, $operation ): void {
 		$this->record( 'file_written', 'file', 0, (string) $path, [ 'operation' => (string) $operation ], null, false );
+	}
+
+	/* ================================================================
+	 * MCP CONNECT
+	 *
+	 * Most of these fire on the OAuth endpoints, where nobody is logged in:
+	 * the author is set explicitly (the approver, or "System" for what the
+	 * plugin decided on its own). Every one of them is a security trail (an
+	 * external agent gaining or losing access to the site), so the role
+	 * exclusion does not apply to them, as for failed logins: excluding
+	 * administrators would hide every approval and manual revocation.
+	 * ================================================================ */
+
+	/**
+	 * Fires at the token exchange, not at the consent: the connection only
+	 * becomes real then. The approver is the author.
+	 *
+	 * @param int $connection_id Connection id.
+	 */
+	public function on_mcp_authorized( $connection_id ): void {
+		$connection = self::mcp_connection( (int) $connection_id );
+
+		if ( null === $connection ) {
+			return;
+		}
+
+		$approver = get_userdata( (int) ( $connection['approved_by'] ?? 0 ) );
+
+		$this->record(
+			'mcp_connection_authorized',
+			'mcp_connection',
+			(int) $connection_id,
+			self::mcp_label( $connection ),
+			self::mcp_details( $connection ),
+			$approver ? $approver : new \WP_User( 0 ),
+			false
+		);
+	}
+
+	/**
+	 * @param string $client_name Client name shown on the consent screen.
+	 * @param string $client_id   Client id (CIMD URL or DCR id).
+	 */
+	public function on_mcp_denied( $client_name, $client_id ): void {
+		$client_id = (string) $client_id;
+		$name      = '' !== (string) $client_name ? (string) $client_name : $client_id;
+
+		$this->record( 'mcp_connection_denied', 'mcp_connection', 0, $name, [ 'client' => $client_id ], null, false );
+	}
+
+	/**
+	 * A revocation by hand is authored by the current user; the automatic
+	 * ones (token reuse, revocation by the client itself, expiry) by nobody.
+	 *
+	 * @param int    $connection_id Connection id.
+	 * @param string $reason        'manual', 'all', 'reuse', 'user_deleted', 'token' or 'expired'.
+	 */
+	public function on_mcp_revoked( $connection_id, $reason ): void {
+		$reason     = (string) $reason;
+		$connection = self::mcp_connection( (int) $connection_id );
+		$details    = $connection ? self::mcp_details( $connection ) : [];
+
+		$details['reason'] = $reason;
+
+		$this->record(
+			'mcp_connection_revoked',
+			'mcp_connection',
+			(int) $connection_id,
+			$connection ? self::mcp_label( $connection ) : '#' . (int) $connection_id,
+			$details,
+			in_array( $reason, [ 'reuse', 'token', 'expired' ], true ) ? new \WP_User( 0 ) : null,
+			false
+		);
+	}
+
+	/**
+	 * A refresh token presented twice: either the client lost track of its
+	 * rotation, or the token was stolen. The connection is revoked right
+	 * after (its own row).
+	 *
+	 * @param int $connection_id Connection id.
+	 */
+	public function on_mcp_refresh_reuse( $connection_id ): void {
+		$connection = self::mcp_connection( (int) $connection_id );
+
+		$this->record(
+			'mcp_refresh_reuse_detected',
+			'mcp_connection',
+			(int) $connection_id,
+			$connection ? self::mcp_label( $connection ) : '#' . (int) $connection_id,
+			$connection ? self::mcp_details( $connection ) : [],
+			new \WP_User( 0 ),
+			false
+		);
+	}
+
+	/**
+	 * Dynamic client registration: anonymous by nature.
+	 *
+	 * @param string $client_id   Issued client id.
+	 * @param string $client_name Declared client name.
+	 */
+	public function on_mcp_client_registered( $client_id, $client_name ): void {
+		$client_id = (string) $client_id;
+		$name      = '' !== (string) $client_name ? (string) $client_name : $client_id;
+
+		$this->record( 'mcp_client_registered', 'mcp_connection', 0, $name, [ 'client' => $client_id ], new \WP_User( 0 ), false );
+	}
+
+	/**
+	 * Connection row, or null if it is gone or MCP Connect is not shipped.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private static function mcp_connection( int $id ): ?array {
+		if ( ! $id || ! class_exists( \Lumia\Tools\Modules\McpConnect\Connections::class ) ) {
+			return null;
+		}
+
+		return \Lumia\Tools\Modules\McpConnect\Connections::get( $id );
+	}
+
+	/**
+	 * Label of a connection: the one given at the consent, else the client name.
+	 *
+	 * @param array<string, mixed> $connection
+	 */
+	private static function mcp_label( array $connection ): string {
+		$label = (string) ( $connection['label'] ?? '' );
+
+		return '' !== $label ? $label : (string) ( $connection['client_name'] ?? '' );
+	}
+
+	/**
+	 * Client and acting account of a connection. Never a token.
+	 *
+	 * @param array<string, mixed> $connection
+	 * @return array<string, string>
+	 */
+	private static function mcp_details( array $connection ): array {
+		$details = [ 'client' => (string) ( $connection['client_name'] ?? '' ) ];
+		$acting  = get_userdata( (int) ( $connection['acting_user_id'] ?? 0 ) );
+
+		if ( $acting ) {
+			$details['acting_user'] = $acting->user_login;
+		}
+
+		return $details;
 	}
 
 	/* ================================================================

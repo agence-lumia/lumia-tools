@@ -4,7 +4,7 @@
  * Plugin URI:  https://github.com/agence-lumia/lumia-tools
  * Update URI:  https://github.com/agence-lumia/lumia-tools
  * Description: A modular toolkit to optimize and improve your WordPress site.
- * Version:     2.2.4
+ * Version:     2.2.5-dev.4
  * Author:      Agence Lümia
  * Author URI:  https://agence-lumia.com
  * License:     GPL-2.0+
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Base constants
-define( 'LUMIA_VERSION', '2.2.4' );
+define( 'LUMIA_VERSION', '2.2.5-dev.4' );
 define( 'LUMIA_PLUGIN_FILE', __FILE__ );
 define( 'LUMIA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LUMIA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -32,6 +32,12 @@ define( 'LUMIA_ASSETS_URL', LUMIA_PLUGIN_URL . 'assets/' );
 // Autoloader
 require_once LUMIA_INCLUDES_DIR . 'Core/Autoloader.php';
 Lumia\Tools\Core\Autoloader::register();
+
+// MCP Connect: the Bearer filter is hooked at file load, not on plugins_loaded
+// nor in the module's init(): the first wp_get_current_user() caches the user
+// for the whole request, and an earlier plugin would lock it to anonymous.
+// boot() only reads the raw module flag; everything else waits for init().
+Lumia\Tools\Modules\McpConnect\Discovery::boot();
 
 // Bootstrap
 add_action(

@@ -980,6 +980,9 @@
    *
    * Without the adapter after COUNTER_WAIT_MS (blocked file, browser without module
    * support), or when NumberFlow cannot animate in this browser, the text stays as written.
+   *
+   * The count style (options.counterStyle "count") counts the value up instead, written frame
+   * by frame by countAdapter below, with the same interface: it never waits for NumberFlow.
    * ================================================================ */
 
   var COUNTER_WAIT_MS = 3000;
@@ -992,6 +995,223 @@
   function counterAdapter() {
     var adapter = window.lumiaMotionCounter;
     return adapter && typeof adapter.mount === "function" && typeof adapter.play === "function" ? adapter : null;
+  }
+
+  // Margin over the expected end before the count writes its value anyway (a hidden tab runs no frame).
+  var COUNT_END_MARGIN_MS = 150;
+
+  function countStop(handle) {
+    clearTimeout(handle.timer);
+    clearTimeout(handle.endTimer);
+    cancelAnimationFrame(handle.frame);
+    handle.timer = 0;
+    handle.endTimer = 0;
+    handle.frame = 0;
+  }
+
+  // Writes a value in the format of the page (core.formatCounter, the parser's own formatter),
+  // only when the number changes; the prefix and suffix are written once, at mount. With cells
+  // (fixed width in a font without tabular digits), each digit gets a box of the widest digit's
+  // width, and the boxes are rebuilt only when the shape of the number changes.
+  function countWrite(handle, value) {
+    var num = core.formatCounter(value, handle.fmt, handle.digits);
+    if (handle.last === num) {
+      return;
+    }
+    handle.last = num;
+    var box = handle.num;
+    if (!handle.cell) {
+      if (box.childNodes.length !== 1 || box.firstChild.nodeType !== 3) {
+        box.textContent = "";
+        box.appendChild(document.createTextNode(""));
+      }
+      box.firstChild.nodeValue = num;
+      return;
+    }
+    var shape = num.replace(/\d/g, "0");
+    if (handle.shape !== shape) {
+      handle.shape = shape;
+      box.textContent = "";
+      for (var i = 0; i < num.length; i++) {
+        var ch = num.charAt(i);
+        if (/\d/.test(ch)) {
+          var cell = document.createElement("span");
+          cell.style.cssText = "display:inline-block;text-align:center;width:" + handle.cell + "em";
+          box.appendChild(cell);
+        } else {
+          box.appendChild(document.createTextNode(ch));
+        }
+      }
+    }
+    // Same shape: each digit box gets its digit, in order.
+    var digits = num.replace(/\D/g, "");
+    var k = 0;
+    for (var c = box.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 1) {
+        c.textContent = digits.charAt(k++);
+      }
+    }
+  }
+
+  // Width of the widest digit, in em, when the font draws them at different widths even with
+  // tabular-nums (no tnum feature: Georgia), else 0. Measured in the shadow root, so in the
+  // element's own font; offsetWidth ignores the transforms of an entrance still at its start
+  // state, ten digits in a row average the rounding, and em follows a fluid font size.
+  function countCell(handle) {
+    var size = parseFloat(window.getComputedStyle(handle.flow).fontSize);
+    if (!(size > 0)) {
+      return 0;
+    }
+    var min = Infinity;
+    var max = 0;
+    for (var d = 0; d < 10; d++) {
+      var probe = document.createElement("span");
+      probe.style.cssText = "display:inline-block;white-space:nowrap";
+      probe.textContent = new Array(11).join(String(d));
+      handle.root.appendChild(probe);
+      var w = probe.offsetWidth / 10;
+      handle.root.removeChild(probe);
+      min = Math.min(min, w);
+      max = Math.max(max, w);
+    }
+    return max - min > 0.01 ? Math.ceil((max / size) * 1000) / 1000 : 0;
+  }
+
+  // Measures the cells again (web fonts loaded since the mount) and redraws when they changed.
+  function countMeasure(handle) {
+    if (!handle.fixed) {
+      return;
+    }
+    var cell = countCell(handle);
+    if (cell !== handle.cell) {
+      handle.cell = cell;
+      handle.shape = null;
+      handle.last = null;
+      // Boxed digits never break apart; plain text wraps as the written text did.
+      handle.num.style.whiteSpace = cell ? "nowrap" : "";
+    }
+  }
+
+  /* Count style: an <lm-count> element replaces the text node and shows the value, counted from
+   * the start value to the written one on every frame with the counter curve
+   * (core.counterProgress, the curve the odometer gets as CSS). A custom tag, as
+   * <lm-number-flow>: theme rules aimed at the spans of a stat (".stat__value span") leave it
+   * alone. It stays once the value is written, as the NumberFlow element does, and is hidden
+   * from assistive technologies the same way (handle.flow). Digits are tabular, so the number
+   * does not jitter while it changes; fixed width pads the integer part with zeros to the digits
+   * of the written value, as the odometer does, and boxes each digit when the font has no
+   * tabular digits (the width would change on every frame). */
+  var countAdapter = {
+    mount: function (node, fmt, opts) {
+      var host = document.createElement("lm-count");
+      // The digits live in a shadow root, as NumberFlow's do: innerText leaves them out, so a
+      // rendering crawler reads the number once, from the .lm-sr copy, not "620620". Without
+      // shadow DOM the text stays as written, as the odometer does without canAnimate.
+      if (!node || !node.parentNode || !fmt || typeof host.attachShadow !== "function") {
+        return null;
+      }
+      var o = opts || {};
+      host.style.fontVariantNumeric = "tabular-nums";
+      var root = host.attachShadow({ mode: "open" });
+      var handle = {
+        flow: host,
+        node: node,
+        fmt: fmt,
+        root: root,
+        num: document.createElement("span"),
+        last: null,
+        shape: null,
+        cell: 0,
+        fixed: !!o.fixed,
+        from: typeof o.from === "number" && isFinite(o.from) ? o.from : 0,
+        digits: o.fixed ? Math.abs(fmt.value).toFixed(fmt.decimals).split(".")[0].length : 0,
+        timer: 0,
+        endTimer: 0,
+        frame: 0,
+      };
+      root.appendChild(document.createTextNode(fmt.prefix));
+      root.appendChild(handle.num);
+      root.appendChild(document.createTextNode(fmt.suffix));
+      node.parentNode.replaceChild(host, node);
+      countMeasure(handle);
+      countWrite(handle, handle.from);
+      return handle;
+    },
+
+    play: function (handle, opts) {
+      if (!handle || !handle.flow.isConnected) {
+        return;
+      }
+      countStop(handle);
+      var o = opts || {};
+      var ms = Math.max(0, (Number(o.duration) || 0) * 1000);
+      var delay = Math.max(0, (Number(o.delay) || 0) * 1000);
+      var ease =
+        typeof o.ease === "function"
+          ? o.ease
+          : function (p) {
+              return p;
+            };
+      var from = handle.from;
+      var to = handle.fmt.value;
+      var ended = false;
+      // The last write is the parsed value itself: the text ends exactly as written.
+      var end = function () {
+        if (ended) {
+          return;
+        }
+        ended = true;
+        countStop(handle);
+        countWrite(handle, to);
+        if (typeof o.onEnd === "function") {
+          o.onEnd();
+        }
+      };
+      handle.timer = setTimeout(function () {
+        handle.timer = 0;
+        // In view by now, its web fonts almost always loaded: the cells measured at mount may be stale.
+        countMeasure(handle);
+        var t0 = -1;
+        var tick = function (now) {
+          handle.frame = 0;
+          if (t0 < 0) {
+            t0 = now;
+            // Counted from the first frame, which may come late (a busy page): the fallback
+            // must not cut the count short.
+            clearTimeout(handle.endTimer);
+            handle.endTimer = setTimeout(end, ms + COUNT_END_MARGIN_MS);
+          }
+          var p = ms > 0 ? (now - t0) / ms : 1;
+          if (p >= 1) {
+            end();
+            return;
+          }
+          countWrite(handle, from + (to - from) * ease(p));
+          handle.frame = requestAnimationFrame(tick);
+        };
+        handle.frame = requestAnimationFrame(tick);
+        handle.endTimer = setTimeout(end, ms + COUNT_END_MARGIN_MS);
+      }, delay);
+    },
+
+    reset: function (handle) {
+      if (!handle) {
+        return;
+      }
+      countStop(handle);
+      if (handle.flow.parentNode) {
+        handle.flow.parentNode.replaceChild(handle.node, handle.flow);
+      }
+    },
+  };
+
+  function isCount(item) {
+    return item.options.counterStyle === "count";
+  }
+
+  // The adapter of an item: the count style is always there, the odometer once motion-counter.js ran.
+  function counterAdapterFor(item) {
+    return isCount(item) ? countAdapter : counterAdapter();
   }
 
   // The text node holding the number and its format, or { reason } when there is none.
@@ -1029,7 +1249,7 @@
 
   // Replaces the number with its NumberFlow element, at the start value. False when it stays as written.
   function counterMount(item) {
-    var adapter = counterAdapter();
+    var adapter = counterAdapterFor(item);
     var source = counterSource(item.el);
     if (source.reason) {
       logOnce(item.el, describe(item.el) + " left as written: " + source.reason + ".");
@@ -1058,7 +1278,11 @@
       }
     }
     if (!handle) {
-      logOnce(item.el, describe(item.el) + " left as written: NumberFlow cannot animate in this browser.");
+      logOnce(
+        item.el,
+        describe(item.el) +
+          (isCount(item) ? " left as written: the counter could not be mounted." : " left as written: NumberFlow cannot animate in this browser.")
+      );
       return false;
     }
     handle.flow.setAttribute("aria-hidden", "true");
@@ -1104,6 +1328,7 @@
       duration: o.tweenDuration,
       delay: o.delay,
       easing: counterEasing(item),
+      ease: core.counterProgress(o),
       onEnd: function () {
         if (item.state === "playing") {
           item.state = "done";
@@ -1176,7 +1401,7 @@
   var counter = {
     start: function (list) {
       list.forEach(function (item) {
-        if (counterAdapter()) {
+        if (counterAdapterFor(item)) {
           counterPrepare(item);
         } else if (counterGaveUp) {
           settle(item);
@@ -1198,7 +1423,7 @@
 
     // Builder: rolls again from the start value.
     preview: function (item) {
-      if (!counterAdapter() || !counterMount(item)) {
+      if (!counterAdapterFor(item) || !counterMount(item)) {
         return;
       }
       item.state = "pending";

@@ -103,6 +103,12 @@ return [
 		lm_assert( 'auto' === $lm_effects( [ 'counter' => [ 'counter_width' => 3 ] ], $lm_defaults )['counter']['counter_width'], 'a number falls back to auto' );
 		lm_assert( 'auto' === $lm_effects( [], $lm_defaults )['counter']['counter_width'], 'absent: auto' );
 	},
+	'counter_style keeps odometer or count only'    => static function () use ( $lm_defaults, $lm_effects ): void {
+		lm_assert( 'count' === $lm_effects( [ 'counter' => [ 'counter_style' => 'count' ] ], $lm_defaults )['counter']['counter_style'], 'count kept' );
+		lm_assert( 'odometer' === $lm_effects( [ 'counter' => [ 'counter_style' => 'flip' ] ], $lm_defaults )['counter']['counter_style'], 'unknown keyword falls back to odometer' );
+		lm_assert( 'odometer' === $lm_effects( [ 'counter' => [ 'counter_style' => [ 'count' ] ] ], $lm_defaults )['counter']['counter_style'], 'an array falls back to odometer' );
+		lm_assert( 'odometer' === $lm_effects( [], $lm_defaults )['counter']['counter_style'], 'absent: odometer' );
+	},
 	'lerp is clamped to 0.01..1'                    => static function () use ( $lm_defaults ): void {
 		$high = SettingsSanitizer::sanitize( [ 'lenis' => [ 'lerp' => '7' ] ], $lm_defaults() );
 		$low  = SettingsSanitizer::sanitize( [ 'lenis' => [ 'lerp' => '0' ] ], $lm_defaults() );
