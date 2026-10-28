@@ -154,8 +154,7 @@ final class ConsentPage {
 		$agent_login = $agent instanceof \WP_User ? $agent->user_login : Agent::LOGIN;
 
 		$presets     = Agent::presets();
-		$preset      = Module::settings()['agent_preset'] ?? '';
-		$preset_name = is_string( $preset ) && isset( $presets[ $preset ] ) ? $presets[ $preset ]['label'] : '';
+		$preset_name = $presets[ Agent::current_preset() ]['label'] ?? '';
 		?>
 		<div class="lumia-card__header lumia-mcp-consent__client">
 			<?php if ( 0 === strpos( $logo_uri, 'https://' ) ) : ?>
@@ -259,8 +258,10 @@ final class ConsentPage {
 								</strong>
 								<span class="lumia-form__help">
 									<?php
-									if ( '' !== $preset_name ) {
-										/* translators: %s: name of the permission preset (e.g. Content and Bricks). */
+									if ( Agent::PRESET_ADMIN === Agent::current_preset() ) {
+										esc_html_e( 'Dedicated account with every right of an administrator: whoever holds this connection controls the whole site.', 'lumia-tools' );
+									} elseif ( '' !== $preset_name ) {
+										/* translators: %s: name of the permission preset (Editor or Administrator). */
 										echo esc_html( sprintf( __( 'Dedicated account, permissions: %s. Recommended.', 'lumia-tools' ), $preset_name ) );
 									} else {
 										esc_html_e( 'Dedicated account with limited permissions. Recommended.', 'lumia-tools' );

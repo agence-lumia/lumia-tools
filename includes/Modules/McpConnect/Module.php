@@ -126,7 +126,7 @@ final class Module extends AbstractModule {
 			'approver_capability' => in_array( $approver, self::APPROVER_CAPABILITIES, true ) ? $approver : (string) $defaults['approver_capability'],
 		];
 
-		$previous = (string) self::settings()['agent_preset'];
+		$previous = Agent::current_preset();
 		$saved    = $this->save_module_settings( $sanitized );
 
 		// The role carries the capabilities: changing the preset only takes
@@ -149,7 +149,7 @@ final class Module extends AbstractModule {
 			'trusted_only'        => true,
 			'dcr_enabled'         => false,
 			'dcr_purge_days'      => 30,
-			'agent_preset'        => 'content_bricks',
+			'agent_preset'        => Agent::DEFAULT_PRESET,
 			'approver_capability' => 'manage_options',
 		];
 	}
@@ -224,9 +224,15 @@ final class Module extends AbstractModule {
 	 * LIFECYCLE
 	 * ================================================================ */
 
+	/**
+	 * Also turns the Bricks abilities on: without them Claude connects but has
+	 * no tool to edit a page. Only here, so a later choice to turn them off in
+	 * Bricks > AI stands (the Help tab and Site Health then warn).
+	 */
 	public function on_activate(): void {
 		Store::install();
 		Agent::ensure();
+		Agent::enable_bricks_abilities();
 	}
 
 	/**
@@ -264,8 +270,7 @@ final class Module extends AbstractModule {
 			return;
 		}
 
-		$preset = self::settings()['agent_preset'] ?? Agent::DEFAULT_PRESET;
-		Agent::sync_role( is_string( $preset ) ? $preset : Agent::DEFAULT_PRESET );
+		Agent::sync_role( Agent::current_preset() );
 		Agent::reset_account( Agent::user_id() );
 	}
 

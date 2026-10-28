@@ -5967,17 +5967,15 @@ msgctxt "request source and connection label"
 msgid "%1$s (%2$s)"
 msgstr "%1$s (%2$s)"
 
-#: includes/Modules/McpConnect/Agent.php:150
-msgid "Content and Bricks"
-msgstr "Contenu et Bricks"
+#: includes/Modules/McpConnect/Agent.php:118
+msgctxt "MCP Connect permission preset"
+msgid "Editor"
+msgstr "Éditeur"
 
-#: includes/Modules/McpConnect/Agent.php:154
-msgid "Content, Bricks and SEO"
-msgstr "Contenu, Bricks et SEO"
-
-#: includes/Modules/McpConnect/Agent.php:158
-msgid "Full shop"
-msgstr "Boutique complète"
+#: includes/Modules/McpConnect/Agent.php:122
+msgctxt "MCP Connect permission preset"
+msgid "Administrator"
+msgstr "Administrateur"
 
 #: includes/Modules/McpConnect/Agent.php:382
 msgid "This account is used by Claude through MCP Connect and cannot sign in."
@@ -6256,7 +6254,7 @@ msgstr "Le compte dédié %s a des droits que votre propre compte n'a pas : Clau
 msgid "%1$s (%2$s)"
 msgstr "%1$s (%2$s)"
 
-#. translators: %s: name of the permission preset (e.g. Content and Bricks).
+#. translators: %s: name of the permission preset (Editor or Administrator).
 #: includes/Modules/McpConnect/ConsentPage.php:264
 msgid "Dedicated account, permissions: %s. Recommended."
 msgstr "Compte dédié, droits : %s. Recommandé."
@@ -6521,8 +6519,20 @@ msgid "Permissions of the Claude account"
 msgstr "Droits du compte Claude"
 
 #: includes/Modules/McpConnect/settings-template.php:170
-msgid "Claude acts through a dedicated account that cannot sign in by itself. It can never manage plugins, users or site settings, whatever the preset."
-msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Il ne peut jamais gérer les extensions, les utilisateurs ni les réglages du site, quel que soit le profil choisi."
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator."
+msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Éditeur : ce que peut faire un administrateur, y compris ce que lui donnent les extensions (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code. Administrateur : tous les droits d'un administrateur."
+
+#: includes/Modules/McpConnect/ConsentPage.php:262
+msgid "Dedicated account with every right of an administrator: whoever holds this connection controls the whole site."
+msgstr "Compte dédié avec tous les droits d'un administrateur : quiconque détient cette connexion contrôle tout le site."
+
+#: includes/Modules/McpConnect/SiteHealth.php:305
+msgid "Bricks 2.4 or later is needed for Claude to edit with Bricks."
+msgstr "Bricks 2.4 ou plus récent est nécessaire pour que Claude puisse modifier avec Bricks."
+
+#: includes/Modules/McpConnect/settings-template.php:173
+msgid "Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it."
+msgstr "Claude peut modifier les réglages du site, installer des extensions et gérer les utilisateurs : quiconque détient une connexion contrôle tout le site. Choisissez Éditeur sauf si une tâche l'exige."
 
 #: includes/Modules/McpConnect/settings-template.php:182
 msgid "Clients"
@@ -6790,8 +6800,20 @@ msgid "Missing: it is created again on the next visit of an administrator to the
 msgstr "Manquant : il sera recréé à la prochaine visite d'un administrateur dans l'admin."
 
 #: includes/Modules/McpConnect/SiteHealth.php:293
-msgid "Role preset"
-msgstr "Profil de droits"
+msgid "Claude account permissions"
+msgstr "Droits du compte Claude"
+
+#: includes/Modules/McpConnect/SiteHealth.php:299
+msgid "On: Claude can edit pages, templates and the design system with Bricks"
+msgstr "Activées : Claude peut modifier les pages, les modèles et le design system avec Bricks"
+
+#: includes/Modules/McpConnect/SiteHealth.php:302
+msgid "Off: Claude connects but has no tool to edit the site. Turn on \"Enable Bricks abilities\" in Bricks > AI."
+msgstr "Désactivées : Claude se connecte mais n'a aucun outil pour modifier le site. Activez « Activer les capacités Bricks » dans Bricks > AI."
+
+#: includes/Modules/McpConnect/SiteHealth.php:309
+msgid "Bricks abilities"
+msgstr "Capacités Bricks"
 
 #: includes/Modules/McpConnect/SiteHealth.php:300
 msgid "The Claude account can edit with Bricks"
