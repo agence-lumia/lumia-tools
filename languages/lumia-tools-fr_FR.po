@@ -6518,10 +6518,6 @@ msgstr "Qui peut autoriser une connexion"
 msgid "Permissions of the Claude account"
 msgstr "Droits du compte Claude"
 
-#: includes/Modules/McpConnect/settings-template.php:170
-msgid "Claude acts through a dedicated account that cannot sign in by itself. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code. Administrator: every right of an administrator."
-msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Éditeur : ce que peut faire un administrateur, y compris ce que lui donnent les extensions (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code. Administrateur : tous les droits d'un administrateur."
-
 #: includes/Modules/McpConnect/ConsentPage.php:262
 msgid "Dedicated account with every right of an administrator: whoever holds this connection controls the whole site."
 msgstr "Compte dédié avec tous les droits d'un administrateur : quiconque détient cette connexion contrôle tout le site."
@@ -6529,10 +6525,6 @@ msgstr "Compte dédié avec tous les droits d'un administrateur : quiconque dét
 #: includes/Modules/McpConnect/SiteHealth.php:305
 msgid "Bricks 2.4 or later is needed for Claude to edit with Bricks."
 msgstr "Bricks 2.4 ou plus récent est nécessaire pour que Claude puisse modifier avec Bricks."
-
-#: includes/Modules/McpConnect/settings-template.php:173
-msgid "Claude can change the site settings, install plugins and manage users: anyone holding a connection controls the whole site. Choose Editor unless a task needs it."
-msgstr "Claude peut modifier les réglages du site, installer des extensions et gérer les utilisateurs : quiconque détient une connexion contrôle tout le site. Choisissez Éditeur sauf si une tâche l'exige."
 
 #: includes/Modules/McpConnect/settings-template.php:182
 msgid "Clients"
@@ -6839,3 +6831,258 @@ msgstr "Un 403 signifie généralement que le serveur web bloque /.well-known/ a
 #: includes/Modules/McpConnect/SiteHealth.php:439
 msgid "On Apache or LiteSpeed, check that no rule of the server or of .htaccess denies paths starting with a dot."
 msgstr "Sur Apache ou LiteSpeed, vérifiez qu'aucune règle du serveur ou du .htaccess ne refuse les chemins commençant par un point."
+
+#: includes/Modules/McpConnect/settings-template.php:174
+msgid "Set by the LUMIA_MCP_AGENT_PRESET constant in wp-config.php: remove it to choose here."
+msgstr "Défini par la constante LUMIA_MCP_AGENT_PRESET dans wp-config.php : retirez-la pour choisir ici."
+
+#: includes/Modules/McpConnect/settings-template.php:176
+msgid "Anyone holding a connection controls the whole site, code included: revoke the connections once the work is done."
+msgstr "Toute connexion active contrôle l'ensemble du site, code compris : révoquez les connexions une fois le travail terminé."
+
+#. translators: %s: name of the permission preset.
+#: includes/Modules/McpConnect/SiteHealth.php:297
+#, php-format
+msgid "%s (set by LUMIA_MCP_AGENT_PRESET in wp-config.php)"
+msgstr "%s (défini par LUMIA_MCP_AGENT_PRESET dans wp-config.php)"
+
+#: includes/Modules/McpConnect/SiteHealth.php:356
+#: includes/Modules/McpConnect/SiteHealth.php:374
+msgid "Code"
+msgstr "Code"
+
+#: includes/Modules/McpConnect/SiteHealth.php:357
+msgid "Editor preset: Claude cannot write JavaScript or PHP, change the settings or manage plugins."
+msgstr "Préréglage Éditeur : Claude ne peut ni écrire de JavaScript ou de PHP, ni modifier les réglages, ni gérer les extensions."
+
+#: includes/Modules/McpConnect/SiteHealth.php:365
+msgid "Blocked by DISALLOW_UNFILTERED_HTML in wp-config.php: Claude cannot write JavaScript in pages or Bricks scripts."
+msgstr "Bloqué par DISALLOW_UNFILTERED_HTML dans wp-config.php : Claude ne peut pas écrire de JavaScript dans les pages ni dans les scripts Bricks."
+
+#: includes/Modules/McpConnect/SiteHealth.php:367
+msgid "On a multisite network only super admins may write JavaScript: Claude cannot."
+msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent écrire du JavaScript : Claude ne le peut pas."
+
+#: includes/Modules/McpConnect/SiteHealth.php:369
+msgid "Claude can write JavaScript, CSS and HTML in pages and Bricks scripts."
+msgstr "Claude peut écrire du JavaScript, du CSS et du HTML dans les pages et les scripts Bricks."
+
+#: includes/Modules/McpConnect/SiteHealth.php:384
+msgid "File changes are disallowed on this site (DISALLOW_FILE_MODS in wp-config.php): Claude cannot install or update plugins."
+msgstr "Les modifications de fichiers sont interdites sur ce site (DISALLOW_FILE_MODS dans wp-config.php) : Claude ne peut pas installer ni mettre à jour d'extensions."
+
+#: includes/Modules/McpConnect/SiteHealth.php:385
+msgid "Claude can install, update and remove plugins."
+msgstr "Claude peut installer, mettre à jour et supprimer des extensions."
+
+#: includes/Modules/McpConnect/SiteHealth.php:392
+msgid "Bricks PHP ability"
+msgstr "Capacité PHP de Bricks"
+
+#: includes/Modules/McpConnect/SiteHealth.php:394
+msgid "On: Claude can run PHP through bricks/execute-php (also enable it in Bricks > AI)."
+msgstr "Active : Claude peut exécuter du PHP via bricks/execute-php (à activer aussi dans Bricks > AI)."
+
+#: includes/Modules/McpConnect/SiteHealth.php:395
+msgid "Off: add define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); to wp-config.php and enable bricks/execute-php in Bricks > AI for Claude to run PHP."
+msgstr "Inactive : ajoutez define( 'BRICKS_ENABLE_PHP_ABILITIES', true ); dans wp-config.php et activez bricks/execute-php dans Bricks > AI pour que Claude puisse exécuter du PHP."
+
+#: includes/Modules/McpConnect/settings-template.php:171
+msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, unfiltered uploads (with ALLOW_UNFILTERED_UPLOADS) and Bricks code execution. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
+msgstr "Claude agit via un compte dédié qui ne peut pas se connecter seul. Administrateur (par défaut) : tous les droits d'un administrateur, plus le JavaScript, les envois de fichiers sans filtre (avec ALLOW_UNFILTERED_UPLOADS) et l'exécution de code Bricks. Éditeur : ce qu'un administrateur peut faire, y compris ce que les extensions lui accordent (pages, Bricks, médias, menus, boutique, SEO, formulaires…), mais jamais les réglages WordPress, les extensions, les thèmes, les utilisateurs, les rôles ni le code."
+
+#: includes/Modules/McpConnect/SiteHealth.php:384
+msgid "On a multisite network only super admins may install, update or remove plugins: Claude cannot."
+msgstr "Sur un réseau multisite, seuls les super administrateurs peuvent installer, mettre à jour ou supprimer des extensions : Claude ne le peut pas."
+
+#: includes/Modules/McpConnect/SiteHealth.php:399
+msgid "File types"
+msgstr "Types de fichiers"
+
+#: includes/Modules/McpConnect/SiteHealth.php:401
+msgid "Claude can upload any file type."
+msgstr "Claude peut envoyer tous les types de fichiers."
+
+#: includes/Modules/McpConnect/SiteHealth.php:402
+msgid "Claude can upload the file types WordPress allows. For any type (SVG, fonts, JSON), add define( 'ALLOW_UNFILTERED_UPLOADS', true ); to wp-config.php."
+msgstr "Claude peut envoyer les types de fichiers autorisés par WordPress. Pour tous les types (SVG, polices, JSON), ajoutez define( 'ALLOW_UNFILTERED_UPLOADS', true ); dans wp-config.php."
+
+#: includes/Modules/ActivityLog/Events.php:185
+msgid "Claude action"
+msgstr "Action de Claude"
+
+#: includes/Modules/McpConnect/Abilities/Cache.php:16
+msgid "Caches"
+msgstr "Caches"
+
+#: includes/Modules/McpConnect/Abilities/Cache.php:20
+msgid "Purge the page cache (Cache Enabler, WP Rocket, LiteSpeed and others), the object cache, OPcache and expired transients."
+msgstr "Vider le cache des pages (Cache Enabler, WP Rocket, LiteSpeed et autres), le cache objet, OPcache et les transients expirés."
+
+#: includes/Modules/McpConnect/Abilities/Cache.php:30
+msgid "Purge the caches"
+msgstr "Vider les caches"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:20
+msgid "Diagnostics"
+msgstr "Diagnostic"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:24
+msgid "Read the environment (versions, plugins, constants, limits) and the debug log, clear the debug log."
+msgstr "Lire l'environnement (versions, extensions, constantes, limites) et le journal de débogage, vider le journal de débogage."
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:34
+msgid "Get the site environment"
+msgstr "Lire l'environnement du site"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:42
+msgid "Read the error log"
+msgstr "Lire le journal d'erreurs"
+
+#: includes/Modules/McpConnect/Abilities/Diagnostics.php:73
+msgid "Clear the debug log"
+msgstr "Vider le journal de débogage"
+
+#: includes/Modules/McpConnect/Abilities/HttpProbe.php:31
+msgid "Page checks"
+msgstr "Vérification des pages"
+
+#: includes/Modules/McpConnect/Abilities/HttpProbe.php:35
+msgid "Request a page of this site (this site only) and read its status, headers, redirections, HTML or SEO tags."
+msgstr "Demander une page de ce site (ce site uniquement) et lire son statut, ses en-têtes, ses redirections, son HTML ou ses balises SEO."
+
+#: includes/Modules/McpConnect/Abilities/HttpProbe.php:45
+msgid "Request a page of the site"
+msgstr "Demander une page du site"
+
+#: includes/Modules/McpConnect/Abilities/Options.php:49
+msgid "Read, write and delete WordPress options (plugin settings), except those that would cut the connection."
+msgstr "Lire, écrire et supprimer des options WordPress (réglages des extensions), sauf celles qui couperaient la connexion."
+
+#: includes/Modules/McpConnect/Abilities/Options.php:64
+msgid "Read an option"
+msgstr "Lire une option"
+
+#: includes/Modules/McpConnect/Abilities/Options.php:79
+msgid "Write an option"
+msgstr "Écrire une option"
+
+#: includes/Modules/McpConnect/Abilities/Options.php:106
+msgid "Delete an option"
+msgstr "Supprimer une option"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:21
+msgid "List, install, update, activate, deactivate and delete plugins (never Lümia Tools nor the MCP Adapter)."
+msgstr "Lister, installer, mettre à jour, activer, désactiver et supprimer des extensions (jamais Lümia Tools ni le MCP Adapter)."
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:36
+msgid "List the plugins"
+msgstr "Lister les extensions"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:51
+msgid "Install a plugin"
+msgstr "Installer une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:73
+msgid "Update a plugin"
+msgstr "Mettre à jour une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:83
+msgid "Activate a plugin"
+msgstr "Activer une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:94
+msgid "Deactivate a plugin"
+msgstr "Désactiver une extension"
+
+#: includes/Modules/McpConnect/Abilities/Plugins.php:105
+msgid "Delete a plugin"
+msgstr "Supprimer une extension"
+
+#: includes/Modules/McpConnect/Abilities/Registry.php:72
+msgid "Site tools for Claude: diagnostics, page checks, caches, plugins, options, snippets and SEO."
+msgstr "Outils du site pour Claude : diagnostic, vérification des pages, caches, extensions, options, snippets et SEO."
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:44
+msgid "SEO (Rank Math)"
+msgstr "SEO (Rank Math)"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:48
+msgid "Write the Rank Math SEO of posts and pages (title, description, keyword, robots, canonical, social) and manage redirections."
+msgstr "Écrire le SEO Rank Math des articles et des pages (titre, description, mot-clé, robots, canonique, réseaux sociaux) et gérer les redirections."
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:97
+msgid "Read the SEO fields of a post"
+msgstr "Lire les champs SEO d'un contenu"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:107
+msgid "Write the SEO fields of a post"
+msgstr "Écrire les champs SEO d'un contenu"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:121
+msgid "Save a redirection"
+msgstr "Enregistrer une redirection"
+
+#: includes/Modules/McpConnect/Abilities/Seo.php:167
+msgid "Delete redirections"
+msgstr "Supprimer des redirections"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:23
+msgid "Snippets (FluentSnippets)"
+msgstr "Snippets (FluentSnippets)"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:27
+msgid "List, read, create, update, publish and delete FluentSnippets snippets (PHP, CSS, JS, HTML)."
+msgstr "Lister, lire, créer, modifier, publier et supprimer des snippets FluentSnippets (PHP, CSS, JS, HTML)."
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:80
+msgid "List the snippets"
+msgstr "Lister les snippets"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:94
+msgid "Read a snippet"
+msgstr "Lire un snippet"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:104
+msgid "Create a snippet"
+msgstr "Créer un snippet"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:114
+msgid "Update a snippet"
+msgstr "Modifier un snippet"
+
+#: includes/Modules/McpConnect/Abilities/Snippets.php:134
+msgid "Delete a snippet"
+msgstr "Supprimer un snippet"
+
+#: includes/Modules/McpConnect/settings-template.php:194
+msgid "Tools for Claude"
+msgstr "Outils pour Claude"
+
+#: includes/Modules/McpConnect/settings-template.php:195
+msgid "The lumia/* abilities Claude can use on this site, on top of the Bricks ones. Each one still checks the rights of the Claude account."
+msgstr "Les capacités lumia/* que Claude peut utiliser sur ce site, en plus de celles de Bricks. Chacune vérifie toujours les droits du compte Claude."
+
+#: includes/Modules/McpConnect/settings-template.php:199
+msgid "The Abilities API needs WordPress 6.9 or later: these tools are not available on this site."
+msgstr "L'API des capacités nécessite WordPress 6.9 ou plus récent : ces outils ne sont pas disponibles sur ce site."
+
+#: includes/Modules/McpConnect/settings-template.php:207
+msgid "Plugin not active"
+msgstr "Extension inactive"
+
+#: includes/Modules/Motion/settings-template.php:382
+msgid "Custom animations"
+msgstr "Animations sur mesure"
+
+#: includes/Modules/Motion/settings-template.php:383
+msgid "GSAP animations written by hand. A script calling lumiaMotion.ready() in a Bricks Code element or in the page settings loads GSAP and ScrollTrigger on that page by itself."
+msgstr "Animations GSAP écrites à la main. Un script qui appelle lumiaMotion.ready() dans un élément Code de Bricks ou dans les réglages de la page charge GSAP et ScrollTrigger sur cette page tout seul."
+
+#: includes/Modules/Motion/settings-template.php:389
+msgid "Load GSAP on every page"
+msgstr "Charger GSAP sur toutes les pages"
+
+#: includes/Modules/Motion/settings-template.php:390
+msgid "For animations kept in a snippet plugin (FluentSnippets), which no page shows: GSAP, ScrollTrigger and SplitText then load on every page, after the first paint."
+msgstr "Pour les animations rangées dans une extension de snippets (FluentSnippets), qu'aucune page ne montre : GSAP, ScrollTrigger et SplitText se chargent alors sur toutes les pages, après le premier affichage."

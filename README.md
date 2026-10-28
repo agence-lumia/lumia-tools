@@ -119,6 +119,7 @@ In Settings > Updates:
 - Counters roll with [NumberFlow](https://number-flow.barvian.me/) (dynamic or fixed width), and screen readers always get the written value
 - Loaded only on the pages that use an effect; GSAP, Lenis and NumberFlow bundled, no CDN; optional Lenis smooth scrolling
 - Clear Bricks panel (sections, units, Replay, "Show markers", inherited values as placeholders); `wp lumia motion migrate` for sites using the former snippet
+- Custom GSAP animations through `lumiaMotion.ready()` (page custom code, Code element or a snippet): GSAP, ScrollTrigger and SplitText loaded on demand by the same loader
 
 ### MCP Connect
 
@@ -126,10 +127,11 @@ In Settings > Updates:
 - Requires the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (0.7 or later), pretty permalinks and HTTPS
 - OAuth 2.1 authorization server per site: discovery documents (RFC 9728, RFC 8414), PKCE S256, client metadata documents (CIMD) with SSRF guards, optional dynamic client registration (off by default), revocation endpoint
 - Consent screen in wp-admin, showing who asks, where the browser returns and which account Claude will act as; optional connection label
-- Claude acts through a dedicated `claude-mcp` account that cannot sign in by itself, with a permission preset: Editor (default: the administrator's capabilities, plugins' included, shop management too, minus the core site settings, plugins, themes, users, code and the plugin capabilities that edit roles or `.htaccess`) or Administrator (every right); the Bricks abilities (Bricks 2.4 or later) are turned on when the module is activated and left on afterwards
+- Claude acts through a dedicated `claude-mcp` account that cannot sign in by itself, with a permission preset: Administrator (default: every right of an administrator, plus JavaScript, unfiltered uploads (with `ALLOW_UNFILTERED_UPLOADS`) and Bricks code execution; sites on Editor move to Administrator once when they update to 2.4.0; `LUMIA_MCP_AGENT_PRESET` in wp-config forces a preset) or Editor (the administrator's capabilities, plugins' included, shop management too, minus the core site settings, plugins, themes, users, code and the plugin capabilities that edit roles or `.htaccess`); the Bricks abilities (Bricks 2.4 or later) are turned on when the module is activated and left on afterwards
 - Tokens stored hashed, accepted on the MCP route only; refresh tokens rotated, and a reused one revokes the connection
 - Connections list with Revoke and Revoke all, a pause switch, and every change made through Claude marked with its connection in the Activity Log
 - Site Health tests for the discovery documents, the `Authorization` header and the environment. If you are locked out, `define( 'LUMIA_DISABLE_MCP_CONNECT', true );` in `wp-config.php` turns the whole protocol off
+- Tools for Claude (`lumia/*` abilities, through the Abilities API and the MCP Adapter): environment and error log, requests on the site's own pages with an SEO extract, cache purge, plugins (never Lumia Tools nor the MCP Adapter deactivated), options, FluentSnippets snippets, Rank Math post SEO and redirections
 
 ## Architecture
 

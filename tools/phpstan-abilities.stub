@@ -1,0 +1,102 @@
+<?php
+/**
+ * PHPStan stubs for the plugins the lumia/* abilities call (FluentSnippets,
+ * Rank Math), which are not part of the repository. They declare only what
+ * includes/Modules/McpConnect/Abilities/ calls, with the signatures read in
+ * FluentSnippets 10.58 and Rank Math 1.0.280. Tooling file only, listed under
+ * `scanFiles` in phpstan.neon.dist; the `.stub` extension keeps it out of PHPCS.
+ */
+
+namespace FluentSnippets\App\Helpers {
+	class Helper {
+		/**
+		 * @param array<string, mixed> $data meta, code.
+		 * @return string|\WP_Error File name of the new snippet.
+		 */
+		public static function createSnippet( $data ) {}
+
+		/**
+		 * @param array<string, mixed> $data meta, code, file_name, reactivate.
+		 * @return string|\WP_Error
+		 */
+		public static function updateSnippet( $data ) {}
+
+		/**
+		 * @return array<string, mixed>
+		 */
+		public static function getIndexedConfig( $cached = true ) {}
+	}
+}
+
+namespace FluentSnippets\App\Model {
+	class Snippet {
+		/** @param array<string, mixed> $args */
+		public function __construct( $args = [] ) {}
+
+		/**
+		 * @param array<string, mixed> $args
+		 * @return array<int, array{meta: array<string, mixed>, code: string, file: string, status: string}>
+		 */
+		public function get( $args = [] ) {}
+
+		/**
+		 * @return array{meta: array<string, mixed>, code: string, file: string, status: string}|\WP_Error
+		 */
+		public function findByFileName( $fileName ) {}
+
+		/**
+		 * @param array<string, mixed> $metaData
+		 * @return string|\WP_Error
+		 */
+		public function updateSnippet( $fileName, $code, $metaData ) {}
+
+		/**
+		 * @return true|\WP_Error
+		 */
+		public function deleteSnippet( $fileName ) {}
+	}
+}
+
+namespace RankMath {
+	class Helper {
+		public static function is_module_active( $id ): bool {}
+	}
+}
+
+namespace RankMath\Redirections {
+	/**
+	 * @property-read array<int, array<string, string>> $sources
+	 * @property-read string                            $url_to
+	 */
+	class Redirection {
+		/** @param array<string, mixed> $data */
+		public static function from( $data ): self {}
+
+		public function has_sources(): bool {}
+
+		public function is_infinite_loop(): bool {}
+
+		/** @return int|false */
+		public function save() {}
+	}
+
+	class DB {
+		/** @return array<string, mixed>|false */
+		public static function get_redirection_by_id( $id, $status = 'all' ) {}
+
+		/**
+		 * @param int[] $ids
+		 * @return int
+		 */
+		public static function delete( $ids ) {}
+	}
+}
+
+namespace WP\MCP\Core {
+	/**
+	 * MCP Adapter 0.7: only its existence and file are read (Plugins::is_protected()).
+	 */
+	class McpAdapter {
+		public static function instance(): self {}
+	}
+}
