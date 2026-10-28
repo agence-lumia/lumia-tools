@@ -44,7 +44,9 @@ final class Registry {
 	/**
 	 * Hooks the registration. The Abilities API builds its registry lazily, on
 	 * first use: when that already happened (another plugin used it during
-	 * `init`, before this module), the abilities are registered at once.
+	 * `init`, before this module), the abilities are registered at once,
+	 * straight into the registries (wp_register_ability() and
+	 * wp_register_ability_category() refuse anything outside their action).
 	 */
 	public static function boot(): void {
 		if ( ! function_exists( 'wp_register_ability' ) || ! function_exists( 'wp_register_ability_category' ) ) {
@@ -65,13 +67,20 @@ final class Registry {
 	}
 
 	public static function register_category(): void {
-		wp_register_ability_category(
-			self::CATEGORY,
-			[
-				'label'       => __( 'Lümia Tools', 'lumia-tools' ),
-				'description' => __( 'Site tools for Claude: diagnostics, page checks, caches, plugins, options, snippets and SEO.', 'lumia-tools' ),
-			]
-		);
+		$args = [
+			'label'       => __( 'Lümia Tools', 'lumia-tools' ),
+			'description' => __( 'Site tools for Claude: diagnostics, page checks, caches, plugins, options, snippets and SEO.', 'lumia-tools' ),
+		];
+
+		if ( doing_action( 'wp_abilities_api_categories_init' ) ) {
+			wp_register_ability_category( self::CATEGORY, $args );
+			return;
+		}
+
+		$registry = \WP_Ability_Categories_Registry::get_instance();
+		if ( null !== $registry && ! $registry->is_registered( self::CATEGORY ) ) {
+			$registry->register( self::CATEGORY, $args );
+		}
 	}
 
 	/**
@@ -152,40 +161,47 @@ final class Registry {
 			$schema['default'] = [];
 		}
 
-		wp_register_ability(
-			$full,
-			[
-				'label'               => (string) $definition['label'],
-				'description'         => (string) $definition['description'],
-				'category'            => self::CATEGORY,
-				'input_schema'        => $schema,
-				'execute_callback'    => static function ( $args = [] ) use ( $full, $execute, $readonly ) {
-					$args   = is_array( $args ) ? $args : [];
-					$result = $execute( $args );
+		$args = [
+			'label'               => (string) $definition['label'],
+			'description'         => (string) $definition['description'],
+			'category'            => self::CATEGORY,
+			'input_schema'        => $schema,
+			'execute_callback'    => static function ( $args = [] ) use ( $full, $execute, $readonly ) {
+				$args   = is_array( $args ) ? $args : [];
+				$result = $execute( $args );
 
-					if ( ! $readonly && ! is_wp_error( $result ) ) {
-						self::log( $full, $args );
-					}
+				if ( ! $readonly && ! is_wp_error( $result ) ) {
+					self::log( $full, $args );
+				}
 
-					return $result;
-				},
-				'permission_callback' => static function () use ( $capability ): bool {
-					return current_user_can( $capability );
-				},
-				'meta'                => [
-					'annotations'  => [
-						'readonly'    => $readonly,
-						'destructive' => ! empty( $definition['destructive'] ),
-						'idempotent'  => ! empty( $definition['idempotent'] ),
-					],
-					'show_in_rest' => true,
-					'mcp'          => [
-						'public' => true,
-						'type'   => 'tool',
-					],
+				return $result;
+			},
+			'permission_callback' => static function () use ( $capability ): bool {
+				return current_user_can( $capability );
+			},
+			'meta'                => [
+				'annotations'  => [
+					'readonly'    => $readonly,
+					'destructive' => ! empty( $definition['destructive'] ),
+					'idempotent'  => ! empty( $definition['idempotent'] ),
 				],
-			]
-		);
+				'show_in_rest' => true,
+				'mcp'          => [
+					'public' => true,
+					'type'   => 'tool',
+				],
+			],
+		];
+
+		if ( doing_action( 'wp_abilities_api_init' ) ) {
+			wp_register_ability( $full, $args );
+			return;
+		}
+
+		$registry = \WP_Abilities_Registry::get_instance();
+		if ( null !== $registry && ! $registry->is_registered( $full ) ) {
+			$registry->register( $full, $args );
+		}
 	}
 
 	/**
@@ -199,7 +215,8 @@ final class Registry {
 	private static function log( string $ability, array $args ): void {
 		$details = [];
 		foreach ( $args as $key => $value ) {
-			if ( in_array( $key, [ 'code', 'value', 'content' ], true ) ) {
+			// Code and values stay out; a zip URL may carry a signed token.
+			if ( in_array( $key, [ 'code', 'value', 'content', 'zip_url' ], true ) ) {
 				continue;
 			}
 			if ( is_scalar( $value ) ) {

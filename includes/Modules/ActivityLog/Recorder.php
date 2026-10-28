@@ -859,7 +859,9 @@ class Recorder {
 	 * @param array<string, mixed> $details Short arguments.
 	 */
 	public function on_mcp_ability_executed( $ability, $details ): void {
-		$this->record( 'mcp_ability_executed', 'mcp_ability', 0, (string) $ability, is_array( $details ) ? $details : [] );
+		// No role exclusion, like every MCP event: an "act as me" connection
+		// of an excluded administrator must still leave a trail.
+		$this->record( 'mcp_ability_executed', 'mcp_ability', 0, (string) $ability, is_array( $details ) ? $details : [], null, false );
 	}
 
 	/**

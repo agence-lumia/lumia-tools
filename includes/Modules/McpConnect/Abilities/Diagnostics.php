@@ -180,9 +180,23 @@ final class Diagnostics implements Family {
 
 		$wanted   = min( self::MAX_LINES, max( 1, (int) ( $args['lines'] ?? self::DEFAULT_LINES ) ) );
 		$contains = isset( $args['contains'] ) ? (string) $args['contains'] : '';
-		$since    = isset( $args['since'] ) && '' !== $args['since'] ? strtotime( (string) $args['since'] . ' UTC' ) : false;
-		$size     = (int) filesize( $path );
-		$lines    = self::tail( $path, $size );
+		$since    = false;
+		if ( isset( $args['since'] ) && '' !== trim( (string) $args['since'] ) ) {
+			// A date without a zone is read as UTC, the zone of the log; an ISO
+			// date with its own zone is read as written.
+			$text  = trim( (string) $args['since'] );
+			$since = preg_match( '/(Z|[+-]\d{2}:?\d{2}|UTC|GMT)$/i', $text ) ? strtotime( $text ) : strtotime( $text . ' UTC' );
+			if ( false === $since ) {
+				return Registry::error( 'invalid_since', 'Unreadable `since` date: use e.g. 2026-10-28 14:00 (UTC) or 2026-10-28T14:00:00Z.' );
+			}
+		}
+		$size  = (int) filesize( $path );
+		$lines = self::tail( $path, $size );
+
+		// The date filter first: it needs the [date] lines, which contains could drop.
+		if ( false !== $since ) {
+			$lines = self::since( $lines, $since );
+		}
 
 		if ( '' !== $contains ) {
 			$lines = array_values(
@@ -193,10 +207,6 @@ final class Diagnostics implements Family {
 					}
 				)
 			);
-		}
-
-		if ( false !== $since ) {
-			$lines = self::since( $lines, $since );
 		}
 
 		return [

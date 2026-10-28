@@ -135,7 +135,7 @@ final class Module extends AbstractModule {
 			'dcr_purge_days'      => min( self::DCR_PURGE_MAX, max( self::DCR_PURGE_MIN, absint( $settings['dcr_purge_days'] ?? $defaults['dcr_purge_days'] ) ) ),
 			'agent_preset'        => in_array( $preset, $presets, true ) ? $preset : (string) $defaults['agent_preset'],
 			'approver_capability' => in_array( $approver, self::APPROVER_CAPABILITIES, true ) ? $approver : (string) $defaults['approver_capability'],
-			'abilities'           => self::sanitize_families( $settings['abilities'] ?? null ),
+			'abilities'           => self::sanitize_families( $settings['abilities'] ?? null, self::settings()['abilities'] ?? [] ),
 		];
 
 		$previous = Agent::current_preset();
@@ -171,16 +171,27 @@ final class Module extends AbstractModule {
 
 	/**
 	 * Families of lumia/* abilities turned on: a checkbox per family, every
-	 * known key rebuilt (an unchecked box is absent from the form).
+	 * known key rebuilt (an unchecked box is absent from the form). The form
+	 * posts `abilities[_sent]`: without it (a configuration exported before
+	 * 2.4.0, a payload without the key) the current families are kept rather
+	 * than all turned off; a family the stored value does not know is on.
 	 *
 	 * @param mixed $families Posted families.
+	 * @param mixed $current  Stored families.
 	 * @return array<string, bool>
 	 */
-	private static function sanitize_families( $families ): array {
-		$families = is_array( $families ) ? $families : [];
-		$out      = [];
+	private static function sanitize_families( $families, $current ): array {
+		$current = is_array( $current ) ? $current : [];
+		$sent    = is_array( $families ) && ! empty( $families['_sent'] );
+		$out     = [];
 		foreach ( array_keys( Registry::FAMILIES ) as $key ) {
-			$out[ $key ] = ! empty( $families[ $key ] );
+			if ( $sent ) {
+				$out[ $key ] = ! empty( $families[ $key ] );
+			} elseif ( is_array( $families ) && array_key_exists( $key, $families ) ) {
+				$out[ $key ] = ! empty( $families[ $key ] );
+			} else {
+				$out[ $key ] = ! array_key_exists( $key, $current ) || ! empty( $current[ $key ] );
+			}
 		}
 
 		return $out;
