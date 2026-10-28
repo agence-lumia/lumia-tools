@@ -67,6 +67,10 @@ final class Module extends AbstractModule {
 		add_action( 'wp_authenticate_application_password_errors', [ Agent::class, 'block_app_passwords' ], 10, 2 );
 		add_action( 'delete_user', [ $this, 'on_delete_user' ] );
 
+		// After an update or a change of the preset constant: token requests
+		// never load an admin page, where the role is otherwise resynced.
+		Agent::maybe_sync();
+
 		add_action( self::CRON_HOOK, [ Store::class, 'purge_expired' ] );
 
 		// Scheduled here and not only on activation: a module activated by a
@@ -112,7 +116,9 @@ final class Module extends AbstractModule {
 	public function save_settings( array $settings ): bool {
 		$defaults = self::get_defaults();
 		$presets  = array_keys( Agent::presets() );
-		$preset   = sanitize_key( (string) ( $settings['agent_preset'] ?? $defaults['agent_preset'] ) );
+		// A preset locked by the constant is a disabled select, absent from the
+		// form: the stored choice is kept for the day the constant goes.
+		$preset   = sanitize_key( (string) ( $settings['agent_preset'] ?? self::settings()['agent_preset'] ) );
 		$approver = sanitize_key( (string) ( $settings['approver_capability'] ?? $defaults['approver_capability'] ) );
 
 		$sanitized = [
@@ -130,9 +136,11 @@ final class Module extends AbstractModule {
 		$saved    = $this->save_module_settings( $sanitized );
 
 		// The role carries the capabilities: changing the preset only takes
-		// effect once the role is rewritten.
-		if ( $previous !== $sanitized['agent_preset'] ) {
-			Agent::sync_role( $sanitized['agent_preset'] );
+		// effect once the role is rewritten. The active preset is read again
+		// rather than the saved one: LUMIA_MCP_AGENT_PRESET wins over it.
+		$current = Agent::current_preset();
+		if ( $previous !== $current ) {
+			Agent::sync_role( $current );
 		}
 
 		return $saved;
@@ -162,7 +170,7 @@ final class Module extends AbstractModule {
 	 */
 	public static function get_uninstall_keys(): array {
 		return [
-			'options' => [ self::OPTION, Store::SCHEMA_OPTION, Agent::USER_OPTION ],
+			'options' => [ self::OPTION, Store::SCHEMA_OPTION, Agent::USER_OPTION, Agent::SYNC_OPTION ],
 			'tables'  => [ Store::TABLE_CLIENTS, Store::TABLE_CONNECTIONS, Store::TABLE_TOKENS ],
 			'cron'    => [ self::CRON_HOOK ],
 		];
