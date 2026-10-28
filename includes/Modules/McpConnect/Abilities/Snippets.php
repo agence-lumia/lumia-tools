@@ -102,7 +102,7 @@ final class Snippets implements Family {
 			],
 			'create-snippet' => [
 				'label'       => __( 'Create a snippet', 'lumia-tools' ),
-				'description' => 'Creates a FluentSnippets snippet. PHP code is written without the opening <?php tag; CSS and JS without their <style>/<script> tags. FluentSnippets checks the code first and refuses invalid PHP. Created as a draft unless `status` is published. For a GSAP animation, wrap the code in lumiaMotion.ready(function (m) { … }) (Lümia Motion loads GSAP, ScrollTrigger and SplitText): for a snippet shared by many pages, Motion > Load GSAP on every page must be on; on one page, prefer the page custom code or a Bricks Code element, which load GSAP by themselves.',
+				'description' => 'Creates a FluentSnippets snippet. PHP code is written without the opening <?php tag; CSS and JS without their <style>/<script> tags. FluentSnippets checks the code first and refuses invalid PHP. Created as a draft unless `status` is published. For a GSAP animation, wrap the code in lumiaMotion.ready(function (m) { … }) (Lümia Motion loads GSAP, ScrollTrigger and SplitText): for a snippet shared by many pages, Motion > Load GSAP on every page must be on; on one page, prefer a Bricks Code element with javascriptCode and executeCode true (it loads GSAP by itself); Bricks abilities never write the page custom scripts.',
 				'input'       => array_merge( $fields, [ 'code' => [ 'type' => 'string' ] ] ),
 				'required'    => [ 'name', 'type', 'run_at', 'code' ],
 				'execute'     => [ self::class, 'create' ],
