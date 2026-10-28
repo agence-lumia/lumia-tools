@@ -7070,3 +7070,19 @@ msgstr "L'API des capacités nécessite WordPress 6.9 ou plus récent : ces outi
 #: includes/Modules/McpConnect/settings-template.php:207
 msgid "Plugin not active"
 msgstr "Extension inactive"
+
+#: includes/Modules/Motion/settings-template.php:382
+msgid "Custom animations"
+msgstr "Animations sur mesure"
+
+#: includes/Modules/Motion/settings-template.php:383
+msgid "GSAP animations written by hand. A script calling lumiaMotion.ready() in a Bricks Code element or in the page settings loads GSAP and ScrollTrigger on that page by itself."
+msgstr "Animations GSAP écrites à la main. Un script qui appelle lumiaMotion.ready() dans un élément Code de Bricks ou dans les réglages de la page charge GSAP et ScrollTrigger sur cette page tout seul."
+
+#: includes/Modules/Motion/settings-template.php:389
+msgid "Load GSAP on every page"
+msgstr "Charger GSAP sur toutes les pages"
+
+#: includes/Modules/Motion/settings-template.php:390
+msgid "For animations kept in a snippet plugin (FluentSnippets), which no page shows: GSAP, ScrollTrigger and SplitText then load on every page, after the first paint."
+msgstr "Pour les animations rangées dans une extension de snippets (FluentSnippets), qu'aucune page ne montre : GSAP, ScrollTrigger et SplitText se chargent alors sur toutes les pages, après le premier affichage."

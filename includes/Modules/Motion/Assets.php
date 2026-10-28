@@ -3,6 +3,8 @@ namespace Lumia\Tools\Modules\Motion;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Core\Compat;
+
 /**
  * Loading of the Motion files on the public pages and in the Bricks builder.
  *
@@ -10,7 +12,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * - `wp_enqueue_scripts`: before anything is rendered, so only what every page needs
  *   (the styles, printed inline: a linked stylesheet would block the first paint).
- * - `wp_head` (priority 1): the inline script that sets `lm-js` and the 3 s safety.
+ * - `wp_head` (priority 1): the inline script that sets `lm-js` and the 3 s safety, and the
+ *   `lumiaMotion.ready()` stub of the custom animations (CustomGsap).
  * - `wp_footer` (priority 19): the page is rendered, popups included (Bricks prints them
  *   at priority 10), and `Marker::engine_families()` knows which effects the engine plays. On a
  *   public page the scripts are not printed as tags: an inline loader injects them once
@@ -160,14 +163,33 @@ final class Assets {
 	 * engine reads the same two classes and leaves what is on screen as it is.
 	 */
 	public function print_head_script(): void {
-		// The canvas never pre-hides: its engine shows every element as it ends.
-		if ( is_admin() || self::is_builder_main() || self::is_builder_canvas() ) {
+		if ( is_admin() || self::is_builder_main() ) {
+			return;
+		}
+
+		// The canvas never pre-hides: its engine shows every element as it ends. It still gets
+		// the ready() stub, so a page script calling it does not throw there.
+		if ( self::is_builder_canvas() ) {
+			wp_print_inline_script_tag( self::ready_stub_js() );
 			return;
 		}
 
 		wp_print_inline_script_tag(
-			"(function(d){if(document.readyState!=='loading'){return;}d.classList.add('lm-js');setTimeout(function(){d.classList.add('lm-ready')}," . (int) self::SAFETY_MS . ');})(document.documentElement);'
+			self::ready_stub_js()
+			. "(function(d){if(document.readyState!=='loading'){return;}d.classList.add('lm-js');setTimeout(function(){d.classList.add('lm-ready')}," . (int) self::SAFETY_MS . ');})(document.documentElement);'
 		);
+	}
+
+	/**
+	 * `window.lumiaMotion.ready()` before the engine exists: the scripts of the page run long
+	 * before the engine, which is injected after the first paint. The stub queues the
+	 * callbacks in `lumiaMotion._queue`; the engine takes them over when it starts and runs
+	 * them once GSAP is ready (assets/front/js/motion.js, whenReady()). About 150 bytes on
+	 * every public page, the price of a call that never throws.
+	 */
+	private static function ready_stub_js(): string {
+		return '(function(w){var m=w.lumiaMotion=w.lumiaMotion||{};if(m.ready){return;}'
+			. 'var q=m._queue=[];m.ready=function(f){if(typeof f==="function"){q.push(f);}};})(window);';
 	}
 
 	/**
@@ -188,8 +210,9 @@ final class Assets {
 		}
 
 		$canvas    = self::is_builder_canvas();
-		$engine    = $canvas || $this->page_needs_engine();
-		$splitting = $canvas || in_array( Effects::FAMILY_TEXT, Marker::engine_families(), true );
+		$custom    = $canvas ? null : $this->custom_gsap();
+		$engine    = $canvas || $this->page_needs_engine() || null !== $custom;
+		$splitting = $canvas || in_array( Effects::FAMILY_TEXT, Marker::engine_families(), true ) || ! empty( $custom['split'] );
 
 		$this->register_libraries();
 
@@ -370,6 +393,33 @@ final class Assets {
 		$families = array_diff( Marker::engine_families(), [ Effects::FAMILY_UNDERLINE ] );
 
 		return array() !== $families;
+	}
+
+	/**
+	 * What the custom animations of the page need (CustomGsap), null when none asks for GSAP:
+	 * the Code elements already seen by Marker, the custom scripts of the page settings, the
+	 * "Load GSAP on every page" setting (with SplitText, its code is not known), then the
+	 * `lumia_motion_custom_gsap` filter, which may force it (true) or turn it off (false).
+	 *
+	 * @return array{split: bool}|null
+	 */
+	private function custom_gsap(): ?array {
+		$post_id = is_singular() ? (int) get_queried_object_id() : 0;
+		if ( $post_id > 0 ) {
+			CustomGsap::observe_page( get_post_meta( $post_id, CustomGsap::PAGE_SETTINGS_META, true ) );
+		}
+
+		$found = CustomGsap::found();
+		if ( ! empty( $this->settings['gsap_everywhere'] ) ) {
+			$found = [ 'split' => true ];
+		}
+
+		$filtered = Compat::apply_filters( 'motion_custom_gsap', null !== $found, $found );
+		if ( false === $filtered ) {
+			return null;
+		}
+
+		return $found ?? ( true === $filtered ? [ 'split' => false ] : null );
 	}
 
 	/**

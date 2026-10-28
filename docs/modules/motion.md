@@ -81,6 +81,36 @@ Entrance effects (`fade`, `slide-up`, `blur`, `blur-up`, `zoom`, `zoom-blur`) of
 - **Engine:** `skipReason()` returns `load` for a `[data-lm-load]` element and `settled` for a `[data-lm-settled]` one: no ScrollTrigger, no initial state. Neither counts for the scripts (`Marker::engine_families()`): a page whose effects are all on the first screen loads no GSAP, no engine, no SplitText, no counter module (e2e); its styles stay inline. **Except inside a query loop:** "Load more", infinite scroll, AJAX pagination and query filters add items of the same kind later, rendered by the REST API outside the first screen, and those need the engine; a loop item of the first screen still plays in CSS, but its families count (e2e `edges`). AJAX popups need no such rule: Bricks 2.4.3 renders their content with the page anyway (`Popups::generate_popup_html()` calls `Frontend::render_data()` to drop an empty popup, then leaves out the HTML), so `Marker` sees their elements.
 - **Limits:** breakpoint values (and "On load" per breakpoint) do not apply to the load animation; it uses the wide-screen values. An element with a base entrance and a text effect on a smaller breakpoint plays the CSS entrance there too (mobile included), never the text effect; a settled element likewise never plays the entrance of another breakpoint. In a very tall first section, its lower elements animate off screen: set them to "On load: never". A first root that is a Template element is in the zone, but the elements of the template are rendered as a separate tree (their parent is `0` there) and are not; the same goes for page content shown through a Post Content element of a template. With two classes setting the same value, the first class of the element wins (the CSS cascade may pick the other one for the engine path).
 
+## Custom animations: `lumiaMotion.ready()`
+
+For an animation the effects do not cover (a timeline, a pinned section, a marquee), write GSAP by hand and let Motion load it (issue #54). Where to write it, in order of preference:
+
+1. **Bricks > Page settings > Custom code** (body footer) of the page, or a **Code element** with JavaScript (code execution must be allowed for the author: the Claude account holds it under the Administrator preset of MCP Connect). The call is found on the page and GSAP + ScrollTrigger load there by themselves; SplitText too when the code mentions `SplitText`.
+2. **FluentSnippets** (a JS snippet, `wp_footer`) for an animation shared by many pages: no page shows that code, so turn on **Motion > Custom animations > Load GSAP on every page** (GSAP, ScrollTrigger and SplitText on every public page, after the first paint).
+3. From PHP, `add_filter( 'lumia_motion_custom_gsap', '__return_true' )` loads them on the pages it chooses (or `__return_false` to turn the detection off).
+
+```html
+<script>
+lumiaMotion.ready(function (m) {
+  // m.gsap, m.ScrollTrigger, m.SplitText (null unless loaded), m.lenis (null without smooth scroll),
+  // m.reducedMotion (true when the visitor asked for less motion).
+  if (m.reducedMotion) {
+    return;
+  }
+  m.gsap.to(".hero__shape", {
+    yPercent: -30,
+    ease: "none",
+    scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
+  });
+});
+</script>
+```
+
+- **The stub.** Page scripts run while the HTML is parsed, long before the engine (injected after the first paint). `Assets::ready_stub_js()`, printed with the head script on every public page and in the canvas (about 150 bytes), defines `window.lumiaMotion.ready()` and queues the callbacks in `lumiaMotion._queue`. The engine's "loaded twice" guard now tests `lumiaMotion.scan`, not the object, so the stub does not stop it; the engine takes the queue over and replaces the object.
+- **When the callbacks run**: after the engine's `start()` (fonts waited for, first build done, `lm-ready` set), so ScrollTrigger measures the final layout; a call made after that runs at once. Each callback is wrapped: an error is logged to the console and the others still run. They do not run in the builder canvas (nothing follows the scroll there: the element shows as written), nor when the engine itself cannot start (GSAP missing, the former snippet still active).
+- **Detection** (`CustomGsap`): `Marker` hands the settings of every rendered element to `CustomGsap::observe_element()` (keys `javascriptCode` and `code` of a Code element), and `Assets::custom_gsap()` reads the custom scripts of the page settings of the queried content (`_bricks_page_settings`: `customScriptsHeader`, `customScriptsBodyHeader`, `customScriptsBodyFooter`), then the setting, then the filter. The custom scripts of a header or footer template are not read: use a Code element there, or the setting. The engine then loads like for an effect (`enqueue_engine()`, same loader, same `lm-ready` safety), with no item of its own when the page has no effect.
+- **Verified** in Chromium with the bundled GSAP: a call before the engine, a call after it, reduced motion (`reducedMotion: true`), and the canvas (no call).
+
 ## Decisions and pitfalls
 
 - **Components, global elements, the element holding a query loop:** Bricks writes their settings under `.brxe-{id}` (0,1,0), which loses to the class (0,2,0). `Marker` copies the element's own `_lm*` values into an inline `style`, which wins, at the cost of the element's breakpoint values in these cases. Loop **children** do not need it (`.brxe-loop .brxe-{id}.brxe-{type}`, 0,3,0, measured) and must not get it: it would erase their breakpoint values. Also losing to the class, not handled: nested slider slides (`[data-id].splide__slide`, tie) and a few WooCommerce form elements. The loop test is `Query::is_any_looping()`, as in Bricks' own selector code: `Query::is_looping()` is forced true by the `bricks/query/force_is_looping` filter (AJAX popups) while Bricks still writes the ID selector.

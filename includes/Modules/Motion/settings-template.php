@@ -375,6 +375,40 @@ $number_ranges = [
 	<div class="lumia-tabs__panel" role="tabpanel" data-lumia-tabs-group="motion" data-lumia-tab-panel="compatibility" hidden>
 
 	<!-- ============================================================
+		CUSTOM ANIMATIONS
+		============================================================ -->
+	<div class="lumia-section">
+		<div class="lumia-section__header">
+			<h2 class="lumia-section__title"><?php esc_html_e( 'Custom animations', 'lumia-tools' ); ?></h2>
+			<p class="lumia-section__desc"><?php esc_html_e( 'GSAP animations written by hand. A script calling lumiaMotion.ready() in a Bricks Code element or in the page settings loads GSAP and ScrollTrigger on that page by itself.', 'lumia-tools' ); ?></p>
+		</div>
+		<div class="lumia-section__content">
+
+			<div class="lumia-option">
+				<div class="lumia-option__content">
+					<label for="lumia_motion_gsap_everywhere" class="lumia-option__label"><?php esc_html_e( 'Load GSAP on every page', 'lumia-tools' ); ?></label>
+					<p class="lumia-option__desc"><?php esc_html_e( 'For animations kept in a snippet plugin (FluentSnippets), which no page shows: GSAP, ScrollTrigger and SplitText then load on every page, after the first paint.', 'lumia-tools' ); ?></p>
+				</div>
+				<div class="lumia-option__control">
+					<label class="lumia-toggle">
+						<input
+							type="checkbox"
+							id="lumia_motion_gsap_everywhere"
+							name="lumia_module_settings[gsap_everywhere]"
+							value="1"
+							<?php checked( ! empty( $module_settings['gsap_everywhere'] ) ); ?>
+						>
+						<span class="lumia-toggle__slider"></span>
+					</label>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="lumia-divider"></div>
+
+	<!-- ============================================================
 		COMPATIBILITY
 		============================================================ -->
 	<div class="lumia-section">

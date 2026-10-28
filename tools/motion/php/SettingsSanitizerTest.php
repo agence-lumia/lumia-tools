@@ -31,6 +31,7 @@ $lm_defaults = static function (): array {
 		],
 		'legacy_classes'  => true,
 		'builder_preview' => 'replay',
+		'gsap_everywhere' => false,
 	];
 };
 
@@ -245,6 +246,12 @@ return [
 		);
 		lm_assert( true === $result['lenis']['enabled'], 'lenis[enabled] = 1 must be true' );
 		lm_assert( true === $result['legacy_classes'], 'legacy_classes = 1 must be true' );
+	},
+	'gsap_everywhere is a checkbox'                 => static function () use ( $lm_defaults ): void {
+		$off = SettingsSanitizer::sanitize( [], $lm_defaults() );
+		$on  = SettingsSanitizer::sanitize( [ 'gsap_everywhere' => '1' ], $lm_defaults() );
+		lm_assert( false === $off['gsap_everywhere'], 'a missing gsap_everywhere must be false' );
+		lm_assert( true === $on['gsap_everywhere'], 'gsap_everywhere = 1 must be true' );
 	},
 	'builder_preview accepts replay and off only'   => static function () use ( $lm_defaults ): void {
 		$off  = SettingsSanitizer::sanitize( [ 'builder_preview' => 'off' ], $lm_defaults() );

@@ -20,9 +20,13 @@
   "use strict";
 
   // Loaded twice (a page builder preview, a caching plugin that merges files): the first one wins.
-  if (window.lumiaMotion) {
+  // The ready() stub printed in the head (Assets::ready_stub_js()) is not an engine: its queue is
+  // taken over below.
+  if (window.lumiaMotion && typeof window.lumiaMotion.scan === "function") {
     return;
   }
+  var stubQueue =
+    window.lumiaMotion && Array.isArray(window.lumiaMotion._queue) ? window.lumiaMotion._queue : [];
 
   var config = window.lumiaMotionConfig || {};
   var root = document.documentElement;
@@ -1944,7 +1948,57 @@
     });
   }
 
+  /* ================================================================
+   * CUSTOM ANIMATIONS: lumiaMotion.ready(callback)
+   * ================================================================ */
+
+  // Callbacks of the custom animations, run once the engine has started: GSAP, ScrollTrigger (and
+  // SplitText when loaded) are registered, Lenis drives ScrollTrigger, and the first build is done,
+  // so the positions they measure are the final ones. Never in the builder canvas, where nothing
+  // follows the scroll. Under reduced motion they still run, told so: the author decides (a
+  // gsap.matchMedia() of their own, or nothing).
+  var readyQueue = [];
+  var readyStarted = false;
+
+  function runReady(fn) {
+    try {
+      fn({
+        gsap: gsap,
+        ScrollTrigger: ScrollTrigger,
+        SplitText: window.SplitText || null,
+        lenis: window.lumiaLenis || null,
+        reducedMotion: !motionOk,
+      });
+    } catch (error) {
+      if (window.console && console.error) {
+        console.error("Lumia Motion: a lumiaMotion.ready() callback failed.", error);
+      }
+    }
+  }
+
+  function whenReady(fn) {
+    if (typeof fn !== "function" || BUILDER) {
+      return;
+    }
+    if (readyStarted) {
+      runReady(fn);
+    } else {
+      readyQueue.push(fn);
+    }
+  }
+
+  function flushReady() {
+    if (readyStarted) {
+      return;
+    }
+    readyStarted = true;
+    var queue = readyQueue;
+    readyQueue = [];
+    queue.forEach(runReady);
+  }
+
   window.lumiaMotion = {
+    ready: whenReady,
     refresh: refresh,
     scan: scan,
     destroy: destroy,
@@ -2058,6 +2112,12 @@
     gsap.registerPlugin(SplitText);
   }
   media = gsap.matchMedia();
+  stubQueue.forEach(whenReady);
+
+  function startAll() {
+    start();
+    flushReady();
+  }
 
   function boot() {
     var fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
@@ -2065,7 +2125,7 @@
     var cap = new Promise(function (resolve) {
       setTimeout(resolve, FONT_WAIT_MS);
     });
-    Promise.race([fonts, cap]).then(start, start);
+    Promise.race([fonts, cap]).then(startAll, startAll);
   }
 
   if (document.readyState === "loading") {
