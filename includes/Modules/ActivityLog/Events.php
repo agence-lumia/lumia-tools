@@ -29,6 +29,7 @@ class Events {
 			'options'  => __( 'WordPress settings', 'lumia-tools' ),
 			'settings' => __( 'Lümia Tools settings', 'lumia-tools' ),
 			'files'    => __( 'Files', 'lumia-tools' ),
+			'mcp'      => __( 'Claude (MCP)', 'lumia-tools' ),
 		];
 	}
 
@@ -39,125 +40,145 @@ class Events {
 	 */
 	public static function all(): array {
 		return [
-			'login'            => [
+			'login'                      => [
 				'group' => 'auth',
 				'label' => __( 'Login', 'lumia-tools' ),
 			],
-			'login_failed'     => [
+			'login_failed'               => [
 				'group' => 'auth',
 				'label' => __( 'Login failed', 'lumia-tools' ),
 			],
-			'logout'           => [
+			'logout'                     => [
 				'group' => 'auth',
 				'label' => __( 'Logout', 'lumia-tools' ),
 			],
-			'post_created'     => [
+			'post_created'               => [
 				'group' => 'content',
 				'label' => __( 'Content created', 'lumia-tools' ),
 			],
-			'post_updated'     => [
+			'post_updated'               => [
 				'group' => 'content',
 				'label' => __( 'Content updated', 'lumia-tools' ),
 			],
-			'post_trashed'     => [
+			'post_trashed'               => [
 				'group' => 'content',
 				'label' => __( 'Content trashed', 'lumia-tools' ),
 			],
-			'post_restored'    => [
+			'post_restored'              => [
 				'group' => 'content',
 				'label' => __( 'Content restored', 'lumia-tools' ),
 			],
-			'post_deleted'     => [
+			'post_deleted'               => [
 				'group' => 'content',
 				'label' => __( 'Content deleted', 'lumia-tools' ),
 			],
-			'media_added'      => [
+			'media_added'                => [
 				'group' => 'media',
 				'label' => __( 'Media added', 'lumia-tools' ),
 			],
-			'media_updated'    => [
+			'media_updated'              => [
 				'group' => 'media',
 				'label' => __( 'Media updated', 'lumia-tools' ),
 			],
-			'media_deleted'    => [
+			'media_deleted'              => [
 				'group' => 'media',
 				'label' => __( 'Media deleted', 'lumia-tools' ),
 			],
-			'user_created'     => [
+			'user_created'               => [
 				'group' => 'users',
 				'label' => __( 'User created', 'lumia-tools' ),
 			],
-			'user_updated'     => [
+			'user_updated'               => [
 				'group' => 'users',
 				'label' => __( 'Profile updated', 'lumia-tools' ),
 			],
-			'user_role'        => [
+			'user_role'                  => [
 				'group' => 'users',
 				'label' => __( 'Role changed', 'lumia-tools' ),
 			],
-			'user_deleted'     => [
+			'user_deleted'               => [
 				'group' => 'users',
 				'label' => __( 'User deleted', 'lumia-tools' ),
 			],
-			'password_reset'   => [
+			'password_reset'             => [
 				'group' => 'users',
 				'label' => __( 'Password reset', 'lumia-tools' ),
 			],
-			'plugin_activated' => [
+			'plugin_activated'           => [
 				'group' => 'plugins',
 				'label' => __( 'Plugin activated', 'lumia-tools' ),
 			],
-			'plugin_disabled'  => [
+			'plugin_disabled'            => [
 				'group' => 'plugins',
 				'label' => __( 'Plugin deactivated', 'lumia-tools' ),
 			],
-			'plugin_installed' => [
+			'plugin_installed'           => [
 				'group' => 'plugins',
 				'label' => __( 'Plugin installed', 'lumia-tools' ),
 			],
-			'plugin_updated'   => [
+			'plugin_updated'             => [
 				'group' => 'plugins',
 				'label' => __( 'Plugin updated', 'lumia-tools' ),
 			],
-			'plugin_deleted'   => [
+			'plugin_deleted'             => [
 				'group' => 'plugins',
 				'label' => __( 'Plugin deleted', 'lumia-tools' ),
 			],
-			'theme_switched'   => [
+			'theme_switched'             => [
 				'group' => 'themes',
 				'label' => __( 'Theme activated', 'lumia-tools' ),
 			],
-			'theme_installed'  => [
+			'theme_installed'            => [
 				'group' => 'themes',
 				'label' => __( 'Theme installed', 'lumia-tools' ),
 			],
-			'theme_updated'    => [
+			'theme_updated'              => [
 				'group' => 'themes',
 				'label' => __( 'Theme updated', 'lumia-tools' ),
 			],
-			'theme_deleted'    => [
+			'theme_deleted'              => [
 				'group' => 'themes',
 				'label' => __( 'Theme deleted', 'lumia-tools' ),
 			],
-			'option_updated'   => [
+			'option_updated'             => [
 				'group' => 'options',
 				'label' => __( 'Setting changed', 'lumia-tools' ),
 			],
-			'lumia_settings'   => [
+			'lumia_settings'             => [
 				'group' => 'settings',
 				'label' => __( 'Settings changed', 'lumia-tools' ),
 			],
-			'files_unlocked'   => [
+			'files_unlocked'             => [
 				'group' => 'files',
 				'label' => __( 'File editing unlocked (danger mode)', 'lumia-tools' ),
 			],
-			'files_locked'     => [
+			'files_locked'               => [
 				'group' => 'files',
 				'label' => __( 'File editing locked again', 'lumia-tools' ),
 			],
-			'file_written'     => [
+			'file_written'               => [
 				'group' => 'files',
 				'label' => __( 'File written in danger mode', 'lumia-tools' ),
+			],
+			'mcp_connection_authorized'  => [
+				'group' => 'mcp',
+				'label' => __( 'Claude connection authorized', 'lumia-tools' ),
+			],
+			'mcp_connection_denied'      => [
+				'group' => 'mcp',
+				'label' => __( 'Claude connection denied', 'lumia-tools' ),
+			],
+			'mcp_connection_revoked'     => [
+				'group' => 'mcp',
+				'label' => __( 'Claude connection revoked', 'lumia-tools' ),
+			],
+			'mcp_refresh_reuse_detected' => [
+				'group' => 'mcp',
+				'label' => __( 'Claude token reuse detected', 'lumia-tools' ),
+			],
+			'mcp_client_registered'      => [
+				'group' => 'mcp',
+				'label' => __( 'Claude client registered', 'lumia-tools' ),
 			],
 		];
 	}
