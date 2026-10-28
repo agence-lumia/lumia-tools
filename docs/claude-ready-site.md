@@ -4,16 +4,13 @@ What a new agency site needs so that Claude, connected through MCP Connect, can 
 
 ## wp-config.php
 
+Nothing is required there since 2.4.1: under the Administrator preset (the default), Lümia Tools itself defines `BRICKS_ENABLE_PHP_ABILITIES` (bricks/execute-php) and `ALLOW_UNFILTERED_UPLOADS` (SVG, fonts, JSON) when wp-config.php does not, so a site created from the seed has them although the hosting template generates wp-config.php. A value written in wp-config.php always wins, `false` included.
+
+Optional, when the template lets you add lines:
+
 ```php
-// Administrator preset of the Claude account (the default since 2.4.0; the constant
-// also locks it against a change in the admin).
+// Lock the preset against a change in the admin.
 define( 'LUMIA_MCP_AGENT_PRESET', 'admin' );
-
-// bricks/execute-php (also enable it in Bricks > AI).
-define( 'BRICKS_ENABLE_PHP_ABILITIES', true );
-
-// SVG, fonts, JSON (Lottie) uploads by Claude.
-define( 'ALLOW_UNFILTERED_UPLOADS', true );
 
 // A debug log Claude reads with lumia/read-error-log, never shown to visitors.
 define( 'WP_DEBUG', true );
@@ -32,6 +29,10 @@ Never define `DISALLOW_UNFILTERED_HTML` (no JavaScript for Claude), `DISALLOW_FI
 | FluentSnippets | `lumia/*-snippet` abilities |
 | Rank Math | `rank-math/*` abilities and `lumia/seo-*` |
 | Secure Custom Fields | SCF abilities (custom post types, field groups) |
+
+## Seed
+
+The seed carries the database and `wp-content`: the Bricks > AI toggles, the Bricks code execution roles, the Lümia Tools settings (MCP Connect, Tools for Claude, Motion) and the plugin settings all travel with it. Update Lümia Tools on the reference site before publishing a seed.
 
 ## Bricks
 

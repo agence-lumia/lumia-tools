@@ -225,6 +225,61 @@ final class Agent {
 	}
 
 	/**
+	 * Constants Lümia Tools defines under the Administrator preset when
+	 * wp-config.php does not: Bricks' PHP ability (`bricks/execute-php`) and
+	 * uploads of any file type. The site seed carries the database, not the
+	 * wp-config.php the hosting template generates, so a setting could not
+	 * reach them.
+	 */
+	const CODE_CONSTANTS = [ 'BRICKS_ENABLE_PHP_ABILITIES', 'ALLOW_UNFILTERED_UPLOADS' ];
+
+	/**
+	 * Names of the CODE_CONSTANTS this plugin defined on this request (the
+	 * others come from wp-config.php or are not defined).
+	 *
+	 * @var string[]
+	 */
+	private static array $defined_here = [];
+
+	/**
+	 * Called at file load (lumia-tools.php), before Bricks loads as the theme:
+	 * defines the CODE_CONSTANTS under the Administrator preset, when MCP
+	 * Connect is active, unless wp-config.php already set them (false
+	 * included). Reads the autoloaded options only.
+	 */
+	public static function define_code_constants(): void {
+		if ( ! Discovery::enabled() || self::PRESET_ADMIN !== self::current_preset() ) {
+			return;
+		}
+
+		// A site whose wp-config.php forbids file changes or the code editors
+		// keeps administrators from running code: unfiltered uploads (a .php
+		// file in uploads/) and Bricks PHP would reopen that door.
+		if ( ! wp_is_file_mod_allowed( 'capability_update_core' ) || ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) ) {
+			return;
+		}
+
+		foreach ( self::CODE_CONSTANTS as $name ) {
+			if ( ! defined( $name ) ) {
+				define( $name, true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.VariableConstantNameFound -- WordPress' and Bricks' own constants.
+				self::$defined_here[] = $name;
+			}
+		}
+	}
+
+	/**
+	 * Where a CODE_CONSTANTS value comes from: `lumia` (defined by this
+	 * plugin), `config` (wp-config.php or another plugin) or `none`.
+	 */
+	public static function constant_source( string $name ): string {
+		if ( in_array( $name, self::$defined_here, true ) ) {
+			return 'lumia';
+		}
+
+		return defined( $name ) ? 'config' : 'none';
+	}
+
+	/**
 	 * Active preset: the LUMIA_MCP_AGENT_PRESET constant when it holds a known
 	 * preset, then the stored setting, then the default one (a preset of
 	 * 2.3.0, "Content and Bricks" and the like, reads as the default).

@@ -4,7 +4,7 @@
  * Plugin URI:  https://github.com/agence-lumia/lumia-tools
  * Update URI:  https://github.com/agence-lumia/lumia-tools
  * Description: A modular toolkit to optimize and improve your WordPress site.
- * Version:     2.4.0
+ * Version:     2.4.1-dev.2
  * Author:      Agence Lümia
  * Author URI:  https://agence-lumia.com
  * License:     GPL-2.0+
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Base constants
-define( 'LUMIA_VERSION', '2.4.0' );
+define( 'LUMIA_VERSION', '2.4.1-dev.2' );
 define( 'LUMIA_PLUGIN_FILE', __FILE__ );
 define( 'LUMIA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LUMIA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -38,6 +38,10 @@ Lumia\Tools\Core\Autoloader::register();
 // for the whole request, and an earlier plugin would lock it to anonymous.
 // boot() only reads the raw module flag; everything else waits for init().
 Lumia\Tools\Modules\McpConnect\Discovery::boot();
+// Under the Administrator preset: BRICKS_ENABLE_PHP_ABILITIES and
+// ALLOW_UNFILTERED_UPLOADS, when wp-config.php does not set them. At file
+// load, before the theme (Bricks) loads.
+Lumia\Tools\Modules\McpConnect\Agent::define_code_constants();
 
 // Bootstrap
 add_action(
