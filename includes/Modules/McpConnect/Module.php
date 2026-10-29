@@ -138,6 +138,10 @@ final class Module extends AbstractModule {
 			'abilities'           => self::sanitize_families( $settings['abilities'] ?? null, self::settings()['abilities'] ?? [] ),
 		];
 
+		// The preset is now a choice made on this site (form or import): the
+		// pre-2.4 Editor migration of Agent::maybe_sync() must not overturn it.
+		Agent::mark_preset_chosen();
+
 		$previous = Agent::current_preset();
 		$saved    = $this->save_module_settings( $sanitized );
 
@@ -290,6 +294,7 @@ final class Module extends AbstractModule {
 	 */
 	public function on_activate(): void {
 		Store::install();
+		Agent::mark_preset_chosen();
 		Agent::ensure();
 		Agent::enable_bricks_abilities();
 	}

@@ -53,7 +53,7 @@ $update_status = \Lumia\Tools\Core\Plugin::instance()->updater->get_status();
 					<?php echo $this->render_icon( 'info', 'lg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
 				<div class="lumia-card__content">
-					<span class="lumia-card__value"><?php echo esc_html( LUMIA_VERSION ); ?></span>
+					<span class="lumia-card__value"><?php echo esc_html( $update_status['installed'] ); ?></span>
 					<span class="lumia-card__label">
 						<?php
 						echo esc_html(

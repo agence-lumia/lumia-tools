@@ -7056,16 +7056,16 @@ msgid "Custom animations"
 msgstr "Animations sur mesure"
 
 #: includes/Modules/Motion/settings-template.php:383
-msgid "GSAP animations written by hand. A script calling lumiaMotion.ready() in a Bricks Code element or in the page settings loads GSAP and ScrollTrigger on that page by itself."
-msgstr "Animations GSAP écrites à la main. Un script qui appelle lumiaMotion.ready() dans un élément Code de Bricks ou dans les réglages de la page charge GSAP et ScrollTrigger sur cette page tout seul."
+msgid "GSAP animations written by hand. A script calling lumiaMotion.ready() loads GSAP and ScrollTrigger on that page by itself, wherever it is written: a Bricks Code element, the page settings, a snippet."
+msgstr "Animations GSAP écrites à la main. Un script qui appelle lumiaMotion.ready() charge GSAP et ScrollTrigger sur cette page tout seul, où qu'il soit écrit : un élément Code de Bricks, les réglages de la page, un snippet."
 
 #: includes/Modules/Motion/settings-template.php:389
 msgid "Load GSAP on every page"
 msgstr "Charger GSAP sur toutes les pages"
 
 #: includes/Modules/Motion/settings-template.php:390
-msgid "For animations kept in a snippet plugin (FluentSnippets), which no page shows: GSAP, ScrollTrigger and SplitText then load on every page, after the first paint."
-msgstr "Pour les animations rangées dans une extension de snippets (FluentSnippets), qu'aucune page ne montre : GSAP, ScrollTrigger et SplitText se chargent alors sur toutes les pages, après le premier affichage."
+msgid "For GSAP code shared by many pages that does not call lumiaMotion.ready(): GSAP, ScrollTrigger and SplitText then load on every page, after the first paint."
+msgstr "Pour du code GSAP partagé par plusieurs pages qui n'appelle pas lumiaMotion.ready() : GSAP, ScrollTrigger et SplitText se chargent alors sur toutes les pages, après le premier affichage."
 
 #: includes/Modules/McpConnect/settings-template.php:173
 msgid "Claude acts through a dedicated account that cannot sign in by itself. Administrator (default): every right of an administrator, plus JavaScript, any file type and Bricks code execution, including PHP. Editor: what an administrator can do, including what plugins grant them (pages, Bricks, media, menus, shop, SEO, forms…), but never the WordPress settings, plugins, themes, users, roles or code."
