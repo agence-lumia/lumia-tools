@@ -87,7 +87,7 @@ $wp_memory_limit = defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : __( 'N/A', '
 						<p class="lumia-option__desc"><?php echo esc_html__( 'Plugin version installed on this site.', 'lumia-tools' ); ?></p>
 					</div>
 					<div class="lumia-option__control lumia-inline">
-						<span class="lumia-badge lumia-badge--info">v<?php echo esc_html( LUMIA_VERSION ); ?></span>
+						<span class="lumia-badge lumia-badge--info">v<?php echo esc_html( \Lumia\Tools\Core\Plugin::instance()->updater->get_installed_version() ); ?></span>
 						<button type="submit" class="lumia-btn lumia-btn--secondary lumia-btn--sm" form="lumia-check-updates-form">
 							<?php echo esc_html__( 'Check for updates', 'lumia-tools' ); ?>
 						</button>
