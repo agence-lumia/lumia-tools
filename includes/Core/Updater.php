@@ -90,6 +90,35 @@ class Updater {
 		delete_transient( $this->transient_key . '_stable' );
 		delete_transient( $this->transient_key . '_dev' );
 		delete_site_transient( 'update_plugins' );
+
+		// With `opcache.revalidate_freq` > 0, PHP keeps serving the old compiled
+		// main file (and the old LUMIA_VERSION) for up to that many seconds.
+		// Force its eviction; wp_opcache_invalidate() honors `restrict_api`.
+		if ( function_exists( 'wp_opcache_invalidate' ) ) {
+			wp_opcache_invalidate( LUMIA_PLUGIN_FILE, true );
+		}
+	}
+
+	/**
+	 * Installed version, read from the plugin header on disk.
+	 *
+	 * Not LUMIA_VERSION: right after an update, OPcache can still serve the old
+	 * compiled main file for `opcache.revalidate_freq` seconds, so the constant
+	 * holds the previous version and the update notice comes back (#69).
+	 * `$transient->checked` comes from get_plugins(), which also reads the file.
+	 *
+	 * @param \stdClass|null $transient `update_plugins` transient, if at hand.
+	 */
+	public function get_installed_version( $transient = null ): string {
+		$plugin_file = plugin_basename( LUMIA_PLUGIN_FILE );
+
+		if ( is_object( $transient ) && ! empty( $transient->checked[ $plugin_file ] ) ) {
+			return (string) $transient->checked[ $plugin_file ];
+		}
+
+		$header = get_file_data( LUMIA_PLUGIN_FILE, [ 'Version' => 'Version' ] );
+
+		return '' !== $header['Version'] ? $header['Version'] : LUMIA_VERSION;
 	}
 
 	/**
@@ -111,14 +140,15 @@ class Updater {
 		}
 
 		$plugin_file = plugin_basename( LUMIA_PLUGIN_FILE );
+		$installed   = $this->get_installed_version( $transient );
 
 		// Compare the versions
-		$has_update = $this->compare_versions( LUMIA_VERSION, $remote['version'] );
+		$has_update = $this->compare_versions( $installed, $remote['version'] );
 
 		$item = (object) [
 			'slug'         => dirname( $plugin_file ),
 			'plugin'       => $plugin_file,
-			'new_version'  => $has_update ? $remote['version'] : LUMIA_VERSION,
+			'new_version'  => $has_update ? $remote['version'] : $installed,
 			'url'          => $remote['url'],
 			'package'      => $remote['download_url'],
 			'icons'        => [],
@@ -213,10 +243,11 @@ class Updater {
 			return '<p>' . esc_html__( 'No release notes available.', 'lumia-tools' ) . '</p>';
 		}
 
-		$newer = array_filter(
+		$installed = $this->get_installed_version();
+		$newer     = array_filter(
 			$notes,
-			function ( $note ) {
-				return version_compare( LUMIA_VERSION, $note['version'], '<' );
+			function ( $note ) use ( $installed ) {
+				return version_compare( $installed, $note['version'], '<' );
 			}
 		);
 
@@ -243,16 +274,18 @@ class Updater {
 	 * Only reads the cache: the dashboard must never trigger a 10 s HTTP call.
 	 * Empty cache or recent failure → `remote` is null.
 	 *
-	 * @return array{channel: string, remote: ?string, has_update: bool}
+	 * @return array{channel: string, installed: string, remote: ?string, has_update: bool}
 	 */
 	public function get_status(): array {
-		$cached = get_transient( $this->transient_key . '_' . $this->channel );
-		$remote = is_array( $cached ) && ! empty( $cached['version'] ) ? (string) $cached['version'] : null;
+		$cached    = get_transient( $this->transient_key . '_' . $this->channel );
+		$remote    = is_array( $cached ) && ! empty( $cached['version'] ) ? (string) $cached['version'] : null;
+		$installed = $this->get_installed_version();
 
 		return [
 			'channel'    => $this->channel,
+			'installed'  => $installed,
 			'remote'     => $remote,
-			'has_update' => null !== $remote && $this->compare_versions( LUMIA_VERSION, $remote ),
+			'has_update' => null !== $remote && $this->compare_versions( $installed, $remote ),
 		];
 	}
 
