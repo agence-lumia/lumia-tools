@@ -14,11 +14,13 @@ defined( 'ABSPATH' ) || exit;
  *
  * - the call itself, found in the JavaScript of a Bricks Code element of the
  *   page (Marker) or in the custom scripts of the page settings;
- * - the "Load GSAP on every page" setting, for animations kept in a snippet
- *   plugin (FluentSnippets) that no page shows;
+ * - the "Load GSAP on every page" setting, for shared GSAP code that does not
+ *   call lumiaMotion.ready();
  * - the `lumia_motion_custom_gsap` filter (true, or false to turn it off).
  *
- * A mention of SplitText in that code also loads SplitText.
+ * A mention of SplitText in that code also loads SplitText. A call no page
+ * shows (a FluentSnippets snippet) is not found here: the loader injects the
+ * engine on demand when the stub has queued one (Assets::loader_js()).
  */
 final class CustomGsap {
 
