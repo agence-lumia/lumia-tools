@@ -82,6 +82,12 @@ final class Assets {
 	private array $settings;
 
 	/**
+	 * Whether a `lumiaMotion.ready()` call made in the browser may still load the engine on a page
+	 * where nothing asked for it on the server (set by custom_gsap()).
+	 */
+	private bool $on_demand = false;
+
+	/**
 	 * Builds the loader.
 	 *
 	 * @param array<string, mixed> $settings Settings of the module, as returned by SettingsSanitizer::sanitize().
@@ -184,12 +190,15 @@ final class Assets {
 	 * `window.lumiaMotion.ready()` before the engine exists: the scripts of the page run long
 	 * before the engine, which is injected after the first paint. The stub queues the
 	 * callbacks in `lumiaMotion._queue`; the engine takes them over when it starts and runs
-	 * them once GSAP is ready (assets/front/js/motion.js, whenReady()). About 150 bytes on
+	 * them once GSAP is ready (assets/front/js/motion.js, whenReady()). About 170 bytes on
 	 * every public page, the price of a call that never throws.
+	 *
+	 * A call made after the loader has run, on a page that did not load the engine, calls
+	 * `lumiaMotion._load()`, set by the loader (loader_js()), which injects the engine then.
 	 */
 	private static function ready_stub_js(): string {
 		return '(function(w){var m=w.lumiaMotion=w.lumiaMotion||{};if(m.ready){return;}'
-			. 'var q=m._queue=[];m.ready=function(f){if(typeof f==="function"){q.push(f);}};})(window);';
+			. 'var q=m._queue=[];m.ready=function(f){if(typeof f==="function"){q.push(f);if(m._load){m._load();}}};})(window);';
 	}
 
 	/**
@@ -229,7 +238,7 @@ final class Assets {
 		}
 
 		if ( ! $canvas ) {
-			$this->print_loader();
+			$this->print_loader( ! $engine && $this->on_demand && self::has_script( 'motion.js' ) );
 		}
 	}
 
@@ -257,13 +266,34 @@ final class Assets {
 	 * after the second frame callback had injected the scripts. It then appends the scripts with `async = false`: they are fetched in parallel
 	 * and run in order. A script that fails to load adds `lm-ready` at once, so nothing waits
 	 * for the 3 s safety.
+	 *
+	 * On demand (a page that does not load the engine), the engine's scripts are passed as a
+	 * second list, which the loader injects only when `lumiaMotion.ready()` was called (the
+	 * stub's queue), whatever printed the call: a snippet limited to that page, a footer script.
+	 * Their `before` data (`window.lumiaMotionConfig`) is printed at once all the same.
+	 *
+	 * @param bool $on_demand Whether to pass the engine for a `lumiaMotion.ready()` call.
 	 */
-	private function print_loader(): void {
+	private function print_loader( bool $on_demand ): void {
 		$scripts = wp_scripts();
 		$queued  = array_values( array_intersect( $scripts->queue, self::LOADED_HANDLES ) );
 		$order   = [];
 		foreach ( $queued as $handle ) {
 			self::resolve_script( $scripts, $handle, $order );
+		}
+
+		// The engine with SplitText (the loader drops it when no callback mentions it), registered
+		// and taken off the queue at once: WordPress must not print it.
+		$later = [];
+		if ( $on_demand ) {
+			$this->enqueue_engine( false, true );
+			wp_dequeue_script( self::HANDLE_CORE );
+			wp_dequeue_script( self::HANDLE_MOTION );
+			self::resolve_script( $scripts, self::HANDLE_MOTION, $later );
+			$later = array_values( array_diff( $later, $order ) );
+			if ( self::loader_unsafe( $scripts, $later ) ) {
+				$later = [];
+			}
 		}
 
 		// What the loader cannot carry is left to WordPress: the scripts keep their tags.
@@ -272,7 +302,36 @@ final class Assets {
 		}
 
 		$before = '';
-		$list   = [];
+		$list   = self::loader_items( $scripts, $order, $before );
+		$lazy   = self::loader_items( $scripts, $later, $before );
+
+		foreach ( $queued as $handle ) {
+			wp_dequeue_script( $handle );
+		}
+
+		if ( array() === $list && array() === $lazy ) {
+			return;
+		}
+
+		$flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES;
+
+		wp_print_inline_script_tag(
+			$before . self::loader_js() . '(' . wp_json_encode( $list, $flags ) . ',' . wp_json_encode( $lazy, $flags ) . ');',
+			[ 'id' => 'lumia-motion-loader' ]
+		);
+	}
+
+	/**
+	 * The loader's items for ordered handles (`[{id, src}]`), with their URLs as WordPress prints
+	 * them; their inline `before` data is appended to `$before`.
+	 *
+	 * @param \WP_Scripts $scripts Registry.
+	 * @param string[]    $order   Ordered handles.
+	 * @param string      $before  Inline data, completed in place.
+	 * @return array<int, array{id: string, src: string}>
+	 */
+	private static function loader_items( \WP_Scripts $scripts, array $order, string &$before ): array {
+		$list = [];
 		foreach ( $order as $handle ) {
 			$item = $scripts->registered[ $handle ];
 			$src  = (string) $item->src;
@@ -295,20 +354,7 @@ final class Assets {
 			}
 		}
 
-		foreach ( $queued as $handle ) {
-			wp_dequeue_script( $handle );
-		}
-
-		if ( array() === $list ) {
-			return;
-		}
-
-		$flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES;
-
-		wp_print_inline_script_tag(
-			$before . self::loader_js() . '(' . wp_json_encode( $list, $flags ) . ');',
-			[ 'id' => 'lumia-motion-loader' ]
-		);
+		return $list;
 	}
 
 	/**
@@ -362,15 +408,29 @@ final class Assets {
 	}
 
 	/**
-	 * The loader, a function expression called with the ordered scripts (`[{id, src}]`).
+	 * The loader, a function expression called with the ordered scripts (`[{id, src}]`) and the
+	 * engine's scripts on demand (empty when the page loads the engine anyway, or never).
+	 *
+	 * On demand, the engine is injected with the other scripts when the stub's queue holds a
+	 * callback by then (the usual case: a snippet or a page script runs while the HTML is
+	 * parsed), its libraries before them and motion.js after them, the order WordPress gives
+	 * when the engine is enqueued (motion-scroll.js after GSAP, the engine after Lenis).
+	 * Otherwise `lumiaMotion._load()` injects it at the first later call; Lenis, already
+	 * started without GSAP, then keeps its own clock. SplitText is kept only when the source
+	 * of a callback mentions it (`String(fn)`), as the server does for the code it reads.
 	 */
 	private static function loader_js(): string {
-		return '(function(list){'
-			. 'var d=document,started=false;'
+		return '(function(list,lazy){'
+			. 'var d=document,w=window,m=w.lumiaMotion||{},started=false;'
 			. 'function shown(){d.documentElement.classList.add("lm-ready");}'
+			. 'function inject(items){items.forEach(function(item){var s=d.createElement("script");s.src=item.src;s.id=item.id;s.async=false;s.onerror=shown;d.body.appendChild(s);});}'
+			. 'function engine(){m._load=null;var q=m._queue||[],split=q.some(function(f){return String(f).indexOf("SplitText")>=0;});'
+			. 'return lazy.filter(function(item){return split||item.id!=="' . self::HANDLE_SPLITTEXT . '-js";});}'
 			. 'function add(){'
 			. 'if(started){return;}started=true;'
-			. 'list.forEach(function(item){var s=d.createElement("script");s.src=item.src;s.id=item.id;s.async=false;s.onerror=shown;d.body.appendChild(s);});'
+			. 'var items=list,own=w.lumiaMotion&&w.lumiaMotion.scan;'
+			. 'if(lazy.length&&!own){if(m._queue&&m._queue.length){var e=engine();items=e.slice(0,-1).concat(list,e.slice(-1));}else{m._load=function(){inject(engine());};}}'
+			. 'inject(items);'
 			. '}'
 			. 'function painted(){'
 			. 'setTimeout(add,' . (int) self::LOADER_FALLBACK_MS . ');'
@@ -405,6 +465,10 @@ final class Assets {
 	 * "Load GSAP on every page" setting (with SplitText, its code is not known), then the
 	 * `lumia_motion_custom_gsap` filter, which may force it (true) or turn it off (false).
 	 *
+	 * When nothing asks for it, the filter is asked again with true, the value a call made in the
+	 * browser would bring (`lumiaMotion.ready()` in a snippet): a filter that keeps the value lets
+	 * the loader inject the engine on demand, one that returns false keeps it off on that page.
+	 *
 	 * @return array{split: bool}|null
 	 */
 	private function custom_gsap(): ?array {
@@ -422,6 +486,8 @@ final class Assets {
 
 		// Truthy or falsy, like any boolean filter; false turns every source off, the setting too.
 		if ( ! Compat::apply_filters( 'motion_custom_gsap', null !== $found, $found ) ) {
+			$this->on_demand = null === $found && (bool) Compat::apply_filters( 'motion_custom_gsap', true, null );
+
 			return null;
 		}
 
