@@ -26,7 +26,7 @@ Never define `DISALLOW_UNFILTERED_HTML` (no JavaScript for Claude) or `DISALLOW_
 |---|---|
 | [MCP Adapter](https://github.com/WordPress/mcp-adapter) 0.7.1 or later | serves the abilities over MCP |
 | Lümia Tools, MCP Connect and Motion on | connection, `lumia/*` abilities, animations |
-| FluentSnippets | `lumia/*-snippet` abilities |
+| FluentSnippets | `lumia/*-snippet` abilities: PHP, CSS and JS snippets under the Administrator preset (PHP refused under `DISALLOW_FILE_MODS`); a GSAP snippet wraps its code in `lumiaMotion.ready()`, and a FluentSnippets condition limits it to a page |
 | Rank Math | `rank-math/*` abilities and `lumia/seo-*` |
 | Secure Custom Fields | SCF abilities (custom post types, field groups) |
 
