@@ -38,6 +38,9 @@ final class Options implements Family {
 		// Would let anyone who registers become an administrator.
 		'default_role',
 		'users_can_register',
+		// Plain permalinks cut /wp-json/, so the MCP URL and the connection.
+		'permalink_structure',
+		'rewrite_rules',
 	];
 
 	/** Option name prefixes refused the same way. */
@@ -82,7 +85,7 @@ final class Options implements Family {
 			],
 			'update-option' => [
 				'label'       => __( 'Write an option', 'lumia-tools' ),
-				'description' => 'Writes a WordPress option. `value` replaces the whole value; with `merge` true and an array value, only the given keys are changed (recursively), which is what to use for plugin settings stored as arrays. Read it first with lumia/get-option. Refused for siteurl, home, active_plugins, template, stylesheet, cron, the salts, default_role, users_can_register, the roles and the lumia_* options.',
+				'description' => 'Writes a WordPress option. `value` replaces the whole value; with `merge` true and an array value, only the given keys are changed (recursively), which is what to use for plugin settings stored as arrays. Read it first with lumia/get-option. Refused for siteurl, home, active_plugins, template, stylesheet, cron, the salts, default_role, users_can_register, permalink_structure and rewrite_rules (plain permalinks cut the MCP connection), the roles and the lumia_* options.',
 				'input'       => [
 					'name'     => $name,
 					'value'    => [

@@ -240,6 +240,7 @@ final class Plugins implements Family {
 		wp_update_plugins();
 		$before   = (string) ( get_plugins()[ $file ]['Version'] ?? '' );
 		$active   = is_plugin_active( $file );
+		$network  = is_multisite() && is_plugin_active_for_network( $file );
 		$skin     = new \WP_Ajax_Upgrader_Skin();
 		$upgrader = new \Plugin_Upgrader( $skin );
 
@@ -252,9 +253,14 @@ final class Plugins implements Family {
 			// put back the same silent way whatever happened: no activation
 			// hook, and no include of a main file this request may already have
 			// loaded (Lümia Tools itself, the MCP Adapter, which carry this
-			// connection).
+			// connection). A network-active plugin goes back to the network
+			// list, not to this site's: it would otherwise run on this site only.
 			wp_clean_plugins_cache();
-			if ( $active && ! is_plugin_active( $file ) ) {
+			if ( $network && ! is_plugin_active_for_network( $file ) ) {
+				$sitewide          = (array) get_site_option( 'active_sitewide_plugins', [] );
+				$sitewide[ $file ] = time();
+				update_site_option( 'active_sitewide_plugins', $sitewide );
+			} elseif ( ! $network && $active && ! is_plugin_active( $file ) ) {
 				$plugins   = (array) get_option( 'active_plugins', [] );
 				$plugins[] = $file;
 				sort( $plugins );

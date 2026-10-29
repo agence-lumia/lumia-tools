@@ -3,6 +3,8 @@ namespace Lumia\Tools\Modules\McpConnect\Abilities;
 
 defined( 'ABSPATH' ) || exit;
 
+use Lumia\Tools\Modules\McpConnect\Agent;
+
 /**
  * FluentSnippets: list, read, create, update, publish, delete snippets.
  *
@@ -12,12 +14,16 @@ defined( 'ABSPATH' ) || exit;
  * syntax is invalid, or that starts with `<?php`, is refused before anything
  * is written, so a broken snippet never reaches the site. Its REST authoring
  * switch is not involved: these abilities sit behind manage_options and the
- * MCP Connect consent.
+ * MCP Connect consent. Writing or publishing PHP is also refused where the
+ * site forbids code changes (code_refusal()).
  */
 final class Snippets implements Family {
 
 	/** Snippet types of FluentSnippets. */
 	const TYPES = [ 'PHP', 'php_content', 'css', 'js' ];
+
+	/** Types whose code FluentSnippets runs as PHP. */
+	const PHP_TYPES = [ 'PHP', 'php_content' ];
 
 	public static function label(): string {
 		return __( 'Snippets (FluentSnippets)', 'lumia-tools' );
@@ -102,7 +108,7 @@ final class Snippets implements Family {
 			],
 			'create-snippet' => [
 				'label'       => __( 'Create a snippet', 'lumia-tools' ),
-				'description' => 'Creates a FluentSnippets snippet. PHP code is written without the opening <?php tag; CSS and JS without their <style>/<script> tags. FluentSnippets checks the code first and refuses invalid PHP. Created as a draft unless `status` is published. For a GSAP animation, wrap the code in lumiaMotion.ready(function (m) { … }) (Lümia Motion loads GSAP, ScrollTrigger and SplitText): for a snippet shared by many pages, Motion > Load GSAP on every page must be on; on one page, prefer the page custom code or a Bricks Code element, which load GSAP by themselves.',
+				'description' => 'Creates a FluentSnippets snippet. PHP code is written without the opening <?php tag; CSS and JS without their <style>/<script> tags. FluentSnippets checks the code first and refuses invalid PHP. Created as a draft unless `status` is published. PHP (PHP and php_content) is refused when the site forbids file changes (DISALLOW_FILE_MODS), on a multisite network for anyone but a super admin, and under the Editor preset. For a GSAP animation (a js snippet), wrap the code in lumiaMotion.ready(function (m) { … }): Lümia Motion then loads GSAP and ScrollTrigger (and SplitText when the code mentions it) on the pages where the snippet runs. Use the FluentSnippets `condition` to limit a snippet to one page.',
 				'input'       => array_merge( $fields, [ 'code' => [ 'type' => 'string' ] ] ),
 				'required'    => [ 'name', 'type', 'run_at', 'code' ],
 				'execute'     => [ self::class, 'create' ],
@@ -203,6 +209,13 @@ final class Snippets implements Family {
 	 * @return array<string, mixed>|\WP_Error
 	 */
 	public static function create( array $args ) {
+		if ( in_array( $args['type'] ?? '', self::PHP_TYPES, true ) ) {
+			$refused = self::code_refusal();
+			if ( null !== $refused ) {
+				return $refused;
+			}
+		}
+
 		$meta           = self::meta_from( $args );
 		$meta['status'] = 'draft';
 
@@ -220,12 +233,16 @@ final class Snippets implements Family {
 			return Registry::error( 'snippet_not_created', 'FluentSnippets did not create the snippet.' );
 		}
 
-		// createSnippet() forces a draft (or follows the auto-publish setting):
-		// the asked status is applied afterwards, like the editor's toggle.
-		if ( 'published' === ( $args['status'] ?? '' ) ) {
-			$published = self::set_status( $file, 'published' );
-			if ( is_wp_error( $published ) ) {
-				return $published;
+		// createSnippet() forces a draft, or publishes when its auto-publish
+		// setting is on: the asked status is applied afterwards either way, like
+		// the editor's toggle, so a snippet asked as a draft (untested PHP)
+		// never runs on the site.
+		$wanted = 'published' === ( $args['status'] ?? '' ) ? 'published' : 'draft';
+		$stored = self::find( $file );
+		if ( is_wp_error( $stored ) || $wanted !== $stored['status'] ) {
+			$applied = self::set_status( $file, $wanted );
+			if ( is_wp_error( $applied ) ) {
+				return $applied;
 			}
 		}
 
@@ -245,6 +262,16 @@ final class Snippets implements Family {
 
 		$meta = array_merge( $snippet['meta'], self::meta_from( $args ) );
 		$code = array_key_exists( 'code', $args ) ? (string) $args['code'] : $snippet['code'];
+
+		// PHP written, a snippet turned into PHP, PHP published or reactivated:
+		// refused where code changes are. Unpublishing stays possible.
+		$touches_code = array_key_exists( 'code', $args ) || array_key_exists( 'type', $args ) || 'published' === ( $args['status'] ?? '' ) || ! empty( $args['reactivate'] );
+		if ( $touches_code && in_array( $meta['type'] ?? '', self::PHP_TYPES, true ) ) {
+			$refused = self::code_refusal();
+			if ( null !== $refused ) {
+				return $refused;
+			}
+		}
 
 		$result = \FluentSnippets\App\Helpers\Helper::updateSnippet(
 			[
@@ -316,6 +343,32 @@ final class Snippets implements Family {
 		// phpcs:enable
 
 		return true;
+	}
+
+	/**
+	 * Why PHP may not be written or published here, null when it may. A PHP
+	 * snippet runs on every request, so it is code execution like a plugin:
+	 * refused when wp-config.php forbids file changes (DISALLOW_FILE_MODS or
+	 * the `file_mod_allowed` filter, as for the plugin abilities), on a network
+	 * for anyone but a super admin (a snippet runs on every site of it, and a
+	 * site administrator does not hold unfiltered_html there), and for the
+	 * Claude agent under the Editor preset, which never gets code. Under the
+	 * Administrator preset Claude writes PHP snippets freely; CSS and JS
+	 * snippets are never refused here.
+	 */
+	private static function code_refusal(): ?\WP_Error {
+		if ( ! wp_is_file_mod_allowed( 'lumia_mcp_snippet' ) ) {
+			return Registry::error( 'snippet_code_disallowed', 'PHP snippets are refused: file changes are disallowed on this site (DISALLOW_FILE_MODS). CSS and JS snippets still work.' );
+		}
+		if ( is_multisite() && ! is_super_admin() ) {
+			return Registry::error( 'snippet_code_disallowed', 'PHP snippets are refused: on a multisite network a PHP snippet runs on every site, so only a super admin may write or publish one. CSS and JS snippets still work.' );
+		}
+		$user = wp_get_current_user();
+		if ( $user->exists() && Agent::is_agent( $user ) && Agent::PRESET_EDITOR === Agent::current_preset() ) {
+			return Registry::error( 'snippet_code_disallowed', 'PHP snippets are refused under the Editor permission preset of MCP Connect, which gives Claude no code. CSS and JS snippets still work; an administrator can switch the preset to Administrator.' );
+		}
+
+		return null;
 	}
 
 	/**

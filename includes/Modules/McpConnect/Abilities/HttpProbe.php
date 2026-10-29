@@ -120,6 +120,7 @@ final class HttpProbe implements Family {
 		$chain    = [];
 		$response = [];
 		$status   = 0;
+		$too_many = false;
 		$current  = $bypass ? add_query_arg( 'lumia_nocache', (string) wp_rand(), $url ) : $url;
 		$start    = microtime( true );
 
@@ -169,6 +170,12 @@ final class HttpProbe implements Family {
 					];
 				}
 
+				// Out of hops: final_url stays the last URL actually fetched.
+				if ( self::MAX_REDIRECTS === $hop ) {
+					$too_many = true;
+					break;
+				}
+
 				$current = $next;
 			}
 		} finally {
@@ -187,6 +194,9 @@ final class HttpProbe implements Family {
 			'size'      => strlen( $body ),
 			'headers'   => self::headers( $response ),
 		];
+		if ( $too_many ) {
+			$result['note'] = 'Too many redirects: stopped after ' . self::MAX_REDIRECTS . ', final_url is the last URL fetched and still redirects (a loop?).';
+		}
 
 		if ( 'HEAD' === $method || '' === $body ) {
 			return $result;

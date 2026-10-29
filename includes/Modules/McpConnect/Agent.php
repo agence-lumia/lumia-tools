@@ -87,6 +87,7 @@ final class Agent {
 		'edit_users',
 		'create_users',
 		'delete_users',
+		'remove_users',
 		'promote_users',
 		'list_users',
 		'install_plugins',
@@ -332,10 +333,13 @@ final class Agent {
 			return;
 		}
 
-		// No marker yet: the first request on 2.4.0 or later. Until then Editor
-		// was the default and was stored without anyone choosing it (the
-		// activation writes the defaults, the form always posts the select):
-		// it moves to Administrator once. A later choice of Editor stands.
+		// No marker yet: the first request on 2.4.0 or later of a site that ran
+		// MCP Connect before (activation and every settings save write an empty
+		// marker first, mark_preset_chosen()). Until then Editor was the
+		// default and was stored without anyone choosing it (the activation
+		// writes the defaults, the form always posts the select): it moves to
+		// Administrator once. A later choice of Editor stands, an imported one
+		// too.
 		if ( false === $stored ) {
 			self::migrate_editor_default();
 			$marker = self::current_preset() . '|' . LUMIA_VERSION;
@@ -350,6 +354,18 @@ final class Agent {
 		if ( $user_id > 0 ) {
 			self::reset_account( $user_id );
 		}
+	}
+
+	/**
+	 * Marks the stored preset as chosen on this site: writes an empty sync
+	 * marker when there is none, so maybe_sync() still resyncs the role on the
+	 * next request but never runs migrate_editor_default(). Called on module
+	 * activation and on every settings save (the form and a configuration
+	 * import, which may activate the module without on_activate()): only a
+	 * site that ran MCP Connect before 2.4.0 reaches maybe_sync() without one.
+	 */
+	public static function mark_preset_chosen(): void {
+		add_option( self::SYNC_OPTION, '', '', true );
 	}
 
 	/**
